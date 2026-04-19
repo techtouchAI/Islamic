@@ -1,7 +1,0 @@
-<?xml version='1.0' encoding='utf-8'?>
-<resources>
-    <string name="app_name">الذاكرين</string>
-    <string name="title_activity_main">الذاكرين</string>
-    <string name="package_name">com.islamic.aldhakereen</string>
-    <string name="custom_url_scheme">com.islamic.aldhakereen</string>
-</resources>

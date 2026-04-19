@@ -20,26 +20,20 @@ jobs:
         distribution: 'temurin'
         cache: gradle
 
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
       with:
-        node-version: '22'
-        cache: 'npm'
+        flutter-version: '3.24.0'
+        channel: 'stable'
 
     - name: Install dependencies
-      run: npm install
+      run: flutter pub get
 
-    - name: Sync Capacitor
-      run: npx cap sync android
-
-    - name: Build with Gradle
-      run: |
-        cd android
-        chmod +x gradlew
-        ./gradlew assembleDebug
+    - name: Build APK
+      run: flutter build apk --debug
 
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
         name: AlDhakereen-Debug-APK
-        path: android/app/build/outputs/apk/debug/app-debug.apk
+        path: build/app/outputs/flutter-apk/app-debug.apk
