@@ -66,20 +66,30 @@
     <div class="app-container">
         <!-- Top App Bar -->
         <header class="app-bar">
-            <button id="menuBtn" class="icon-btn" aria-label="القائمة">
-                <span class="material-icons-round">menu</span>
-            </button>
-            <h1 id="sectionTitle">الرئيسية</h1>
-            <button id="addBtn" class="icon-btn primary-bg" aria-label="إضافة" style="display: none;">
-                <span class="material-icons-round">add</span>
-            </button>
+            <div class="app-bar-right"> <!-- In RTL this is physical TOP RIGHT -->
+                <button id="backBtn" class="nav-text-btn" style="display: none;">
+                    <span class="material-icons-round">arrow_forward_ios</span>
+                    <span>رجوع</span>
+                </button>
+                <button id="menuBtn" class="icon-btn" aria-label="القائمة">
+                    <span class="material-icons-round">notes</span>
+                </button>
+            </div>
+            <div class="app-bar-center">
+                <h1 id="sectionTitle">الرئيسية</h1>
+            </div>
+            <div class="app-bar-left">
+                <button id="addBtn" class="icon-btn primary-bg" aria-label="إضافة" style="display: none;">
+                    <span class="material-icons-round">add</span>
+                </button>
+            </div>
         </header>
 
-        <!-- Search Bar (Conditional Visibility) -->
+        <!-- Search Bar -->
         <div id="searchWrapper" class="search-wrapper" style="display: none;">
             <div class="search-bar">
                 <span class="material-icons-round">search</span>
-                <input type="text" id="searchInput" placeholder="ابحث عن محتوى...">
+                <input type="text" id="searchInput" placeholder="ابحث هنا...">
             </div>
         </div>
 
@@ -90,28 +100,28 @@
                 <div class="home-card clock-card">
                     <div id="digitalClock" class="digital-clock">00:00:00</div>
                     <div class="date-container">
-                        <div id="hijriDate" class="hijri-date">...</div>
+                        <div id="hijriDate" class="hijri-date">1 ذوالقعدة 1447</div>
                         <div id="gregorianDate" class="gregorian-date">...</div>
                     </div>
                 </div>
 
-                <div class="daily-title">محتوى اليوم</div>
+                <div class="daily-title">محتوى اليوم المختار</div>
 
                 <div id="dailyDua" class="home-card content-card">
-                    <div class="card-tag">دعاء مختار</div>
+                    <div class="card-tag">دعاء اليوم</div>
                     <h3 id="dailyDuaTitle">...</h3>
                     <p id="dailyDuaText" class="card-excerpt">...</p>
                 </div>
 
                 <div id="dailyVisit" class="home-card content-card">
-                    <div class="card-tag">زيارة مختارة</div>
+                    <div class="card-tag">زيارة اليوم</div>
                     <h3 id="dailyVisitTitle">...</h3>
                     <p id="dailyVisitText" class="card-excerpt">...</p>
                 </div>
             </section>
 
-            <!-- Other sections will be rendered dynamically -->
-            <div id="contentGrid" class="content-grid"></div>
+            <!-- Grid Container -->
+            <div id="contentGrid" class="content-grid" style="display: none;"></div>
         </main>
     </div>
 
@@ -131,31 +141,37 @@
             </div>
             <div class="input-group">
                 <label>المحتوى</label>
-                <textarea id="itemContent" rows="10" placeholder="أدخل النص هنا..."></textarea>
+                <textarea id="itemContent" rows="8" placeholder="أدخل النص هنا..."></textarea>
             </div>
         </div>
         <div class="modal-footer">
-            <button id="saveItemBtn" class="btn btn-primary">حفظ</button>
+            <button id="saveItemBtn" class="btn btn-primary">حفظ البيانات</button>
         </div>
     </div>
 
     <!-- Reader View -->
     <div id="readerView" class="reader-view">
         <div class="reader-header">
-            <button id="closeReader" class="icon-btn"><span class="material-icons-round">arrow_forward</span></button>
+            <button id="closeReader" class="nav-text-btn">
+                <span class="material-icons-round">arrow_forward_ios</span>
+                <span>رجوع</span>
+            </button>
             <div class="reader-actions">
                 <button id="copyBtn" class="icon-btn"><span class="material-icons-round">content_copy</span></button>
                 <button id="shareBtn" class="icon-btn"><span class="material-icons-round">share</span></button>
             </div>
         </div>
         <div class="reader-content-wrapper">
-            <h2 id="readerTitle"></h2>
-            <div id="readerText" class="reader-text"></div>
+            <div class="reader-border">
+                <h2 id="readerTitle"></h2>
+                <div id="readerText" class="reader-text"></div>
+            </div>
         </div>
         <div class="reader-toolbar">
-            <button id="decreaseFont" class="icon-btn"><span class="material-icons-round">text_decrease</span></button>
-            <span id="fontSizeLabel">100%</span>
-            <button id="increaseFont" class="icon-btn"><span class="material-icons-round">text_increase</span></button>
+            <button id="decreaseFont" class="font-control-btn"><span>-</span></button>
+            <span class="font-label">Aa</span>
+            <button id="increaseFont" class="font-control-btn"><span>+</span></button>
+            <span id="fontSizeLabel" class="font-size-indicator">100%</span>
         </div>
     </div>
 
