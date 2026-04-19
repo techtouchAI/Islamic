@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>الذاكرين - تطبيق إسلامي احترافي</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Noto+Kufi+Arabic:wght@100..900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="theme-light">
+    <!-- Loading Screen -->
+    <div id="loadingScreen" class="loading-screen">
+        <div class="loading-content">
+            <div class="app-logo">
+                <span class="material-icons-round">mosque</span>
+            </div>
+            <h1 class="app-name">الذاكرين</h1>
+            <div class="loader"></div>
+        </div>
+    </div>
+
+    <!-- Main App Container -->
+    <div class="app-container">
+        <!-- Top App Bar -->
+        <header class="app-bar">
+            <button id="menuBtn" class="icon-btn" aria-label="القائمة">
+                <span class="material-icons-round">menu</span>
+            </button>
+            <h1 id="sectionTitle">الأدعية</h1>
+            <button id="addBtn" class="icon-btn primary-bg" aria-label="إضافة">
+                <span class="material-icons-round">add</span>
+            </button>
+        </header>
+
+        <!-- Search Bar -->
+        <div class="search-wrapper">
+            <div class="search-bar">
+                <span class="material-icons-round">search</span>
+                <input type="text" id="searchInput" placeholder="ابحث عن دعاء أو زيارة...">
+            </div>
+        </div>
+
+        <!-- Main Content Area -->
+        <main id="mainContent" class="scroll-area">
+            <!-- Content will be injected here -->
+            <div id="contentGrid" class="content-grid"></div>
+        </main>
+
+        <!-- Bottom Navigation -->
+        <nav class="bottom-nav">
+            <button class="nav-item active" data-section="duas">
+                <span class="material-icons-round">auto_stories</span>
+                <span>الأدعية</span>
+            </button>
+            <button class="nav-item" data-section="visits">
+                <span class="material-icons-round">mosque</span>
+                <span>الزيارات</span>
+            </button>
+            <button class="nav-item" data-section="notes">
+                <span class="material-icons-round">edit_note</span>
+                <span>الملاحظات</span>
+            </button>
+            <button class="nav-item" data-section="settings">
+                <span class="material-icons-round">settings</span>
+                <span>الإعدادات</span>
+            </button>
+        </nav>
+    </div>
+
+    <!-- Modals -->
+    <div id="modalOverlay" class="modal-overlay"></div>
+
+    <!-- Add/Edit Modal -->
+    <div id="contentModal" class="modal">
+        <div class="modal-header">
+            <h2 id="modalTitle">إضافة جديد</h2>
+            <button class="close-modal"><span class="material-icons-round">close</span></button>
+        </div>
+        <div class="modal-body">
+            <div class="input-group">
+                <label>العنوان</label>
+                <input type="text" id="itemTitle" placeholder="أدخل العنوان هنا...">
+            </div>
+            <div class="input-group">
+                <label>المحتوى</label>
+                <textarea id="itemContent" rows="10" placeholder="أدخل النص هنا..."></textarea>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button id="saveItemBtn" class="btn btn-primary">حفظ</button>
+        </div>
+    </div>
+
+    <!-- Reader View (Professional Content Display) -->
+    <div id="readerView" class="reader-view">
+        <div class="reader-header">
+            <button id="closeReader" class="icon-btn"><span class="material-icons-round">arrow_forward</span></button>
+            <div class="reader-actions">
+                <button id="copyBtn" class="icon-btn"><span class="material-icons-round">content_copy</span></button>
+                <button id="shareBtn" class="icon-btn"><span class="material-icons-round">share</span></button>
+            </div>
+        </div>
+        <div class="reader-content-wrapper">
+            <h2 id="readerTitle"></h2>
+            <div id="readerText" class="reader-text"></div>
+        </div>
+        <div class="reader-toolbar">
+            <button id="decreaseFont" class="icon-btn"><span class="material-icons-round">text_decrease</span></button>
+            <span id="fontSizeLabel">100%</span>
+            <button id="increaseFont" class="icon-btn"><span class="material-icons-round">text_increase</span></button>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>
