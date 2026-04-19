@@ -25,6 +25,43 @@
         </div>
     </div>
 
+    <!-- Sidebar / Drawer -->
+    <div id="sidebarOverlay" class="sidebar-overlay"></div>
+    <nav id="sidebar" class="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-profile">
+                <span class="material-icons-round">account_circle</span>
+                <h2>تطبيق الذاكرين</h2>
+            </div>
+        </div>
+        <div class="sidebar-menu">
+            <button class="menu-item active" data-section="home">
+                <span class="material-icons-round">home</span>
+                <span>الرئيسية</span>
+            </button>
+            <button class="menu-item" data-section="duas">
+                <span class="material-icons-round">auto_stories</span>
+                <span>الأدعية</span>
+                <span id="duasBadge" class="badge">0</span>
+            </button>
+            <button class="menu-item" data-section="visits">
+                <span class="material-icons-round">mosque</span>
+                <span>الزيارات</span>
+                <span id="visitsBadge" class="badge">0</span>
+            </button>
+            <button class="menu-item" data-section="notes">
+                <span class="material-icons-round">edit_note</span>
+                <span>الملاحظات</span>
+                <span id="notesBadge" class="badge">0</span>
+            </button>
+            <div class="menu-divider"></div>
+            <button class="menu-item" data-section="settings">
+                <span class="material-icons-round">settings</span>
+                <span>الإعدادات</span>
+            </button>
+        </div>
+    </nav>
+
     <!-- Main App Container -->
     <div class="app-container">
         <!-- Top App Bar -->
@@ -32,45 +69,50 @@
             <button id="menuBtn" class="icon-btn" aria-label="القائمة">
                 <span class="material-icons-round">menu</span>
             </button>
-            <h1 id="sectionTitle">الأدعية</h1>
-            <button id="addBtn" class="icon-btn primary-bg" aria-label="إضافة">
+            <h1 id="sectionTitle">الرئيسية</h1>
+            <button id="addBtn" class="icon-btn primary-bg" aria-label="إضافة" style="display: none;">
                 <span class="material-icons-round">add</span>
             </button>
         </header>
 
-        <!-- Search Bar -->
-        <div class="search-wrapper">
+        <!-- Search Bar (Conditional Visibility) -->
+        <div id="searchWrapper" class="search-wrapper" style="display: none;">
             <div class="search-bar">
                 <span class="material-icons-round">search</span>
-                <input type="text" id="searchInput" placeholder="ابحث عن دعاء أو زيارة...">
+                <input type="text" id="searchInput" placeholder="ابحث عن محتوى...">
             </div>
         </div>
 
         <!-- Main Content Area -->
-        <main id="mainContent" class="scroll-area">
-            <!-- Content will be injected here -->
+        <main id="mainContent" class="scroll-area section-transition">
+            <!-- Home Section -->
+            <section id="home-section" class="app-section active">
+                <div class="home-card clock-card">
+                    <div id="digitalClock" class="digital-clock">00:00:00</div>
+                    <div class="date-container">
+                        <div id="hijriDate" class="hijri-date">...</div>
+                        <div id="gregorianDate" class="gregorian-date">...</div>
+                    </div>
+                </div>
+
+                <div class="daily-title">محتوى اليوم</div>
+
+                <div id="dailyDua" class="home-card content-card">
+                    <div class="card-tag">دعاء مختار</div>
+                    <h3 id="dailyDuaTitle">...</h3>
+                    <p id="dailyDuaText" class="card-excerpt">...</p>
+                </div>
+
+                <div id="dailyVisit" class="home-card content-card">
+                    <div class="card-tag">زيارة مختارة</div>
+                    <h3 id="dailyVisitTitle">...</h3>
+                    <p id="dailyVisitText" class="card-excerpt">...</p>
+                </div>
+            </section>
+
+            <!-- Other sections will be rendered dynamically -->
             <div id="contentGrid" class="content-grid"></div>
         </main>
-
-        <!-- Bottom Navigation -->
-        <nav class="bottom-nav">
-            <button class="nav-item active" data-section="duas">
-                <span class="material-icons-round">auto_stories</span>
-                <span>الأدعية</span>
-            </button>
-            <button class="nav-item" data-section="visits">
-                <span class="material-icons-round">mosque</span>
-                <span>الزيارات</span>
-            </button>
-            <button class="nav-item" data-section="notes">
-                <span class="material-icons-round">edit_note</span>
-                <span>الملاحظات</span>
-            </button>
-            <button class="nav-item" data-section="settings">
-                <span class="material-icons-round">settings</span>
-                <span>الإعدادات</span>
-            </button>
-        </nav>
     </div>
 
     <!-- Modals -->
@@ -97,7 +139,7 @@
         </div>
     </div>
 
-    <!-- Reader View (Professional Content Display) -->
+    <!-- Reader View -->
     <div id="readerView" class="reader-view">
         <div class="reader-header">
             <button id="closeReader" class="icon-btn"><span class="material-icons-round">arrow_forward</span></button>
