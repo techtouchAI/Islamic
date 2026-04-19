@@ -2,7 +2,7 @@ name: Build Android APK
 
 on:
   push:
-    branches: [ "main", "feat/professional-islamic-app-64bit" ]
+    branches: [ "main", "feat/**" ]
   pull_request:
     branches: [ "main" ]
 
@@ -43,4 +43,3 @@ jobs:
       with:
         name: AlDhakereen-Debug-APK
         path: android/app/build/outputs/apk/debug/app-debug.apk
-
