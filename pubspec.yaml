@@ -15,6 +15,8 @@ dependencies:
   share_plus: ^10.1.3
   shared_preferences: ^2.3.5
   image_picker: ^1.1.2
+  url_launcher: ^6.3.1
+  hijri: ^3.0.0
 
 dev_dependencies:
   flutter_test:
@@ -23,3 +25,8 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/data/content.json
+    - assets/images/default_home.png
+    - assets/images/default_bg.png
+    - assets/images/logo.png
