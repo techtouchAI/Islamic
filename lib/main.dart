@@ -1,9 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart' as intl;
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'dart:async';
+import 'dart:math';
+import 'package:share_plus/share_plus.dart';
+import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 
-void main() {
+import 'data/quran_data.dart';
+import 'data/shia_content.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await initializeDateFormatting('ar_SA', null);
   runApp(const AlDhakereenApp());
 }
 
@@ -19,10 +31,36 @@ class _AlDhakereenAppState extends State<AlDhakereenApp> {
   double _fontSizeFactor = 1.0;
   Color _primaryColor = const Color(0xFFD4AF37);
   double _uiOpacity = 1.0;
+  String? _backgroundImagePath;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSettings();
+  }
+
+  Future<void> _loadSettings() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _themeMode = (prefs.getString('theme') ?? 'light') == 'light' ? ThemeMode.light : ThemeMode.dark;
+      _fontSizeFactor = prefs.getDouble('fontSize') ?? 1.0;
+      _primaryColor = Color(prefs.getInt('primaryColor') ?? 0xFFD4AF37);
+      _uiOpacity = prefs.getDouble('uiOpacity') ?? 1.0;
+      _backgroundImagePath = prefs.getString('backgroundImage');
+    });
+  }
+
+  Future<void> _saveSetting(String key, dynamic value) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (value is String) prefs.setString(key, value);
+    if (value is double) prefs.setDouble(key, value);
+    if (value is int) prefs.setInt(key, value);
+  }
 
   void _toggleTheme() {
     setState(() {
       _themeMode = _themeMode == ThemeMode.light ? ThemeMode.dark : ThemeMode.light;
+      _saveSetting('theme', _themeMode == ThemeMode.light ? 'light' : 'dark');
     });
   }
 
@@ -61,12 +99,26 @@ class _AlDhakereenAppState extends State<AlDhakereenApp> {
       themeMode: _themeMode,
       home: MainScaffold(
         fontSizeFactor: _fontSizeFactor,
-        onFontSizeChanged: (val) => setState(() => _fontSizeFactor = val),
+        onFontSizeChanged: (val) {
+          setState(() => _fontSizeFactor = val);
+          _saveSetting('fontSize', val);
+        },
         onThemeToggled: _toggleTheme,
         primaryColor: _primaryColor,
-        onColorChanged: (c) => setState(() => _primaryColor = c),
+        onColorChanged: (c) {
+          setState(() => _primaryColor = c);
+          _saveSetting('primaryColor', c.value);
+        },
         uiOpacity: _uiOpacity,
-        onOpacityChanged: (val) => setState(() => _uiOpacity = val),
+        onOpacityChanged: (val) {
+          setState(() => _uiOpacity = val);
+          _saveSetting('uiOpacity', val);
+        },
+        backgroundImagePath: _backgroundImagePath,
+        onBackgroundImageChanged: (path) {
+          setState(() => _backgroundImagePath = path);
+          if (path != null) _saveSetting('backgroundImage', path);
+        },
       ),
     );
   }
@@ -80,6 +132,8 @@ class MainScaffold extends StatefulWidget {
   final ValueChanged<Color> onColorChanged;
   final double uiOpacity;
   final ValueChanged<double> onOpacityChanged;
+  final String? backgroundImagePath;
+  final ValueChanged<String?> onBackgroundImageChanged;
 
   const MainScaffold({
     super.key,
@@ -90,6 +144,8 @@ class MainScaffold extends StatefulWidget {
     required this.onColorChanged,
     required this.uiOpacity,
     required this.onOpacityChanged,
+    required this.backgroundImagePath,
+    required this.onBackgroundImageChanged,
   });
 
   @override
@@ -139,9 +195,10 @@ class _MainScaffoldState extends State<MainScaffold> {
           title: const Text('الذاكرين', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
           centerTitle: true,
           elevation: 0,
+          backgroundColor: Theme.of(context).appBarTheme.backgroundColor?.withOpacity(widget.uiOpacity),
           leading: Builder(
             builder: (context) => IconButton(
-              icon: const Icon(Icons.notes), // 3 lines professional
+              icon: const Icon(Icons.notes),
               onPressed: () => Scaffold.of(context).openDrawer(),
               tooltip: 'القائمة',
             ),
@@ -149,21 +206,29 @@ class _MainScaffoldState extends State<MainScaffold> {
           actions: [
             if (isSubPage)
               IconButton(
-                icon: const Icon(Icons.arrow_forward_ios), // Logic 'back' in RTL
+                icon: const Icon(Icons.arrow_forward_ios),
                 onPressed: _onBack,
                 tooltip: 'رجوع',
               ),
-            if (!isSubPage) const SizedBox(width: 48), // Spacer to balance leading
+            if (!isSubPage) const SizedBox(width: 48),
           ],
         ),
-        body: SafeArea(
-          child: Opacity(
-            opacity: widget.uiOpacity,
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 400),
-              child: _buildBody(context),
+        body: Stack(
+          children: [
+            if (widget.backgroundImagePath != null)
+              Positioned.fill(
+                child: Image.file(
+                  File(widget.backgroundImagePath!),
+                  fit: BoxFit.cover,
+                ),
+              ),
+            SafeArea(
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 400),
+                child: _buildBody(context),
+              ),
             ),
-          ),
+          ],
         ),
       ),
     );
@@ -172,13 +237,15 @@ class _MainScaffoldState extends State<MainScaffold> {
   Widget _buildBody(BuildContext context) {
     switch (_currentSection) {
       case 'home':
-        return HomeSection(key: const ValueKey('home'), fontSizeFactor: widget.fontSizeFactor);
+        return HomeSection(key: const ValueKey('home'), fontSizeFactor: widget.fontSizeFactor, uiOpacity: widget.uiOpacity);
+      case 'quran':
+        return QuranSection(key: const ValueKey('quran'), fontSizeFactor: widget.fontSizeFactor, uiOpacity: widget.uiOpacity);
       case 'duas':
-        return ContentListSection(key: const ValueKey('duas'), title: 'الأدعية', type: 'dua', fontSizeFactor: widget.fontSizeFactor);
+        return ContentListSection(key: const ValueKey('duas'), title: 'الأدعية', type: 'dua', fontSizeFactor: widget.fontSizeFactor, uiOpacity: widget.uiOpacity);
       case 'visits':
-        return ContentListSection(key: const ValueKey('visits'), title: 'الزيارات', type: 'visit', fontSizeFactor: widget.fontSizeFactor);
+        return ContentListSection(key: const ValueKey('visits'), title: 'الزيارات', type: 'visit', fontSizeFactor: widget.fontSizeFactor, uiOpacity: widget.uiOpacity);
       case 'notes':
-        return ContentListSection(key: const ValueKey('notes'), title: 'الملاحظات', type: 'note', fontSizeFactor: widget.fontSizeFactor);
+        return const Center(child: Text('قسم الملاحظات قيد التطوير'));
       case 'settings':
         return SettingsSection(
           key: const ValueKey('settings'),
@@ -187,6 +254,8 @@ class _MainScaffoldState extends State<MainScaffold> {
           onColorChanged: widget.onColorChanged,
           uiOpacity: widget.uiOpacity,
           onOpacityChanged: widget.onOpacityChanged,
+          onBackgroundImageChanged: widget.onBackgroundImageChanged,
+          backgroundImagePath: widget.backgroundImagePath,
         );
       default:
         return const Center(child: Text('صفحة غير معروفة'));
@@ -230,6 +299,7 @@ class AppDrawer extends StatelessWidget {
               padding: EdgeInsets.zero,
               children: [
                 _buildItem(context, 'home', 'الرئيسية', Icons.home),
+                _buildItem(context, 'quran', 'القرآن الكريم', Icons.menu_book),
                 _buildItem(context, 'duas', 'الأدعية', Icons.auto_stories),
                 _buildItem(context, 'visits', 'الزيارات', Icons.place),
                 _buildItem(context, 'notes', 'الملاحظات', Icons.edit_note),
@@ -237,10 +307,6 @@ class AppDrawer extends StatelessWidget {
                 _buildItem(context, 'settings', 'الإعدادات', Icons.settings),
               ],
             ),
-          ),
-          const Padding(
-            padding: EdgeInsets.all(16.0),
-            child: Text('الإصدار 1.0.0', style: TextStyle(color: Colors.grey, fontSize: 12)),
           ),
         ],
       ),
@@ -259,9 +325,26 @@ class AppDrawer extends StatelessWidget {
   }
 }
 
-class HomeSection extends StatelessWidget {
+class HomeSection extends StatefulWidget {
   final double fontSizeFactor;
-  const HomeSection({super.key, required this.fontSizeFactor});
+  final double uiOpacity;
+  const HomeSection({super.key, required this.fontSizeFactor, required this.uiOpacity});
+
+  @override
+  State<HomeSection> createState() => _HomeSectionState();
+}
+
+class _HomeSectionState extends State<HomeSection> {
+  late Dhikr randomDua;
+  late Dhikr randomVisit;
+
+  @override
+  void initState() {
+    super.initState();
+    final random = Random();
+    randomDua = shiaDuas[random.nextInt(shiaDuas.length)];
+    randomVisit = shiaVisits[random.nextInt(shiaVisits.length)];
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -273,7 +356,7 @@ class HomeSection extends StatelessWidget {
         children: [
           Card(
             elevation: 10,
-            color: Colors.black,
+            color: Colors.black.withOpacity(widget.uiOpacity),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
             child: Container(
               width: double.infinity,
@@ -290,13 +373,13 @@ class HomeSection extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 30),
-          const Align(
+          Align(
             alignment: Alignment.centerRight,
-            child: Text('محتوى اليوم المختار', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.grey)),
+            child: Text('محتوى اليوم المختار', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Theme.of(context).brightness == Brightness.dark ? Colors.white70 : Colors.grey)),
           ),
           const SizedBox(height: 16),
-          const _DailyCard(tag: 'دعاء اليوم', title: 'دعاء الصباح', content: 'أَصْبَحْنَا وَأَصْبَحَ الْمُلْكُ لِلَّهِ، وَالْحَمْدُ لِلَّهِ، لاَ إِلَهَ إِلاَّ اللَّهُ وَحْدَهُ لاَ شَرِيكَ لَهُ، لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ وَهُوَ عَلَى كُلِّ شَيْءٍ قَدِيرٌ.'),
-          const _DailyCard(tag: 'زيارة اليوم', title: 'زيارة عاشوراء', content: 'السَّلامُ عَلَيْكَ يا أَبا عَبْدِ اللهِ، السَّلامُ عَلَيْكَ يَا بْنَ رَسُولِ اللهِ، السَّلامُ عَلَيْكَ يا خِيَرَةَ اللهِ وَابْنَ خِيَرَتِهِ، السَّلامُ عَلَيْكَ يَا بْنَ أَمِيرِ الْمُؤْمِنِينَ وَابْنَ سَيِّدِ الْوَصِيِّينَ.'),
+          _DailyCard(tag: 'دعاء اليوم', title: randomDua.title, content: randomDua.content, uiOpacity: widget.uiOpacity),
+          _DailyCard(tag: 'زيارة اليوم', title: randomVisit.title, content: randomVisit.content, uiOpacity: widget.uiOpacity),
         ],
       ),
     );
@@ -338,21 +421,32 @@ class _ClockWidgetState extends State<_ClockWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return Text(
-      _timeString,
-      style: const TextStyle(color: Color(0xFFD4AF37), fontSize: 50, fontWeight: FontWeight.bold, fontFamily: 'monospace'),
+    return FittedBox(
+      fit: BoxFit.scaleDown,
+      child: Text(
+        _timeString,
+        maxLines: 1,
+        style: const TextStyle(
+          color: Color(0xFFD4AF37),
+          fontSize: 50,
+          fontWeight: FontWeight.bold,
+          fontFamily: 'monospace',
+        ),
+      ),
     );
   }
 }
 
 class _DailyCard extends StatelessWidget {
   final String tag, title, content;
-  const _DailyCard({required this.tag, required this.title, required this.content});
+  final double uiOpacity;
+  const _DailyCard({required this.tag, required this.title, required this.content, required this.uiOpacity});
 
   @override
   Widget build(BuildContext context) {
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
+      color: Theme.of(context).cardColor.withOpacity(uiOpacity),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       child: InkWell(
         onTap: () => Navigator.push(context, MaterialPageRoute(builder: (c) => ReaderPage(title: title, content: content, fontSizeFactor: 1.0))),
@@ -379,13 +473,40 @@ class _DailyCard extends StatelessWidget {
   }
 }
 
-class ContentListSection extends StatelessWidget {
-  final String title, type;
+class QuranSection extends StatelessWidget {
   final double fontSizeFactor;
-  const ContentListSection({super.key, required this.title, required this.type, required this.fontSizeFactor});
+  final double uiOpacity;
+  const QuranSection({super.key, required this.fontSizeFactor, required this.uiOpacity});
 
   @override
   Widget build(BuildContext context) {
+    final ajza = getJuzList();
+    return ListView.builder(
+      physics: const BouncingScrollPhysics(),
+      itemCount: ajza.length,
+      padding: const EdgeInsets.all(16),
+      itemBuilder: (context, index) => Card(
+        color: Theme.of(context).cardColor.withOpacity(uiOpacity),
+        child: ListTile(
+          title: Text(ajza[index], style: const TextStyle(fontWeight: FontWeight.bold)),
+          trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (c) => ReaderPage(title: ajza[index], content: getJuzContent(index), fontSizeFactor: fontSizeFactor))),
+        ),
+      ),
+    );
+  }
+}
+
+class ContentListSection extends StatelessWidget {
+  final String title, type;
+  final double fontSizeFactor;
+  final double uiOpacity;
+  const ContentListSection({super.key, required this.title, required this.type, required this.fontSizeFactor, required this.uiOpacity});
+
+  @override
+  Widget build(BuildContext context) {
+    final List<Dhikr> data = type == 'dua' ? shiaDuas : shiaVisits;
+
     return Column(
       children: [
         Padding(
@@ -393,10 +514,10 @@ class ContentListSection extends StatelessWidget {
           child: TextField(
             textAlign: TextAlign.right,
             decoration: InputDecoration(
-              hintText: 'ابحث في المختار...',
+              hintText: 'ابحث...',
               prefixIcon: const Icon(Icons.search),
               filled: true,
-              fillColor: Theme.of(context).cardColor,
+              fillColor: Theme.of(context).cardColor.withOpacity(uiOpacity),
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none),
             ),
           ),
@@ -404,18 +525,18 @@ class ContentListSection extends StatelessWidget {
         Expanded(
           child: ListView.builder(
             physics: const BouncingScrollPhysics(),
-            itemCount: 10,
+            itemCount: data.length,
             padding: const EdgeInsets.only(bottom: 20),
             itemBuilder: (context, index) => Card(
+              color: Theme.of(context).cardColor.withOpacity(uiOpacity),
               child: ListTile(
                 contentPadding: const EdgeInsets.all(20),
-                title: Text('$title نموذج ${index + 1}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                title: Text(data[index].title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
                 subtitle: Padding(
                   padding: const EdgeInsets.only(top: 10),
-                  child: Text('نص تجريبي للمحتوى يظهر هنا للتحقق من التنسيق والوضوح في العرض...', maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontFamily: 'Amiri', fontSize: 16)),
+                  child: Text(data[index].content, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontFamily: 'Amiri', fontSize: 16)),
                 ),
-                trailing: IconButton(icon: const Icon(Icons.delete_outline), onPressed: () {}),
-                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (c) => ReaderPage(title: 'عرض النص الكامل', content: 'هذا النص هو مثال لنص يمكن أن يستبدل في نفس المساحة، لقد تم توليد هذا النص من مولد النص العربى، حيث يمكنك أن تولد مثل هذا النص أو العديد من النصوص الأخرى إضافة إلى زيادة عدد الحروف التى يولدها التطبيق. ' * 5, fontSizeFactor: fontSizeFactor))),
+                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (c) => ReaderPage(title: data[index].title, content: data[index].content, fontSizeFactor: fontSizeFactor))),
               ),
             ),
           ),
@@ -443,6 +564,15 @@ class _ReaderPageState extends State<ReaderPage> {
     _factor = widget.fontSizeFactor;
   }
 
+  void _copy() {
+    Clipboard.setData(ClipboardData(text: widget.content));
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم نسخ النص بنجاح')));
+  }
+
+  void _share() {
+    Share.share("${widget.title}\n\n${widget.content}");
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -451,8 +581,8 @@ class _ReaderPageState extends State<ReaderPage> {
         centerTitle: true,
         leading: IconButton(icon: const Icon(Icons.arrow_forward_ios), onPressed: () => Navigator.pop(context)),
         actions: [
-          IconButton(icon: const Icon(Icons.content_copy), onPressed: () {}),
-          IconButton(icon: const Icon(Icons.share), onPressed: () {}),
+          IconButton(icon: const Icon(Icons.content_copy), onPressed: _copy),
+          IconButton(icon: const Icon(Icons.share), onPressed: _share),
         ],
       ),
       body: Column(
@@ -515,6 +645,8 @@ class SettingsSection extends StatelessWidget {
   final ValueChanged<Color> onColorChanged;
   final double uiOpacity;
   final ValueChanged<double> onOpacityChanged;
+  final ValueChanged<String?> onBackgroundImageChanged;
+  final String? backgroundImagePath;
 
   const SettingsSection({
     super.key,
@@ -523,7 +655,17 @@ class SettingsSection extends StatelessWidget {
     required this.onColorChanged,
     required this.uiOpacity,
     required this.onOpacityChanged,
+    required this.onBackgroundImageChanged,
+    required this.backgroundImagePath,
   });
+
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      onBackgroundImageChanged(pickedFile.path);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -561,6 +703,13 @@ class SettingsSection extends StatelessWidget {
                   )).toList(),
                 ),
               ),
+            ),
+            const Divider(indent: 16, endIndent: 16),
+            ListTile(
+              title: const Text('خلفية التطبيق'),
+              subtitle: const Text('اختر صورة من المعرض لتكون خلفية'),
+              trailing: backgroundImagePath != null ? IconButton(icon: const Icon(Icons.delete), onPressed: () => onBackgroundImageChanged(null)) : null,
+              onTap: _pickImage,
             ),
             const Divider(indent: 16, endIndent: 16),
             Padding(
