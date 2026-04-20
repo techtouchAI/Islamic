@@ -477,7 +477,7 @@ class _ClockWidgetState extends State<_ClockWidget> {
         maxLines: 1,
         style: const TextStyle(
           color: Color(0xFFD4AF37),
-          fontSize: 35,
+          fontSize: 28,
           fontWeight: FontWeight.bold,
           fontFamily: 'monospace',
         ),
