@@ -12,6 +12,10 @@ import 'dart:io';
 
 import 'data/quran_data.dart';
 import 'data/shia_content.dart';
+import 'data/tafsir_data.dart';
+import 'data/dreams_data.dart';
+import 'data/stories_data.dart';
+import 'data/imam_ali_data.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -241,11 +245,17 @@ class _MainScaffoldState extends State<MainScaffold> {
       case 'quran':
         return QuranSection(key: const ValueKey('quran'), fontSizeFactor: widget.fontSizeFactor, uiOpacity: widget.uiOpacity);
       case 'duas':
-        return ContentListSection(key: const ValueKey('duas'), title: 'الأدعية', type: 'dua', fontSizeFactor: widget.fontSizeFactor, uiOpacity: widget.uiOpacity);
+        return GenericListSection(key: const ValueKey('duas'), title: 'الأدعية', data: shiaDuas.map((e) => {'title': e.title, 'content': e.content}).toList(), fontSizeFactor: widget.fontSizeFactor, uiOpacity: widget.uiOpacity);
       case 'visits':
-        return ContentListSection(key: const ValueKey('visits'), title: 'الزيارات', type: 'visit', fontSizeFactor: widget.fontSizeFactor, uiOpacity: widget.uiOpacity);
-      case 'notes':
-        return const Center(child: Text('قسم الملاحظات قيد التطوير'));
+        return GenericListSection(key: const ValueKey('visits'), title: 'الزيارات', data: shiaVisits.map((e) => {'title': e.title, 'content': e.content}).toList(), fontSizeFactor: widget.fontSizeFactor, uiOpacity: widget.uiOpacity);
+      case 'tafsir':
+        return GenericListSection(key: const ValueKey('tafsir'), title: 'التفسير', data: tafsirList.map((e) => {'title': e.title, 'content': e.content}).toList(), fontSizeFactor: widget.fontSizeFactor, uiOpacity: widget.uiOpacity);
+      case 'dreams':
+        return GenericListSection(key: const ValueKey('dreams'), title: 'الأحلام', data: dreamsList.map((e) => {'title': e.title, 'content': e.content}).toList(), fontSizeFactor: widget.fontSizeFactor, uiOpacity: widget.uiOpacity);
+      case 'stories':
+        return GenericListSection(key: const ValueKey('stories'), title: 'قصص الأنبياء', data: storiesList.map((e) => {'title': e.title, 'content': e.content}).toList(), fontSizeFactor: widget.fontSizeFactor, uiOpacity: widget.uiOpacity);
+      case 'imam_ali':
+        return GenericListSection(key: const ValueKey('imam_ali'), title: 'موسوعة الإمام علي (ع)', data: imamAliList.map((e) => {'title': e.title, 'content': e.content}).toList(), fontSizeFactor: widget.fontSizeFactor, uiOpacity: widget.uiOpacity);
       case 'settings':
         return SettingsSection(
           key: const ValueKey('settings'),
@@ -302,7 +312,10 @@ class AppDrawer extends StatelessWidget {
                 _buildItem(context, 'quran', 'القرآن الكريم', Icons.menu_book),
                 _buildItem(context, 'duas', 'الأدعية', Icons.auto_stories),
                 _buildItem(context, 'visits', 'الزيارات', Icons.place),
-                _buildItem(context, 'notes', 'الملاحظات', Icons.edit_note),
+                _buildItem(context, 'tafsir', 'التفسير', Icons.translate),
+                _buildItem(context, 'dreams', 'تفسير الأحلام', Icons.bedtime),
+                _buildItem(context, 'stories', 'قصص الأنبياء', Icons.history_edu),
+                _buildItem(context, 'imam_ali', 'موسوعة الإمام علي (ع)', Icons.shield),
                 const Divider(),
                 _buildItem(context, 'settings', 'الإعدادات', Icons.settings),
               ],
@@ -335,15 +348,21 @@ class HomeSection extends StatefulWidget {
 }
 
 class _HomeSectionState extends State<HomeSection> {
-  late Dhikr randomDua;
-  late Dhikr randomVisit;
+  late Map<String, String> items;
 
   @override
   void initState() {
     super.initState();
     final random = Random();
-    randomDua = shiaDuas[random.nextInt(shiaDuas.length)];
-    randomVisit = shiaVisits[random.nextInt(shiaVisits.length)];
+    items = {
+      'القرآن': 'سورة الفاتحة',
+      'الدعاء': shiaDuas[random.nextInt(shiaDuas.length)].title,
+      'الزيارة': shiaVisits[random.nextInt(shiaVisits.length)].title,
+      'التفسير': tafsirList[random.nextInt(tafsirList.length)].title,
+      'الأحلام': dreamsList[random.nextInt(dreamsList.length)].title,
+      'القصص': storiesList[random.nextInt(storiesList.length)].title,
+      'الإمام علي (ع)': imamAliList[random.nextInt(imamAliList.length)].title,
+    };
   }
 
   @override
@@ -360,26 +379,56 @@ class _HomeSectionState extends State<HomeSection> {
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
             child: Container(
               width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 40),
+              padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 10),
               child: Column(
                 children: [
                   const _ClockWidget(),
-                  const SizedBox(height: 20),
-                  const Text('1 ذوالقعدة 1447 هـ', style: TextStyle(color: Color(0xFFD4AF37), fontSize: 24, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 8),
-                  Text(intl.DateFormat('EEEE, d MMMM yyyy', 'ar_SA').format(now), style: const TextStyle(color: Colors.white60, fontSize: 16)),
+                  const SizedBox(height: 10),
+                  const Text('1 ذوالقعدة 1447 هـ', style: TextStyle(color: Color(0xFFD4AF37), fontSize: 20, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 4),
+                  Text(intl.DateFormat('EEEE, d MMMM yyyy', 'ar_SA').format(now), style: const TextStyle(color: Colors.white60, fontSize: 14)),
                 ],
               ),
             ),
           ),
-          const SizedBox(height: 30),
+          const SizedBox(height: 20),
           Align(
             alignment: Alignment.centerRight,
-            child: Text('محتوى اليوم المختار', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Theme.of(context).brightness == Brightness.dark ? Colors.white70 : Colors.grey)),
+            child: Text('مقتطفات من الأقسام', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Theme.of(context).brightness == Brightness.dark ? Colors.white70 : Colors.grey)),
           ),
-          const SizedBox(height: 16),
-          _DailyCard(tag: 'دعاء اليوم', title: randomDua.title, content: randomDua.content, uiOpacity: widget.uiOpacity),
-          _DailyCard(tag: 'زيارة اليوم', title: randomVisit.title, content: randomVisit.content, uiOpacity: widget.uiOpacity),
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: items.entries.map((e) => _HomeSmallCard(tag: e.key, title: e.value, uiOpacity: widget.uiOpacity)).toList(),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _HomeSmallCard extends StatelessWidget {
+  final String tag, title;
+  final double uiOpacity;
+  const _HomeSmallCard({required this.tag, required this.title, required this.uiOpacity});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: (MediaQuery.of(context).size.width - 42) / 2,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor.withOpacity(uiOpacity),
+        borderRadius: BorderRadius.circular(15),
+        border: Border.all(color: Theme.of(context).colorScheme.primary.withOpacity(0.2)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(tag, style: TextStyle(fontSize: 10, color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 4),
+          Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
         ],
       ),
     );
@@ -428,45 +477,9 @@ class _ClockWidgetState extends State<_ClockWidget> {
         maxLines: 1,
         style: const TextStyle(
           color: Color(0xFFD4AF37),
-          fontSize: 50,
+          fontSize: 35,
           fontWeight: FontWeight.bold,
           fontFamily: 'monospace',
-        ),
-      ),
-    );
-  }
-}
-
-class _DailyCard extends StatelessWidget {
-  final String tag, title, content;
-  final double uiOpacity;
-  const _DailyCard({required this.tag, required this.title, required this.content, required this.uiOpacity});
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 16),
-      color: Theme.of(context).cardColor.withOpacity(uiOpacity),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-      child: InkWell(
-        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (c) => ReaderPage(title: title, content: content, fontSizeFactor: 1.0))),
-        borderRadius: BorderRadius.circular(18),
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                decoration: BoxDecoration(color: Theme.of(context).colorScheme.primary.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
-                child: Text(tag, style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold)),
-              ),
-              const SizedBox(height: 12),
-              Text(title, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 8),
-              Text(content, maxLines: 3, overflow: TextOverflow.ellipsis, style: const TextStyle(fontFamily: 'Amiri', fontSize: 18, height: 1.5), textAlign: TextAlign.right),
-            ],
-          ),
         ),
       ),
     );
@@ -497,16 +510,15 @@ class QuranSection extends StatelessWidget {
   }
 }
 
-class ContentListSection extends StatelessWidget {
-  final String title, type;
+class GenericListSection extends StatelessWidget {
+  final String title;
+  final List<Map<String, String>> data;
   final double fontSizeFactor;
   final double uiOpacity;
-  const ContentListSection({super.key, required this.title, required this.type, required this.fontSizeFactor, required this.uiOpacity});
+  const GenericListSection({super.key, required this.title, required this.data, required this.fontSizeFactor, required this.uiOpacity});
 
   @override
   Widget build(BuildContext context) {
-    final List<Dhikr> data = type == 'dua' ? shiaDuas : shiaVisits;
-
     return Column(
       children: [
         Padding(
@@ -514,7 +526,7 @@ class ContentListSection extends StatelessWidget {
           child: TextField(
             textAlign: TextAlign.right,
             decoration: InputDecoration(
-              hintText: 'ابحث...',
+              hintText: 'ابحث في $title...',
               prefixIcon: const Icon(Icons.search),
               filled: true,
               fillColor: Theme.of(context).cardColor.withOpacity(uiOpacity),
@@ -531,12 +543,12 @@ class ContentListSection extends StatelessWidget {
               color: Theme.of(context).cardColor.withOpacity(uiOpacity),
               child: ListTile(
                 contentPadding: const EdgeInsets.all(20),
-                title: Text(data[index].title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                title: Text(data[index]['title']!, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
                 subtitle: Padding(
                   padding: const EdgeInsets.only(top: 10),
-                  child: Text(data[index].content, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontFamily: 'Amiri', fontSize: 16)),
+                  child: Text(data[index]['content']!, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontFamily: 'Amiri', fontSize: 16)),
                 ),
-                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (c) => ReaderPage(title: data[index].title, content: data[index].content, fontSizeFactor: fontSizeFactor))),
+                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (c) => ReaderPage(title: data[index]['title']!, content: data[index]['content']!, fontSizeFactor: fontSizeFactor))),
               ),
             ),
           ),
