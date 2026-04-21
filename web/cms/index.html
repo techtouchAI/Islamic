@@ -39,6 +39,15 @@
             </div>
 
             <div class="col-lg-10 p-4">
+                <div class="card mb-4 shadow-sm border-0">
+                    <div class="card-body py-2 px-3 d-flex gap-3 align-items-center">
+                        <label class="small fw-bold">المستودع (Repo):</label>
+                        <input type="text" id="repo-config" class="form-control form-control-sm w-25" value="techtouchAI/Islamic">
+                        <label class="small fw-bold">المسار (Path):</label>
+                        <input type="text" id="path-config" class="form-control form-control-sm w-25" value="assets/data/content.json">
+                    </div>
+                </div>
+
                 <div id="view-header" class="header-bar">
                     <h3 id="view-title">المحتوى</h3>
                     <div id="header-actions" class="d-flex gap-2">
@@ -256,24 +265,35 @@
         function deleteItem(index) { if(confirm('هل أنت متأكد من الحذف؟')) { db.content[currentView].splice(index, 1); renderItems(); } }
         function openBatch() { document.getElementById('batch-input').value = ''; batchModal.show(); }
         function processBatch() {
+            const input = document.getElementById('batch-input').value;
+            if(!input.trim()) return;
             try {
-                const data = JSON.parse(document.getElementById('batch-input').value);
+                const data = JSON.parse(input);
                 if(Array.isArray(data)) {
+                    const valid = data.every(item => item.title && item.content);
+                    if(!valid) {
+                        alert('كل عنصر يجب أن يحتوي على title و content');
+                        return;
+                    }
                     db.content[currentView] = [...db.content[currentView], ...data];
                     batchModal.hide();
                     renderItems();
                 } else alert('يجب أن تكون البيانات عبارة عن Array [{},{}]');
-            } catch (e) { alert('خطأ في تنسيق JSON'); }
+            } catch (e) { alert('خطأ في تنسيق JSON: ' + e.message); }
         }
 
         async function pushToGitHub() {
             const token = prompt("أدخل GitHub Personal Access Token:");
             if (!token) return;
-            const repo = "techtouchAI/Islamic";
-            const path = "assets/data/content.json";
+            const repo = document.getElementById('repo-config').value;
+            const path = document.getElementById('path-config').value;
 
             try {
                 const res = await fetch(`https://api.github.com/repos/${repo}/contents/${path}`, { headers: { "Authorization": `token ${token}` } });
+                if(!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.message || 'فشل جلب ملف البيانات من GitHub');
+                }
                 const data = await res.json();
                 const sha = data.sha;
 
@@ -288,8 +308,11 @@
                 });
 
                 if (updateRes.ok) alert("تم الحفظ بنجاح! جاري بناء نسخة APK جديدة.");
-                else alert("خطأ في الحفظ. تحقق من الصلاحيات.");
-            } catch (e) { alert("فشل الاتصال بـ GitHub."); }
+                else {
+                    const err = await updateRes.json();
+                    alert("خطأ في الحفظ: " + (err.message || "تحقق من الصلاحيات"));
+                }
+            } catch (e) { alert("خطأ: " + e.message); }
         }
 
         init();

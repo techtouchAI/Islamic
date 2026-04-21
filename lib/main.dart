@@ -16,12 +16,24 @@ import 'dart:io';
 import 'data/data_manager.dart';
 import 'data/daily_duas.dart';
 
+Widget _buildImage(String? path, {double? height, BoxFit fit = BoxFit.contain}) {
+  if (path == null || path.isEmpty) return const SizedBox();
+  if (path.startsWith('http')) {
+    return Image.network(path, height: height, fit: fit, errorBuilder: (c, e, s) => const Icon(Icons.error));
+  }
+  return Image.asset(path, height: height, fit: fit, errorBuilder: (c, e, s) => const Icon(Icons.image_not_supported));
+}
+
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await initializeDateFormatting('ar_SA', null);
-  HijriCalendar.setLocal('ar');
-  await DataManager.loadContent();
-  runApp(const AlDhakereenApp());
+  runZonedGuarded(() async {
+    WidgetsFlutterBinding.ensureInitialized();
+    await initializeDateFormatting('ar_SA', null);
+    HijriCalendar.setLocal('ar');
+    await DataManager.loadContent();
+    runApp(const AlDhakereenApp());
+  }, (error, stackTrace) {
+    debugPrint('Global error: $error');
+  });
 }
 
 class AlDhakereenApp extends StatefulWidget {
@@ -48,6 +60,10 @@ class _AlDhakereenAppState extends State<AlDhakereenApp> {
   Future<void> _loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
     final dbSettings = DataManager.getSettings();
+
+    if (dbSettings.isEmpty) {
+       debugPrint("Warning: Config database is empty or failed to load.");
+    }
 
     // Default color from JSON if not in prefs
     int defaultPrimary = int.tryParse(dbSettings['primary_color'] ?? '0xFFD4AF37') ?? 0xFFD4AF37;
@@ -195,6 +211,7 @@ class _MainScaffoldState extends State<MainScaffold> {
     }
   }
 
+
   @override
   Widget build(BuildContext context) {
     final bool isSubPage = _history.length > 1;
@@ -245,13 +262,9 @@ class _MainScaffoldState extends State<MainScaffold> {
                   fit: BoxFit.cover,
                 ),
               ),
-            if (widget.backgroundImagePath == null && settings['bg_image'] != null)
+            if (widget.backgroundImagePath == null)
               Positioned.fill(
-                child: Image.asset(
-                  settings['bg_image'].toString(),
-                  fit: BoxFit.cover,
-                  errorBuilder: (c, e, s) => const SizedBox(),
-                ),
+                child: _buildImage(settings['bg_image']?.toString(), fit: BoxFit.cover),
               ),
             SafeArea(
               child: AnimatedSwitcher(
@@ -335,10 +348,7 @@ class AppDrawer extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  if (settings['logo_image'] != null)
-                     Image.asset(settings['logo_image'].toString(), height: 50, errorBuilder: (c,e,s) => const Icon(Icons.mosque, size: 50, color: Colors.white)),
-                  if (settings['logo_image'] == null)
-                     const Icon(Icons.mosque, size: 50, color: Colors.white),
+                  _buildImage(settings['logo_image']?.toString(), height: 50),
                   const SizedBox(height: 10),
                   const Text('تطبيق الذاكرين', style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)),
                   Text(about['developer_name']?.toString() ?? '', style: const TextStyle(color: Colors.white70, fontSize: 12)),
@@ -366,16 +376,27 @@ class AppDrawer extends StatelessWidget {
   }
 
   IconData _getIcon(String? name) {
-    switch (name) {
-      case 'menu_book': return Icons.menu_book;
-      case 'auto_stories': return Icons.auto_stories;
-      case 'place': return Icons.place;
-      case 'translate': return Icons.translate;
-      case 'bedtime': return Icons.bedtime;
-      case 'history_edu': return Icons.history_edu;
-      case 'shield': return Icons.shield;
-      default: return Icons.star;
-    }
+    const iconMap = {
+      'menu_book': Icons.menu_book,
+      'auto_stories': Icons.auto_stories,
+      'place': Icons.place,
+      'translate': Icons.translate,
+      'bedtime': Icons.bedtime,
+      'history_edu': Icons.history_edu,
+      'shield': Icons.shield,
+      'favorite': Icons.favorite,
+      'home': Icons.home,
+      'settings': Icons.settings,
+      'person': Icons.person,
+      'notes': Icons.notes,
+      'notifications': Icons.notifications,
+      'search': Icons.search,
+      'mosque': Icons.mosque,
+      'book': Icons.book,
+      'event': Icons.event,
+      'info': Icons.info,
+    };
+    return iconMap[name] ?? Icons.star;
   }
 
   Widget _buildItem(BuildContext context, String id, String title, IconData icon) {
