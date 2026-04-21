@@ -14,6 +14,7 @@ import 'package:hijri/hijri_calendar.dart';
 import 'dart:io';
 
 import 'data/data_manager.dart';
+import 'data/daily_duas.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -36,6 +37,7 @@ class _AlDhakereenAppState extends State<AlDhakereenApp> {
   Color _primaryColor = const Color(0xFFD4AF37);
   double _uiOpacity = 1.0;
   String? _backgroundImagePath;
+  Color _cardColor = Colors.white;
 
   @override
   void initState() {
@@ -51,6 +53,7 @@ class _AlDhakereenAppState extends State<AlDhakereenApp> {
       _primaryColor = Color(prefs.getInt('primaryColor') ?? 0xFFD4AF37);
       _uiOpacity = prefs.getDouble('uiOpacity') ?? 1.0;
       _backgroundImagePath = prefs.getString('backgroundImage');
+      _cardColor = Color(prefs.getInt('cardColor') ?? Colors.white.toARGB32());
     });
   }
 
@@ -123,6 +126,11 @@ class _AlDhakereenAppState extends State<AlDhakereenApp> {
           setState(() => _backgroundImagePath = path);
           if (path != null) _saveSetting('backgroundImage', path);
         },
+        cardColor: _cardColor,
+        onCardColorChanged: (c) {
+          setState(() => _cardColor = c);
+          _saveSetting('cardColor', c.toARGB32());
+        },
       ),
     );
   }
@@ -138,6 +146,8 @@ class MainScaffold extends StatefulWidget {
   final ValueChanged<double> onOpacityChanged;
   final String? backgroundImagePath;
   final ValueChanged<String?> onBackgroundImageChanged;
+  final Color cardColor;
+  final ValueChanged<Color> onCardColorChanged;
 
   const MainScaffold({
     super.key,
@@ -150,6 +160,8 @@ class MainScaffold extends StatefulWidget {
     required this.onOpacityChanged,
     required this.backgroundImagePath,
     required this.onBackgroundImageChanged,
+    required this.cardColor,
+    required this.onCardColorChanged,
   });
 
   @override
@@ -250,7 +262,12 @@ class _MainScaffoldState extends State<MainScaffold> {
   Widget _buildBody(BuildContext context) {
     switch (_currentSection) {
       case 'home':
-        return HomeSection(key: const ValueKey('home'), fontSizeFactor: widget.fontSizeFactor, uiOpacity: widget.uiOpacity);
+        return HomeSection(
+          key: const ValueKey('home'),
+          fontSizeFactor: widget.fontSizeFactor,
+          uiOpacity: widget.uiOpacity,
+          cardColor: widget.cardColor,
+        );
       case 'settings':
         return SettingsSection(
           key: const ValueKey('settings'),
@@ -261,6 +278,8 @@ class _MainScaffoldState extends State<MainScaffold> {
           onOpacityChanged: widget.onOpacityChanged,
           onBackgroundImageChanged: widget.onBackgroundImageChanged,
           backgroundImagePath: widget.backgroundImagePath,
+          cardColor: widget.cardColor,
+          onCardColorChanged: widget.onCardColorChanged,
         );
       case 'about':
         return const AboutSection(key: ValueKey('about'));
@@ -365,7 +384,8 @@ class AppDrawer extends StatelessWidget {
 class HomeSection extends StatefulWidget {
   final double fontSizeFactor;
   final double uiOpacity;
-  const HomeSection({super.key, required this.fontSizeFactor, required this.uiOpacity});
+  final Color cardColor;
+  const HomeSection({super.key, required this.fontSizeFactor, required this.uiOpacity, required this.cardColor});
 
   @override
   State<HomeSection> createState() => _HomeSectionState();
@@ -373,11 +393,13 @@ class HomeSection extends StatefulWidget {
 
 class _HomeSectionState extends State<HomeSection> {
   late Map<String, dynamic> items;
+  Map<String, dynamic>? _dailyDua;
 
   @override
   void initState() {
     super.initState();
     _refreshItems();
+    _loadDailyDua();
   }
 
   void _refreshItems() {
@@ -393,6 +415,19 @@ class _HomeSectionState extends State<HomeSection> {
     };
   }
 
+  void _loadDailyDua() {
+    // Selection based on the day of the year
+    final now = DateTime.now();
+    const dayOfYearStr = 'D';
+    final dayOfYear = int.parse(intl.DateFormat(dayOfYearStr).format(now));
+
+    const source = DailyDuas.shortDuas;
+
+    setState(() {
+      _dailyDua = source[dayOfYear % source.length];
+    });
+  }
+
   dynamic _safeGet(List list, Random r) {
     if (list.isEmpty) return {'title': 'قريباً', 'content': ''};
     return list[r.nextInt(list.length)];
@@ -402,59 +437,96 @@ class _HomeSectionState extends State<HomeSection> {
   Widget build(BuildContext context) {
     final now = DateTime.now();
     final hijri = HijriCalendar.now();
+    final bool isDarkCard = widget.cardColor.computeLuminance() < 0.5;
+    final Color textColor = isDarkCard ? Colors.white : Colors.black87;
 
-    return SingleChildScrollView(
-      physics: const BouncingScrollPhysics(),
-      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
-      child: Column(
-        children: [
-          Card(
-            elevation: 10,
-            color: Colors.black.withValues(alpha: widget.uiOpacity),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 10),
-              child: Column(
-                children: [
-                  const _ClockWidget(),
-                  const SizedBox(height: 8),
-                  Text('${hijri.hDay} ${hijri.longMonthName} ${hijri.hYear} هـ', style: const TextStyle(color: Color(0xFFD4AF37), fontSize: 18, fontWeight: FontWeight.bold)),
-                  Text(intl.DateFormat('EEEE, d MMMM yyyy', 'ar_SA').format(now), style: const TextStyle(color: Colors.white60, fontSize: 13)),
-                ],
+    return SizedBox(
+      width: double.infinity,
+      height: double.infinity,
+      child: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
+        padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+        child: Column(
+          children: [
+            Card(
+              elevation: 10,
+              color: Colors.black.withValues(alpha: widget.uiOpacity),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 15),
+                child: Column(
+                  children: [
+                    const _ClockWidget(),
+                    const SizedBox(height: 8),
+                    Text('${hijri.hDay} ${hijri.longMonthName} ${hijri.hYear} هـ', style: const TextStyle(color: Color(0xFFD4AF37), fontSize: 20, fontWeight: FontWeight.bold)),
+                    Text(intl.DateFormat('EEEE, d MMMM yyyy', 'ar_SA').format(now), style: const TextStyle(color: Colors.white70, fontSize: 14)),
+                  ],
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: 20),
-          Align(
-            alignment: Alignment.centerRight,
-            child: Text('مقتطفات إيمانية', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Theme.of(context).brightness == Brightness.dark ? Colors.white70 : Colors.grey)),
-          ),
-          const SizedBox(height: 10),
-          Wrap(
-            spacing: 10,
-            runSpacing: 10,
-            children: items.entries.map((e) {
-              return _HomeSmallCard(
-                tag: e.key,
-                title: e.value['title'].toString(),
-                uiOpacity: widget.uiOpacity,
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (c) => ReaderPage(
-                        title: e.value['title'].toString(),
-                        content: e.value['content'].toString(),
-                        fontSizeFactor: widget.fontSizeFactor,
+            const SizedBox(height: 20),
+            if (_dailyDua != null)
+              Card(
+                elevation: 5,
+                color: widget.cardColor.withValues(alpha: widget.uiOpacity),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: BorderSide(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3))),
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.auto_awesome, color: Theme.of(context).colorScheme.primary, size: 18),
+                          const SizedBox(width: 8),
+                          Text('إلهام اليوم', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold, fontSize: 16)),
+                        ],
                       ),
-                    ),
-                  );
-                },
-              );
-            }).toList(),
-          ),
-        ],
+                      const SizedBox(height: 12),
+                      Text(
+                        _dailyDua!['content'].toString(),
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.amiri(fontSize: 18, height: 1.6, color: textColor),
+                      ),
+                      const SizedBox(height: 10),
+                      Text('— ${_dailyDua!['title']} —', style: TextStyle(fontSize: 12, color: textColor.withValues(alpha: 0.6))),
+                    ],
+                  ),
+                ),
+              ),
+            const SizedBox(height: 25),
+            Align(
+              alignment: Alignment.centerRight,
+              child: Text('مقتطفات إيمانية', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Theme.of(context).brightness == Brightness.dark ? Colors.white70 : Colors.black87)),
+            ),
+            const SizedBox(height: 15),
+            Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              children: items.entries.map((e) {
+                return _HomeSmallCard(
+                  tag: e.key,
+                  title: e.value['title'].toString(),
+                  uiOpacity: widget.uiOpacity,
+                  cardColor: widget.cardColor,
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (c) => ReaderPage(
+                          title: e.value['title'].toString(),
+                          content: e.value['content'].toString(),
+                          fontSizeFactor: widget.fontSizeFactor,
+                        ),
+                      ),
+                    );
+                  },
+                );
+              }).toList(),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -463,28 +535,32 @@ class _HomeSectionState extends State<HomeSection> {
 class _HomeSmallCard extends StatelessWidget {
   final String tag, title;
   final double uiOpacity;
+  final Color cardColor;
   final VoidCallback onTap;
-  const _HomeSmallCard({required this.tag, required this.title, required this.uiOpacity, required this.onTap});
+  const _HomeSmallCard({required this.tag, required this.title, required this.uiOpacity, required this.cardColor, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
+    final bool isDarkCard = cardColor.computeLuminance() < 0.5;
+    final Color textColor = isDarkCard ? Colors.white : Colors.black87;
+
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(15),
       child: Container(
-        width: (MediaQuery.of(context).size.width - 42) / 2,
+        width: (MediaQuery.of(context).size.width - 48) / 2,
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: Theme.of(context).cardColor.withValues(alpha: uiOpacity),
+          color: cardColor.withValues(alpha: uiOpacity),
           borderRadius: BorderRadius.circular(15),
           border: Border.all(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(tag, style: TextStyle(fontSize: 10, color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 4),
-            Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+            Text(tag, style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 6),
+            Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: textColor)),
           ],
         ),
       ),
@@ -614,19 +690,23 @@ class DynamicListSection extends StatelessWidget {
                   physics: const BouncingScrollPhysics(),
                   itemCount: data.length,
                   padding: const EdgeInsets.only(bottom: 20),
-                  itemBuilder: (context, index) => Card(
-                    color: Theme.of(context).cardColor.withValues(alpha: uiOpacity),
-                    margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    child: ListTile(
-                      contentPadding: const EdgeInsets.all(20),
-                      title: Text(data[index]['title'].toString(), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-                      subtitle: Padding(
-                        padding: const EdgeInsets.only(top: 10),
-                        child: Text(data[index]['content'].toString(), maxLines: 2, overflow: TextOverflow.ellipsis, style: GoogleFonts.amiri(fontSize: 16)),
+                  itemBuilder: (context, index) {
+                    // Note: Here we'd ideally pass the cardColor from settings.
+                    // For now, using the uiOpacity.
+                    return Card(
+                      color: Theme.of(context).cardColor.withValues(alpha: uiOpacity),
+                      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      child: ListTile(
+                        contentPadding: const EdgeInsets.all(20),
+                        title: Text(data[index]['title'].toString(), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                        subtitle: Padding(
+                          padding: const EdgeInsets.only(top: 10),
+                          child: Text(data[index]['content'].toString(), maxLines: 2, overflow: TextOverflow.ellipsis, style: GoogleFonts.amiri(fontSize: 16)),
+                        ),
+                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (c) => ReaderPage(title: data[index]['title'].toString(), content: data[index]['content'].toString(), fontSizeFactor: fontSizeFactor))),
                       ),
-                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (c) => ReaderPage(title: data[index]['title'].toString(), content: data[index]['content'].toString(), fontSizeFactor: fontSizeFactor))),
-                    ),
-                  ),
+                    );
+                  },
                 ),
         ),
       ],
@@ -725,6 +805,8 @@ class SettingsSection extends StatelessWidget {
   final ValueChanged<double> onOpacityChanged;
   final ValueChanged<String?> onBackgroundImageChanged;
   final String? backgroundImagePath;
+  final Color cardColor;
+  final ValueChanged<Color> onCardColorChanged;
 
   const SettingsSection({
     super.key,
@@ -735,10 +817,22 @@ class SettingsSection extends StatelessWidget {
     required this.onOpacityChanged,
     required this.onBackgroundImageChanged,
     required this.backgroundImagePath,
+    required this.cardColor,
+    required this.onCardColorChanged,
   });
 
   @override
   Widget build(BuildContext context) {
+    final comfortColors = [
+      Colors.white,
+      const Color(0xFFFDF5E6), // Old Lace
+      const Color(0xFFF5F5DC), // Beige
+      const Color(0xFFE0EEE0), // Honeydew
+      const Color(0xFFE6E6FA), // Lavender
+      const Color(0xFF2C2C2C), // Dark Grey
+      Colors.black,
+    ];
+
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
@@ -748,13 +842,28 @@ class SettingsSection extends StatelessWidget {
           onChanged: (v) => onThemeToggled(),
         ),
         const Divider(),
-        const Text('لون التطبيق', style: TextStyle(fontWeight: FontWeight.bold)),
+        const Text('لون ثمة التطبيق', style: TextStyle(fontWeight: FontWeight.bold)),
         const SizedBox(height: 10),
         Wrap(
           spacing: 10,
           children: [const Color(0xFFD4AF37), Colors.blueGrey, Colors.teal, Colors.brown].map((c) => GestureDetector(
             onTap: () => onColorChanged(c),
             child: CircleAvatar(backgroundColor: c, radius: 20, child: primaryColor.toARGB32() == c.toARGB32() ? const Icon(Icons.check, color: Colors.white) : null),
+          )).toList(),
+        ),
+        const Divider(),
+        const Text('لون خلفية البطاقات (مريح للعين)', style: TextStyle(fontWeight: FontWeight.bold)),
+        const SizedBox(height: 10),
+        Wrap(
+          spacing: 10,
+          runSpacing: 10,
+          children: comfortColors.map((c) => GestureDetector(
+            onTap: () => onCardColorChanged(c),
+            child: CircleAvatar(
+              backgroundColor: c,
+              radius: 20,
+              child: cardColor.toARGB32() == c.toARGB32() ? Icon(Icons.check, color: c.computeLuminance() > 0.5 ? Colors.black : Colors.white) : null,
+            ),
           )).toList(),
         ),
         const Divider(),
