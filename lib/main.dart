@@ -16,6 +16,33 @@ import 'dart:io';
 import 'data/data_manager.dart';
 import 'data/daily_duas.dart';
 
+IconData getMaterialIcon(String? name) {
+  const iconMap = {
+    'menu_book': Icons.menu_book,
+    'auto_stories': Icons.auto_stories,
+    'place': Icons.place,
+    'translate': Icons.translate,
+    'bedtime': Icons.bedtime,
+    'history_edu': Icons.history_edu,
+    'shield': Icons.shield,
+    'favorite': Icons.favorite,
+    'home': Icons.home,
+    'settings': Icons.settings,
+    'person': Icons.person,
+    'notes': Icons.notes,
+    'notifications': Icons.notifications,
+    'search': Icons.search,
+    'mosque': Icons.mosque,
+    'book': Icons.book,
+    'event': Icons.event,
+    'info': Icons.info,
+    'group': Icons.group,
+    'verified': Icons.verified,
+    'code': Icons.code,
+  };
+  return iconMap[name] ?? Icons.star;
+}
+
 Widget _buildImage(String? path, {double? height, BoxFit fit = BoxFit.contain}) {
   if (path == null || path.isEmpty) return const SizedBox();
   if (path.startsWith('http')) {
@@ -680,7 +707,7 @@ class AboutSection extends StatelessWidget {
               CircleAvatar(
                 radius: 50,
                 backgroundColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
-                child: Icon(Icons.person, size: 60, color: Theme.of(context).colorScheme.primary),
+                child: Icon(getMaterialIcon(about['developer_icon']?.toString() ?? 'person'), size: 60, color: Theme.of(context).colorScheme.primary),
               ),
               const SizedBox(height: 20),
               Text(about['developer_name']?.toString() ?? 'المطور', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
