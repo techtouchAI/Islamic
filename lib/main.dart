@@ -271,13 +271,23 @@ class _MainScaffoldState extends State<MainScaffold> {
             ),
           ),
           actions: [
+            IconButton(
+              icon: const Icon(Icons.search),
+              onPressed: () {
+                showSearch(
+                  context: context,
+                  delegate: GlobalSearchDelegate(fontSizeFactor: widget.fontSizeFactor),
+                );
+              },
+              tooltip: 'بحث شامل',
+            ),
             if (isSubPage)
               IconButton(
                 icon: const Icon(Icons.arrow_forward_ios),
                 onPressed: _onBack,
                 tooltip: 'رجوع',
               ),
-            if (!isSubPage) const SizedBox(width: 48),
+            if (!isSubPage) const SizedBox(width: 4),
           ],
         ),
         body: Stack(
@@ -464,7 +474,9 @@ class _HomeSectionState extends State<HomeSection> {
     final sections = DataManager.getSections();
     items = {};
     sections.forEach((key, value) {
-       items[value['title']] = _safeGet(DataManager.getItems(key), random);
+       if (value['visible_home'] == true) {
+         items[value['title']] = _safeGet(DataManager.getItems(key), random);
+       }
     });
   }
 
@@ -519,32 +531,41 @@ class _HomeSectionState extends State<HomeSection> {
               ),
             ),
             const SizedBox(height: 20),
-            if (_dailyDua != null)
-              Card(
-                elevation: 5,
-                color: widget.cardColor.withValues(alpha: widget.uiOpacity),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: BorderSide(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3))),
-                child: Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.auto_awesome, color: Theme.of(context).colorScheme.primary, size: 18),
-                          const SizedBox(width: 8),
-                          Text('إلهام اليوم', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold, fontSize: 16)),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        _dailyDua!['content'].toString(),
-                        textAlign: TextAlign.center,
-                        style: GoogleFonts.amiri(fontSize: 18, height: 1.6, color: textColor),
-                      ),
-                      const SizedBox(height: 10),
-                      Text('— ${_dailyDua!['title']} —', style: TextStyle(fontSize: 12, color: textColor.withValues(alpha: 0.6))),
-                    ],
+            if (_dailyDua != null && DataManager.getSettings()['show_inspiration'] != false)
+              InkWell(
+                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (c) => ReaderPage(
+                  title: _dailyDua!['title'].toString(),
+                  content: _dailyDua!['content'].toString(),
+                  fontSizeFactor: widget.fontSizeFactor,
+                ))),
+                child: Card(
+                  elevation: 5,
+                  color: widget.cardColor.withValues(alpha: widget.uiOpacity),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: BorderSide(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3))),
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.auto_awesome, color: Theme.of(context).colorScheme.primary, size: 18),
+                            const SizedBox(width: 8),
+                            Text('إلهام اليوم', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold, fontSize: 16)),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          _dailyDua!['content'].toString(),
+                          textAlign: TextAlign.center,
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
+                          style: GoogleFonts.amiri(fontSize: 18, height: 1.6, color: textColor),
+                        ),
+                        const SizedBox(height: 10),
+                        Text('— ${_dailyDua!['title']} —', style: TextStyle(fontSize: 12, color: textColor.withValues(alpha: 0.6))),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -875,6 +896,82 @@ class _ReaderPageState extends State<ReaderPage> {
           ),
         ],
       ),
+    );
+  }
+}
+
+class GlobalSearchDelegate extends SearchDelegate {
+  final double fontSizeFactor;
+  GlobalSearchDelegate({required this.fontSizeFactor});
+
+  @override
+  String get searchFieldLabel => 'ابحث في كل الأقسام...';
+
+  @override
+  List<Widget>? buildActions(BuildContext context) {
+    return [
+      IconButton(icon: const Icon(Icons.clear), onPressed: () => query = ''),
+    ];
+  }
+
+  @override
+  Widget? buildLeading(BuildContext context) {
+    return IconButton(
+      icon: const Icon(Icons.arrow_back),
+      onPressed: () => close(context, null),
+    );
+  }
+
+  @override
+  Widget buildResults(BuildContext context) {
+    return _buildSearchResults();
+  }
+
+  @override
+  Widget buildSuggestions(BuildContext context) {
+    return _buildSearchResults();
+  }
+
+  Widget _buildSearchResults() {
+    if (query.isEmpty) {
+      return const Center(child: Text('ابدأ الكتابة للبحث...'));
+    }
+
+    final sections = DataManager.getSections();
+    List<Map<String, dynamic>> results = [];
+
+    sections.forEach((key, sec) {
+      final items = DataManager.getItems(key);
+      for (var it in items) {
+        if (it['title'].toString().contains(query) || it['content'].toString().contains(query)) {
+          results.add({
+            'section': sec['title'],
+            'title': it['title'],
+            'content': it['content'],
+          });
+        }
+      }
+    });
+
+    if (results.isEmpty) {
+      return const Center(child: Text('لا توجد نتائج مطابقة'));
+    }
+
+    return ListView.builder(
+      itemCount: results.length,
+      itemBuilder: (context, i) {
+        return ListTile(
+          title: Text(results[i]['title'], style: const TextStyle(fontWeight: FontWeight.bold)),
+          subtitle: Text('${results[i]['section']} - ${results[i]['content']}', maxLines: 1, overflow: TextOverflow.ellipsis),
+          onTap: () {
+            Navigator.push(context, MaterialPageRoute(builder: (c) => ReaderPage(
+              title: results[i]['title'],
+              content: results[i]['content'],
+              fontSizeFactor: fontSizeFactor,
+            )));
+          },
+        );
+      },
     );
   }
 }

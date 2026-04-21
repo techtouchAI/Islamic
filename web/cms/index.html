@@ -188,6 +188,12 @@
                                 <label class="small fw-bold">أيقونة القسم</label>
                                 <input type="text" class="form-control" value="${sec.icon}" onchange="db.sections['${id}'].icon=this.value;renderNav();">
                             </div>
+                            <div class="col-md-4 d-flex align-items-end">
+                                <div class="form-check form-switch mb-2">
+                                    <input class="form-check-input" type="checkbox" ${sec.visible_home?'checked':''} onchange="db.sections['${id}'].visible_home=this.checked">
+                                    <label class="form-check-label fw-bold small">عرض في الرئيسية</label>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <div id="items-container"></div>
@@ -205,7 +211,11 @@
                                 <label class="small">لون البطاقات (Card Background)</label>
                                 <input type="text" class="form-control mb-3" value="${db.settings.card_color}" onchange="db.settings.card_color=this.value">
                                 <label class="small">الشفافية الافتراضية</label>
-                                <input type="number" step="0.1" class="form-control" value="${db.settings.ui_opacity}" onchange="db.settings.ui_opacity=parseFloat(this.value)">
+                                <input type="number" step="0.1" class="form-control mb-3" value="${db.settings.ui_opacity}" onchange="db.settings.ui_opacity=parseFloat(this.value)">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" ${db.settings.show_inspiration?'checked':''} onchange="db.settings.show_inspiration=this.checked">
+                                    <label class="form-check-label fw-bold">عرض إلهام اليوم</label>
+                                </div>
                             </div>
                         </div>
                         <div class="col-md-6">

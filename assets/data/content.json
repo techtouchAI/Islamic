@@ -1,12 +1,12 @@
 {
   "sections": {
-    "quran": {"title": "القرآن الكريم", "icon": "menu_book", "color": "0xFFD4AF37"},
-    "duas": {"title": "الأدعية", "icon": "auto_stories", "color": "0xFFD4AF37"},
-    "visits": {"title": "الزيارات", "icon": "place", "color": "0xFFD4AF37"},
-    "tafsir": {"title": "التفسير", "icon": "translate", "color": "0xFFD4AF37"},
-    "dreams": {"title": "تفسير الأحلام", "icon": "bedtime", "color": "0xFFD4AF37"},
-    "stories": {"title": "قصص الأنبياء", "icon": "history_edu", "color": "0xFFD4AF37"},
-    "imam_ali": {"title": "موسوعة الإمام علي (ع)", "icon": "shield", "color": "0xFFD4AF37"}
+    "quran": {"title": "القرآن الكريم", "icon": "menu_book", "color": "0xFFD4AF37", "visible_home": true},
+    "duas": {"title": "الأدعية", "icon": "auto_stories", "color": "0xFFD4AF37", "visible_home": true},
+    "visits": {"title": "الزيارات", "icon": "place", "color": "0xFFD4AF37", "visible_home": true},
+    "tafsir": {"title": "التفسير", "icon": "translate", "color": "0xFFD4AF37", "visible_home": true},
+    "dreams": {"title": "تفسير الأحلام", "icon": "bedtime", "color": "0xFFD4AF37", "visible_home": true},
+    "stories": {"title": "قصص الأنبياء", "icon": "history_edu", "color": "0xFFD4AF37", "visible_home": true},
+    "imam_ali": {"title": "موسوعة الإمام علي (ع)", "icon": "shield", "color": "0xFFD4AF37", "visible_home": true}
   },
   "content": {
     "quran": [
@@ -35,6 +35,7 @@
     "primary_color": "0xFFD4AF37",
     "card_color": "0xFFFFFFFF",
     "ui_opacity": 1.0,
+    "show_inspiration": true,
     "logo_image": "assets/images/logo.png",
     "bg_image": "assets/images/default_bg.png"
   }
