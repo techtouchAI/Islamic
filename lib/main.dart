@@ -803,19 +803,6 @@ class DynamicListSection extends StatelessWidget {
     final data = DataManager.getItems(sectionKey);
     return Column(
       children: [
-        Padding(
-          padding: const EdgeInsets.all(16),
-          child: TextField(
-            textAlign: TextAlign.right,
-            decoration: InputDecoration(
-              hintText: 'ابحث في $title...',
-              prefixIcon: const Icon(Icons.search),
-              filled: true,
-              fillColor: Theme.of(context).cardColor.withValues(alpha: uiOpacity),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none),
-            ),
-          ),
-        ),
         Expanded(
           child: data.isEmpty
               ? const Center(child: Text('لا يوجد محتوى متوفر حالياً'))
@@ -1038,74 +1025,109 @@ class SettingsSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final comfortColors = [
       Colors.white,
-      const Color(0xFFFDF5E6), // Old Lace
-      const Color(0xFFF5F5DC), // Beige
-      const Color(0xFFE0EEE0), // Honeydew
-      const Color(0xFFE6E6FA), // Lavender
-      const Color(0xFF2C2C2C), // Dark Grey
+      const Color(0xFFFDF5E6),
+      const Color(0xFFF5F5DC),
+      const Color(0xFFE0EEE0),
+      const Color(0xFFE6E6FA),
+      const Color(0xFF2C2C2C),
       Colors.black,
     ];
 
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        SwitchListTile(
-          title: const Text('الوضع الليلي'),
-          value: Theme.of(context).brightness == Brightness.dark,
-          onChanged: (v) => onThemeToggled(),
-        ),
-        const Divider(),
-        const Text('لون ثمة التطبيق', style: TextStyle(fontWeight: FontWeight.bold)),
-        const SizedBox(height: 10),
-        Wrap(
-          spacing: 10,
-          children: [const Color(0xFFD4AF37), Colors.blueGrey, Colors.teal, Colors.brown].map((c) => GestureDetector(
-            onTap: () => onColorChanged(c),
-            child: CircleAvatar(backgroundColor: c, radius: 20, child: primaryColor.toARGB32() == c.toARGB32() ? const Icon(Icons.check, color: Colors.white) : null),
-          )).toList(),
-        ),
-        const Divider(),
-        const Text('لون خلفية البطاقات (مريح للعين)', style: TextStyle(fontWeight: FontWeight.bold)),
-        const SizedBox(height: 10),
-        Wrap(
-          spacing: 10,
-          runSpacing: 10,
-          children: comfortColors.map((c) => GestureDetector(
-            onTap: () => onCardColorChanged(c),
-            child: CircleAvatar(
-              backgroundColor: c,
-              radius: 20,
-              child: cardColor.toARGB32() == c.toARGB32() ? Icon(Icons.check, color: c.computeLuminance() > 0.5 ? Colors.black : Colors.white) : null,
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildGroup(context, 'المظهر العام', [
+            SwitchListTile(
+              title: const Text('الوضع الليلي'),
+              value: Theme.of(context).brightness == Brightness.dark,
+              onChanged: (v) => onThemeToggled(),
+              contentPadding: EdgeInsets.zero,
             ),
-          )).toList(),
-        ),
-        const Divider(),
-        const Text('الشفافية', style: TextStyle(fontWeight: FontWeight.bold)),
-        Slider(value: uiOpacity, min: 0.3, max: 1.0, onChanged: onOpacityChanged),
-        const Divider(),
-        ListTile(
-          title: const Text('تغيير خلفية التطبيق'),
-          trailing: const Icon(Icons.image),
-          onTap: () async {
-             final picker = ImagePicker();
-             final img = await picker.pickImage(source: ImageSource.gallery);
-             if (img != null) onBackgroundImageChanged(img.path);
-          },
-        ),
-        const Divider(),
-        const Padding(
-          padding: EdgeInsets.symmetric(vertical: 10),
-          child: Text('إعدادات ظهور الصفحة الرئيسية', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFFD4AF37))),
-        ),
-        _visToggle('inspiration', 'إلهام اليوم'),
-        _visToggle('quran', 'القرآن الكريم'),
-        _visToggle('duas', 'الأدعية'),
-        _visToggle('visits', 'الزيارات'),
-        _visToggle('tafsir', 'التفسير'),
-        _visToggle('dreams', 'تفسير الأحلام'),
-        _visToggle('stories', 'قصص الأنبياء'),
-        _visToggle('imam_ali', 'موسوعة الإمام علي (ع)'),
-      ],
+            const SizedBox(height: 10),
+            const Text('لون ثمة التطبيق', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 12,
+              children: [const Color(0xFFD4AF37), Colors.blueGrey, Colors.teal, Colors.brown].map((c) => GestureDetector(
+                onTap: () => onColorChanged(c),
+                child: CircleAvatar(
+                  backgroundColor: c,
+                  radius: 18,
+                  child: primaryColor.toARGB32() == c.toARGB32() ? const Icon(Icons.check, color: Colors.white, size: 16) : null
+                ),
+              )).toList(),
+            ),
+          ]),
+
+          _buildGroup(context, 'تخصيص البطاقات', [
+            const Text('لون خلفية البطاقات (مريح للعين)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 10,
+              runSpacing: 10,
+              children: comfortColors.map((c) => GestureDetector(
+                onTap: () => onCardColorChanged(c),
+                child: CircleAvatar(
+                  backgroundColor: c,
+                  radius: 18,
+                  child: cardColor.toARGB32() == c.toARGB32() ? Icon(Icons.check, color: c.computeLuminance() > 0.5 ? Colors.black : Colors.white, size: 16) : null,
+                ),
+              )).toList(),
+            ),
+            const SizedBox(height: 15),
+            const Text('مستوى الشفافية', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+            Slider(value: uiOpacity, min: 0.3, max: 1.0, onChanged: onOpacityChanged, activeColor: primaryColor),
+          ]),
+
+          _buildGroup(context, 'الوسائط', [
+            ListTile(
+              title: const Text('تغيير خلفية التطبيق'),
+              trailing: const Icon(Icons.image_search),
+              contentPadding: EdgeInsets.zero,
+              onTap: () async {
+                 final picker = ImagePicker();
+                 final img = await picker.pickImage(source: ImageSource.gallery);
+                 if (img != null) onBackgroundImageChanged(img.path);
+              },
+            ),
+          ]),
+
+          _buildGroup(context, 'إعدادات ظهور الصفحة الرئيسية', [
+            _visToggle('inspiration', 'إلهام اليوم'),
+            _visToggle('quran', 'القرآن الكريم'),
+            _visToggle('duas', 'الأدعية'),
+            _visToggle('visits', 'الزيارات'),
+            _visToggle('tafsir', 'التفسير'),
+            _visToggle('dreams', 'تفسير الأحلام'),
+            _visToggle('stories', 'قصص الأنبياء'),
+            _visToggle('imam_ali', 'موسوعة الإمام علي (ع)'),
+          ]),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGroup(BuildContext context, String title, List<Widget> children) {
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 20),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.03),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: primaryColor.withValues(alpha: 0.2)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title, style: TextStyle(color: primaryColor, fontWeight: FontWeight.bold, fontSize: 15)),
+          const SizedBox(height: 15),
+          ...children,
+        ],
+      ),
     );
   }
 

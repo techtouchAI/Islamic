@@ -181,6 +181,7 @@
             const links = [
                 {id: 'settings', title: 'الهوية والوسائط', icon: 'palette'},
                 {id: 'about', title: 'ملف المطور', icon: 'person_pin'},
+                {id: 'universal_batch', title: 'استيراد شامل بالدفعة', icon: 'dynamic_feed'},
                 {divider: true}
             ];
             Object.keys(db.sections).forEach(k => links.push({id: k, title: db.sections[k].title, icon: db.sections[k].icon}));
@@ -263,6 +264,29 @@
                         </div>
                     </div>
                 `;
+            } else if (id === 'universal_batch') {
+                title.innerText = "استيراد شامل لكل الأقسام"; icon.innerText = "dynamic_feed";
+                ws.innerHTML = `
+                    <div class="card card-lux p-4 shadow-sm">
+                        <h6 class="fw-bold mb-3 text-primary">إضافة محتوى لعدة أقسام في وقت واحد</h6>
+                        <p class="small text-muted">استخدم التنسيق التالي للصق البيانات. سيقوم النظام تلقائياً بتوزيع كل موضوع على قسمه الصحيح.</p>
+                        <pre class="bg-dark text-light p-3 rounded" dir="ltr" style="font-size:0.75rem">
+[
+  {
+    "section": "duas",
+    "title": "دعاء كميل",
+    "content": "نص الدعاء هنا..."
+  },
+  {
+    "section": "quran",
+    "title": "سورة الفاتحة",
+    "content": "نص السورة..."
+  }
+]</pre>
+                        <textarea id="u-batch-text" class="form-control mb-3" rows="10" placeholder='ألصق كود JSON هنا...' style="font-family:monospace; font-size:0.8rem;"></textarea>
+                        <button class="btn btn-primary btn-lg w-100" onclick="processUniversalBatch()">توزيع الإضافات على الأقسام</button>
+                    </div>
+                `;
             }
             if (window.innerWidth < 992) toggleSidebar(false);
         }
@@ -325,6 +349,26 @@
                     alert("تم إضافة " + data.length + " عنصر بنجاح.");
                 } else alert("يجب أن يكون النص عبارة عن مصفوفة Array [{},{}]");
             } catch(e) { alert("خطأ في تنسيق JSON: " + e.message); }
+        }
+
+        function processUniversalBatch() {
+            const txt = document.getElementById('u-batch-text').value.trim();
+            if(!txt) return;
+            try {
+                const data = JSON.parse(txt);
+                if(!Array.isArray(data)) return alert("يجب أن يكون مصفوفة JSON");
+
+                let count = 0;
+                data.forEach(item => {
+                    const sec = item.section;
+                    if(db.content[sec]) {
+                        db.content[sec].push({ id: Date.now() + Math.random(), title: item.title, content: item.content });
+                        count++;
+                    }
+                });
+                alert("تم استيراد وتوزيع " + count + " عنصر بنجاح.");
+                document.getElementById('u-batch-text').value = '';
+            } catch(e) { alert("خطأ JSON: " + e.message); }
         }
 
         function processImg(input, type) {
