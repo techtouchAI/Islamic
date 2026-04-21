@@ -3,21 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CMS - نظام إدارة محتوى الذاكرين</title>
+    <title>CMS - نظام التحكم الشامل بالذاكرين</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Kufi+Arabic:wght@400;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <style>
-        body { font-family: 'Noto Kufi Arabic', sans-serif; background-color: #f0f2f5; }
+        body { font-family: 'Noto Kufi Arabic', sans-serif; background-color: #f8f9fa; }
         .sidebar { background: #1a252f; color: white; min-height: 100vh; padding: 25px 15px; position: sticky; top: 0; }
-        .nav-link { color: #aab2bd; margin-bottom: 8px; cursor: pointer; border-radius: 8px; transition: 0.3s; padding: 12px; }
+        .nav-link { color: #aab2bd; margin-bottom: 8px; cursor: pointer; border-radius: 8px; padding: 12px; display: flex; align-items: center; gap: 10px; }
         .nav-link:hover { background: rgba(255,255,255,0.1); color: white; }
         .nav-link.active { background: #D4AF37; color: black; font-weight: bold; }
-        .main-card { border-radius: 20px; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.05); margin-bottom: 30px; }
+        .main-card { border-radius: 20px; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
+        .header-bar { background: white; padding: 20px 30px; border-radius: 15px; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.02); }
+        .content-item { border-bottom: 1px solid #eee; padding: 15px; transition: 0.2s; }
+        .content-item:hover { background: #fffdf7; }
         .btn-gold { background: #D4AF37; color: black; font-weight: bold; border: none; }
         .btn-gold:hover { background: #b8962d; }
-        .header-bar { background: white; padding: 20px 30px; border-radius: 15px; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center; }
-        .content-item { border-bottom: 1px solid #eee; padding: 15px 0; }
-        .content-item:last-child { border-bottom: none; }
+        .section-config { background: #fefefe; padding: 15px; border-radius: 10px; border: 1px solid #eee; margin-bottom: 20px; }
+        .about-container { background: #fff; padding: 30px; border-radius: 20px; border: 2px solid #D4AF37; }
     </style>
 </head>
 <body>
@@ -26,52 +29,44 @@
             <div class="col-lg-2 sidebar">
                 <div class="text-center mb-4">
                     <h4 class="text-white">الذاكرين CMS</h4>
-                    <span class="badge bg-warning text-dark">لوحة التحكم</span>
+                    <span class="badge bg-warning text-dark">التحكم الشامل</span>
                 </div>
                 <hr class="text-secondary">
-                <nav class="nav flex-column">
-                    <a class="nav-link active" onclick="showSection('quran')">القرآن الكريم</a>
-                    <a class="nav-link" onclick="showSection('duas')">الأدعية</a>
-                    <a class="nav-link" onclick="showSection('visits')">الزيارات</a>
-                    <a class="nav-link" onclick="showSection('tafsir')">التفسير</a>
-                    <a class="nav-link" onclick="showSection('dreams')">تفسير الأحلام</a>
-                    <a class="nav-link" onclick="showSection('stories')">قصص الأنبياء</a>
-                    <a class="nav-link" onclick="showSection('imam_ali')">موسوعة الإمام علي (ع)</a>
-                    <hr class="text-secondary">
-                    <a class="nav-link" onclick="showSection('about')">حول المطور</a>
-                    <a class="nav-link" onclick="showSection('settings')">إعدادات المظهر</a>
+                <nav class="nav flex-column" id="sidebar-nav">
+                    <!-- Loaded dynamically -->
                 </nav>
             </div>
 
             <div class="col-lg-10 p-4">
-                <div class="header-bar">
-                    <h3 id="section-title">القرآن الكريم</h3>
-                    <div class="d-flex gap-2">
-                        <button class="btn btn-outline-dark" onclick="openBatchAdd()">إضافة مجموعة</button>
-                        <button class="btn btn-gold" onclick="openAddModal()">إضافة عنصر جديد</button>
+                <div id="view-header" class="header-bar">
+                    <h3 id="view-title">المحتوى</h3>
+                    <div id="header-actions" class="d-flex gap-2">
+                        <!-- Loaded dynamically -->
                     </div>
                 </div>
 
-                <div class="card main-card p-4">
-                    <div id="content-display">
-                        <!-- Content dynamic loading -->
-                    </div>
+                <div id="main-content-area" class="card main-card p-4">
+                    <!-- Workspace -->
                 </div>
 
-                <div class="sticky-bottom bg-white p-3 border-top d-flex justify-content-between align-items-center">
-                    <div class="text-muted small">سيتم تحديث ملف <code>content.json</code> وبناء APK جديد عند الحفظ عبر GitHub.</div>
-                    <button class="btn btn-success btn-lg px-5" onclick="pushToGitHub()">حفظ وإرسال للتطبيق (GitHub)</button>
+                <div class="sticky-bottom bg-white p-3 border-top mt-4 d-flex justify-content-between align-items-center rounded-3 shadow-sm">
+                    <div class="text-muted small">
+                        <strong>ملاحظة:</strong> الضغط على حفظ سيقوم بتحديث التطبيق وبناء APK جديد فوراً.
+                    </div>
+                    <button class="btn btn-success btn-lg px-5 shadow" onclick="pushToGitHub()">
+                        <i class="material-icons align-middle">cloud_upload</i> حفظ وإرسال للتطبيق
+                    </button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Modal -->
+    <!-- Edit Modal -->
     <div class="modal fade" id="itemModal" tabindex="-1">
         <div class="modal-dialog modal-xl">
-            <div class="modal-content border-0 shadow">
+            <div class="modal-content border-0 shadow-lg">
                 <div class="modal-header bg-light">
-                    <h5 class="modal-title">تحرير المحتوى</h5>
+                    <h5 class="modal-title fw-bold">تحرير المحتوى</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body p-4">
@@ -80,13 +75,13 @@
                         <input type="text" id="modal-title-input" class="form-control form-control-lg">
                     </div>
                     <div class="mb-3">
-                        <label class="form-label fw-bold">المحتوى الكامل</label>
-                        <textarea id="modal-content-input" class="form-control" rows="15" style="white-space: pre-wrap;"></textarea>
+                        <label class="form-label fw-bold">المحتوى</label>
+                        <textarea id="modal-content-input" class="form-control" rows="12" style="white-space: pre-wrap;"></textarea>
                     </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
-                    <button type="button" class="btn btn-gold" onclick="saveCurrentItem()">حفظ العنصر</button>
+                    <button type="button" class="btn btn-gold" onclick="saveCurrentItem()">حفظ التغييرات</button>
                 </div>
             </div>
         </div>
@@ -98,17 +93,21 @@
             <div class="modal-content">
                 <div class="modal-header"><h5>إضافة مجموعة (JSON)</h5></div>
                 <div class="modal-body">
-                    <textarea id="batch-input" class="form-control" rows="10" placeholder='[{"title": "...", "content": "..."}]'></textarea>
+                    <p class="small text-muted">الصيغة: <code>[{"title": "...", "content": "..."}]</code></p>
+                    <textarea id="batch-input" class="form-control" rows="12" placeholder='أدخل البيانات هنا...'></textarea>
                 </div>
-                <div class="modal-footer"><button class="btn btn-primary" onclick="processBatch()">إضافة</button></div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button class="btn btn-primary" onclick="processBatch()">إضافة المجموعة</button>
+                </div>
             </div>
         </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        let currentSection = 'quran';
-        let config = {};
+        let db = {};
+        let currentView = 'quran';
         let editingIndex = -1;
         const itemModal = new bootstrap.Modal(document.getElementById('itemModal'));
         const batchModal = new bootstrap.Modal(document.getElementById('batchModal'));
@@ -116,83 +115,170 @@
         async function init() {
             try {
                 const res = await fetch('../../assets/data/content.json');
-                config = await res.json();
-                showSection('quran');
-            } catch (e) { alert('خطأ في تحميل البيانات.'); }
+                db = await res.json();
+                renderSidebar();
+                switchView('quran');
+            } catch (e) { alert('خطأ في تحميل قاعدة البيانات.'); }
         }
 
-        function showSection(section) {
-            currentSection = section;
-            document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-            const activeLink = document.querySelector(`[onclick="showSection('${section}')"]`);
-            if(activeLink) {
-                activeLink.classList.add('active');
-                document.getElementById('section-title').innerText = activeLink.innerText;
-            }
-            renderContent();
+        function renderSidebar() {
+            const nav = document.getElementById('sidebar-nav');
+            nav.innerHTML = '';
+            Object.keys(db.sections).forEach(key => {
+                const sec = db.sections[key];
+                nav.innerHTML += `<a class="nav-link ${currentView===key?'active':''}" onclick="switchView('${key}')"><i class="material-icons">${sec.icon}</i> ${sec.title}</a>`;
+            });
+            nav.innerHTML += '<hr class="text-secondary">';
+            nav.innerHTML += `<a class="nav-link ${currentView==='about'?'active':''}" onclick="switchView('about')"><i class="material-icons">info</i> حول المطور</a>`;
+            nav.innerHTML += `<a class="nav-link ${currentView==='settings'?'active':''}" onclick="switchView('settings')"><i class="material-icons">palette</i> المظهر العام</a>`;
         }
 
-        function renderContent() {
-            const container = document.getElementById('content-display');
-            container.innerHTML = '';
-            if (sectionIsList(currentSection)) {
-                const items = config[currentSection] || [];
-                items.forEach((item, index) => {
-                    container.innerHTML += `
-                        <div class="content-item d-flex justify-content-between align-items-center">
-                            <div><h6 class="mb-1 fw-bold">${item.title}</h6></div>
-                            <div class="d-flex gap-2">
-                                <button class="btn btn-sm btn-outline-primary" onclick="editItem(${index})">تعديل</button>
-                                <button class="btn btn-sm btn-outline-danger" onclick="deleteItem(${index})">حذف</button>
+        function switchView(view) {
+            currentView = view;
+            renderSidebar();
+            const area = document.getElementById('main-content-area');
+            const actions = document.getElementById('header-actions');
+            const title = document.getElementById('view-title');
+
+            actions.innerHTML = '';
+            area.innerHTML = '';
+
+            if (db.sections[view]) {
+                title.innerText = db.sections[view].title;
+                actions.innerHTML = `<button class="btn btn-outline-dark" onclick="openBatch()">إضافة دفعة</button><button class="btn btn-gold" onclick="openAdd()">إضافة عنصر</button>`;
+
+                // Section Config
+                area.innerHTML = `
+                    <div class="section-config">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label small fw-bold">اسم القسم في التطبيق</label>
+                                <input type="text" class="form-control" value="${db.sections[view].title}" onchange="db.sections['${view}'].title=this.value;renderSidebar();">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-bold">أيقونة القسم (Material Icon)</label>
+                                <input type="text" class="form-control" value="${db.sections[view].icon}" onchange="db.sections['${view}'].icon=this.value;renderSidebar();">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-bold">لون القسم</label>
+                                <input type="text" class="form-control" value="${db.sections[view].color}" onchange="db.sections['${view}'].color=this.value">
                             </div>
                         </div>
-                    `;
-                });
-            } else if (currentSection === 'about') {
-                container.innerHTML = `
-                    <input type="text" class="form-control mb-2" value="${config.about.developer_name}" onchange="config.about.developer_name=this.value">
-                    <textarea class="form-control" rows="5" onchange="config.about.app_info=this.value">${config.about.app_info}</textarea>
+                    </div>
+                    <div id="items-list"></div>
+                `;
+                renderItems();
+            } else if (view === 'about') {
+                title.innerText = 'إعدادات قسم حول';
+                area.innerHTML = `
+                    <div class="about-container shadow-sm">
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">اسم المطور</label>
+                            <input type="text" class="form-control form-control-lg" value="${db.about.developer_name}" onchange="db.about.developer_name=this.value">
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">رابط الصفحة الشخصية</label>
+                            <input type="text" class="form-control" value="${db.about.developer_page}" onchange="db.about.developer_page=this.value">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">وصف التطبيق (حول)</label>
+                            <textarea class="form-control" rows="8" onchange="db.about.app_info=this.value">${db.about.app_info}</textarea>
+                        </div>
+                    </div>
+                `;
+            } else if (view === 'settings') {
+                title.innerText = 'المظهر والألوان العامة';
+                area.innerHTML = `
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <div class="card p-3 shadow-sm border-0">
+                                <label class="form-label fw-bold">اللون الأساسي (Primary)</label>
+                                <input type="text" class="form-control mb-2" value="${db.settings.primary_color}" onchange="db.settings.primary_color=this.value">
+                                <label class="form-label fw-bold">لون البطاقات (Card Color)</label>
+                                <input type="text" class="form-control" value="${db.settings.card_color}" onchange="db.settings.card_color=this.value">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card p-3 shadow-sm border-0">
+                                <label class="form-label fw-bold">مسار الشعار (Logo)</label>
+                                <input type="text" class="form-control mb-2" value="${db.settings.logo_image}" onchange="db.settings.logo_image=this.value">
+                                <label class="form-label fw-bold">مسار الخلفية (Background)</label>
+                                <input type="text" class="form-control" value="${db.settings.bg_image}" onchange="db.settings.bg_image=this.value">
+                            </div>
+                        </div>
+                    </div>
                 `;
             }
         }
 
-        function sectionIsList(s) { return !['about', 'settings'].includes(s); }
-        function openAddModal() { editingIndex = -1; document.getElementById('modal-title-input').value = ''; document.getElementById('modal-content-input').value = ''; itemModal.show(); }
-        function editItem(index) { editingIndex = index; const item = config[currentSection][index]; document.getElementById('modal-title-input').value = item.title; document.getElementById('modal-content-input').value = item.content; itemModal.show(); }
-        function saveCurrentItem() { const title = document.getElementById('modal-title-input').value; const content = document.getElementById('modal-content-input').value; if (editingIndex === -1) config[currentSection].push({ id: Date.now(), title, content }); else { config[currentSection][editingIndex].title = title; config[currentSection][editingIndex].content = content; } itemModal.hide(); renderContent(); }
-        function deleteItem(index) { if(confirm('حذف؟')) { config[currentSection].splice(index, 1); renderContent(); } }
-        function openBatchAdd() { document.getElementById('batch-input').value = ''; batchModal.show(); }
-        function processBatch() { try { const data = JSON.parse(document.getElementById('batch-input').value); config[currentSection] = [...config[currentSection], ...data]; batchModal.hide(); renderContent(); } catch (e) { alert('JSON Error'); } }
+        function renderItems() {
+            const list = document.getElementById('items-list');
+            list.innerHTML = '';
+            const items = db.content[currentView] || [];
+            items.forEach((item, index) => {
+                list.innerHTML += `
+                    <div class="content-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="badge bg-light text-dark me-2">#${index+1}</span>
+                            <span class="fw-bold">${item.title}</span>
+                            <p class="small text-muted mb-0">${item.content.substring(0, 100)}...</p>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-sm btn-outline-primary" onclick="editItem(${index})">تعديل</button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="deleteItem(${index})">حذف</button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function openAdd() { editingIndex = -1; document.getElementById('modal-title-input').value = ''; document.getElementById('modal-content-input').value = ''; itemModal.show(); }
+        function editItem(index) { editingIndex = index; const item = db.content[currentView][index]; document.getElementById('modal-title-input').value = item.title; document.getElementById('modal-content-input').value = item.content; itemModal.show(); }
+        function saveCurrentItem() {
+            const title = document.getElementById('modal-title-input').value;
+            const content = document.getElementById('modal-content-input').value;
+            if (editingIndex === -1) db.content[currentView].push({ id: Date.now(), title, content });
+            else { db.content[currentView][editingIndex].title = title; db.content[currentView][editingIndex].content = content; }
+            itemModal.hide();
+            renderItems();
+        }
+        function deleteItem(index) { if(confirm('هل أنت متأكد من الحذف؟')) { db.content[currentView].splice(index, 1); renderItems(); } }
+        function openBatch() { document.getElementById('batch-input').value = ''; batchModal.show(); }
+        function processBatch() {
+            try {
+                const data = JSON.parse(document.getElementById('batch-input').value);
+                if(Array.isArray(data)) {
+                    db.content[currentView] = [...db.content[currentView], ...data];
+                    batchModal.hide();
+                    renderItems();
+                } else alert('يجب أن تكون البيانات عبارة عن Array [{},{}]');
+            } catch (e) { alert('خطأ في تنسيق JSON'); }
+        }
 
         async function pushToGitHub() {
-            const token = prompt("أدخل GitHub PAT:");
+            const token = prompt("أدخل GitHub Personal Access Token:");
+            if (!token) return;
             const repo = "techtouchAI/Islamic";
             const path = "assets/data/content.json";
 
-            if (!token) return;
-
             try {
-                // Get current SHA
-                const res = await fetch(`https://api.github.com/repos/${repo}/contents/${path}`, {
-                    headers: { "Authorization": `token ${token}` }
-                });
+                const res = await fetch(`https://api.github.com/repos/${repo}/contents/${path}`, { headers: { "Authorization": `token ${token}` } });
                 const data = await res.json();
                 const sha = data.sha;
 
-                // Update file
                 const updateRes = await fetch(`https://api.github.com/repos/${repo}/contents/${path}`, {
                     method: "PUT",
                     headers: { "Authorization": `token ${token}`, "Content-Type": "application/json" },
                     body: JSON.stringify({
-                        message: "CMS: Update content.json",
-                        content: btoa(unescape(encodeURIComponent(JSON.stringify(config, null, 2)))),
+                        message: "CMS: Comprehensive Update",
+                        content: btoa(unescape(encodeURIComponent(JSON.stringify(db, null, 2)))),
                         sha: sha
                     })
                 });
 
-                if (updateRes.ok) alert("تم الحفظ بنجاح! سيتم بناء APK جديد خلال دقائق.");
-                else alert("فشل في الحفظ. تأكد من صلاحيات التوكن.");
-            } catch (e) { alert("حدث خطأ في الاتصال بـ GitHub."); }
+                if (updateRes.ok) alert("تم الحفظ بنجاح! جاري بناء نسخة APK جديدة.");
+                else alert("خطأ في الحفظ. تحقق من الصلاحيات.");
+            } catch (e) { alert("فشل الاتصال بـ GitHub."); }
         }
 
         init();

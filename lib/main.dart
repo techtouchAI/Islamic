@@ -47,13 +47,19 @@ class _AlDhakereenAppState extends State<AlDhakereenApp> {
 
   Future<void> _loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
+    final dbSettings = DataManager.getSettings();
+
+    // Default color from JSON if not in prefs
+    int defaultPrimary = int.tryParse(dbSettings['primary_color'] ?? '0xFFD4AF37') ?? 0xFFD4AF37;
+    int defaultCard = int.tryParse(dbSettings['card_color'] ?? '0xFFFFFFFF') ?? 0xFFFFFFFF;
+
     setState(() {
       _themeMode = (prefs.getString('theme') ?? 'light') == 'light' ? ThemeMode.light : ThemeMode.dark;
       _fontSizeFactor = prefs.getDouble('fontSize') ?? 1.0;
-      _primaryColor = Color(prefs.getInt('primaryColor') ?? 0xFFD4AF37);
-      _uiOpacity = prefs.getDouble('uiOpacity') ?? 1.0;
+      _primaryColor = Color(prefs.getInt('primaryColor') ?? defaultPrimary);
+      _uiOpacity = prefs.getDouble('uiOpacity') ?? (dbSettings['ui_opacity']?.toDouble() ?? 1.0);
       _backgroundImagePath = prefs.getString('backgroundImage');
-      _cardColor = Color(prefs.getInt('cardColor') ?? Colors.white.toARGB32());
+      _cardColor = Color(prefs.getInt('cardColor') ?? defaultCard);
     });
   }
 
@@ -295,16 +301,9 @@ class _MainScaffoldState extends State<MainScaffold> {
   }
 
   String _getSectionTitle(String key) {
-    switch (key) {
-      case 'quran': return 'القرآن الكريم';
-      case 'duas': return 'الأدعية';
-      case 'visits': return 'الزيارات';
-      case 'tafsir': return 'التفسير';
-      case 'dreams': return 'تفسير الأحلام';
-      case 'stories': return 'قصص الأنبياء';
-      case 'imam_ali': return 'موسوعة الإمام علي (ع)';
-      default: return 'المحتوى';
-    }
+    final sections = DataManager.getSections();
+    if (sections.containsKey(key)) return sections[key]['title'].toString();
+    return 'المحتوى';
   }
 }
 
@@ -318,6 +317,7 @@ class AppDrawer extends StatelessWidget {
   Widget build(BuildContext context) {
     final about = DataManager.getAbout();
     final settings = DataManager.getSettings();
+    final sections = DataManager.getSections();
 
     return Drawer(
       child: Column(
@@ -351,13 +351,9 @@ class AppDrawer extends StatelessWidget {
               padding: EdgeInsets.zero,
               children: [
                 _buildItem(context, 'home', 'الرئيسية', Icons.home),
-                _buildItem(context, 'quran', 'القرآن الكريم', Icons.menu_book),
-                _buildItem(context, 'duas', 'الأدعية', Icons.auto_stories),
-                _buildItem(context, 'visits', 'الزيارات', Icons.place),
-                _buildItem(context, 'tafsir', 'التفسير', Icons.translate),
-                _buildItem(context, 'dreams', 'تفسير الأحلام', Icons.bedtime),
-                _buildItem(context, 'stories', 'قصص الأنبياء', Icons.history_edu),
-                _buildItem(context, 'imam_ali', 'موسوعة الإمام علي (ع)', Icons.shield),
+                ...sections.entries.map((e) {
+                   return _buildItem(context, e.key, e.value['title'], _getIcon(e.value['icon']));
+                }),
                 const Divider(),
                 _buildItem(context, 'about', 'حول المطور', Icons.person),
                 _buildItem(context, 'settings', 'الإعدادات', Icons.settings),
@@ -367,6 +363,19 @@ class AppDrawer extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  IconData _getIcon(String? name) {
+    switch (name) {
+      case 'menu_book': return Icons.menu_book;
+      case 'auto_stories': return Icons.auto_stories;
+      case 'place': return Icons.place;
+      case 'translate': return Icons.translate;
+      case 'bedtime': return Icons.bedtime;
+      case 'history_edu': return Icons.history_edu;
+      case 'shield': return Icons.shield;
+      default: return Icons.star;
+    }
   }
 
   Widget _buildItem(BuildContext context, String id, String title, IconData icon) {
@@ -404,15 +413,11 @@ class _HomeSectionState extends State<HomeSection> {
 
   void _refreshItems() {
     final random = Random();
-    items = {
-      'القرآن': _safeGet(DataManager.getItems('quran'), random),
-      'الأدعية': _safeGet(DataManager.getItems('duas'), random),
-      'الزيارات': _safeGet(DataManager.getItems('visits'), random),
-      'التفسير': _safeGet(DataManager.getItems('tafsir'), random),
-      'الأحلام': _safeGet(DataManager.getItems('dreams'), random),
-      'القصص': _safeGet(DataManager.getItems('stories'), random),
-      'الإمام علي (ع)': _safeGet(DataManager.getItems('imam_ali'), random),
-    };
+    final sections = DataManager.getSections();
+    items = {};
+    sections.forEach((key, value) {
+       items[value['title']] = _safeGet(DataManager.getItems(key), random);
+    });
   }
 
   void _loadDailyDua() {
@@ -625,33 +630,56 @@ class AboutSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final about = DataManager.getAbout();
-    return Padding(
+    return SingleChildScrollView(
       padding: const EdgeInsets.all(24.0),
       child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            CircleAvatar(
-              radius: 50,
-              backgroundColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
-              child: Icon(Icons.person, size: 60, color: Theme.of(context).colorScheme.primary),
-            ),
-            const SizedBox(height: 20),
-            Text(about['developer_name']?.toString() ?? 'المطور', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 10),
-            Text(about['app_info']?.toString() ?? '', textAlign: TextAlign.center, style: const TextStyle(fontSize: 16, color: Colors.grey)),
-            const SizedBox(height: 30),
-            if (about['developer_page'] != null)
-              ElevatedButton.icon(
-                onPressed: () => launchUrl(Uri.parse(about['developer_page'].toString())),
-                icon: const Icon(Icons.link),
-                label: const Text('زيارة الموقع الشخصي'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Theme.of(context).colorScheme.primary,
-                  foregroundColor: Colors.white,
-                ),
+        child: Container(
+          padding: const EdgeInsets.all(30),
+          decoration: BoxDecoration(
+            color: Theme.of(context).cardColor,
+            borderRadius: BorderRadius.circular(30),
+            border: Border.all(color: Theme.of(context).colorScheme.primary, width: 2),
+            boxShadow: [
+              BoxShadow(
+                color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
+              )
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircleAvatar(
+                radius: 50,
+                backgroundColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                child: Icon(Icons.person, size: 60, color: Theme.of(context).colorScheme.primary),
               ),
-          ],
+              const SizedBox(height: 20),
+              Text(about['developer_name']?.toString() ?? 'المطور', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 15),
+              const Divider(),
+              const SizedBox(height: 15),
+              Text(
+                about['app_info']?.toString() ?? '',
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 16, height: 1.6),
+              ),
+              const SizedBox(height: 30),
+              if (about['developer_page'] != null)
+                ElevatedButton.icon(
+                  onPressed: () => launchUrl(Uri.parse(about['developer_page'].toString())),
+                  icon: const Icon(Icons.link),
+                  label: const Text('زيارة الموقع الشخصي'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );
