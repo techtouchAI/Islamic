@@ -9,28 +9,37 @@
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <style>
         :root { --gold: #D4AF37; --dark: #1a252f; --light-gold: #fcf8e3; }
-        body { font-family: 'Noto Kufi Arabic', sans-serif; background-color: #f8f9fa; color: #333; }
-        .sidebar { background: var(--dark); color: white; min-height: 100vh; position: sticky; top: 0; transition: 0.3s; }
+        body { font-family: 'Noto Kufi Arabic', sans-serif; background-color: #f8f9fa; color: #333; overflow-x: hidden; }
+        .sidebar { background: var(--dark); color: white; min-height: 100vh; position: sticky; top: 0; transition: 0.3s; z-index: 2000; }
         .nav-link { color: #cbd5e0; margin-bottom: 5px; cursor: pointer; border-radius: 12px; padding: 12px 20px; display: flex; align-items: center; gap: 12px; transition: 0.2s; }
         .nav-link:hover { background: rgba(255,255,255,0.1); color: white; }
         .nav-link.active { background: var(--gold); color: black; font-weight: bold; box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3); }
-        .main-content { padding: 30px; }
+        .main-content { padding: 30px; min-width: 0; }
         .card-lux { border-radius: 20px; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.05); background: white; transition: 0.3s; }
         .btn-gold { background: var(--gold); color: black; font-weight: bold; border: none; border-radius: 12px; padding: 10px 25px; transition: 0.3s; }
         .btn-gold:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(212, 175, 55, 0.4); background: #c5a02c; }
-        .action-bar { background: white; padding: 20px; border-radius: 18px; margin-bottom: 25px; box-shadow: 0 2px 15px rgba(0,0,0,0.03); display: flex; align-items: center; justify-content: space-between; }
+        .action-bar { background: white; padding: 20px; border-radius: 18px; margin-bottom: 25px; box-shadow: 0 2px 15px rgba(0,0,0,0.03); display: flex; align-items: center; justify-content: space-between; gap: 15px; }
         .img-preview { width: 80px; height: 80px; border-radius: 15px; object-fit: cover; border: 2px solid var(--gold); background: #eee; }
         .upload-card { border: 2px dashed #ddd; border-radius: 20px; padding: 30px; text-align: center; cursor: pointer; transition: 0.3s; background: #fafafa; }
         .upload-card:hover { border-color: var(--gold); background: var(--light-gold); }
+        .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1999; backdrop-filter: blur(2px); }
+        .sidebar-overlay.show { display: block; }
         @media (max-width: 991.98px) {
-            .sidebar { position: fixed; right: -300px; width: 300px; height: 100%; z-index: 2000; }
+            .sidebar { position: fixed; right: -280px; width: 280px; height: 100%; }
             .sidebar.show { right: 0; }
-            .mobile-toggle { display: block; position: fixed; bottom: 25px; left: 25px; z-index: 2001; }
+            .mobile-toggle { display: block !important; position: fixed; bottom: 25px; left: 25px; z-index: 2001; }
+            .main-content { padding: 15px; }
+            .action-bar { flex-direction: column; align-items: stretch !important; }
+            .btn-group-sm-responsive { display: flex; flex-direction: column; gap: 8px; }
+            .btn-group-sm-responsive .btn { width: 100%; }
         }
+        * { word-break: break-word; overflow-wrap: anywhere; }
     </style>
 </head>
 <body>
-    <button class="btn btn-dark rounded-circle mobile-toggle d-lg-none" style="width: 60px; height: 60px;" onclick="document.getElementById('sidebar').classList.toggle('show')">
+    <div id="sidebarOverlay" class="sidebar-overlay" onclick="toggleSidebar(false)"></div>
+
+    <button class="btn btn-dark rounded-circle mobile-toggle d-none" style="width: 60px; height: 60px; box-shadow: 0 4px 15px rgba(0,0,0,0.3);" onclick="toggleSidebar(true)">
         <i class="material-icons">menu</i>
     </button>
 
@@ -48,10 +57,10 @@
 
             <!-- Main Workspace -->
             <div class="col-lg-10 main-content">
-                <div class="action-bar mb-4 shadow-sm">
+                <div class="action-bar mb-4 shadow-sm" id="main-action-bar">
                     <div class="d-flex align-items-center gap-3">
-                        <div class="p-3 bg-light rounded-circle"><i class="material-icons text-gold" id="view-icon">settings</i></div>
-                        <h3 class="mb-0 fw-bold" id="view-title">إعدادات التطبيق</h3>
+                        <div class="p-2 bg-light rounded-circle"><i class="material-icons text-gold" id="view-icon">settings</i></div>
+                        <h4 class="mb-0 fw-bold" id="view-title">إعدادات التطبيق</h4>
                     </div>
                     <div id="view-actions" class="d-flex gap-2"></div>
                 </div>
@@ -83,15 +92,11 @@
                 <div class="modal-body p-4 text-center">
                     <h5 class="fw-bold mb-3">📄 صياغة ملف JSON للاستيراد</h5>
                     <p class="text-muted">عند إضافة محتوى بالدفعة، يجب أن يكون الملف بالتنسيق التالي:</p>
-                    <pre class="bg-light p-3 rounded text-start" dir="ltr" style="font-size: 0.8rem;">
+                    <pre class="bg-light p-3 rounded text-start" dir="ltr" style="font-size: 0.8rem; overflow-x: auto;">
 [
   {
     "title": "عنوان الموضوع",
     "content": "نص الموضوع هنا..."
-  },
-  {
-    "title": "موضوع ثانٍ",
-    "content": "نص آخر..."
   }
 ]</pre>
                     <p class="small text-danger">تأكد من أن كل عنصر يحتوي على المفتاحين title و content فقط لضمان التوافق.</p>
@@ -180,9 +185,11 @@
                 const s = db.sections[id];
                 title.innerText = s.title; icon.innerText = s.icon;
                 acts.innerHTML = `
-                    <button class="btn btn-outline-dark px-3" onclick="helpModal.show()">تعليمات الاستيراد</button>
-                    <button class="btn btn-outline-gold px-3" onclick="importModal.show()">استيراد JSON</button>
-                    <button class="btn btn-gold" onclick="openAdd()">إضافة موضوع</button>
+                    <div class="btn-group-sm-responsive">
+                        <button class="btn btn-outline-dark px-3" onclick="helpModal.show()">تعليمات الاستيراد</button>
+                        <button class="btn btn-outline-gold px-3" onclick="importModal.show()">استيراد JSON</button>
+                        <button class="btn btn-gold" onclick="openAdd()">إضافة موضوع</button>
+                    </div>
                 `;
                 ws.innerHTML = `<div id="list-container" class="row g-3"></div>`;
                 renderItems();
@@ -217,12 +224,11 @@
             } else if (id === 'about') {
                 title.innerText = "معلومات المطور"; icon.innerText = "contact_support";
                 ws.innerHTML = `
-                    <div class="card card-lux p-5 mx-auto shadow-lg" style="max-width:900px;">
+                    <div class="card card-lux p-4 p-md-5 mx-auto shadow-lg" style="max-width:900px;">
                         <div class="row g-4">
                             <div class="col-md-4 text-center">
                                 <div class="bg-light p-4 rounded-circle mb-3 d-inline-block border border-gold"><i class="material-icons text-gold" style="font-size:4rem">${db.about.developer_icon}</i></div>
                                 <input type="text" class="form-control text-center mb-3" value="${db.about.developer_icon}" onchange="db.about.developer_icon=this.value">
-                                <small class="text-muted">أيقونة Material</small>
                             </div>
                             <div class="col-md-8">
                                 <label class="fw-bold small">اسم المطور</label>
@@ -236,7 +242,7 @@
                     </div>
                 `;
             }
-            if (window.innerWidth < 992) document.getElementById('sidebar').classList.remove('show');
+            if (window.innerWidth < 992) toggleSidebar(false);
         }
 
         function renderItems() {
@@ -259,6 +265,13 @@
                     </div>
                 `;
             });
+        }
+
+        function toggleSidebar(show) {
+            const s = document.getElementById('sidebar');
+            const o = document.getElementById('sidebarOverlay');
+            if(show) { s.classList.add('show'); o.classList.add('show'); }
+            else { s.classList.remove('show'); o.classList.remove('show'); }
         }
 
         function handleFile(files) {
