@@ -36,3 +36,4 @@ jobs:
         with:
           name: aldhakereen-apk
           path: build/app/outputs/flutter-apk/*.apk
+
