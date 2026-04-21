@@ -18,6 +18,7 @@ import 'data/data_manager.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting('ar_SA', null);
+  HijriCalendar.setLocal('ar');
   await DataManager.loadContent();
   runApp(const AlDhakereenApp());
 }
@@ -433,7 +434,25 @@ class _HomeSectionState extends State<HomeSection> {
           Wrap(
             spacing: 10,
             runSpacing: 10,
-            children: items.entries.map((e) => _HomeSmallCard(tag: e.key, title: e.value['title'].toString(), uiOpacity: widget.uiOpacity)).toList(),
+            children: items.entries.map((e) {
+              return _HomeSmallCard(
+                tag: e.key,
+                title: e.value['title'].toString(),
+                uiOpacity: widget.uiOpacity,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (c) => ReaderPage(
+                        title: e.value['title'].toString(),
+                        content: e.value['content'].toString(),
+                        fontSizeFactor: widget.fontSizeFactor,
+                      ),
+                    ),
+                  );
+                },
+              );
+            }).toList(),
           ),
         ],
       ),
@@ -444,25 +463,30 @@ class _HomeSectionState extends State<HomeSection> {
 class _HomeSmallCard extends StatelessWidget {
   final String tag, title;
   final double uiOpacity;
-  const _HomeSmallCard({required this.tag, required this.title, required this.uiOpacity});
+  final VoidCallback onTap;
+  const _HomeSmallCard({required this.tag, required this.title, required this.uiOpacity, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: (MediaQuery.of(context).size.width - 42) / 2,
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor.withValues(alpha: uiOpacity),
-        borderRadius: BorderRadius.circular(15),
-        border: Border.all(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(tag, style: TextStyle(fontSize: 10, color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 4),
-          Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
-        ],
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(15),
+      child: Container(
+        width: (MediaQuery.of(context).size.width - 42) / 2,
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Theme.of(context).cardColor.withValues(alpha: uiOpacity),
+          borderRadius: BorderRadius.circular(15),
+          border: Border.all(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(tag, style: TextStyle(fontSize: 10, color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 4),
+            Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+          ],
+        ),
       ),
     );
   }
