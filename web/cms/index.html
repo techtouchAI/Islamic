@@ -8,73 +8,66 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <style>
-        :root { --gold: #D4AF37; --dark: #1a252f; }
-        body { font-family: 'Noto Kufi Arabic', sans-serif; background-color: #f4f7f6; overflow-x: hidden; }
-        .sidebar { background: var(--dark); color: white; min-height: 100vh; transition: 0.3s; z-index: 1000; }
-        .nav-link { color: #aab2bd; margin-bottom: 5px; cursor: pointer; border-radius: 10px; padding: 10px 15px; display: flex; align-items: center; gap: 10px; font-size: 0.9rem; }
-        .nav-link:hover { background: rgba(255,255,255,0.05); color: white; }
-        .nav-link.active { background: var(--gold); color: black; font-weight: bold; }
-        .main-content { padding: 20px; transition: 0.3s; }
-        .card-custom { border-radius: 15px; border: none; box-shadow: 0 5px 15px rgba(0,0,0,0.05); background: white; margin-bottom: 20px; }
-        .btn-gold { background: var(--gold); color: black; font-weight: bold; border: none; border-radius: 8px; }
-        .btn-gold:hover { background: #b8962d; }
-        .action-bar { position: sticky; top: 0; background: rgba(255,255,255,0.9); backdrop-filter: blur(10px); z-index: 100; padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #eee; }
-        .mobile-nav-toggle { display: none; position: fixed; bottom: 20px; left: 20px; z-index: 2000; border-radius: 50%; width: 60px; height: 60px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+        :root { --gold: #D4AF37; --dark: #1a252f; --light-gold: #fcf8e3; }
+        body { font-family: 'Noto Kufi Arabic', sans-serif; background-color: #f8f9fa; color: #333; }
+        .sidebar { background: var(--dark); color: white; min-height: 100vh; position: sticky; top: 0; transition: 0.3s; }
+        .nav-link { color: #cbd5e0; margin-bottom: 5px; cursor: pointer; border-radius: 12px; padding: 12px 20px; display: flex; align-items: center; gap: 12px; transition: 0.2s; }
+        .nav-link:hover { background: rgba(255,255,255,0.1); color: white; }
+        .nav-link.active { background: var(--gold); color: black; font-weight: bold; box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3); }
+        .main-content { padding: 30px; }
+        .card-lux { border-radius: 20px; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.05); background: white; transition: 0.3s; }
+        .btn-gold { background: var(--gold); color: black; font-weight: bold; border: none; border-radius: 12px; padding: 10px 25px; transition: 0.3s; }
+        .btn-gold:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(212, 175, 55, 0.4); background: #c5a02c; }
+        .action-bar { background: white; padding: 20px; border-radius: 18px; margin-bottom: 25px; box-shadow: 0 2px 15px rgba(0,0,0,0.03); display: flex; align-items: center; justify-content: space-between; }
+        .img-preview { width: 80px; height: 80px; border-radius: 15px; object-fit: cover; border: 2px solid var(--gold); background: #eee; }
+        .upload-card { border: 2px dashed #ddd; border-radius: 20px; padding: 30px; text-align: center; cursor: pointer; transition: 0.3s; background: #fafafa; }
+        .upload-card:hover { border-color: var(--gold); background: var(--light-gold); }
         @media (max-width: 991.98px) {
-            .sidebar { position: fixed; right: -280px; width: 280px; height: 100%; }
+            .sidebar { position: fixed; right: -300px; width: 300px; height: 100%; z-index: 2000; }
             .sidebar.show { right: 0; }
-            .mobile-nav-toggle { display: flex; align-items: center; justify-content: center; }
-            .main-content { padding: 15px; }
-            .btn-sm-wide { width: 100%; margin-bottom: 10px; }
+            .mobile-toggle { display: block; position: fixed; bottom: 25px; left: 25px; z-index: 2001; }
         }
-        .file-drop { border: 2px dashed #ccc; padding: 20px; text-align: center; border-radius: 15px; background: #fafafa; cursor: pointer; }
-        .file-drop:hover { border-color: var(--gold); background: #fffdf7; }
     </style>
 </head>
 <body>
-    <button class="btn btn-dark mobile-nav-toggle" onclick="toggleSidebar()">
+    <button class="btn btn-dark rounded-circle mobile-toggle d-lg-none" style="width: 60px; height: 60px;" onclick="document.getElementById('sidebar').classList.toggle('show')">
         <i class="material-icons">menu</i>
     </button>
 
     <div class="container-fluid">
         <div class="row">
-            <div id="sidebar" class="col-lg-2 sidebar p-3 shadow">
-                <div class="text-center mb-4 mt-2">
-                    <h5 class="fw-bold mb-0">الذاكرين CMS</h5>
-                    <small class="text-warning">نسخة التحكم الشامل</small>
+            <!-- Sidebar -->
+            <div id="sidebar" class="col-lg-2 sidebar p-4">
+                <div class="text-center mb-5">
+                    <i class="material-icons text-gold" style="font-size: 3.5rem;">mosque</i>
+                    <h5 class="fw-bold mt-2">الذاكرين CMS</h5>
+                    <div class="badge bg-gold text-dark px-3 py-2 mt-1">الإصدار الاحترافي</div>
                 </div>
-                <hr>
-                <nav class="nav flex-column" id="nav-container">
-                    <!-- Dynamic -->
-                </nav>
+                <nav class="nav flex-column" id="nav-list"></nav>
             </div>
 
+            <!-- Main Workspace -->
             <div class="col-lg-10 main-content">
-                <div class="action-bar d-flex flex-wrap justify-content-between align-items-center gap-3 shadow-sm">
-                    <div class="d-flex align-items-center gap-2">
-                        <i class="material-icons text-gold" id="view-icon">settings</i>
-                        <h4 class="mb-0 fw-bold" id="view-title">قيد التحميل...</h4>
+                <div class="action-bar mb-4">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="p-3 bg-light rounded-circle"><i class="material-icons text-gold" id="view-icon">settings</i></div>
+                        <h3 class="mb-0 fw-bold" id="view-title">إعدادات التطبيق</h3>
                     </div>
-                    <div id="view-actions" class="d-flex flex-wrap gap-2">
-                        <!-- Dynamic -->
-                    </div>
+                    <div id="view-actions" class="d-flex gap-2"></div>
                 </div>
 
-                <div id="content-workspace">
-                    <!-- Dynamic Workspace -->
-                </div>
+                <div id="workspace"></div>
 
-                <div class="action-bar mt-4 border-success bg-light shadow-sm">
+                <!-- Global Sync -->
+                <div class="card card-lux p-4 mt-5 border-top border-success border-4">
                     <div class="row align-items-center">
-                        <div class="col-md-8 mb-2 mb-md-0">
-                            <div class="d-flex gap-2">
-                                <input type="text" id="repo-id" class="form-control form-control-sm" placeholder="المستودع (user/repo)">
-                                <input type="text" id="path-id" class="form-control form-control-sm" placeholder="المسار">
-                            </div>
+                        <div class="col-lg-8">
+                            <h5 class="fw-bold"><i class="material-icons align-middle me-2">cloud_sync</i> مزامنة البيانات السحابية</h5>
+                            <p class="text-muted small mb-0">سيتم تحديث التطبيق وبناء نسخة APK جديدة فور الحفظ إلى مستودع GitHub.</p>
                         </div>
-                        <div class="col-md-4 text-md-end">
-                            <button class="btn btn-success w-100 fw-bold shadow-sm" onclick="saveToGitHub()">
-                                <i class="material-icons align-middle">sync</i> حفظ ومزامنة للتطبيق
+                        <div class="col-lg-4 text-lg-end mt-3 mt-lg-0">
+                            <button class="btn btn-success btn-lg w-100 shadow" onclick="saveToGitHub()">
+                                <i class="material-icons align-middle">publish</i> حفظ وإرسال للتطبيق
                             </button>
                         </div>
                     </div>
@@ -84,34 +77,16 @@
     </div>
 
     <!-- Modals -->
-    <div class="modal fade" id="itemModal" tabindex="-1">
+    <div class="modal fade" id="editModal" tabindex="-1">
         <div class="modal-dialog modal-xl modal-dialog-centered">
-            <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
-                <div class="modal-header bg-light border-0 px-4 pt-4">
-                    <h5 class="fw-bold">تحرير البيانات</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body p-4">
-                    <input type="text" id="m-title" class="form-control form-control-lg mb-3 shadow-sm" placeholder="العنوان هنا...">
-                    <textarea id="m-content" class="form-control shadow-sm" rows="12" placeholder="المحتوى هنا..." style="white-space: pre-wrap; border-radius: 12px;"></textarea>
-                </div>
-                <div class="modal-footer border-0 p-4">
-                    <button type="button" class="btn btn-outline-secondary px-4" data-bs-dismiss="modal">إلغاء</button>
-                    <button type="button" class="btn btn-gold px-5" onclick="commitItem()">حفظ العنصر</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal fade" id="importModal" tabindex="-1">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content border-0" style="border-radius: 20px;">
+            <div class="modal-content border-0" style="border-radius: 25px;">
                 <div class="modal-body p-5">
-                    <div class="file-drop" id="drop-zone" onclick="document.getElementById('file-input').click()">
-                        <i class="material-icons style-text-gold" style="font-size: 4rem;">upload_file</i>
-                        <h5 class="mt-3 fw-bold">اسحب ملف JSON أو انقر للرفع</h5>
-                        <p class="text-muted small">يجب أن يكون الملف متوافقاً مع هيكلية التطبيق</p>
-                        <input type="file" id="file-input" hidden accept=".json" onchange="handleFile(this.files)">
+                    <h4 class="fw-bold mb-4">تحرير المحتوى</h4>
+                    <input type="text" id="m-title" class="form-control form-control-lg mb-4" placeholder="العنوان...">
+                    <textarea id="m-content" class="form-control" rows="12" placeholder="المحتوى الكامل هنا..." style="white-space: pre-wrap; border-radius: 15px;"></textarea>
+                    <div class="mt-4 text-end">
+                        <button class="btn btn-light px-4 me-2" data-bs-dismiss="modal">إلغاء</button>
+                        <button class="btn btn-gold px-5" onclick="saveItem()">حفظ التغييرات</button>
                     </div>
                 </div>
             </div>
@@ -121,247 +96,165 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         let db = null;
-        let currentSection = 'settings';
+        let activeView = 'settings';
         let editIdx = -1;
-        const itemModal = new bootstrap.Modal(document.getElementById('itemModal'));
-        const importModal = new bootstrap.Modal(document.getElementById('importModal'));
+        const modal = new bootstrap.Modal(document.getElementById('editModal'));
 
         async function init() {
             try {
                 const res = await fetch('../../assets/data/content.json');
                 db = await res.json();
-
-                document.getElementById('repo-id').value = localStorage.getItem('git_repo') || "techtouchAI/Islamic";
-                document.getElementById('path-id').value = localStorage.getItem('git_path') || "assets/data/content.json";
-
                 renderNav();
-                loadSection('settings');
-            } catch (e) { alert("فشل تحميل قاعدة البيانات."); }
+                loadView('settings');
+            } catch (e) { alert("خطأ في تحميل قاعدة البيانات."); }
         }
 
         function renderNav() {
-            const nav = document.getElementById('nav-container');
-            nav.innerHTML = '';
+            const list = document.getElementById('nav-list');
+            list.innerHTML = '';
+            const links = [
+                {id: 'settings', title: 'الهوية والوسائط', icon: 'palette'},
+                {id: 'about', title: 'ملف المطور', icon: 'person_pin'},
+                {divider: true}
+            ];
+            Object.keys(db.sections).forEach(k => links.push({id: k, title: db.sections[k].title, icon: db.sections[k].icon}));
 
-            const addLink = (id, title, icon) => {
-                nav.innerHTML += `<a class="nav-link ${currentSection===id?'active':''}" onclick="loadSection('${id}')">
-                    <i class="material-icons">${icon}</i> ${title}</a>`;
-            };
-
-            addLink('settings', 'إعدادات التطبيق', 'app_settings_alt');
-            addLink('about', 'معلومات المطور', 'contact_page');
-            nav.innerHTML += '<hr class="text-secondary opacity-25">';
-
-            Object.keys(db.sections).forEach(key => {
-                addLink(key, db.sections[key].title, db.sections[key].icon);
+            links.forEach(l => {
+                if(l.divider) return list.innerHTML += '<hr class="text-secondary opacity-25 my-3">';
+                list.innerHTML += `<a class="nav-link ${activeView===l.id?'active':''}" onclick="loadView('${l.id}')">
+                    <i class="material-icons">${l.icon}</i> ${l.title}</a>`;
             });
         }
 
-        function loadSection(id) {
-            currentSection = id;
+        function loadView(id) {
+            activeView = id;
             renderNav();
-            const ws = document.getElementById('content-workspace');
+            const ws = document.getElementById('workspace');
             const acts = document.getElementById('view-actions');
             const title = document.getElementById('view-title');
             const icon = document.getElementById('view-icon');
-
             ws.innerHTML = ''; acts.innerHTML = '';
 
             if (db.sections[id]) {
-                const sec = db.sections[id];
-                title.innerText = sec.title;
-                icon.innerText = sec.icon;
-
-                acts.innerHTML = `
-                    <button class="btn btn-sm btn-outline-dark px-3" onclick="importModal.show()">إضافة ملف JSON</button>
-                    <button class="btn btn-sm btn-gold px-4" onclick="openEdit(-1)">إضافة عنصر جديد</button>
-                `;
-
-                ws.innerHTML = `
-                    <div class="card card-custom p-3 mb-4 border-start border-gold border-4">
-                        <div class="row g-3">
-                            <div class="col-md-4">
-                                <label class="small fw-bold">اسم القسم</label>
-                                <input type="text" class="form-control" value="${sec.title}" onchange="db.sections['${id}'].title=this.value;renderNav();">
-                            </div>
-                            <div class="col-md-4">
-                                <label class="small fw-bold">أيقونة القسم</label>
-                                <input type="text" class="form-control" value="${sec.icon}" onchange="db.sections['${id}'].icon=this.value;renderNav();">
-                            </div>
-                            <div class="col-md-4 d-flex align-items-end">
-                                <div class="form-check form-switch mb-2">
-                                    <input class="form-check-input" type="checkbox" ${sec.visible_home?'checked':''} onchange="db.sections['${id}'].visible_home=this.checked">
-                                    <label class="form-check-label fw-bold small">عرض في الرئيسية</label>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div id="items-container"></div>
-                `;
+                const s = db.sections[id];
+                title.innerText = s.title; icon.innerText = s.icon;
+                acts.innerHTML = `<button class="btn btn-gold" onclick="openAdd()">إضافة موضوع جديد</button>`;
+                ws.innerHTML = `<div id="list-container" class="row g-3"></div>`;
                 renderItems();
             } else if (id === 'settings') {
-                title.innerText = "إعدادات المظهر والهوية"; icon.innerText = "palette";
+                title.innerText = "الهوية والوسائط"; icon.innerText = "photo_library";
                 ws.innerHTML = `
                     <div class="row g-4">
                         <div class="col-md-6">
-                            <div class="card card-custom p-4 h-100">
-                                <h6 class="fw-bold mb-3">الألوان والسمات</h6>
-                                <label class="small">اللون الأساسي (Primary Color)</label>
-                                <input type="text" class="form-control mb-3" value="${db.settings.primary_color}" onchange="db.settings.primary_color=this.value">
-                                <label class="small">لون البطاقات (Card Background)</label>
-                                <input type="text" class="form-control mb-3" value="${db.settings.card_color}" onchange="db.settings.card_color=this.value">
-                                <label class="small">الشفافية الافتراضية</label>
-                                <input type="number" step="0.1" class="form-control mb-3" value="${db.settings.ui_opacity}" onchange="db.settings.ui_opacity=parseFloat(this.value)">
-                                <div class="form-check form-switch">
-                                    <input class="form-check-input" type="checkbox" ${db.settings.show_inspiration?'checked':''} onchange="db.settings.show_inspiration=this.checked">
-                                    <label class="form-check-label fw-bold">عرض إلهام اليوم</label>
+                            <div class="card card-lux p-4 h-100">
+                                <h5 class="fw-bold mb-4">شعار التطبيق (Logo)</h5>
+                                <div class="upload-card mb-3" onclick="document.getElementById('logo-file').click()">
+                                    <img id="logo-prev" src="${db.settings.custom_logo_base64 || '../../assets/images/logo.png'}" class="img-preview mb-3" style="width:120px;height:120px">
+                                    <h6 class="fw-bold">انقر لاختيار صورة من الاستوديو</h6>
+                                    <p class="text-muted small">ستظهر كأيقونة أساسية للتطبيق</p>
+                                    <input type="file" id="logo-file" hidden accept="image/*" onchange="processImg(this, 'logo')">
                                 </div>
+                                <button class="btn btn-outline-danger btn-sm" onclick="clearImg('logo')">استعادة الافتراضي</button>
                             </div>
                         </div>
                         <div class="col-md-6">
-                            <div class="card card-custom p-4 h-100">
-                                <h6 class="fw-bold mb-3">الوسائط والشعارات</h6>
-                                <label class="small">رابط شعار التطبيق (Logo)</label>
-                                <div class="input-group mb-3">
-                                    <input type="text" class="form-control" id="logo-in" value="${db.settings.logo_image}" onchange="db.settings.logo_image=this.value">
-                                    <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">أصول</button>
-                                    <ul class="dropdown-menu">
-                                        <li><a class="dropdown-item" onclick="setAsset('logo', 'assets/images/logo.png')">Default Logo</a></li>
-                                        <li><a class="dropdown-item" onclick="setAsset('logo', 'assets/images/default_home.png')">Home Image</a></li>
-                                    </ul>
+                            <div class="card card-lux p-4 h-100">
+                                <h5 class="fw-bold mb-4">الخلفية الافتراضية (Background)</h5>
+                                <div class="upload-card mb-3" onclick="document.getElementById('bg-file').click()">
+                                    <img id="bg-prev" src="${db.settings.custom_bg_base64 || '../../assets/images/default_bg.png'}" class="img-preview mb-3" style="width:120px;height:120px">
+                                    <h6 class="fw-bold">انقر لاختيار خلفية من الاستوديو</h6>
+                                    <p class="text-muted small">ستكون الخلفية الأساسية لكافة صفحات التطبيق</p>
+                                    <input type="file" id="bg-file" hidden accept="image/*" onchange="processImg(this, 'bg')">
                                 </div>
-                                <label class="small">رابط الخلفية الافتراضية (Background)</label>
-                                <div class="input-group">
-                                    <input type="text" class="form-control" id="bg-in" value="${db.settings.bg_image}" onchange="db.settings.bg_image=this.value">
-                                    <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">أصول</button>
-                                    <ul class="dropdown-menu">
-                                        <li><a class="dropdown-item" onclick="setAsset('bg', 'assets/images/default_bg.png')">Default BG</a></li>
-                                    </ul>
-                                </div>
-                                <p class="small text-muted mt-2">يمكن استخدام مسارات داخلية (assets/...) أو روابط خارجية (http...)</p>
+                                <button class="btn btn-outline-danger btn-sm" onclick="clearImg('bg')">استعادة الافتراضي</button>
                             </div>
                         </div>
                     </div>
                 `;
             } else if (id === 'about') {
-                title.innerText = "تعديل قسم حول"; icon.innerText = "contact_page";
+                title.innerText = "معلومات المطور"; icon.innerText = "contact_support";
                 ws.innerHTML = `
-                    <div class="card card-custom p-5 mx-auto shadow-lg border-top border-gold border-5" style="max-width: 800px;">
-                        <div class="text-center mb-4">
-                            <div class="bg-light d-inline-block p-4 rounded-circle mb-3"><i class="material-icons" style="font-size: 3rem;">person</i></div>
-                            <h5 class="fw-bold">ملف المطور</h5>
+                    <div class="card card-lux p-5 max-auto" style="max-width:900px; margin:0 auto">
+                        <div class="row g-4">
+                            <div class="col-md-4 text-center">
+                                <div class="bg-light p-4 rounded-circle mb-3 d-inline-block"><i class="material-icons text-gold" style="font-size:4rem">${db.about.developer_icon}</i></div>
+                                <input type="text" class="form-control text-center mb-3" value="${db.about.developer_icon}" onchange="db.about.developer_icon=this.value">
+                                <small class="text-muted">اسم أيقونة Material</small>
+                            </div>
+                            <div class="col-md-8">
+                                <label class="fw-bold small">اسم المطور</label>
+                                <input type="text" class="form-control mb-3" value="${db.about.developer_name}" onchange="db.about.developer_name=this.value">
+                                <label class="fw-bold small">رابط الصفحة</label>
+                                <input type="text" class="form-control mb-3" value="${db.about.developer_page}" onchange="db.about.developer_page=this.value">
+                                <label class="fw-bold small">عن التطبيق</label>
+                                <textarea class="form-control" rows="6" onchange="db.about.app_info=this.value">${db.about.app_info}</textarea>
+                            </div>
                         </div>
-                        <label class="fw-bold small">اسم المطور / الفريق</label>
-                        <input type="text" class="form-control mb-4" value="${db.about.developer_name}" onchange="db.about.developer_name=this.value">
-                        <label class="fw-bold small">رابط الصفحة الشخصية</label>
-                        <input type="text" class="form-control mb-4" value="${db.about.developer_page}" onchange="db.about.developer_page=this.value">
-                        <label class="fw-bold small">أيقونة المطور</label>
-                        <input type="text" class="form-control mb-4" value="${db.about.developer_icon || 'person'}" onchange="db.about.developer_icon=this.value">
-                        <label class="fw-bold small">عن التطبيق</label>
-                        <textarea class="form-control" rows="8" onchange="db.about.app_info=this.value">${db.about.app_info}</textarea>
                     </div>
                 `;
             }
-            if (window.innerWidth < 992) toggleSidebar(false);
         }
 
         function renderItems() {
-            const container = document.getElementById('items-container');
+            const container = document.getElementById('list-container');
             container.innerHTML = '';
-            const items = db.content[currentSection] || [];
-            items.forEach((it, i) => {
+            (db.content[activeView] || []).forEach((it, i) => {
                 container.innerHTML += `
-                    <div class="card card-custom p-3 d-flex flex-row justify-content-between align-items-center">
-                        <div class="text-truncate" style="max-width: 70%">
-                            <span class="badge bg-gold text-dark me-2">#${i+1}</span>
-                            <span class="fw-bold">${it.title}</span>
-                        </div>
-                        <div class="d-flex gap-2">
-                            <button class="btn btn-sm btn-outline-primary" onclick="openEdit(${i})">تعديل</button>
-                            <button class="btn btn-sm btn-outline-danger" onclick="deleteItem(${i})">حذف</button>
+                    <div class="col-md-6">
+                        <div class="card card-lux p-3 d-flex flex-row justify-content-between align-items-center">
+                            <div class="text-truncate" style="max-width:70%">
+                                <span class="badge bg-gold text-dark me-2">#${i+1}</span>
+                                <span class="fw-bold">${it.title}</span>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-sm btn-outline-primary" onclick="openEdit(${i})"><i class="material-icons small">edit</i></button>
+                                <button class="btn btn-sm btn-outline-danger" onclick="deleteItem(${i})"><i class="material-icons small">delete</i></button>
+                            </div>
                         </div>
                     </div>
                 `;
             });
         }
 
-        function openEdit(idx) {
-            editIdx = idx;
-            const it = idx === -1 ? {title: '', content: ''} : db.content[currentSection][idx];
-            document.getElementById('m-title').value = it.title;
-            document.getElementById('m-content').value = it.content;
-            itemModal.show();
-        }
-
-        function commitItem() {
-            const title = document.getElementById('m-title').value;
-            const content = document.getElementById('m-content').value;
-            if(!title || !content) return alert("يرجى ملء كافة الحقول");
-
-            if (editIdx === -1) db.content[currentSection].push({id: Date.now(), title, content});
-            else { db.content[currentSection][editIdx].title = title; db.content[currentSection][editIdx].content = content; }
-
-            itemModal.hide();
-            renderItems();
-        }
-
-        function deleteItem(i) {
-            if(confirm("هل أنت متأكد؟")) { db.content[currentSection].splice(i, 1); renderItems(); }
-        }
-
-        function handleFile(files) {
-            if(!files.length) return;
+        function processImg(input, type) {
+            if(!input.files.length) return;
             const reader = new FileReader();
             reader.onload = (e) => {
-                try {
-                    const data = JSON.parse(e.target.result);
-                    if(Array.isArray(data)) {
-                        db.content[currentSection] = [...db.content[currentSection], ...data];
-                        renderItems();
-                        importModal.hide();
-                    } else alert("يجب أن يكون الملف عبارة عن Array [{},{}]");
-                } catch(err) { alert("خطأ في قراءة ملف JSON"); }
+                const base64 = e.target.result;
+                if(type === 'logo') { db.settings.custom_logo_base64 = base64; document.getElementById('logo-prev').src = base64; }
+                if(type === 'bg') { db.settings.custom_bg_base64 = base64; document.getElementById('bg-prev').src = base64; }
             };
-            reader.readAsText(files[0]);
+            reader.readAsDataURL(input.files[0]);
         }
 
-        function setAsset(type, val) {
-            if(type === 'logo') { db.settings.logo_image = val; document.getElementById('logo-in').value = val; }
-            if(type === 'bg') { db.settings.bg_image = val; document.getElementById('bg-in').value = val; }
+        function clearImg(type) {
+            if(type === 'logo') { db.settings.custom_logo_base64 = null; document.getElementById('logo-prev').src = '../../assets/images/logo.png'; }
+            if(type === 'bg') { db.settings.custom_bg_base64 = null; document.getElementById('bg-prev').src = '../../assets/images/default_bg.png'; }
         }
 
-        function toggleSidebar(force) {
-            const s = document.getElementById('sidebar');
-            if(force !== undefined) force ? s.classList.add('show') : s.classList.remove('show');
-            else s.classList.toggle('show');
+        function openEdit(i) { editIdx = i; const it = i === -1 ? {title:'', content:''} : db.content[activeView][i]; document.getElementById('m-title').value = it.title; document.getElementById('m-content').value = it.content; modal.show(); }
+        function saveItem() {
+            const t = document.getElementById('m-title').value; const c = document.getElementById('m-content').value;
+            if(!t || !c) return alert("املاً الحقول");
+            if(editIdx === -1) db.content[activeView].push({id:Date.now(), title:t, content:c});
+            else { db.content[activeView][editIdx].title = t; db.content[activeView][editIdx].content = c; }
+            modal.hide(); renderItems();
         }
+        function deleteItem(i) { if(confirm("حذف؟")) { db.content[activeView].splice(i, 1); renderItems(); } }
 
         async function saveToGitHub() {
-            const token = prompt("أدخل GitHub Token:");
-            if(!token) return;
-
-            const repo = document.getElementById('repo-id').value;
-            const path = document.getElementById('path-id').value;
-            localStorage.setItem('git_repo', repo);
-            localStorage.setItem('git_path', path);
-
+            const token = prompt("GitHub Token:"); if(!token) return;
+            const repo = "techtouchAI/Islamic"; const path = "assets/data/content.json";
             try {
-                const res = await fetch(`https://api.github.com/repos/${repo}/contents/${path}`, { headers: { "Authorization": `token ${token}` } });
+                const res = await fetch(`https://api.github.com/repos/${repo}/contents/${path}`, { headers: {"Authorization": `token ${token}`} });
                 const sha = (await res.json()).sha;
-
                 const update = await fetch(`https://api.github.com/repos/${repo}/contents/${path}`, {
-                    method: "PUT",
-                    headers: { "Authorization": `token ${token}`, "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        message: "CMS: Update App Data",
-                        content: btoa(unescape(encodeURIComponent(JSON.stringify(db, null, 2)))),
-                        sha: sha
-                    })
+                    method: "PUT", headers: {"Authorization": `token ${token}`},
+                    body: JSON.stringify({ message: "CMS: Media & Data Update", content: btoa(unescape(encodeURIComponent(JSON.stringify(db, null, 2)))), sha: sha })
                 });
-
-                if(update.ok) alert("تم المزامنة بنجاح! سيتم تحديث التطبيق آلياً.");
-                else alert("خطأ في المزامنة. تأكد من صلاحيات التوكن.");
-            } catch(e) { alert("حدث خطأ تقني في الاتصال."); }
+                if(update.ok) alert("تم الحفظ والمزامنة! جاري تحديث التطبيق.");
+                else alert("فشل المزامنة.");
+            } catch(e) { alert("خطأ في الاتصال."); }
         }
 
         init();

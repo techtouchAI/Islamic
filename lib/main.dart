@@ -45,6 +45,14 @@ IconData getMaterialIcon(String? name) {
 
 Widget _buildImage(String? path, {double? height, BoxFit fit = BoxFit.contain}) {
   if (path == null || path.isEmpty) return const SizedBox();
+
+  if (path.startsWith('data:image')) {
+     try {
+       final bytes = Uri.parse(path).data!.contentAsBytes();
+       return Image.memory(Uint8List.fromList(bytes), height: height, fit: fit, errorBuilder: (c, e, s) => const Icon(Icons.broken_image));
+     } catch (e) { return const Icon(Icons.broken_image); }
+  }
+
   if (path.startsWith('http')) {
     return Image.network(path, height: height, fit: fit, errorBuilder: (c, e, s) => const Icon(Icons.error));
   }
@@ -77,6 +85,7 @@ class _AlDhakereenAppState extends State<AlDhakereenApp> {
   double _uiOpacity = 1.0;
   String? _backgroundImagePath;
   Color _cardColor = Colors.white;
+  Map<String, bool> _homeVisibility = {};
 
   @override
   void initState() {
@@ -103,6 +112,13 @@ class _AlDhakereenAppState extends State<AlDhakereenApp> {
       _uiOpacity = prefs.getDouble('uiOpacity') ?? (dbSettings['ui_opacity']?.toDouble() ?? 1.0);
       _backgroundImagePath = prefs.getString('backgroundImage');
       _cardColor = Color(prefs.getInt('cardColor') ?? defaultCard);
+
+      final sections = DataManager.getSections();
+      _homeVisibility = {};
+      sections.forEach((key, value) {
+        _homeVisibility[key] = prefs.getBool('vis_$key') ?? (value['visible_home'] ?? true);
+      });
+      _homeVisibility['inspiration'] = prefs.getBool('vis_inspiration') ?? (dbSettings['show_inspiration'] ?? true);
     });
   }
 
@@ -180,6 +196,12 @@ class _AlDhakereenAppState extends State<AlDhakereenApp> {
           setState(() => _cardColor = c);
           _saveSetting('cardColor', c.toARGB32());
         },
+        homeVisibility: _homeVisibility,
+        onVisibilityChanged: (key, val) async {
+          setState(() => _homeVisibility[key] = val);
+          final prefs = await SharedPreferences.getInstance();
+          prefs.setBool('vis_$key', val);
+        },
       ),
     );
   }
@@ -197,6 +219,8 @@ class MainScaffold extends StatefulWidget {
   final ValueChanged<String?> onBackgroundImageChanged;
   final Color cardColor;
   final ValueChanged<Color> onCardColorChanged;
+  final Map<String, bool> homeVisibility;
+  final void Function(String, bool) onVisibilityChanged;
 
   const MainScaffold({
     super.key,
@@ -211,6 +235,8 @@ class MainScaffold extends StatefulWidget {
     required this.onBackgroundImageChanged,
     required this.cardColor,
     required this.onCardColorChanged,
+    required this.homeVisibility,
+    required this.onVisibilityChanged,
   });
 
   @override
@@ -301,7 +327,7 @@ class _MainScaffoldState extends State<MainScaffold> {
               ),
             if (widget.backgroundImagePath == null)
               Positioned.fill(
-                child: _buildImage(settings['bg_image']?.toString(), fit: BoxFit.cover),
+                child: _buildImage(settings['custom_bg_base64']?.toString() ?? settings['bg_image']?.toString(), fit: BoxFit.cover),
               ),
             SafeArea(
               child: AnimatedSwitcher(
@@ -323,6 +349,7 @@ class _MainScaffoldState extends State<MainScaffold> {
           fontSizeFactor: widget.fontSizeFactor,
           uiOpacity: widget.uiOpacity,
           cardColor: widget.cardColor,
+          visibility: widget.homeVisibility,
         );
       case 'settings':
         return SettingsSection(
@@ -336,6 +363,8 @@ class _MainScaffoldState extends State<MainScaffold> {
           backgroundImagePath: widget.backgroundImagePath,
           cardColor: widget.cardColor,
           onCardColorChanged: widget.onCardColorChanged,
+          visibility: widget.homeVisibility,
+          onVisibilityChanged: widget.onVisibilityChanged,
         );
       case 'about':
         return const AboutSection(key: ValueKey('about'));
@@ -385,7 +414,7 @@ class AppDrawer extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  _buildImage(settings['logo_image']?.toString(), height: 50),
+                  _buildImage(settings['custom_logo_base64']?.toString() ?? settings['logo_image']?.toString(), height: 60),
                   const SizedBox(height: 10),
                   const Text('تطبيق الذاكرين', style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)),
                   Text(about['developer_name']?.toString() ?? '', style: const TextStyle(color: Colors.white70, fontSize: 12)),
@@ -452,7 +481,8 @@ class HomeSection extends StatefulWidget {
   final double fontSizeFactor;
   final double uiOpacity;
   final Color cardColor;
-  const HomeSection({super.key, required this.fontSizeFactor, required this.uiOpacity, required this.cardColor});
+  final Map<String, bool> visibility;
+  const HomeSection({super.key, required this.fontSizeFactor, required this.uiOpacity, required this.cardColor, required this.visibility});
 
   @override
   State<HomeSection> createState() => _HomeSectionState();
@@ -474,7 +504,7 @@ class _HomeSectionState extends State<HomeSection> {
     final sections = DataManager.getSections();
     items = {};
     sections.forEach((key, value) {
-       if (value['visible_home'] == true) {
+       if (widget.visibility[key] ?? true) {
          items[value['title']] = _safeGet(DataManager.getItems(key), random);
        }
     });
@@ -531,7 +561,7 @@ class _HomeSectionState extends State<HomeSection> {
               ),
             ),
             const SizedBox(height: 20),
-            if (_dailyDua != null && DataManager.getSettings()['show_inspiration'] != false)
+            if (_dailyDua != null && (widget.visibility['inspiration'] ?? true))
               InkWell(
                 onTap: () => Navigator.push(context, MaterialPageRoute(builder: (c) => ReaderPage(
                   title: _dailyDua!['title'].toString(),
@@ -986,6 +1016,8 @@ class SettingsSection extends StatelessWidget {
   final String? backgroundImagePath;
   final Color cardColor;
   final ValueChanged<Color> onCardColorChanged;
+  final Map<String, bool> visibility;
+  final void Function(String, bool) onVisibilityChanged;
 
   const SettingsSection({
     super.key,
@@ -998,6 +1030,8 @@ class SettingsSection extends StatelessWidget {
     required this.backgroundImagePath,
     required this.cardColor,
     required this.onCardColorChanged,
+    required this.visibility,
+    required this.onVisibilityChanged,
   });
 
   @override
@@ -1058,7 +1092,29 @@ class SettingsSection extends StatelessWidget {
              if (img != null) onBackgroundImageChanged(img.path);
           },
         ),
+        const Divider(),
+        const Padding(
+          padding: EdgeInsets.symmetric(vertical: 10),
+          child: Text('إعدادات ظهور الصفحة الرئيسية', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFFD4AF37))),
+        ),
+        _visToggle('inspiration', 'إلهام اليوم'),
+        _visToggle('quran', 'القرآن الكريم'),
+        _visToggle('duas', 'الأدعية'),
+        _visToggle('visits', 'الزيارات'),
+        _visToggle('tafsir', 'التفسير'),
+        _visToggle('dreams', 'تفسير الأحلام'),
+        _visToggle('stories', 'قصص الأنبياء'),
+        _visToggle('imam_ali', 'موسوعة الإمام علي (ع)'),
       ],
+    );
+  }
+
+  Widget _visToggle(String key, String title) {
+    return SwitchListTile(
+      title: Text(title, style: const TextStyle(fontSize: 14)),
+      value: visibility[key] ?? true,
+      onChanged: (v) => onVisibilityChanged(key, v),
+      dense: true,
     );
   }
 }
