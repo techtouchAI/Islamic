@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart' as intl;
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -80,7 +81,7 @@ class _AlDhakereenAppState extends State<AlDhakereenApp> {
       ],
       theme: ThemeData(
         useMaterial3: true,
-        fontFamily: 'Noto Kufi Arabic',
+        textTheme: GoogleFonts.notoKufiArabicTextTheme(),
         colorScheme: ColorScheme.fromSeed(
           seedColor: _primaryColor,
           brightness: Brightness.light,
@@ -90,7 +91,7 @@ class _AlDhakereenAppState extends State<AlDhakereenApp> {
       ),
       darkTheme: ThemeData(
         useMaterial3: true,
-        fontFamily: 'Noto Kufi Arabic',
+        textTheme: GoogleFonts.notoKufiArabicTextTheme(ThemeData.dark().textTheme),
         colorScheme: ColorScheme.fromSeed(
           seedColor: _primaryColor,
           brightness: Brightness.dark,
@@ -109,7 +110,7 @@ class _AlDhakereenAppState extends State<AlDhakereenApp> {
         primaryColor: _primaryColor,
         onColorChanged: (c) {
           setState(() => _primaryColor = c);
-          _saveSetting('primaryColor', c.value);
+          _saveSetting('primaryColor', c.toARGB32());
         },
         uiOpacity: _uiOpacity,
         onOpacityChanged: (val) {
@@ -198,7 +199,7 @@ class _MainScaffoldState extends State<MainScaffold> {
           title: const Text('الذاكرين', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
           centerTitle: true,
           elevation: 0,
-          backgroundColor: Theme.of(context).appBarTheme.backgroundColor?.withOpacity(widget.uiOpacity),
+          backgroundColor: Theme.of(context).appBarTheme.backgroundColor?.withValues(alpha: widget.uiOpacity),
           leading: Builder(
             builder: (context) => IconButton(
               icon: const Icon(Icons.notes),
@@ -307,7 +308,7 @@ class AppDrawer extends StatelessWidget {
               gradient: LinearGradient(
                 begin: Alignment.topRight,
                 end: Alignment.bottomLeft,
-                colors: [Theme.of(context).colorScheme.primary, Theme.of(context).colorScheme.primary.withOpacity(0.8)],
+                colors: [Theme.of(context).colorScheme.primary, Theme.of(context).colorScheme.primary.withValues(alpha: 0.8)],
               ),
             ),
             child: Center(
@@ -354,7 +355,7 @@ class AppDrawer extends StatelessWidget {
       leading: Icon(icon, color: active ? Theme.of(context).colorScheme.primary : null),
       title: Text(title, style: TextStyle(fontWeight: active ? FontWeight.bold : FontWeight.normal, fontSize: 15)),
       selected: active,
-      selectedTileColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+      selectedTileColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
       onTap: () => onNavigate(id),
     );
   }
@@ -408,7 +409,7 @@ class _HomeSectionState extends State<HomeSection> {
         children: [
           Card(
             elevation: 10,
-            color: Colors.black.withOpacity(widget.uiOpacity),
+            color: Colors.black.withValues(alpha: widget.uiOpacity),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
             child: Container(
               width: double.infinity,
@@ -451,9 +452,9 @@ class _HomeSmallCard extends StatelessWidget {
       width: (MediaQuery.of(context).size.width - 42) / 2,
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Theme.of(context).cardColor.withOpacity(uiOpacity),
+        color: Theme.of(context).cardColor.withValues(alpha: uiOpacity),
         borderRadius: BorderRadius.circular(15),
-        border: Border.all(color: Theme.of(context).colorScheme.primary.withOpacity(0.2)),
+        border: Border.all(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -532,7 +533,7 @@ class AboutSection extends StatelessWidget {
           children: [
             CircleAvatar(
               radius: 50,
-              backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+              backgroundColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
               child: Icon(Icons.person, size: 60, color: Theme.of(context).colorScheme.primary),
             ),
             const SizedBox(height: 20),
@@ -577,7 +578,7 @@ class DynamicListSection extends StatelessWidget {
               hintText: 'ابحث في $title...',
               prefixIcon: const Icon(Icons.search),
               filled: true,
-              fillColor: Theme.of(context).cardColor.withOpacity(uiOpacity),
+              fillColor: Theme.of(context).cardColor.withValues(alpha: uiOpacity),
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none),
             ),
           ),
@@ -590,14 +591,14 @@ class DynamicListSection extends StatelessWidget {
                   itemCount: data.length,
                   padding: const EdgeInsets.only(bottom: 20),
                   itemBuilder: (context, index) => Card(
-                    color: Theme.of(context).cardColor.withOpacity(uiOpacity),
+                    color: Theme.of(context).cardColor.withValues(alpha: uiOpacity),
                     margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     child: ListTile(
                       contentPadding: const EdgeInsets.all(20),
                       title: Text(data[index]['title'].toString(), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
                       subtitle: Padding(
                         padding: const EdgeInsets.only(top: 10),
-                        child: Text(data[index]['content'].toString(), maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontFamily: 'Amiri', fontSize: 16)),
+                        child: Text(data[index]['content'].toString(), maxLines: 2, overflow: TextOverflow.ellipsis, style: GoogleFonts.amiri(fontSize: 16)),
                       ),
                       onTap: () => Navigator.push(context, MaterialPageRoute(builder: (c) => ReaderPage(title: data[index]['title'].toString(), content: data[index]['content'].toString(), fontSizeFactor: fontSizeFactor))),
                     ),
@@ -653,7 +654,7 @@ class _ReaderPageState extends State<ReaderPage> {
                 decoration: BoxDecoration(
                   border: Border.all(color: Theme.of(context).colorScheme.primary, width: 2),
                   borderRadius: BorderRadius.circular(20),
-                  color: Theme.of(context).colorScheme.primary.withOpacity(0.02),
+                  color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.02),
                 ),
                 child: Column(
                   children: [
@@ -662,7 +663,7 @@ class _ReaderPageState extends State<ReaderPage> {
                     Text(
                       widget.content,
                       textAlign: TextAlign.center,
-                      style: TextStyle(fontFamily: 'Amiri', fontSize: 22 * _factor, height: 1.8),
+                      style: GoogleFonts.amiri(fontSize: 22 * _factor, height: 1.8),
                     ),
                     const SizedBox(height: 12),
                     Icon(Icons.star_outline, color: Theme.of(context).colorScheme.primary),
@@ -675,7 +676,7 @@ class _ReaderPageState extends State<ReaderPage> {
             padding: EdgeInsets.fromLTRB(20, 10, 20, MediaQuery.of(context).padding.bottom + 10),
             decoration: BoxDecoration(
               color: Theme.of(context).cardColor,
-              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)],
+              boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10)],
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -729,7 +730,7 @@ class SettingsSection extends StatelessWidget {
           spacing: 10,
           children: [const Color(0xFFD4AF37), Colors.blueGrey, Colors.teal, Colors.brown].map((c) => GestureDetector(
             onTap: () => onColorChanged(c),
-            child: CircleAvatar(backgroundColor: c, radius: 20, child: primaryColor.value == c.value ? const Icon(Icons.check, color: Colors.white) : null),
+            child: CircleAvatar(backgroundColor: c, radius: 20, child: primaryColor.toARGB32() == c.toARGB32() ? const Icon(Icons.check, color: Colors.white) : null),
           )).toList(),
         ),
         const Divider(),
