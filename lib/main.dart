@@ -285,7 +285,7 @@ class _MainScaffoldState extends State<MainScaffold> {
           },
         ),
         appBar: AppBar(
-          title: const Text('الذاكرين', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
+          title: Text(_getAppBarTitle(_currentSection), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
           centerTitle: true,
           elevation: 0,
           backgroundColor: Theme.of(context).appBarTheme.backgroundColor?.withValues(alpha: widget.uiOpacity),
@@ -375,7 +375,6 @@ class _MainScaffoldState extends State<MainScaffold> {
           sectionKey: _currentSection,
           fontSizeFactor: widget.fontSizeFactor,
           uiOpacity: widget.uiOpacity,
-          cardColor: widget.cardColor,
         );
     }
   }
@@ -384,6 +383,14 @@ class _MainScaffoldState extends State<MainScaffold> {
     final sections = DataManager.getSections();
     if (sections.containsKey(key)) return sections[key]['title'].toString();
     return 'المحتوى';
+  }
+
+  String _getAppBarTitle(String section) {
+    if (section == 'home') return 'الذاكرين';
+    if (section == 'settings') return 'الإعدادات';
+    if (section == 'about') return 'حول المطور';
+    if (section == 'universal_batch') return 'استيراد بالدفعة';
+    return _getSectionTitle(section);
   }
 }
 
@@ -546,17 +553,17 @@ class _HomeSectionState extends State<HomeSection> {
           children: [
             Card(
               elevation: 10,
-              color: Colors.black.withValues(alpha: widget.uiOpacity),
+              color: Theme.of(context).brightness == Brightness.dark ? Colors.grey[900]?.withValues(alpha: widget.uiOpacity) : Colors.white.withValues(alpha: widget.uiOpacity),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
               child: Container(
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 15),
                 child: Column(
                   children: [
-                    const _ClockWidget(),
+                    _ClockWidget(color: Theme.of(context).colorScheme.primary),
                     const SizedBox(height: 8),
-                    Text('${hijri.hDay} ${hijri.longMonthName} ${hijri.hYear} هـ', style: const TextStyle(color: Color(0xFFD4AF37), fontSize: 20, fontWeight: FontWeight.bold)),
-                    Text(intl.DateFormat('EEEE, d MMMM yyyy', 'ar_SA').format(now), style: const TextStyle(color: Colors.white70, fontSize: 14)),
+                    Text('${hijri.hDay} ${hijri.longMonthName} ${hijri.hYear} هـ', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontSize: 20, fontWeight: FontWeight.bold)),
+                    Text(intl.DateFormat('EEEE, d MMMM yyyy', 'ar_SA').format(now), style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? Colors.white70 : Colors.black87, fontSize: 14)),
                   ],
                 ),
               ),
@@ -568,7 +575,6 @@ class _HomeSectionState extends State<HomeSection> {
                   title: _dailyDua!['title'].toString(),
                   content: _dailyDua!['content'].toString(),
                   fontSizeFactor: widget.fontSizeFactor,
-                  defaultCardColor: widget.cardColor,
                 ))),
                 child: Card(
                   elevation: 5,
@@ -625,7 +631,6 @@ class _HomeSectionState extends State<HomeSection> {
                             title: e.value['title'].toString(),
                             content: e.value['content'].toString(),
                             fontSizeFactor: widget.fontSizeFactor,
-                            defaultCardColor: widget.cardColor,
                           ),
                         ),
                       );
@@ -678,7 +683,8 @@ class _HomeSmallCard extends StatelessWidget {
 }
 
 class _ClockWidget extends StatefulWidget {
-  const _ClockWidget();
+  final Color color;
+  const _ClockWidget({required this.color});
   @override
   State<_ClockWidget> createState() => _ClockWidgetState();
 }
@@ -799,8 +805,7 @@ class DynamicListSection extends StatelessWidget {
   final String sectionKey;
   final double fontSizeFactor;
   final double uiOpacity;
-  final Color cardColor;
-  const DynamicListSection({super.key, required this.title, required this.sectionKey, required this.fontSizeFactor, required this.uiOpacity, required this.cardColor});
+  const DynamicListSection({super.key, required this.title, required this.sectionKey, required this.fontSizeFactor, required this.uiOpacity});
 
   @override
   Widget build(BuildContext context) {
@@ -815,19 +820,19 @@ class DynamicListSection extends StatelessWidget {
                   itemCount: data.length,
                   padding: const EdgeInsets.only(bottom: 20),
                   itemBuilder: (context, index) {
-                    final bool isDarkCard = cardColor.computeLuminance() < 0.5;
-                    final Color textColor = isDarkCard ? Colors.white : Colors.black87;
+                    // Note: Here we'd ideally pass the cardColor from settings.
+                    // For now, using the uiOpacity.
                     return Card(
-                      color: cardColor.withValues(alpha: uiOpacity),
+                      color: Theme.of(context).cardColor.withValues(alpha: uiOpacity),
                       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                       child: ListTile(
                         contentPadding: const EdgeInsets.all(20),
-                        title: Text(data[index]['title'].toString(), style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: textColor)),
+                        title: Text(data[index]['title'].toString(), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
                         subtitle: Padding(
                           padding: const EdgeInsets.only(top: 10),
-                          child: Text(data[index]['content'].toString(), maxLines: 2, overflow: TextOverflow.ellipsis, style: GoogleFonts.amiri(fontSize: 16, color: textColor.withValues(alpha: 0.7))),
+                          child: Text(data[index]['content'].toString(), maxLines: 2, overflow: TextOverflow.ellipsis, style: GoogleFonts.amiri(fontSize: 16)),
                         ),
-                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (c) => ReaderPage(title: data[index]['title'].toString(), content: data[index]['content'].toString(), fontSizeFactor: fontSizeFactor, defaultCardColor: cardColor))),
+                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (c) => ReaderPage(title: data[index]['title'].toString(), content: data[index]['content'].toString(), fontSizeFactor: fontSizeFactor))),
                       ),
                     );
                   },
@@ -841,8 +846,7 @@ class DynamicListSection extends StatelessWidget {
 class ReaderPage extends StatefulWidget {
   final String title, content;
   final double fontSizeFactor;
-  final Color defaultCardColor;
-  const ReaderPage({super.key, required this.title, required this.content, required this.fontSizeFactor, required this.defaultCardColor});
+  const ReaderPage({super.key, required this.title, required this.content, required this.fontSizeFactor});
 
   @override
   State<ReaderPage> createState() => _ReaderPageState();
@@ -850,20 +854,15 @@ class ReaderPage extends StatefulWidget {
 
 class _ReaderPageState extends State<ReaderPage> {
   late double _factor;
-  late Color _localColor;
 
   @override
   void initState() {
     super.initState();
     _factor = widget.fontSizeFactor;
-    _localColor = widget.defaultCardColor;
   }
 
   @override
   Widget build(BuildContext context) {
-    final bool isDark = _localColor.computeLuminance() < 0.5;
-    final Color textColor = isDark ? Colors.white : Colors.black87;
-
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.title, style: const TextStyle(fontSize: 16)),
@@ -888,7 +887,7 @@ class _ReaderPageState extends State<ReaderPage> {
                 decoration: BoxDecoration(
                   border: Border.all(color: Theme.of(context).colorScheme.primary, width: 2),
                   borderRadius: BorderRadius.circular(20),
-                  color: _localColor,
+                  color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.02),
                 ),
                 child: Column(
                   children: [
@@ -897,7 +896,7 @@ class _ReaderPageState extends State<ReaderPage> {
                     Text(
                       widget.content,
                       textAlign: TextAlign.center,
-                      style: GoogleFonts.amiri(fontSize: 22 * _factor, height: 1.8, color: textColor),
+                      style: GoogleFonts.amiri(fontSize: 22 * _factor, height: 1.8),
                     ),
                     const SizedBox(height: 12),
                     Icon(Icons.star_outline, color: Theme.of(context).colorScheme.primary),
@@ -913,53 +912,15 @@ class _ReaderPageState extends State<ReaderPage> {
               boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10)],
             ),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Row(
-                  children: [
-                    IconButton(icon: const Icon(Icons.remove_circle_outline), onPressed: () => setState(() => _factor = max(0.5, _factor - 0.1))),
-                    const Text(' Aa ', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                    IconButton(icon: const Icon(Icons.add_circle_outline), onPressed: () => setState(() => _factor = min(3.0, _factor + 0.1))),
-                  ],
-                ),
-                IconButton(
-                  icon: Icon(Icons.palette_outlined, color: Theme.of(context).colorScheme.primary),
-                  onPressed: () => _showColorPicker(context),
-                  tooltip: 'تغيير اللون للقسم',
-                ),
+                IconButton(icon: const Icon(Icons.remove_circle_outline), onPressed: () => setState(() => _factor = max(0.5, _factor - 0.1))),
+                const Text(' Aa ', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                IconButton(icon: const Icon(Icons.add_circle_outline), onPressed: () => setState(() => _factor = min(3.0, _factor + 0.1))),
               ],
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  void _showColorPicker(BuildContext context) {
-    final colors = [
-      Colors.white,
-      const Color(0xFFFDF5E6),
-      const Color(0xFFF5F5DC),
-      const Color(0xFFE0EEE0),
-      const Color(0xFFE6E6FA),
-      const Color(0xFF2C2C2C),
-      Colors.black,
-    ];
-    showModalBottomSheet(
-      context: context,
-      builder: (c) => Container(
-        padding: const EdgeInsets.all(20),
-        child: Wrap(
-          spacing: 15,
-          runSpacing: 15,
-          children: colors.map((c) => GestureDetector(
-            onTap: () {
-              setState(() => _localColor = c);
-              Navigator.pop(context);
-            },
-            child: CircleAvatar(backgroundColor: c, radius: 25, child: _localColor.toARGB32() == c.toARGB32() ? Icon(Icons.check, color: c.computeLuminance() > 0.5 ? Colors.black : Colors.white) : null),
-          )).toList(),
-        ),
       ),
     );
   }
@@ -1033,7 +994,6 @@ class GlobalSearchDelegate extends SearchDelegate {
               title: results[i]['title'],
               content: results[i]['content'],
               fontSizeFactor: fontSizeFactor,
-              defaultCardColor: Colors.white, // Search context default
             )));
           },
         );
