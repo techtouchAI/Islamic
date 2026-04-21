@@ -531,23 +531,25 @@ class _HomeSectionState extends State<HomeSection> {
               spacing: 12,
               runSpacing: 12,
               children: items.entries.map((e) {
-                return _HomeSmallCard(
-                  tag: e.key,
-                  title: e.value['title'].toString(),
-                  uiOpacity: widget.uiOpacity,
-                  cardColor: widget.cardColor,
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (c) => ReaderPage(
-                          title: e.value['title'].toString(),
-                          content: e.value['content'].toString(),
-                          fontSizeFactor: widget.fontSizeFactor,
+                return RepaintBoundary(
+                  child: _HomeSmallCard(
+                    tag: e.key,
+                    title: e.value['title'].toString(),
+                    uiOpacity: widget.uiOpacity,
+                    cardColor: widget.cardColor,
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (c) => ReaderPage(
+                            title: e.value['title'].toString(),
+                            content: e.value['content'].toString(),
+                            fontSizeFactor: widget.fontSizeFactor,
+                          ),
                         ),
-                      ),
-                    );
-                  },
+                      );
+                    },
+                  ),
                 );
               }).toList(),
             ),
@@ -602,7 +604,7 @@ class _ClockWidget extends StatefulWidget {
 
 class _ClockWidgetState extends State<_ClockWidget> {
   late Timer _timer;
-  String _timeString = "";
+  final ValueNotifier<String> _timeNotifier = ValueNotifier<String>("");
 
   @override
   void initState() {
@@ -614,32 +616,36 @@ class _ClockWidgetState extends State<_ClockWidget> {
   @override
   void dispose() {
     _timer.cancel();
+    _timeNotifier.dispose();
     super.dispose();
   }
 
   void _updateTime() {
     final DateTime now = DateTime.now();
     final String formattedTime = intl.DateFormat('hh:mm:ss a', 'en_US').format(now);
-    if (mounted) {
-      setState(() {
-        _timeString = formattedTime.replaceFirst('AM', 'ص').replaceFirst('PM', 'م');
-      });
-    }
+    _timeNotifier.value = formattedTime.replaceFirst('AM', 'ص').replaceFirst('PM', 'م');
   }
 
   @override
   Widget build(BuildContext context) {
-    return FittedBox(
-      fit: BoxFit.scaleDown,
-      child: Text(
-        _timeString,
-        maxLines: 1,
-        style: const TextStyle(
-          color: Color(0xFFD4AF37),
-          fontSize: 24,
-          fontWeight: FontWeight.bold,
-          fontFamily: 'monospace',
-        ),
+    return RepaintBoundary(
+      child: ValueListenableBuilder<String>(
+        valueListenable: _timeNotifier,
+        builder: (context, value, child) {
+          return FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              value,
+              maxLines: 1,
+              style: const TextStyle(
+                color: Color(0xFFD4AF37),
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                fontFamily: 'monospace',
+              ),
+            ),
+          );
+        },
       ),
     );
   }

@@ -3,112 +3,116 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CMS - نظام التحكم الشامل بالذاكرين</title>
+    <title>الذاكرين - لوحة التحكم الاحترافية</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Kufi+Arabic:wght@400;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <style>
-        body { font-family: 'Noto Kufi Arabic', sans-serif; background-color: #f8f9fa; }
-        .sidebar { background: #1a252f; color: white; min-height: 100vh; padding: 25px 15px; position: sticky; top: 0; }
-        .nav-link { color: #aab2bd; margin-bottom: 8px; cursor: pointer; border-radius: 8px; padding: 12px; display: flex; align-items: center; gap: 10px; }
-        .nav-link:hover { background: rgba(255,255,255,0.1); color: white; }
-        .nav-link.active { background: #D4AF37; color: black; font-weight: bold; }
-        .main-card { border-radius: 20px; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
-        .header-bar { background: white; padding: 20px 30px; border-radius: 15px; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.02); }
-        .content-item { border-bottom: 1px solid #eee; padding: 15px; transition: 0.2s; }
-        .content-item:hover { background: #fffdf7; }
-        .btn-gold { background: #D4AF37; color: black; font-weight: bold; border: none; }
+        :root { --gold: #D4AF37; --dark: #1a252f; }
+        body { font-family: 'Noto Kufi Arabic', sans-serif; background-color: #f4f7f6; overflow-x: hidden; }
+        .sidebar { background: var(--dark); color: white; min-height: 100vh; transition: 0.3s; z-index: 1000; }
+        .nav-link { color: #aab2bd; margin-bottom: 5px; cursor: pointer; border-radius: 10px; padding: 10px 15px; display: flex; align-items: center; gap: 10px; font-size: 0.9rem; }
+        .nav-link:hover { background: rgba(255,255,255,0.05); color: white; }
+        .nav-link.active { background: var(--gold); color: black; font-weight: bold; }
+        .main-content { padding: 20px; transition: 0.3s; }
+        .card-custom { border-radius: 15px; border: none; box-shadow: 0 5px 15px rgba(0,0,0,0.05); background: white; margin-bottom: 20px; }
+        .btn-gold { background: var(--gold); color: black; font-weight: bold; border: none; border-radius: 8px; }
         .btn-gold:hover { background: #b8962d; }
-        .section-config { background: #fefefe; padding: 15px; border-radius: 10px; border: 1px solid #eee; margin-bottom: 20px; }
-        .about-container { background: #fff; padding: 30px; border-radius: 20px; border: 2px solid #D4AF37; }
-        .add-footer { border-top: 2px dashed #eee; padding-top: 20px; margin-top: 20px; text-align: center; }
+        .action-bar { position: sticky; top: 0; background: rgba(255,255,255,0.9); backdrop-filter: blur(10px); z-index: 100; padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #eee; }
+        .mobile-nav-toggle { display: none; position: fixed; bottom: 20px; left: 20px; z-index: 2000; border-radius: 50%; width: 60px; height: 60px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+        @media (max-width: 991.98px) {
+            .sidebar { position: fixed; right: -280px; width: 280px; height: 100%; }
+            .sidebar.show { right: 0; }
+            .mobile-nav-toggle { display: flex; align-items: center; justify-content: center; }
+            .main-content { padding: 15px; }
+            .btn-sm-wide { width: 100%; margin-bottom: 10px; }
+        }
+        .file-drop { border: 2px dashed #ccc; padding: 20px; text-align: center; border-radius: 15px; background: #fafafa; cursor: pointer; }
+        .file-drop:hover { border-color: var(--gold); background: #fffdf7; }
     </style>
 </head>
 <body>
+    <button class="btn btn-dark mobile-nav-toggle" onclick="toggleSidebar()">
+        <i class="material-icons">menu</i>
+    </button>
+
     <div class="container-fluid">
         <div class="row">
-            <div class="col-lg-2 sidebar">
-                <div class="text-center mb-4">
-                    <h4 class="text-white">الذاكرين CMS</h4>
-                    <span class="badge bg-warning text-dark">التحكم الشامل</span>
+            <div id="sidebar" class="col-lg-2 sidebar p-3 shadow">
+                <div class="text-center mb-4 mt-2">
+                    <h5 class="fw-bold mb-0">الذاكرين CMS</h5>
+                    <small class="text-warning">نسخة التحكم الشامل</small>
                 </div>
-                <hr class="text-secondary">
-                <nav class="nav flex-column" id="sidebar-nav">
-                    <!-- Loaded dynamically -->
+                <hr>
+                <nav class="nav flex-column" id="nav-container">
+                    <!-- Dynamic -->
                 </nav>
             </div>
 
-            <div class="col-lg-10 p-4">
-                <div class="card mb-4 shadow-sm border-0">
-                    <div class="card-body py-2 px-3 d-flex gap-3 align-items-center">
-                        <label class="small fw-bold">المستودع (Repo):</label>
-                        <input type="text" id="repo-config" class="form-control form-control-sm w-25" value="techtouchAI/Islamic">
-                        <label class="small fw-bold">المسار (Path):</label>
-                        <input type="text" id="path-config" class="form-control form-control-sm w-25" value="assets/data/content.json">
+            <div class="col-lg-10 main-content">
+                <div class="action-bar d-flex flex-wrap justify-content-between align-items-center gap-3 shadow-sm">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="material-icons text-gold" id="view-icon">settings</i>
+                        <h4 class="mb-0 fw-bold" id="view-title">قيد التحميل...</h4>
+                    </div>
+                    <div id="view-actions" class="d-flex flex-wrap gap-2">
+                        <!-- Dynamic -->
                     </div>
                 </div>
 
-                <div id="view-header" class="header-bar">
-                    <h3 id="view-title">المحتوى</h3>
-                    <div id="header-actions" class="d-flex gap-2">
-                        <!-- Loaded dynamically -->
-                    </div>
+                <div id="content-workspace">
+                    <!-- Dynamic Workspace -->
                 </div>
 
-                <div id="main-content-area" class="card main-card p-4">
-                    <!-- Workspace -->
-                </div>
-
-                <div class="sticky-bottom bg-white p-3 border-top mt-4 d-flex justify-content-between align-items-center rounded-3 shadow-sm">
-                    <div class="text-muted small">
-                        <strong>ملاحظة:</strong> الضغط على حفظ سيقوم بتحديث التطبيق وبناء APK جديد فوراً.
+                <div class="action-bar mt-4 border-success bg-light shadow-sm">
+                    <div class="row align-items-center">
+                        <div class="col-md-8 mb-2 mb-md-0">
+                            <div class="d-flex gap-2">
+                                <input type="text" id="repo-id" class="form-control form-control-sm" placeholder="المستودع (user/repo)">
+                                <input type="text" id="path-id" class="form-control form-control-sm" placeholder="المسار">
+                            </div>
+                        </div>
+                        <div class="col-md-4 text-md-end">
+                            <button class="btn btn-success w-100 fw-bold shadow-sm" onclick="saveToGitHub()">
+                                <i class="material-icons align-middle">sync</i> حفظ ومزامنة للتطبيق
+                            </button>
+                        </div>
                     </div>
-                    <button class="btn btn-success btn-lg px-5 shadow" onclick="pushToGitHub()">
-                        <i class="material-icons align-middle">cloud_upload</i> حفظ وإرسال للتطبيق
-                    </button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Edit Modal -->
+    <!-- Modals -->
     <div class="modal fade" id="itemModal" tabindex="-1">
-        <div class="modal-dialog modal-xl">
-            <div class="modal-content border-0 shadow-lg">
-                <div class="modal-header bg-light">
-                    <h5 class="modal-title fw-bold">تحرير المحتوى</h5>
+        <div class="modal-dialog modal-xl modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
+                <div class="modal-header bg-light border-0 px-4 pt-4">
+                    <h5 class="fw-bold">تحرير البيانات</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body p-4">
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">العنوان</label>
-                        <input type="text" id="modal-title-input" class="form-control form-control-lg">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">المحتوى</label>
-                        <textarea id="modal-content-input" class="form-control" rows="12" style="white-space: pre-wrap;"></textarea>
-                    </div>
+                    <input type="text" id="m-title" class="form-control form-control-lg mb-3 shadow-sm" placeholder="العنوان هنا...">
+                    <textarea id="m-content" class="form-control shadow-sm" rows="12" placeholder="المحتوى هنا..." style="white-space: pre-wrap; border-radius: 12px;"></textarea>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
-                    <button type="button" class="btn btn-gold" onclick="saveCurrentItem()">حفظ التغييرات</button>
+                <div class="modal-footer border-0 p-4">
+                    <button type="button" class="btn btn-outline-secondary px-4" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="button" class="btn btn-gold px-5" onclick="commitItem()">حفظ العنصر</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Batch Modal -->
-    <div class="modal fade" id="batchModal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header"><h5>إضافة مجموعة (JSON)</h5></div>
-                <div class="modal-body">
-                    <p class="small text-muted">الصيغة: <code>[{"title": "...", "content": "..."}]</code></p>
-                    <textarea id="batch-input" class="form-control" rows="12" placeholder='أدخل البيانات هنا...'></textarea>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
-                    <button class="btn btn-primary" onclick="processBatch()">إضافة المجموعة</button>
+    <div class="modal fade" id="importModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0" style="border-radius: 20px;">
+                <div class="modal-body p-5">
+                    <div class="file-drop" id="drop-zone" onclick="document.getElementById('file-input').click()">
+                        <i class="material-icons style-text-gold" style="font-size: 4rem;">upload_file</i>
+                        <h5 class="mt-3 fw-bold">اسحب ملف JSON أو انقر للرفع</h5>
+                        <p class="text-muted small">يجب أن يكون الملف متوافقاً مع هيكلية التطبيق</p>
+                        <input type="file" id="file-input" hidden accept=".json" onchange="handleFile(this.files)">
+                    </div>
                 </div>
             </div>
         </div>
@@ -116,203 +120,218 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        let db = {};
-        let currentView = 'quran';
-        let editingIndex = -1;
+        let db = null;
+        let currentSection = 'settings';
+        let editIdx = -1;
         const itemModal = new bootstrap.Modal(document.getElementById('itemModal'));
-        const batchModal = new bootstrap.Modal(document.getElementById('batchModal'));
+        const importModal = new bootstrap.Modal(document.getElementById('importModal'));
 
         async function init() {
             try {
                 const res = await fetch('../../assets/data/content.json');
                 db = await res.json();
-                renderSidebar();
-                switchView('quran');
-            } catch (e) { alert('خطأ في تحميل قاعدة البيانات.'); }
+
+                document.getElementById('repo-id').value = localStorage.getItem('git_repo') || "techtouchAI/Islamic";
+                document.getElementById('path-id').value = localStorage.getItem('git_path') || "assets/data/content.json";
+
+                renderNav();
+                loadSection('settings');
+            } catch (e) { alert("فشل تحميل قاعدة البيانات."); }
         }
 
-        function renderSidebar() {
-            const nav = document.getElementById('sidebar-nav');
+        function renderNav() {
+            const nav = document.getElementById('nav-container');
             nav.innerHTML = '';
+
+            const addLink = (id, title, icon) => {
+                nav.innerHTML += `<a class="nav-link ${currentSection===id?'active':''}" onclick="loadSection('${id}')">
+                    <i class="material-icons">${icon}</i> ${title}</a>`;
+            };
+
+            addLink('settings', 'إعدادات التطبيق', 'app_settings_alt');
+            addLink('about', 'معلومات المطور', 'contact_page');
+            nav.innerHTML += '<hr class="text-secondary opacity-25">';
+
             Object.keys(db.sections).forEach(key => {
-                const sec = db.sections[key];
-                nav.innerHTML += `<a class="nav-link ${currentView===key?'active':''}" onclick="switchView('${key}')"><i class="material-icons">${sec.icon}</i> ${sec.title}</a>`;
+                addLink(key, db.sections[key].title, db.sections[key].icon);
             });
-            nav.innerHTML += '<hr class="text-secondary">';
-            nav.innerHTML += `<a class="nav-link ${currentView==='about'?'active':''}" onclick="switchView('about')"><i class="material-icons">info</i> حول المطور</a>`;
-            nav.innerHTML += `<a class="nav-link ${currentView==='settings'?'active':''}" onclick="switchView('settings')"><i class="material-icons">palette</i> المظهر العام</a>`;
         }
 
-        function switchView(view) {
-            currentView = view;
-            renderSidebar();
-            const area = document.getElementById('main-content-area');
-            const actions = document.getElementById('header-actions');
+        function loadSection(id) {
+            currentSection = id;
+            renderNav();
+            const ws = document.getElementById('content-workspace');
+            const acts = document.getElementById('view-actions');
             const title = document.getElementById('view-title');
+            const icon = document.getElementById('view-icon');
 
-            actions.innerHTML = '';
-            area.innerHTML = '';
+            ws.innerHTML = ''; acts.innerHTML = '';
 
-            if (db.sections[view]) {
-                title.innerText = db.sections[view].title;
-                actions.innerHTML = `<button class="btn btn-outline-dark" onclick="openBatch()">إضافة دفعة</button><button class="btn btn-gold" onclick="openAdd()">إضافة عنصر</button>`;
+            if (db.sections[id]) {
+                const sec = db.sections[id];
+                title.innerText = sec.title;
+                icon.innerText = sec.icon;
 
-                // Section Config
-                area.innerHTML = `
-                    <div class="section-config">
+                acts.innerHTML = `
+                    <button class="btn btn-sm btn-outline-dark px-3" onclick="importModal.show()">إضافة ملف JSON</button>
+                    <button class="btn btn-sm btn-gold px-4" onclick="openEdit(-1)">إضافة عنصر جديد</button>
+                `;
+
+                ws.innerHTML = `
+                    <div class="card card-custom p-3 mb-4 border-start border-gold border-4">
                         <div class="row g-3">
                             <div class="col-md-4">
-                                <label class="form-label small fw-bold">اسم القسم في التطبيق</label>
-                                <input type="text" class="form-control" value="${db.sections[view].title}" onchange="db.sections['${view}'].title=this.value;renderSidebar();">
+                                <label class="small fw-bold">اسم القسم</label>
+                                <input type="text" class="form-control" value="${sec.title}" onchange="db.sections['${id}'].title=this.value;renderNav();">
                             </div>
                             <div class="col-md-4">
-                                <label class="form-label small fw-bold">أيقونة القسم (Material Icon)</label>
-                                <input type="text" class="form-control" value="${db.sections[view].icon}" onchange="db.sections['${view}'].icon=this.value;renderSidebar();">
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label small fw-bold">لون القسم</label>
-                                <input type="text" class="form-control" value="${db.sections[view].color}" onchange="db.sections['${view}'].color=this.value">
+                                <label class="small fw-bold">أيقونة القسم</label>
+                                <input type="text" class="form-control" value="${sec.icon}" onchange="db.sections['${id}'].icon=this.value;renderNav();">
                             </div>
                         </div>
                     </div>
-                    <div id="items-list"></div>
+                    <div id="items-container"></div>
                 `;
                 renderItems();
-            } else if (view === 'about') {
-                title.innerText = 'إعدادات قسم حول';
-                area.innerHTML = `
-                    <div class="about-container shadow-sm">
-                        <div class="mb-4">
-                            <label class="form-label fw-bold">اسم المطور</label>
-                            <input type="text" class="form-control form-control-lg" value="${db.about.developer_name}" onchange="db.about.developer_name=this.value">
+            } else if (id === 'settings') {
+                title.innerText = "إعدادات المظهر والهوية"; icon.innerText = "palette";
+                ws.innerHTML = `
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <div class="card card-custom p-4 h-100">
+                                <h6 class="fw-bold mb-3">الألوان والسمات</h6>
+                                <label class="small">اللون الأساسي (Primary Color)</label>
+                                <input type="text" class="form-control mb-3" value="${db.settings.primary_color}" onchange="db.settings.primary_color=this.value">
+                                <label class="small">لون البطاقات (Card Background)</label>
+                                <input type="text" class="form-control mb-3" value="${db.settings.card_color}" onchange="db.settings.card_color=this.value">
+                                <label class="small">الشفافية الافتراضية</label>
+                                <input type="number" step="0.1" class="form-control" value="${db.settings.ui_opacity}" onchange="db.settings.ui_opacity=parseFloat(this.value)">
+                            </div>
                         </div>
-                        <div class="mb-4">
-                            <label class="form-label fw-bold">رابط الصفحة الشخصية</label>
-                            <input type="text" class="form-control" value="${db.about.developer_page}" onchange="db.about.developer_page=this.value">
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">وصف التطبيق (حول)</label>
-                            <textarea class="form-control" rows="8" onchange="db.about.app_info=this.value">${db.about.app_info}</textarea>
+                        <div class="col-md-6">
+                            <div class="card card-custom p-4 h-100">
+                                <h6 class="fw-bold mb-3">الوسائط والشعارات</h6>
+                                <label class="small">رابط شعار التطبيق (Logo)</label>
+                                <input type="text" class="form-control mb-3" value="${db.settings.logo_image}" onchange="db.settings.logo_image=this.value">
+                                <label class="small">رابط الخلفية الافتراضية (Background)</label>
+                                <input type="text" class="form-control" value="${db.settings.bg_image}" onchange="db.settings.bg_image=this.value">
+                                <p class="small text-muted mt-2">يمكن استخدام مسارات داخلية (assets/...) أو روابط خارجية (http...)</p>
+                            </div>
                         </div>
                     </div>
                 `;
-            } else if (view === 'settings') {
-                title.innerText = 'المظهر والألوان العامة';
-                area.innerHTML = `
-                    <div class="row g-4">
-                        <div class="col-md-6">
-                            <div class="card p-3 shadow-sm border-0">
-                                <label class="form-label fw-bold">اللون الأساسي (Primary)</label>
-                                <input type="text" class="form-control mb-2" value="${db.settings.primary_color}" onchange="db.settings.primary_color=this.value">
-                                <label class="form-label fw-bold">لون البطاقات (Card Color)</label>
-                                <input type="text" class="form-control" value="${db.settings.card_color}" onchange="db.settings.card_color=this.value">
-                            </div>
+            } else if (id === 'about') {
+                title.innerText = "تعديل قسم حول"; icon.innerText = "contact_page";
+                ws.innerHTML = `
+                    <div class="card card-custom p-5 mx-auto shadow-lg border-top border-gold border-5" style="max-width: 800px;">
+                        <div class="text-center mb-4">
+                            <div class="bg-light d-inline-block p-4 rounded-circle mb-3"><i class="material-icons" style="font-size: 3rem;">person</i></div>
+                            <h5 class="fw-bold">ملف المطور</h5>
                         </div>
-                        <div class="col-md-6">
-                            <div class="card p-3 shadow-sm border-0">
-                                <label class="form-label fw-bold">مسار الشعار (Logo)</label>
-                                <input type="text" class="form-control mb-2" value="${db.settings.logo_image}" onchange="db.settings.logo_image=this.value">
-                                <label class="form-label fw-bold">مسار الخلفية (Background)</label>
-                                <input type="text" class="form-control" value="${db.settings.bg_image}" onchange="db.settings.bg_image=this.value">
-                            </div>
-                        </div>
+                        <label class="fw-bold small">اسم المطور / الفريق</label>
+                        <input type="text" class="form-control mb-4" value="${db.about.developer_name}" onchange="db.about.developer_name=this.value">
+                        <label class="fw-bold small">رابط الصفحة الشخصية</label>
+                        <input type="text" class="form-control mb-4" value="${db.about.developer_page}" onchange="db.about.developer_page=this.value">
+                        <label class="fw-bold small">عن التطبيق</label>
+                        <textarea class="form-control" rows="8" onchange="db.about.app_info=this.value">${db.about.app_info}</textarea>
                     </div>
                 `;
             }
+            if (window.innerWidth < 992) toggleSidebar(false);
         }
 
         function renderItems() {
-            const list = document.getElementById('items-list');
-            list.innerHTML = '';
-            const items = db.content[currentView] || [];
-            items.forEach((item, index) => {
-                list.innerHTML += `
-                    <div class="content-item d-flex justify-content-between align-items-center">
-                        <div>
-                            <span class="badge bg-light text-dark me-2">#${index+1}</span>
-                            <span class="fw-bold">${item.title}</span>
-                            <p class="small text-muted mb-0">${item.content.substring(0, 100)}...</p>
+            const container = document.getElementById('items-container');
+            container.innerHTML = '';
+            const items = db.content[currentSection] || [];
+            items.forEach((it, i) => {
+                container.innerHTML += `
+                    <div class="card card-custom p-3 d-flex flex-row justify-content-between align-items-center">
+                        <div class="text-truncate" style="max-width: 70%">
+                            <span class="badge bg-gold text-dark me-2">#${i+1}</span>
+                            <span class="fw-bold">${it.title}</span>
                         </div>
                         <div class="d-flex gap-2">
-                            <button class="btn btn-sm btn-outline-primary" onclick="editItem(${index})">تعديل</button>
-                            <button class="btn btn-sm btn-outline-danger" onclick="deleteItem(${index})">حذف</button>
+                            <button class="btn btn-sm btn-outline-primary" onclick="openEdit(${i})">تعديل</button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="deleteItem(${i})">حذف</button>
                         </div>
                     </div>
                 `;
             });
-
-            if (items.length > 0 || currentView) {
-                list.innerHTML += `
-                    <div class="add-footer">
-                        <button class="btn btn-lg btn-gold px-5 shadow-sm" onclick="openAdd()">
-                            <i class="material-icons align-middle">add_circle</i> إضافة موضوع جديد هنا
-                        </button>
-                    </div>
-                `;
-            }
         }
 
-        function openAdd() { editingIndex = -1; document.getElementById('modal-title-input').value = ''; document.getElementById('modal-content-input').value = ''; itemModal.show(); }
-        function editItem(index) { editingIndex = index; const item = db.content[currentView][index]; document.getElementById('modal-title-input').value = item.title; document.getElementById('modal-content-input').value = item.content; itemModal.show(); }
-        function saveCurrentItem() {
-            const title = document.getElementById('modal-title-input').value;
-            const content = document.getElementById('modal-content-input').value;
-            if (editingIndex === -1) db.content[currentView].push({ id: Date.now(), title, content });
-            else { db.content[currentView][editingIndex].title = title; db.content[currentView][editingIndex].content = content; }
+        function openEdit(idx) {
+            editIdx = idx;
+            const it = idx === -1 ? {title: '', content: ''} : db.content[currentSection][idx];
+            document.getElementById('m-title').value = it.title;
+            document.getElementById('m-content').value = it.content;
+            itemModal.show();
+        }
+
+        function commitItem() {
+            const title = document.getElementById('m-title').value;
+            const content = document.getElementById('m-content').value;
+            if(!title || !content) return alert("يرجى ملء كافة الحقول");
+
+            if (editIdx === -1) db.content[currentSection].push({id: Date.now(), title, content});
+            else { db.content[currentSection][editIdx].title = title; db.content[currentSection][editIdx].content = content; }
+
             itemModal.hide();
             renderItems();
         }
-        function deleteItem(index) { if(confirm('هل أنت متأكد من الحذف؟')) { db.content[currentView].splice(index, 1); renderItems(); } }
-        function openBatch() { document.getElementById('batch-input').value = ''; batchModal.show(); }
-        function processBatch() {
-            const input = document.getElementById('batch-input').value;
-            if(!input.trim()) return;
-            try {
-                const data = JSON.parse(input);
-                if(Array.isArray(data)) {
-                    const valid = data.every(item => item.title && item.content);
-                    if(!valid) {
-                        alert('كل عنصر يجب أن يحتوي على title و content');
-                        return;
-                    }
-                    db.content[currentView] = [...db.content[currentView], ...data];
-                    batchModal.hide();
-                    renderItems();
-                } else alert('يجب أن تكون البيانات عبارة عن Array [{},{}]');
-            } catch (e) { alert('خطأ في تنسيق JSON: ' + e.message); }
+
+        function deleteItem(i) {
+            if(confirm("هل أنت متأكد؟")) { db.content[currentSection].splice(i, 1); renderItems(); }
         }
 
-        async function pushToGitHub() {
-            const token = prompt("أدخل GitHub Personal Access Token:");
-            if (!token) return;
-            const repo = document.getElementById('repo-config').value;
-            const path = document.getElementById('path-config').value;
+        function handleFile(files) {
+            if(!files.length) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    if(Array.isArray(data)) {
+                        db.content[currentSection] = [...db.content[currentSection], ...data];
+                        renderItems();
+                        importModal.hide();
+                    } else alert("يجب أن يكون الملف عبارة عن Array [{},{}]");
+                } catch(err) { alert("خطأ في قراءة ملف JSON"); }
+            };
+            reader.readAsText(files[0]);
+        }
+
+        function toggleSidebar(force) {
+            const s = document.getElementById('sidebar');
+            if(force !== undefined) force ? s.classList.add('show') : s.classList.remove('show');
+            else s.classList.toggle('show');
+        }
+
+        async function saveToGitHub() {
+            const token = prompt("أدخل GitHub Token:");
+            if(!token) return;
+
+            const repo = document.getElementById('repo-id').value;
+            const path = document.getElementById('path-id').value;
+            localStorage.setItem('git_repo', repo);
+            localStorage.setItem('git_path', path);
 
             try {
                 const res = await fetch(`https://api.github.com/repos/${repo}/contents/${path}`, { headers: { "Authorization": `token ${token}` } });
-                if(!res.ok) {
-                    const err = await res.json();
-                    throw new Error(err.message || 'فشل جلب ملف البيانات من GitHub');
-                }
-                const data = await res.json();
-                const sha = data.sha;
+                const sha = (await res.json()).sha;
 
-                const updateRes = await fetch(`https://api.github.com/repos/${repo}/contents/${path}`, {
+                const update = await fetch(`https://api.github.com/repos/${repo}/contents/${path}`, {
                     method: "PUT",
                     headers: { "Authorization": `token ${token}`, "Content-Type": "application/json" },
                     body: JSON.stringify({
-                        message: "CMS: Comprehensive Update",
+                        message: "CMS: Update App Data",
                         content: btoa(unescape(encodeURIComponent(JSON.stringify(db, null, 2)))),
                         sha: sha
                     })
                 });
 
-                if (updateRes.ok) alert("تم الحفظ بنجاح! جاري بناء نسخة APK جديدة.");
-                else {
-                    const err = await updateRes.json();
-                    alert("خطأ في الحفظ: " + (err.message || "تحقق من الصلاحيات"));
-                }
-            } catch (e) { alert("خطأ: " + e.message); }
+                if(update.ok) alert("تم المزامنة بنجاح! سيتم تحديث التطبيق آلياً.");
+                else alert("خطأ في المزامنة. تأكد من صلاحيات التوكن.");
+            } catch(e) { alert("حدث خطأ تقني في الاتصال."); }
         }
 
         init();
