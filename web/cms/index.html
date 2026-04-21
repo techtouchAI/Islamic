@@ -21,6 +21,7 @@
         .btn-gold:hover { background: #b8962d; }
         .section-config { background: #fefefe; padding: 15px; border-radius: 10px; border: 1px solid #eee; margin-bottom: 20px; }
         .about-container { background: #fff; padding: 30px; border-radius: 20px; border: 2px solid #D4AF37; }
+        .add-footer { border-top: 2px dashed #eee; padding-top: 20px; margin-top: 20px; text-align: center; }
     </style>
 </head>
 <body>
@@ -230,6 +231,16 @@
                     </div>
                 `;
             });
+
+            if (items.length > 0 || currentView) {
+                list.innerHTML += `
+                    <div class="add-footer">
+                        <button class="btn btn-lg btn-gold px-5 shadow-sm" onclick="openAdd()">
+                            <i class="material-icons align-middle">add_circle</i> إضافة موضوع جديد هنا
+                        </button>
+                    </div>
+                `;
+            }
         }
 
         function openAdd() { editingIndex = -1; document.getElementById('modal-title-input').value = ''; document.getElementById('modal-content-input').value = ''; itemModal.show(); }
