@@ -106,6 +106,25 @@
         </div>
     </div>
 
+    <div class="modal fade" id="batchModal" tabindex="-1">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content border-0" style="border-radius: 20px;">
+                <div class="modal-header bg-light border-0 px-4 pt-4">
+                    <h5 class="fw-bold">لصق محتوى مجمع (JSON)</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <p class="small text-muted">قم بلصق مصفوفة JSON تحتوي على المواضيع:</p>
+                    <textarea id="batch-text" class="form-control" rows="12" placeholder='[{"title": "...", "content": "..."}]' style="font-family: monospace; font-size: 0.8rem;"></textarea>
+                </div>
+                <div class="modal-footer border-0 p-4">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="button" class="btn btn-gold px-4" onclick="processBatchText()">إضافة المجموعة</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="modal fade" id="importModal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content border-0" style="border-radius: 20px;">
@@ -145,6 +164,7 @@
         const modal = new bootstrap.Modal(document.getElementById('editModal'));
         const importModal = new bootstrap.Modal(document.getElementById('importModal'));
         const helpModal = new bootstrap.Modal(document.getElementById('helpModal'));
+        const batchModal = new bootstrap.Modal(document.getElementById('batchModal'));
 
         async function init() {
             try {
@@ -187,7 +207,8 @@
                 acts.innerHTML = `
                     <div class="btn-group-sm-responsive">
                         <button class="btn btn-outline-dark px-3" onclick="helpModal.show()">تعليمات الاستيراد</button>
-                        <button class="btn btn-outline-gold px-3" onclick="importModal.show()">استيراد JSON</button>
+                        <button class="btn btn-outline-gold px-3" onclick="batchModal.show()">إضافة مجمعة (نص)</button>
+                        <button class="btn btn-outline-gold px-3" onclick="importModal.show()">رفع ملف JSON</button>
                         <button class="btn btn-gold" onclick="openAdd()">إضافة موضوع</button>
                     </div>
                 `;
@@ -229,6 +250,7 @@
                             <div class="col-md-4 text-center">
                                 <div class="bg-light p-4 rounded-circle mb-3 d-inline-block border border-gold"><i class="material-icons text-gold" style="font-size:4rem">${db.about.developer_icon}</i></div>
                                 <input type="text" class="form-control text-center mb-3" value="${db.about.developer_icon}" onchange="db.about.developer_icon=this.value">
+                                <small class="text-muted">أيقونة Material</small>
                             </div>
                             <div class="col-md-8">
                                 <label class="fw-bold small">اسم المطور</label>
@@ -289,6 +311,20 @@
                 } catch(err) { alert("خطأ في قراءة ملف JSON"); }
             };
             reader.readAsText(files[0]);
+        }
+
+        function processBatchText() {
+            const txt = document.getElementById('batch-text').value.trim();
+            if(!txt) return;
+            try {
+                const data = JSON.parse(txt);
+                if(Array.isArray(data)) {
+                    db.content[activeView] = [...(db.content[activeView] || []), ...data];
+                    renderItems();
+                    batchModal.hide();
+                    alert("تم إضافة " + data.length + " عنصر بنجاح.");
+                } else alert("يجب أن يكون النص عبارة عن مصفوفة Array [{},{}]");
+            } catch(e) { alert("خطأ في تنسيق JSON: " + e.message); }
         }
 
         function processImg(input, type) {

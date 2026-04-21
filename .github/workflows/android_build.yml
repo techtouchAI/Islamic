@@ -25,6 +25,9 @@ jobs:
         with:
           channel: 'stable'
 
+      - name: Update Launcher Icon from CMS
+        run: python3 scripts/update_launcher_icon.py
+
       - name: Install dependencies
         run: flutter pub get
 
