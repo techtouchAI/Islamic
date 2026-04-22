@@ -358,7 +358,13 @@ class _MainScaffoldState extends State<MainScaffold> {
               ),
             if (widget.backgroundImagePath == null)
               Positioned.fill(
-                child: _buildImage(settings['custom_bg_base64']?.toString() ?? settings['bg_image']?.toString(), fit: BoxFit.cover),
+                child: FutureBuilder<SharedPreferences>(
+                  future: SharedPreferences.getInstance(),
+                  builder: (context, snapshot) {
+                    final selectedBase64 = snapshot.data?.getString('custom_bg_base64_selected');
+                    return _buildImage(selectedBase64 ?? settings['custom_bg_base64']?.toString() ?? settings['bg_image']?.toString(), fit: BoxFit.cover);
+                  }
+                ),
               ),
             Positioned.fill(
               child: Opacity(
@@ -1224,7 +1230,7 @@ class SettingsSection extends StatelessWidget {
 
           _buildGroup(context, 'الوسائط', [
             ListTile(
-              title: const Text('تغيير خلفية التطبيق'),
+              title: const Text('اختيار خلفية مخصصة'),
               trailing: const Icon(Icons.image_search),
               contentPadding: EdgeInsets.zero,
               onTap: () async {
@@ -1232,6 +1238,13 @@ class SettingsSection extends StatelessWidget {
                  final img = await picker.pickImage(source: ImageSource.gallery);
                  if (img != null) onBackgroundImageChanged(img.path);
               },
+            ),
+            const SizedBox(height: 10),
+            const Text('معرض الخلفيات المرفوعة', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+            const SizedBox(height: 10),
+            SizedBox(
+              height: 100,
+              child: _buildBgGallery(context),
             ),
           ]),
 
@@ -1250,6 +1263,41 @@ class SettingsSection extends StatelessWidget {
     );
   }
 
+  Widget _buildBgGallery(BuildContext context) {
+    final settings = DataManager.getSettings();
+    final List<dynamic> gallery = settings['bg_gallery'] ?? [];
+
+    if (gallery.isEmpty) return const Center(child: Text('المعرض فارغ', style: TextStyle(fontSize: 12)));
+
+    return ListView.builder(
+      scrollDirection: Axis.horizontal,
+      itemCount: gallery.length,
+      itemBuilder: (context, index) {
+        final img = gallery[index].toString();
+        return GestureDetector(
+          onTap: () async {
+            final prefs = await SharedPreferences.getInstance();
+            prefs.setString('custom_bg_base64_selected', img);
+            prefs.remove('backgroundImage'); // Clear file path if set
+            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم تغيير الخلفية، أعد فتح الصفحة لرؤية التغيير')));
+          },
+          child: Container(
+            margin: const EdgeInsets.only(left: 10),
+            width: 80,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: primaryColor, width: 1),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(9),
+              child: _buildImage(img, fit: BoxFit.cover),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   Widget _buildGroup(BuildContext context, String title, List<Widget> children) {
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
@@ -1257,9 +1305,9 @@ class SettingsSection extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 20),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.03),
+        color: isDark ? Colors.black : Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: primaryColor.withValues(alpha: 0.2)),
+        border: Border.all(color: primaryColor, width: 2),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1295,8 +1343,11 @@ class _TasbihSectionState extends State<TasbihSection> {
 
   @override
   Widget build(BuildContext context) {
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       width: double.infinity,
+      height: double.infinity,
+      color: isDark ? const Color(0xFF0A0A0A) : const Color(0xFFFDFBF7),
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -1304,9 +1355,9 @@ class _TasbihSectionState extends State<TasbihSection> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+              color: isDark ? Colors.black : Colors.white,
               borderRadius: BorderRadius.circular(50),
-              border: Border.all(color: Theme.of(context).colorScheme.primary, width: 1),
+              border: Border.all(color: Theme.of(context).colorScheme.primary, width: 2),
             ),
             child: Text(
               _currentDhikr,
@@ -1336,7 +1387,7 @@ class _TasbihSectionState extends State<TasbihSection> {
                   width: 220, height: 220,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.05),
+                    color: isDark ? Colors.black : Colors.white,
                   ),
                   child: Center(
                     child: Text(

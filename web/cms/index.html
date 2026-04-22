@@ -217,6 +217,7 @@
                 renderItems();
             } else if (id === 'settings') {
                 title.innerText = "الهوية والوسائط"; icon.innerText = "photo_library";
+                setTimeout(renderGallery, 100);
                 ws.innerHTML = `
                     <div class="row g-4">
                         <div class="col-md-6">
@@ -239,6 +240,19 @@
                                     <input type="file" id="bg-file" hidden accept="image/*" onchange="processImg(this, 'bg')">
                                 </div>
                                 <button class="btn btn-outline-danger btn-sm" onclick="clearImg('bg')">استعادة الافتراضي</button>
+                            </div>
+                        </div>
+                        <div class="col-12 mt-4">
+                            <div class="card card-lux p-4">
+                                <h5 class="fw-bold mb-4">معرض الخلفيات (Background Gallery)</h5>
+                                <div class="d-flex overflow-auto pb-3 gap-3" id="bg-gallery-container" style="scrollbar-width: thin;">
+                                    <!-- Gallery items here -->
+                                </div>
+                                <div class="upload-card mt-3" onclick="document.getElementById('gallery-file').click()">
+                                    <i class="material-icons text-gold">add_photo_alternate</i>
+                                    <h6>أضف صورة إلى المعرض</h6>
+                                    <input type="file" id="gallery-file" hidden accept="image/*" onchange="processImg(this, 'gallery')">
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -378,8 +392,34 @@
                 const base64 = e.target.result;
                 if(type === 'logo') { db.settings.custom_logo_base64 = base64; document.getElementById('logo-prev').src = base64; }
                 if(type === 'bg') { db.settings.custom_bg_base64 = base64; document.getElementById('bg-prev').src = base64; }
+                if(type === 'gallery') {
+                    if(!db.settings.bg_gallery) db.settings.bg_gallery = [];
+                    db.settings.bg_gallery.push(base64);
+                    renderGallery();
+                }
             };
             reader.readAsDataURL(input.files[0]);
+        }
+
+        function renderGallery() {
+            const container = document.getElementById('bg-gallery-container');
+            if(!container) return;
+            container.innerHTML = '';
+            (db.settings.bg_gallery || []).forEach((img, i) => {
+                container.innerHTML += `
+                    <div class="position-relative" style="min-width:120px">
+                        <img src="${img}" class="img-preview" style="width:120px;height:120px">
+                        <button class="btn btn-danger btn-sm position-absolute top-0 end-0 rounded-circle m-1" onclick="deleteFromGallery(${i})">
+                            <i class="material-icons" style="font-size:12px">close</i>
+                        </button>
+                    </div>
+                `;
+            });
+        }
+
+        function deleteFromGallery(i) {
+            db.settings.bg_gallery.splice(i, 1);
+            renderGallery();
         }
 
         function clearImg(type) {

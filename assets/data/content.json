@@ -39,6 +39,7 @@
     "logo_image": "assets/images/logo.png",
     "bg_image": "assets/images/default_bg.png",
     "custom_logo_base64": null,
-    "custom_bg_base64": null
+    "custom_bg_base64": null,
+    "bg_gallery": []
   }
 }
