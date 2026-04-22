@@ -5,6 +5,10 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:adhan_dart/adhan_dart.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:audioplayers/audioplayers.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:timezone/data/latest_all.dart' as tz;
+import 'package:timezone/timezone.dart' as tz;
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'dart:async';
 import 'dart:math';
@@ -93,12 +97,20 @@ Widget _buildImage(String? path, {double? height, BoxFit fit = BoxFit.contain}) 
   return Image.asset(path, height: height, fit: fit, errorBuilder: (c, e, s) => const Icon(Icons.image_not_supported));
 }
 
+final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
+
 void main() async {
   runZonedGuarded(() async {
     WidgetsFlutterBinding.ensureInitialized();
     await initializeDateFormatting('ar_SA', null);
     HijriCalendar.setLocal('ar');
     await DataManager.loadContent();
+
+    tz.initializeTimeZones();
+    const AndroidInitializationSettings initializationSettingsAndroid = AndroidInitializationSettings('ic_launcher');
+    const InitializationSettings initializationSettings = InitializationSettings(android: initializationSettingsAndroid);
+    await flutterLocalNotificationsPlugin.initialize(settings: initializationSettings);
+
     runApp(const AlDhakereenApp());
   }, (error, stackTrace) {
     debugPrint('Global error: $error');
@@ -645,7 +657,7 @@ class _HomeSectionState extends State<HomeSection> {
                 style: GoogleFonts.notoNaskhArabic(fontSize: 16, height: 1.8, color: textColor),
               ),
               const SizedBox(height: 10),
-              Text('— \${data["title"]} —', style: TextStyle(fontSize: 12, color: textColor.withValues(alpha: 0.6))),
+              Text('— ${data["title"]} —', style: TextStyle(fontSize: 12, color: textColor.withValues(alpha: 0.6))),
             ],
           ),
         ),
@@ -1546,7 +1558,7 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
         coordinates = Coordinates(coords[0], coords[1]);
       }
 
-      // Shia Tehran/Jafari Method
+      // Shia Tehran/Jafari Method - Iraq Official Shia Timing
       final params = CalculationMethodParameters.tehran();
       params.madhab = Madhab.shafi;
 
@@ -1561,7 +1573,7 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
         _prayerTimes = pt;
         _loading = false;
       });
-      _checkAdhan();
+      _scheduleNotifications();
     } catch (e) {
       debugPrint("Prayer times error: $e");
       setState(() => _loading = false);
@@ -1571,27 +1583,56 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
   Future<void> _useGPS() async {
     setState(() => _loading = true);
     try {
-      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!serviceEnabled) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('الرجاء تفعيل خدمة الموقع')));
-        return;
+      if (await Permission.location.request().isGranted) {
+        final pos = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+        setState(() {
+          _currentPosition = pos;
+        });
+        _getLocationAndPrayers();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('الرجاء منح صلاحية الوصول للموقع')));
+        setState(() => _loading = false);
       }
-
-      LocationPermission permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-        if (permission == LocationPermission.denied) return;
-      }
-
-      final pos = await Geolocator.getCurrentPosition();
-      setState(() {
-        _currentPosition = pos;
-      });
-      _getLocationAndPrayers();
     } catch (e) {
       debugPrint("GPS Error: $e");
       setState(() => _loading = false);
     }
+  }
+
+  Future<void> _scheduleNotifications() async {
+    if (_prayerTimes == null) return;
+    await flutterLocalNotificationsPlugin.cancelAll();
+
+    if (await Permission.notification.request().isDenied) return;
+
+    _schedulePrayer('fajr', 'صلاة الفجر', _prayerTimes!.fajr, 1);
+    _schedulePrayer('dhuhr', 'صلاة الظهر', _prayerTimes!.dhuhr, 2);
+    _schedulePrayer('asr', 'صلاة العصر', _prayerTimes!.asr, 3);
+    _schedulePrayer('maghrib', 'صلاة المغرب', _prayerTimes!.maghrib, 4);
+    _schedulePrayer('isha', 'صلاة العشاء', _prayerTimes!.isha, 5);
+  }
+
+  Future<void> _schedulePrayer(String key, String title, DateTime time, int id) async {
+     if (!(_enabledPrayers[key] ?? true)) return;
+
+     final adjTime = time.add(Duration(minutes: _manualAdjustments[key] ?? 0));
+     if (adjTime.isBefore(DateTime.now())) return;
+
+     const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
+        'adhan_channel', 'الأذان والتنبيهات',
+        importance: Importance.max, priority: Priority.high,
+        sound: RawResourceAndroidNotificationSound('adhan'),
+        playSound: true,
+     );
+
+     await flutterLocalNotificationsPlugin.zonedSchedule(
+        id: id,
+        title: 'حان وقت $title',
+        body: 'حي على الصلاة',
+        scheduledDate: tz.TZDateTime.from(adjTime, tz.local),
+        notificationDetails: const NotificationDetails(android: androidDetails),
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+     );
   }
 
   void _checkAdhan() {
@@ -1681,9 +1722,9 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
     );
   }
 
-  Widget _buildPrayerCard(String label, DateTime? time, String key) {
-    if (time == null) return const SizedBox();
-    final adjTime = time.add(Duration(minutes: _manualAdjustments[key] ?? 0));
+  Widget _buildPrayerCard(String label, DateTime? originalTime, String key) {
+    if (originalTime == null) return const SizedBox();
+    final adjTime = originalTime.add(Duration(minutes: _manualAdjustments[key] ?? 0));
     return Card(
       margin: const EdgeInsets.only(bottom: 15),
       shape: RoundedRectangleBorder(
@@ -1692,46 +1733,50 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
       ),
       child: ListTile(
         title: Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
-        trailing: Text(intl.DateFormat('hh:mm a').format(adjTime), style: TextStyle(fontSize: 18, color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold)),
+        subtitle: const Text('اضغط لتعديل الوقت يدوياً', style: TextStyle(fontSize: 10)),
+        trailing: Text(
+          intl.DateFormat('hh:mm a').format(adjTime),
+          style: TextStyle(fontSize: 18, color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold)
+        ),
+        onTap: () async {
+          final TimeOfDay? picked = await showTimePicker(
+            context: context,
+            initialTime: TimeOfDay.fromDateTime(adjTime),
+          );
+          if (picked != null) {
+            final now = DateTime.now();
+            final pickedDT = DateTime(now.year, now.month, now.day, picked.hour, picked.minute);
+            final diff = pickedDT.difference(originalTime).inMinutes;
+            setState(() {
+               _manualAdjustments[key] = diff;
+            });
+            final prefs = await SharedPreferences.getInstance();
+            await prefs.setInt('adj_$key', diff);
+            _scheduleNotifications();
+          }
+        },
       ),
     );
   }
 
   Widget _buildSettingsRow(String key) {
      final names = {'fajr': 'الفجر', 'dhuhr': 'الظهر', 'asr': 'العصر', 'maghrib': 'المغرب', 'isha': 'العشاء'};
-     return Column(
-       children: [
-         SwitchListTile(
-           title: Text('تنبيه صلاة ${names[key]}'),
-           value: _enabledPrayers[key] ?? true,
-           onChanged: (v) async {
-             setState(() => _enabledPrayers[key] = v);
-             final prefs = await SharedPreferences.getInstance();
-             prefs.setBool('adhan_$key', v);
-           },
-         ),
-         Padding(
-           padding: const EdgeInsets.symmetric(horizontal: 16),
-           child: Row(
-             children: [
-               const Text('تعديل يدوي (دقائق): '),
-               Expanded(
-                 child: Slider(
-                   value: (_manualAdjustments[key] ?? 0).toDouble(),
-                   min: -30, max: 30,
-                   onChanged: (v) async {
-                     setState(() => _manualAdjustments[key] = v.toInt());
-                     final prefs = await SharedPreferences.getInstance();
-                     prefs.setInt('adj_$key', v.toInt());
-                   },
-                 ),
-               ),
-               Text('${_manualAdjustments[key]} د'),
-             ],
+     return Card(
+       margin: const EdgeInsets.only(bottom: 10),
+       child: Column(
+         children: [
+           SwitchListTile(
+             title: Text('تفعيل أذان ${names[key]}'),
+             value: _enabledPrayers[key] ?? true,
+             onChanged: (v) async {
+               setState(() => _enabledPrayers[key] = v);
+               final prefs = await SharedPreferences.getInstance();
+               await prefs.setBool('adhan_$key', v);
+               _scheduleNotifications();
+             },
            ),
-         ),
-         const Divider(),
-       ],
+         ],
+       ),
      );
   }
 }

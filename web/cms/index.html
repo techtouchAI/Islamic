@@ -182,11 +182,13 @@
                 {id: 'settings', title: 'الهوية والوسائط', icon: 'palette'},
                 {id: 'about', title: 'ملف المطور', icon: 'person_pin'},
                 {id: 'sections_manager', title: 'إدارة الأقسام', icon: 'category'},
-                {id: 'daily_dua_manager', title: 'إدارة دعاء اليوم', icon: 'today'},
                 {id: 'universal_batch', title: 'استيراد شامل بالدفعة', icon: 'dynamic_feed'},
                 {divider: true}
             ];
             Object.keys(db.sections).forEach(k => links.push({id: k, title: db.sections[k].title, icon: db.sections[k].icon}));
+
+            // Add Daily Dua explicitly if not in sections
+            if(!db.sections['daily_duas']) links.push({id: 'daily_dua_manager', title: 'دعاء الأيام (الصفحة الرئيسية)', icon: 'today'});
 
             links.forEach(l => {
                 if(l.divider) return list.innerHTML += '<hr class="text-secondary opacity-25 my-3">';
@@ -296,12 +298,14 @@
                 `;
                 renderSectionsList();
             } else if (id === 'daily_dua_manager') {
-                title.innerText = "إدارة دعاء اليوم"; icon.innerText = "today";
+                title.innerText = "إدارة دعاء الأيام"; icon.innerText = "today";
                 if(!db.daily_duas) db.daily_duas = {};
                 ws.innerHTML = `
                     <div class="card card-lux p-4 shadow-sm">
+                        <p class="small text-muted">هذا القسم مخصص للأدعية التي تظهر في الصفحة الرئيسية بناءً على يوم الأسبوع.</p>
                         <div class="row g-3 mb-4">
                             <div class="col-md-4">
+                                <label class="small fw-bold">اليوم</label>
                                 <select id="dua-day" class="form-select">
                                     <option value="Friday">الجمعة</option><option value="Saturday">السبت</option>
                                     <option value="Sunday">الأحد</option><option value="Monday">الاثنين</option>
@@ -309,11 +313,17 @@
                                     <option value="Thursday">الخميس</option>
                                 </select>
                             </div>
-                            <div class="col-md-4"><input type="text" id="dua-title" class="form-control" placeholder="العنوان"></div>
-                            <div class="col-md-4"><button class="btn btn-gold w-100" onclick="saveDailyDua()">حفظ لهذا اليوم</button></div>
+                            <div class="col-md-4">
+                                <label class="small fw-bold">العنوان</label>
+                                <input type="text" id="dua-title" class="form-control" placeholder="مثلاً: دعاء يوم الجمعة">
+                            </div>
+                            <div class="col-md-4 d-flex align-items-end">
+                                <button class="btn btn-gold w-100" onclick="saveDailyDua()">حفظ التعديل</button>
+                            </div>
                         </div>
-                        <textarea id="dua-content" class="form-control mb-3" rows="6" placeholder="نص الدعاء..."></textarea>
-                        <div id="daily-duas-list" class="mt-4"></div>
+                        <label class="small fw-bold">نص الدعاء</label>
+                        <textarea id="dua-content" class="form-control mb-3" rows="8" placeholder="الصق نص الدعاء هنا..."></textarea>
+                        <div id="daily-duas-list" class="mt-4 row g-3"></div>
                     </div>
                 `;
                 renderDailyDuasList();
@@ -493,12 +503,19 @@
         function renderDailyDuasList() {
             const list = document.getElementById('daily-duas-list');
             if(!list) return;
-            list.innerHTML = '<h6 class="fw-bold mb-3">الأدعية المضافة حالياً:</h6>';
+            list.innerHTML = '<h6 class="fw-bold col-12 mb-3">الأدعية المضافة حالياً:</h6>';
+            const daysMap = {"Friday":"الجمعة", "Saturday":"السبت", "Sunday":"الأحد", "Monday":"الاثنين", "Tuesday":"الثلاثاء", "Wednesday":"الأربعاء", "Thursday":"الخميس"};
             Object.keys(db.daily_duas || {}).forEach(day => {
-                list.innerHTML += `<div class="alert alert-light border d-flex justify-content-between">
-                    <span><b>${day}:</b> ${db.daily_duas[day].title}</span>
-                    <button class="btn btn-sm text-danger" onclick="deleteDailyDua('${day}')">حذف</button>
-                </div>`;
+                list.innerHTML += `
+                    <div class="col-md-6">
+                        <div class="card card-lux p-3 d-flex flex-row justify-content-between align-items-center">
+                            <div class="text-truncate">
+                                <span class="badge bg-gold text-dark me-2">${daysMap[day] || day}</span>
+                                <span class="fw-bold text-dark">${db.daily_duas[day].title}</span>
+                            </div>
+                            <button class="btn btn-sm btn-outline-danger" onclick="deleteDailyDua('${day}')"><i class="material-icons small">delete</i></button>
+                        </div>
+                    </div>`;
             });
         }
 
