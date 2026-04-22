@@ -1,17 +1,59 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/services.dart';
+import 'package:http/http.dart' as http;
+import 'package:path_provider/path_provider.dart';
+import 'package:flutter/foundation.dart';
 
 class DataManager {
   static Map<String, dynamic>? _db;
+  static const String _repoUrl = "https://raw.githubusercontent.com/techtouchAI/Islamic/main/assets/data/content.json";
+
   static Map<String, dynamic>? getDB() => _db;
 
   static Future<void> loadContent() async {
     try {
-      final String response = await rootBundle.loadString('assets/data/content.json');
-      _db = json.decode(response);
+      final localFile = await _getLocalFile();
+
+      // 1. Try to load from local storage first
+      if (await localFile.exists()) {
+        final content = await localFile.readAsString();
+        _db = json.decode(content);
+        debugPrint("DataManager: Loaded from local storage.");
+      } else {
+        // 2. Fallback to bundled assets
+        final String response = await rootBundle.loadString('assets/data/content.json');
+        _db = json.decode(response);
+        debugPrint("DataManager: Loaded from bundled assets.");
+      }
     } catch (e) {
+      debugPrint("DataManager Error: $e");
       _db = {};
     }
+  }
+
+  static Future<void> syncCloudData() async {
+    try {
+      final response = await http.get(Uri.parse(_repoUrl));
+      if (response.statusCode == 200) {
+        final content = response.body;
+        // Validate JSON before saving
+        final newDb = json.decode(content);
+        if (newDb is Map && newDb.containsKey('sections')) {
+          final localFile = await _getLocalFile();
+          await localFile.writeAsString(content);
+          _db = Map<String, dynamic>.from(newDb);
+          debugPrint("DataManager: Cloud sync successful.");
+        }
+      }
+    } catch (e) {
+      debugPrint("DataManager Sync Error: $e");
+    }
+  }
+
+  static Future<File> _getLocalFile() async {
+    final directory = await getApplicationDocumentsDirectory();
+    return File('${directory.path}/content.json');
   }
 
   static List<dynamic> getItems(String section) {

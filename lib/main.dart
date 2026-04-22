@@ -105,6 +105,8 @@ void main() async {
     await initializeDateFormatting('ar_SA', null);
     HijriCalendar.setLocal('ar');
     await DataManager.loadContent();
+    // Background Sync
+    DataManager.syncCloudData();
 
     tz.initializeTimeZones();
     const AndroidInitializationSettings initializationSettingsAndroid = AndroidInitializationSettings('ic_launcher');
