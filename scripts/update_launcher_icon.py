@@ -1,6 +1,8 @@
 import json
 import base64
 import os
+import io
+from PIL import Image
 
 def update_icons():
     json_path = "assets/data/content.json"
@@ -15,19 +17,37 @@ def update_icons():
         print("No custom Base64 logo found. Skipping launcher icon update.")
         return
 
-    # Extract base64 part
-    header, encoded = b64_str.split(',', 1)
-    img_data = base64.b64decode(encoded)
+    try:
+        # Extract base64 part
+        header, encoded = b64_str.split(',', 1)
+        img_data = base64.b64decode(encoded)
 
-    # Densities to update
-    densities = ["hdpi", "mdpi", "xhdpi", "xxhdpi", "xxxhdpi"]
+        # Load and convert image using Pillow to ensure valid PNG format
+        img = Image.open(io.BytesIO(img_data))
+        if img.mode != 'RGBA':
+            img = img.convert('RGBA')
 
-    for d in densities:
-        icon_path = f"android/app/src/main/res/mipmap-{d}/ic_launcher.png"
-        os.makedirs(os.path.dirname(icon_path), exist_ok=True)
-        with open(icon_path, 'wb') as f:
-            f.write(img_data)
-        print(f"Updated launcher icon for {d}")
+        # Sizes for different densities (Standard launcher icon sizes)
+        sizes = {
+            "mdpi": 48,
+            "hdpi": 72,
+            "xhdpi": 96,
+            "xxhdpi": 144,
+            "xxxhdpi": 192
+        }
+
+        for d, size in sizes.items():
+            icon_path = f"android/app/src/main/res/mipmap-{d}/ic_launcher.png"
+            os.makedirs(os.path.dirname(icon_path), exist_ok=True)
+
+            # Resize and save
+            resized_img = img.resize((size, size), Image.Resampling.LANCZOS)
+            resized_img.save(icon_path, "PNG")
+            print(f"Updated and validated launcher icon for {d} ({size}x{size})")
+
+    except Exception as e:
+        print(f"Error processing custom logo: {e}")
+        print("Falling back to default icons.")
 
 if __name__ == "__main__":
     update_icons()

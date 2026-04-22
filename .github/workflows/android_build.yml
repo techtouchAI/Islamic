@@ -25,6 +25,9 @@ jobs:
         with:
           channel: 'stable'
 
+      - name: Install Python dependencies
+        run: pip3 install Pillow
+
       - name: Update Launcher Icon from CMS
         run: python3 scripts/update_launcher_icon.py
 
