@@ -553,8 +553,15 @@ class _HomeSectionState extends State<HomeSection> {
           children: [
             Card(
               elevation: 10,
-              color: Theme.of(context).brightness == Brightness.dark ? Colors.grey[900]?.withValues(alpha: widget.uiOpacity) : Colors.white.withValues(alpha: widget.uiOpacity),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+              color: Theme.of(context).brightness == Brightness.dark
+                ? Colors.white.withValues(alpha: widget.uiOpacity)
+                : Colors.black.withValues(alpha: widget.uiOpacity),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(25),
+                side: Theme.of(context).brightness == Brightness.light
+                  ? BorderSide(color: Theme.of(context).colorScheme.primary, width: 2)
+                  : BorderSide.none,
+              ),
               child: Container(
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 15),
@@ -563,7 +570,7 @@ class _HomeSectionState extends State<HomeSection> {
                     _ClockWidget(color: Theme.of(context).colorScheme.primary),
                     const SizedBox(height: 8),
                     Text('${hijri.hDay} ${hijri.longMonthName} ${hijri.hYear} هـ', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontSize: 20, fontWeight: FontWeight.bold)),
-                    Text(intl.DateFormat('EEEE, d MMMM yyyy', 'ar_SA').format(now), style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? Colors.white70 : Colors.black87, fontSize: 14)),
+                    Text(intl.DateFormat('EEEE, d MMMM yyyy', 'ar_SA').format(now), style: TextStyle(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.8), fontSize: 14, fontWeight: FontWeight.w500)),
                   ],
                 ),
               ),
@@ -667,7 +674,10 @@ class _HomeSmallCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: cardColor.withValues(alpha: uiOpacity),
           borderRadius: BorderRadius.circular(15),
-          border: Border.all(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2)),
+          border: Border.all(color: Theme.of(context).colorScheme.primary, width: 1.5),
+          boxShadow: [
+            BoxShadow(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1), blurRadius: 8, offset: const Offset(0, 4))
+          ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -724,8 +734,8 @@ class _ClockWidgetState extends State<_ClockWidget> {
             child: Text(
               value,
               maxLines: 1,
-              style: const TextStyle(
-                color: Color(0xFFD4AF37),
+              style: TextStyle(
+                color: widget.color,
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
                 fontFamily: 'monospace',
@@ -825,6 +835,10 @@ class DynamicListSection extends StatelessWidget {
                     return Card(
                       color: Theme.of(context).cardColor.withValues(alpha: uiOpacity),
                       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(15),
+                        side: BorderSide(color: Theme.of(context).colorScheme.primary, width: 1.5),
+                      ),
                       child: ListTile(
                         contentPadding: const EdgeInsets.all(20),
                         title: Text(data[index]['title'].toString(), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
@@ -854,6 +868,7 @@ class ReaderPage extends StatefulWidget {
 
 class _ReaderPageState extends State<ReaderPage> {
   late double _factor;
+  Color? _customBgColor;
 
   @override
   void initState() {
@@ -887,7 +902,7 @@ class _ReaderPageState extends State<ReaderPage> {
                 decoration: BoxDecoration(
                   border: Border.all(color: Theme.of(context).colorScheme.primary, width: 2),
                   borderRadius: BorderRadius.circular(20),
-                  color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.02),
+                  color: _customBgColor ?? Theme.of(context).colorScheme.primary.withValues(alpha: 0.02),
                 ),
                 child: Column(
                   children: [
@@ -896,7 +911,13 @@ class _ReaderPageState extends State<ReaderPage> {
                     Text(
                       widget.content,
                       textAlign: TextAlign.center,
-                      style: GoogleFonts.amiri(fontSize: 22 * _factor, height: 1.8),
+                      style: GoogleFonts.amiri(
+                        fontSize: 22 * _factor,
+                        height: 1.8,
+                        color: _customBgColor != null
+                          ? (_customBgColor!.computeLuminance() > 0.5 ? Colors.black : Colors.white)
+                          : null,
+                      ),
                     ),
                     const SizedBox(height: 12),
                     Icon(Icons.star_outline, color: Theme.of(context).colorScheme.primary),
@@ -911,12 +932,38 @@ class _ReaderPageState extends State<ReaderPage> {
               color: Theme.of(context).cardColor,
               boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10)],
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                IconButton(icon: const Icon(Icons.remove_circle_outline), onPressed: () => setState(() => _factor = max(0.5, _factor - 0.1))),
-                const Text(' Aa ', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                IconButton(icon: const Icon(Icons.add_circle_outline), onPressed: () => setState(() => _factor = min(3.0, _factor + 0.1))),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    const Text('لون البطاقة:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                    ...[
+                      null,
+                      const Color(0xFFFDF5E6),
+                      const Color(0xFFE0EEE0),
+                      const Color(0xFFE6E6FA),
+                      const Color(0xFF2C2C2C),
+                    ].map((c) => GestureDetector(
+                      onTap: () => setState(() => _customBgColor = c),
+                      child: CircleAvatar(
+                        radius: 14,
+                        backgroundColor: c ?? Colors.grey[300],
+                        child: _customBgColor == c ? const Icon(Icons.check, size: 14, color: Colors.blue) : null,
+                      ),
+                    )),
+                  ],
+                ),
+                const Divider(height: 15),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    IconButton(icon: const Icon(Icons.remove_circle_outline), onPressed: () => setState(() => _factor = max(0.5, _factor - 0.1))),
+                    const Text(' Aa ', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                    IconButton(icon: const Icon(Icons.add_circle_outline), onPressed: () => setState(() => _factor = min(3.0, _factor + 0.1))),
+                  ],
+                ),
               ],
             ),
           ),
@@ -1055,7 +1102,7 @@ class SettingsSection extends StatelessWidget {
               contentPadding: EdgeInsets.zero,
             ),
             const SizedBox(height: 10),
-            const Text('لون ثمة التطبيق', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+            const Text('لون سمة التطبيق', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
             const SizedBox(height: 10),
             Wrap(
               spacing: 12,
