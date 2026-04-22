@@ -16,6 +16,37 @@ import 'dart:io';
 import 'data/data_manager.dart';
 import 'data/daily_duas.dart';
 
+class IslamicPatternPainter extends CustomPainter {
+  final Color color;
+  IslamicPatternPainter({required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 0.5
+      ..style = PaintingStyle.stroke;
+
+    const double step = 40;
+    for (double x = 0; x < size.width; x += step) {
+      for (double y = 0; y < size.height; y += step) {
+        final path = Path();
+        path.moveTo(x + step / 2, y);
+        path.lineTo(x + step, y + step / 2);
+        path.lineTo(x + step / 2, y + step);
+        path.lineTo(x, y + step / 2);
+        path.close();
+
+        canvas.drawPath(path, paint);
+        canvas.drawCircle(Offset(x + step / 2, y + step / 2), step / 4, paint);
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
 IconData getMaterialIcon(String? name) {
   const iconMap = {
     'menu_book': Icons.menu_book,
@@ -329,6 +360,12 @@ class _MainScaffoldState extends State<MainScaffold> {
               Positioned.fill(
                 child: _buildImage(settings['custom_bg_base64']?.toString() ?? settings['bg_image']?.toString(), fit: BoxFit.cover),
               ),
+            Positioned.fill(
+              child: Opacity(
+                opacity: 0.03,
+                child: CustomPaint(painter: IslamicPatternPainter(color: Theme.of(context).colorScheme.primary)),
+              ),
+            ),
             SafeArea(
               child: AnimatedSwitcher(
                 duration: const Duration(milliseconds: 400),
@@ -368,6 +405,8 @@ class _MainScaffoldState extends State<MainScaffold> {
         );
       case 'about':
         return const AboutSection(key: ValueKey('about'));
+      case 'tasbih':
+        return const TasbihSection(key: ValueKey('tasbih'));
       default:
         return DynamicListSection(
           key: ValueKey(_currentSection),
@@ -435,6 +474,7 @@ class AppDrawer extends StatelessWidget {
               padding: EdgeInsets.zero,
               children: [
                 _buildItem(context, 'home', 'الرئيسية', Icons.home),
+                _buildItem(context, 'tasbih', 'المسبحة الإلكترونية', Icons.vibration),
                 ...sections.entries.map((e) {
                    return _buildItem(context, e.key, e.value['title'], _getIcon(e.value['icon']));
                 }),
@@ -558,9 +598,7 @@ class _HomeSectionState extends State<HomeSection> {
                 : Colors.black.withValues(alpha: widget.uiOpacity),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(25),
-                side: Theme.of(context).brightness == Brightness.light
-                  ? BorderSide(color: Theme.of(context).colorScheme.primary, width: 2)
-                  : BorderSide.none,
+                side: BorderSide(color: Theme.of(context).colorScheme.primary, width: 2.5),
               ),
               child: Container(
                 width: double.infinity,
@@ -667,24 +705,39 @@ class _HomeSmallCard extends StatelessWidget {
 
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(15),
+      borderRadius: BorderRadius.circular(20),
       child: Container(
         width: (MediaQuery.of(context).size.width - 48) / 2,
-        padding: const EdgeInsets.all(12),
+        height: 100,
         decoration: BoxDecoration(
           color: cardColor.withValues(alpha: uiOpacity),
-          borderRadius: BorderRadius.circular(15),
-          border: Border.all(color: Theme.of(context).colorScheme.primary, width: 1.5),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: Theme.of(context).colorScheme.primary, width: 2),
           boxShadow: [
-            BoxShadow(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1), blurRadius: 8, offset: const Offset(0, 4))
+            BoxShadow(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.15), blurRadius: 10, offset: const Offset(0, 5))
           ],
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Stack(
           children: [
-            Text(tag, style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 6),
-            Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: textColor)),
+            Positioned(
+              right: -10, bottom: -10,
+              child: Opacity(
+                opacity: 0.1,
+                child: Icon(Icons.star, size: 80, color: Theme.of(context).colorScheme.primary),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(15),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(tag, style: TextStyle(fontSize: 10, color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
+                  const SizedBox(height: 4),
+                  Text(title, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: textColor, height: 1.2)),
+                ],
+              ),
+            ),
           ],
         ),
       ),
@@ -900,27 +953,45 @@ class _ReaderPageState extends State<ReaderPage> {
                 width: double.infinity,
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  border: Border.all(color: Theme.of(context).colorScheme.primary, width: 2),
-                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: Theme.of(context).colorScheme.primary, width: 3),
+                  borderRadius: BorderRadius.circular(25),
                   color: _customBgColor ?? Theme.of(context).colorScheme.primary.withValues(alpha: 0.02),
+                  boxShadow: [
+                    BoxShadow(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1), blurRadius: 15, spreadRadius: 2)
+                  ],
                 ),
                 child: Column(
                   children: [
-                    Icon(Icons.star_outline, color: Theme.of(context).colorScheme.primary),
-                    const SizedBox(height: 12),
+                    Text(
+                      "بسم الله الرحمن الرحيم",
+                      style: GoogleFonts.notoNaskhArabic(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                    ),
+                    const SizedBox(height: 15),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: List.generate(5, (index) => Icon(Icons.star, size: 12, color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.5))),
+                    ),
+                    const SizedBox(height: 25),
                     Text(
                       widget.content,
                       textAlign: TextAlign.center,
-                      style: GoogleFonts.amiri(
-                        fontSize: 22 * _factor,
-                        height: 1.8,
+                      style: GoogleFonts.notoNaskhArabic(
+                        fontSize: 20 * _factor,
+                        height: 2.2,
                         color: _customBgColor != null
                           ? (_customBgColor!.computeLuminance() > 0.5 ? Colors.black : Colors.white)
                           : null,
                       ),
                     ),
-                    const SizedBox(height: 12),
-                    Icon(Icons.star_outline, color: Theme.of(context).colorScheme.primary),
+                    const SizedBox(height: 25),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: List.generate(5, (index) => Icon(Icons.star, size: 12, color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.5))),
+                    ),
                   ],
                 ),
               ),
@@ -1005,18 +1076,32 @@ class GlobalSearchDelegate extends SearchDelegate {
     return _buildSearchResults();
   }
 
+  String _normalize(String text) {
+    return text
+        .replaceAll(RegExp(r'[\u064B-\u0652]'), '') // Remove Tashkeel
+        .replaceAll('أ', 'ا')
+        .replaceAll('إ', 'ا')
+        .replaceAll('آ', 'ا')
+        .replaceAll('ة', 'ه')
+        .replaceAll('ى', 'ي');
+  }
+
   Widget _buildSearchResults() {
     if (query.isEmpty) {
       return const Center(child: Text('ابدأ الكتابة للبحث...'));
     }
 
+    final normalizedQuery = _normalize(query.trim());
     final sections = DataManager.getSections();
     List<Map<String, dynamic>> results = [];
 
     sections.forEach((key, sec) {
       final items = DataManager.getItems(key);
       for (var it in items) {
-        if (it['title'].toString().contains(query) || it['content'].toString().contains(query)) {
+        final normalizedTitle = _normalize(it['title'].toString());
+        final normalizedContent = _normalize(it['content'].toString());
+
+        if (normalizedTitle.contains(normalizedQuery) || normalizedContent.contains(normalizedQuery)) {
           results.add({
             'section': sec['title'],
             'title': it['title'],
@@ -1193,6 +1278,110 @@ class SettingsSection extends StatelessWidget {
       value: visibility[key] ?? true,
       onChanged: (v) => onVisibilityChanged(key, v),
       dense: true,
+    );
+  }
+}
+
+class TasbihSection extends StatefulWidget {
+  const TasbihSection({super.key});
+
+  @override
+  State<TasbihSection> createState() => _TasbihSectionState();
+}
+
+class _TasbihSectionState extends State<TasbihSection> {
+  int _counter = 0;
+  String _currentDhikr = "سبحان الله";
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(50),
+              border: Border.all(color: Theme.of(context).colorScheme.primary, width: 1),
+            ),
+            child: Text(
+              _currentDhikr,
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.primary),
+            ),
+          ),
+          const SizedBox(height: 50),
+          GestureDetector(
+            onTap: () {
+              setState(() => _counter++);
+              HapticFeedback.lightImpact();
+            },
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                Container(
+                  width: 250, height: 250,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Theme.of(context).colorScheme.primary, width: 8),
+                    boxShadow: [
+                      BoxShadow(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2), blurRadius: 30, spreadRadius: 5)
+                    ],
+                  ),
+                ),
+                Container(
+                  width: 220, height: 220,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.05),
+                  ),
+                  child: Center(
+                    child: Text(
+                      '$_counter',
+                      style: GoogleFonts.notoSans(fontSize: 70, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.primary),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 50),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.refresh, size: 30),
+                onPressed: () => setState(() => _counter = 0),
+                color: Theme.of(context).colorScheme.primary,
+                tooltip: 'تصفير',
+              ),
+              const SizedBox(width: 30),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(15),
+                  border: Border.all(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.5)),
+                ),
+                child: DropdownButton<String>(
+                  value: _currentDhikr,
+                  underline: const SizedBox(),
+                  icon: Icon(Icons.arrow_drop_down, color: Theme.of(context).colorScheme.primary),
+                  onChanged: (String? newValue) {
+                    if (newValue != null) setState(() => _currentDhikr = newValue);
+                  },
+                  items: <String>['سبحان الله', 'الحمد لله', 'لا إله إلا الله', 'الله أكبر', 'أستغفر الله', 'اللهم صل على محمد وآل محمد']
+                    .map<DropdownMenuItem<String>>((String value) {
+                      return DropdownMenuItem<String>(value: value, child: Text(value, style: const TextStyle(fontSize: 14)));
+                    }).toList(),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }
