@@ -18,6 +18,9 @@ dependencies:
   url_launcher: ^6.3.1
   hijri: ^3.0.0
   google_fonts: ^8.0.2
+  adhan_dart: ^1.2.0
+  audioplayers: ^6.6.0
+  geolocator: ^14.0.2
 
 dev_dependencies:
   flutter_test:
@@ -31,3 +34,4 @@ flutter:
     - assets/images/default_home.png
     - assets/images/default_bg.png
     - assets/images/logo.png
+    - assets/audio/adhan.mp3

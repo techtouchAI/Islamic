@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart' as intl;
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:adhan_dart/adhan_dart.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'dart:async';
 import 'dart:math';
@@ -115,6 +118,7 @@ class _AlDhakereenAppState extends State<AlDhakereenApp> {
   Color _primaryColor = const Color(0xFFD4AF37);
   double _uiOpacity = 1.0;
   String? _backgroundImagePath;
+  String? _selectedBase64Bg;
   Color _cardColor = Colors.white;
   Map<String, bool> _homeVisibility = {};
 
@@ -142,6 +146,7 @@ class _AlDhakereenAppState extends State<AlDhakereenApp> {
       _primaryColor = Color(prefs.getInt('primaryColor') ?? defaultPrimary);
       _uiOpacity = prefs.getDouble('uiOpacity') ?? (dbSettings['ui_opacity']?.toDouble() ?? 1.0);
       _backgroundImagePath = prefs.getString('backgroundImage');
+      _selectedBase64Bg = prefs.getString('custom_bg_base64_selected');
       _cardColor = Color(prefs.getInt('cardColor') ?? defaultCard);
 
       final sections = DataManager.getSections();
@@ -201,6 +206,7 @@ class _AlDhakereenAppState extends State<AlDhakereenApp> {
       ),
       themeMode: _themeMode,
       home: MainScaffold(
+        themeMode: _themeMode,
         fontSizeFactor: _fontSizeFactor,
         onFontSizeChanged: (val) {
           setState(() => _fontSizeFactor = val);
@@ -218,9 +224,23 @@ class _AlDhakereenAppState extends State<AlDhakereenApp> {
           _saveSetting('uiOpacity', val);
         },
         backgroundImagePath: _backgroundImagePath,
-        onBackgroundImageChanged: (path) {
-          setState(() => _backgroundImagePath = path);
+        selectedBase64Bg: _selectedBase64Bg,
+        onBackgroundImageChanged: (path) async {
+          final prefs = await SharedPreferences.getInstance();
+          setState(() {
+            _backgroundImagePath = path;
+            if (path != null) {
+               _selectedBase64Bg = null;
+               prefs.remove('custom_bg_base64_selected');
+            }
+          });
           if (path != null) _saveSetting('backgroundImage', path);
+        },
+        onBase64BgChanged: (base64) {
+          setState(() {
+            _selectedBase64Bg = base64;
+            _backgroundImagePath = null;
+          });
         },
         cardColor: _cardColor,
         onCardColorChanged: (c) {
@@ -239,6 +259,7 @@ class _AlDhakereenAppState extends State<AlDhakereenApp> {
 }
 
 class MainScaffold extends StatefulWidget {
+  final ThemeMode themeMode;
   final double fontSizeFactor;
   final ValueChanged<double> onFontSizeChanged;
   final VoidCallback onThemeToggled;
@@ -247,7 +268,9 @@ class MainScaffold extends StatefulWidget {
   final double uiOpacity;
   final ValueChanged<double> onOpacityChanged;
   final String? backgroundImagePath;
+  final String? selectedBase64Bg;
   final ValueChanged<String?> onBackgroundImageChanged;
+  final ValueChanged<String?> onBase64BgChanged;
   final Color cardColor;
   final ValueChanged<Color> onCardColorChanged;
   final Map<String, bool> homeVisibility;
@@ -255,6 +278,7 @@ class MainScaffold extends StatefulWidget {
 
   const MainScaffold({
     super.key,
+    required this.themeMode,
     required this.fontSizeFactor,
     required this.onFontSizeChanged,
     required this.onThemeToggled,
@@ -263,7 +287,9 @@ class MainScaffold extends StatefulWidget {
     required this.uiOpacity,
     required this.onOpacityChanged,
     required this.backgroundImagePath,
+    required this.selectedBase64Bg,
     required this.onBackgroundImageChanged,
+    required this.onBase64BgChanged,
     required this.cardColor,
     required this.onCardColorChanged,
     required this.homeVisibility,
@@ -358,13 +384,7 @@ class _MainScaffoldState extends State<MainScaffold> {
               ),
             if (widget.backgroundImagePath == null)
               Positioned.fill(
-                child: FutureBuilder<SharedPreferences>(
-                  future: SharedPreferences.getInstance(),
-                  builder: (context, snapshot) {
-                    final selectedBase64 = snapshot.data?.getString('custom_bg_base64_selected');
-                    return _buildImage(selectedBase64 ?? settings['custom_bg_base64']?.toString() ?? settings['bg_image']?.toString(), fit: BoxFit.cover);
-                  }
-                ),
+                child: _buildImage(widget.selectedBase64Bg ?? settings['custom_bg_base64']?.toString() ?? settings['bg_image']?.toString(), fit: BoxFit.cover),
               ),
             Positioned.fill(
               child: Opacity(
@@ -403,6 +423,7 @@ class _MainScaffoldState extends State<MainScaffold> {
           uiOpacity: widget.uiOpacity,
           onOpacityChanged: widget.onOpacityChanged,
           onBackgroundImageChanged: widget.onBackgroundImageChanged,
+          onBase64BgChanged: widget.onBase64BgChanged,
           backgroundImagePath: widget.backgroundImagePath,
           cardColor: widget.cardColor,
           onCardColorChanged: widget.onCardColorChanged,
@@ -413,6 +434,8 @@ class _MainScaffoldState extends State<MainScaffold> {
         return const AboutSection(key: ValueKey('about'));
       case 'tasbih':
         return const TasbihSection(key: ValueKey('tasbih'));
+      case 'prayer_times':
+        return const PrayerTimesSection(key: ValueKey('prayer_times'));
       default:
         return DynamicListSection(
           key: ValueKey(_currentSection),
@@ -480,6 +503,7 @@ class AppDrawer extends StatelessWidget {
               padding: EdgeInsets.zero,
               children: [
                 _buildItem(context, 'home', 'الرئيسية', Icons.home),
+                _buildItem(context, 'prayer_times', 'أوقات الصلاة', Icons.access_time),
                 _buildItem(context, 'tasbih', 'المسبحة الإلكترونية', Icons.vibration),
                 ...sections.entries.map((e) {
                    return _buildItem(context, e.key, e.value['title'], _getIcon(e.value['icon']));
@@ -544,7 +568,8 @@ class HomeSection extends StatefulWidget {
 
 class _HomeSectionState extends State<HomeSection> {
   late Map<String, dynamic> items;
-  Map<String, dynamic>? _dailyDua;
+  Map<String, dynamic>? _inspirationDua;
+  Map<String, dynamic>? _dayDua;
 
   @override
   void initState() {
@@ -565,21 +590,67 @@ class _HomeSectionState extends State<HomeSection> {
   }
 
   void _loadDailyDua() {
-    // Selection based on the day of the year
     final now = DateTime.now();
+
+    // 1. Load Inspiration of the day (Rotating snippet)
     const dayOfYearStr = 'D';
     final dayOfYear = int.parse(intl.DateFormat(dayOfYearStr).format(now));
-
     const source = DailyDuas.shortDuas;
+    _inspirationDua = source[dayOfYear % source.length];
 
-    setState(() {
-      _dailyDua = source[dayOfYear % source.length];
-    });
+    // 2. Load Day Dua from content.json (e.g. Dua for Friday)
+    final db = DataManager.getDB();
+    final dayName = intl.DateFormat('EEEE', 'en_US').format(now); // Friday, Saturday...
+    if (db != null && db['daily_duas'] != null && db['daily_duas'][dayName] != null) {
+       _dayDua = db['daily_duas'][dayName];
+    }
+
+    setState(() {});
   }
 
   dynamic _safeGet(List list, Random r) {
     if (list.isEmpty) return {'title': 'قريباً', 'content': ''};
     return list[r.nextInt(list.length)];
+  }
+
+  Widget _buildSpecialCard(BuildContext context, String tag, Map<String, dynamic> data, Color textColor, IconData icon) {
+    return InkWell(
+      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (c) => ReaderPage(
+        title: data['title'].toString(),
+        content: data['content'].toString(),
+        fontSizeFactor: widget.fontSizeFactor,
+      ))),
+      child: Card(
+        elevation: 5,
+        color: widget.cardColor.withValues(alpha: widget.uiOpacity),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: BorderSide(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3))),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(icon, color: Theme.of(context).colorScheme.primary, size: 18),
+                  const SizedBox(width: 8),
+                  Text(tag, style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold, fontSize: 16)),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Text(
+                data['content'].toString(),
+                textAlign: TextAlign.center,
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
+                style: GoogleFonts.notoNaskhArabic(fontSize: 16, height: 1.8, color: textColor),
+              ),
+              const SizedBox(height: 10),
+              Text('— \${data["title"]} —', style: TextStyle(fontSize: 12, color: textColor.withValues(alpha: 0.6))),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -620,44 +691,11 @@ class _HomeSectionState extends State<HomeSection> {
               ),
             ),
             const SizedBox(height: 20),
-            if (_dailyDua != null && (widget.visibility['inspiration'] ?? true))
-              InkWell(
-                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (c) => ReaderPage(
-                  title: _dailyDua!['title'].toString(),
-                  content: _dailyDua!['content'].toString(),
-                  fontSizeFactor: widget.fontSizeFactor,
-                ))),
-                child: Card(
-                  elevation: 5,
-                  color: widget.cardColor.withValues(alpha: widget.uiOpacity),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: BorderSide(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3))),
-                  child: Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.auto_awesome, color: Theme.of(context).colorScheme.primary, size: 18),
-                            const SizedBox(width: 8),
-                            Text('إلهام اليوم', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold, fontSize: 16)),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          _dailyDua!['content'].toString(),
-                          textAlign: TextAlign.center,
-                          maxLines: 3,
-                          overflow: TextOverflow.ellipsis,
-                          style: GoogleFonts.amiri(fontSize: 18, height: 1.6, color: textColor),
-                        ),
-                        const SizedBox(height: 10),
-                        Text('— ${_dailyDua!['title']} —', style: TextStyle(fontSize: 12, color: textColor.withValues(alpha: 0.6))),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
+            if (_dayDua != null)
+              _buildSpecialCard(context, 'دعاء اليوم', _dayDua!, textColor, Icons.calendar_today),
+            const SizedBox(height: 15),
+            if (_inspirationDua != null && (widget.visibility['inspiration'] ?? true))
+              _buildSpecialCard(context, 'إلهام اليوم', _inspirationDua!, textColor, Icons.auto_awesome),
             const SizedBox(height: 25),
             Align(
               alignment: Alignment.centerRight,
@@ -1147,6 +1185,7 @@ class SettingsSection extends StatelessWidget {
   final double uiOpacity;
   final ValueChanged<double> onOpacityChanged;
   final ValueChanged<String?> onBackgroundImageChanged;
+  final ValueChanged<String?> onBase64BgChanged;
   final String? backgroundImagePath;
   final Color cardColor;
   final ValueChanged<Color> onCardColorChanged;
@@ -1161,6 +1200,7 @@ class SettingsSection extends StatelessWidget {
     required this.uiOpacity,
     required this.onOpacityChanged,
     required this.onBackgroundImageChanged,
+    required this.onBase64BgChanged,
     required this.backgroundImagePath,
     required this.cardColor,
     required this.onCardColorChanged,
@@ -1244,7 +1284,9 @@ class SettingsSection extends StatelessWidget {
             const SizedBox(height: 10),
             SizedBox(
               height: 100,
-              child: _buildBgGallery(context),
+              child: _buildBgGallery(context, (img) {
+                onBase64BgChanged(img);
+              }),
             ),
           ]),
 
@@ -1263,7 +1305,7 @@ class SettingsSection extends StatelessWidget {
     );
   }
 
-  Widget _buildBgGallery(BuildContext context) {
+  Widget _buildBgGallery(BuildContext context, ValueChanged<String> onSelected) {
     final settings = DataManager.getSettings();
     final List<dynamic> gallery = settings['bg_gallery'] ?? [];
 
@@ -1277,9 +1319,9 @@ class SettingsSection extends StatelessWidget {
         return GestureDetector(
           onTap: () async {
             final prefs = await SharedPreferences.getInstance();
-            prefs.setString('custom_bg_base64_selected', img);
-            prefs.remove('backgroundImage'); // Clear file path if set
-            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم تغيير الخلفية، أعد فتح الصفحة لرؤية التغيير')));
+            await prefs.setString('custom_bg_base64_selected', img);
+            await prefs.remove('backgroundImage'); // Clear file path if set
+            onSelected(img);
           },
           child: Container(
             margin: const EdgeInsets.only(left: 10),
@@ -1434,5 +1476,262 @@ class _TasbihSectionState extends State<TasbihSection> {
         ],
       ),
     );
+  }
+}
+
+class PrayerTimesSection extends StatefulWidget {
+  const PrayerTimesSection({super.key});
+  @override
+  State<PrayerTimesSection> createState() => _PrayerTimesSectionState();
+}
+
+class _PrayerTimesSectionState extends State<PrayerTimesSection> {
+  PrayerTimes? _prayerTimes;
+  Position? _currentPosition;
+  bool _loading = true;
+  final AudioPlayer _audioPlayer = AudioPlayer();
+  Map<String, bool> _enabledPrayers = {
+    'fajr': true, 'dhuhr': true, 'asr': true, 'maghrib': true, 'isha': true
+  };
+  Map<String, int> _manualAdjustments = {
+    'fajr': 0, 'dhuhr': 0, 'asr': 0, 'maghrib': 0, 'isha': 0
+  };
+  String _selectedProvince = "بغداد";
+  final Map<String, List<double>> _iraqProvinces = {
+    "بغداد": [33.3128, 44.3615],
+    "البصرة": [30.5081, 47.7835],
+    "النجف الأشرف": [32.0259, 44.3462],
+    "كربلاء المقدسة": [32.6160, 44.0248],
+    "أربيل": [36.1901, 44.0094],
+    "الموصل": [36.3489, 43.1577],
+    "كركوك": [35.4681, 44.3922],
+    "السليمانية": [35.5561, 45.4333],
+    "العمارة": [31.8453, 47.1420],
+    "الناصرية": [31.0577, 46.2573],
+    "الكوت": [32.5020, 45.8202],
+    "الحلة": [32.4810, 44.4305],
+    "الديوانية": [31.9904, 44.9258],
+    "بعقوبة": [33.7431, 44.6361],
+    "الرمادي": [33.4219, 43.3032],
+    "تكريت": [34.6074, 43.6766],
+    "السماوة": [31.3120, 45.2810],
+    "دهوك": [36.8679, 42.9431],
+  };
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSettings();
+    _getLocationAndPrayers();
+  }
+
+  Future<void> _loadSettings() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _enabledPrayers.forEach((k, v) {
+        _enabledPrayers[k] = prefs.getBool('adhan_$k') ?? true;
+        _manualAdjustments[k] = prefs.getInt('adj_$k') ?? 0;
+      });
+    });
+  }
+
+  Future<void> _getLocationAndPrayers() async {
+    try {
+      Coordinates coordinates;
+
+      if (_currentPosition != null) {
+        coordinates = Coordinates(_currentPosition!.latitude, _currentPosition!.longitude);
+      } else {
+        final coords = _iraqProvinces[_selectedProvince]!;
+        coordinates = Coordinates(coords[0], coords[1]);
+      }
+
+      // Shia Tehran/Jafari Method
+      final params = CalculationMethodParameters.tehran();
+      params.madhab = Madhab.shafi;
+
+      final pt = PrayerTimes(
+        coordinates: coordinates,
+        date: DateTime.now(),
+        calculationParameters: params,
+        precision: true
+      );
+
+      setState(() {
+        _prayerTimes = pt;
+        _loading = false;
+      });
+      _checkAdhan();
+    } catch (e) {
+      debugPrint("Prayer times error: $e");
+      setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _useGPS() async {
+    setState(() => _loading = true);
+    try {
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('الرجاء تفعيل خدمة الموقع')));
+        return;
+      }
+
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) return;
+      }
+
+      final pos = await Geolocator.getCurrentPosition();
+      setState(() {
+        _currentPosition = pos;
+      });
+      _getLocationAndPrayers();
+    } catch (e) {
+      debugPrint("GPS Error: $e");
+      setState(() => _loading = false);
+    }
+  }
+
+  void _checkAdhan() {
+     Timer.periodic(const Duration(minutes: 1), (timer) {
+        if (_prayerTimes == null) return;
+        final now = DateTime.now();
+        _checkTime('fajr', _prayerTimes!.fajr, now);
+        _checkTime('dhuhr', _prayerTimes!.dhuhr, now);
+        _checkTime('asr', _prayerTimes!.asr, now);
+        _checkTime('maghrib', _prayerTimes!.maghrib, now);
+        _checkTime('isha', _prayerTimes!.isha, now);
+     });
+  }
+
+  void _checkTime(String key, DateTime? time, DateTime now) {
+     if (time == null || !(_enabledPrayers[key] ?? false)) return;
+     final adjTime = time.add(Duration(minutes: _manualAdjustments[key] ?? 0));
+     if (now.hour == adjTime.hour && now.minute == adjTime.minute) {
+        _playAdhan();
+     }
+  }
+
+  Future<void> _playAdhan() async {
+    await _audioPlayer.play(AssetSource('audio/adhan.mp3'));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_loading) return const Center(child: CircularProgressIndicator());
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(15),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(15),
+            ),
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.location_on),
+                    const SizedBox(width: 10),
+                    const Text('المحافظة:', style: TextStyle(fontWeight: FontWeight.bold)),
+                    const Spacer(),
+                    DropdownButton<String>(
+                      value: _selectedProvince,
+                      underline: const SizedBox(),
+                      onChanged: (v) {
+                        if (v != null) {
+                          setState(() {
+                             _selectedProvince = v;
+                             _currentPosition = null;
+                             _loading = true;
+                          });
+                          _getLocationAndPrayers();
+                        }
+                      },
+                      items: _iraqProvinces.keys.map((p) => DropdownMenuItem(value: p, child: Text(p))).toList(),
+                    ),
+                  ],
+                ),
+                const Divider(),
+                TextButton.icon(
+                  onPressed: _useGPS,
+                  icon: const Icon(Icons.my_location),
+                  label: Text(_currentPosition == null ? 'استخدام الموقع الحالي (GPS)' : 'موقعك محدد حالياً عبر GPS'),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+          _buildPrayerCard('الفجر', _prayerTimes?.fajr, 'fajr'),
+          _buildPrayerCard('الظهر', _prayerTimes?.dhuhr, 'dhuhr'),
+          _buildPrayerCard('العصر', _prayerTimes?.asr, 'asr'),
+          _buildPrayerCard('المغرب', _prayerTimes?.maghrib, 'maghrib'),
+          _buildPrayerCard('العشاء', _prayerTimes?.isha, 'isha'),
+          const SizedBox(height: 30),
+          const Divider(),
+          const Text('إعدادات الأذان والتنبيهات', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+          ..._enabledPrayers.keys.map((k) => _buildSettingsRow(k)).toList(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPrayerCard(String label, DateTime? time, String key) {
+    if (time == null) return const SizedBox();
+    final adjTime = time.add(Duration(minutes: _manualAdjustments[key] ?? 0));
+    return Card(
+      margin: const EdgeInsets.only(bottom: 15),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(15),
+        side: BorderSide(color: Theme.of(context).colorScheme.primary)
+      ),
+      child: ListTile(
+        title: Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
+        trailing: Text(intl.DateFormat('hh:mm a').format(adjTime), style: TextStyle(fontSize: 18, color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold)),
+      ),
+    );
+  }
+
+  Widget _buildSettingsRow(String key) {
+     final names = {'fajr': 'الفجر', 'dhuhr': 'الظهر', 'asr': 'العصر', 'maghrib': 'المغرب', 'isha': 'العشاء'};
+     return Column(
+       children: [
+         SwitchListTile(
+           title: Text('تنبيه صلاة ${names[key]}'),
+           value: _enabledPrayers[key] ?? true,
+           onChanged: (v) async {
+             setState(() => _enabledPrayers[key] = v);
+             final prefs = await SharedPreferences.getInstance();
+             prefs.setBool('adhan_$key', v);
+           },
+         ),
+         Padding(
+           padding: const EdgeInsets.symmetric(horizontal: 16),
+           child: Row(
+             children: [
+               const Text('تعديل يدوي (دقائق): '),
+               Expanded(
+                 child: Slider(
+                   value: (_manualAdjustments[key] ?? 0).toDouble(),
+                   min: -30, max: 30,
+                   onChanged: (v) async {
+                     setState(() => _manualAdjustments[key] = v.toInt());
+                     final prefs = await SharedPreferences.getInstance();
+                     prefs.setInt('adj_$key', v.toInt());
+                   },
+                 ),
+               ),
+               Text('${_manualAdjustments[key]} د'),
+             ],
+           ),
+         ),
+         const Divider(),
+       ],
+     );
   }
 }

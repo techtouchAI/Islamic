@@ -181,6 +181,8 @@
             const links = [
                 {id: 'settings', title: 'الهوية والوسائط', icon: 'palette'},
                 {id: 'about', title: 'ملف المطور', icon: 'person_pin'},
+                {id: 'sections_manager', title: 'إدارة الأقسام', icon: 'category'},
+                {id: 'daily_dua_manager', title: 'إدارة دعاء اليوم', icon: 'today'},
                 {id: 'universal_batch', title: 'استيراد شامل بالدفعة', icon: 'dynamic_feed'},
                 {divider: true}
             ];
@@ -278,6 +280,43 @@
                         </div>
                     </div>
                 `;
+            } else if (id === 'sections_manager') {
+                title.innerText = "إدارة الأقسام"; icon.innerText = "category";
+                ws.innerHTML = `
+                    <div class="card card-lux p-4 shadow-sm mb-4">
+                        <h6 class="fw-bold mb-3">إضافة قسم جديد</h6>
+                        <div class="row g-3">
+                            <div class="col-md-3"><input type="text" id="new-sec-id" class="form-control" placeholder="ID (e.g. news)"></div>
+                            <div class="col-md-3"><input type="text" id="new-sec-title" class="form-control" placeholder="اسم القسم"></div>
+                            <div class="col-md-3"><input type="text" id="new-sec-icon" class="form-control" placeholder="أيقونة Material"></div>
+                            <div class="col-md-3"><button class="btn btn-gold w-100" onclick="addNewSection()">إنشاء القسم</button></div>
+                        </div>
+                    </div>
+                    <div id="sections-list" class="row g-3"></div>
+                `;
+                renderSectionsList();
+            } else if (id === 'daily_dua_manager') {
+                title.innerText = "إدارة دعاء اليوم"; icon.innerText = "today";
+                if(!db.daily_duas) db.daily_duas = {};
+                ws.innerHTML = `
+                    <div class="card card-lux p-4 shadow-sm">
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-4">
+                                <select id="dua-day" class="form-select">
+                                    <option value="Friday">الجمعة</option><option value="Saturday">السبت</option>
+                                    <option value="Sunday">الأحد</option><option value="Monday">الاثنين</option>
+                                    <option value="Tuesday">الثلاثاء</option><option value="Wednesday">الأربعاء</option>
+                                    <option value="Thursday">الخميس</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4"><input type="text" id="dua-title" class="form-control" placeholder="العنوان"></div>
+                            <div class="col-md-4"><button class="btn btn-gold w-100" onclick="saveDailyDua()">حفظ لهذا اليوم</button></div>
+                        </div>
+                        <textarea id="dua-content" class="form-control mb-3" rows="6" placeholder="نص الدعاء..."></textarea>
+                        <div id="daily-duas-list" class="mt-4"></div>
+                    </div>
+                `;
+                renderDailyDuasList();
             } else if (id === 'universal_batch') {
                 title.innerText = "استيراد شامل لكل الأقسام"; icon.innerText = "dynamic_feed";
                 ws.innerHTML = `
@@ -421,6 +460,58 @@
             db.settings.bg_gallery.splice(i, 1);
             renderGallery();
         }
+
+        function renderSectionsList() {
+            const list = document.getElementById('sections-list');
+            if(!list) return;
+            list.innerHTML = '';
+            Object.keys(db.sections).forEach(k => {
+                list.innerHTML += `
+                    <div class="col-md-4">
+                        <div class="card card-lux p-3 d-flex flex-row justify-content-between align-items-center">
+                            <div><i class="material-icons align-middle me-2">${db.sections[k].icon}</i> <b>${db.sections[k].title}</b></div>
+                            <button class="btn btn-sm btn-outline-danger" onclick="deleteSection('${k}')"><i class="material-icons small">delete</i></button>
+                        </div>
+                    </div>`;
+            });
+        }
+
+        function addNewSection() {
+            const id = document.getElementById('new-sec-id').value.trim();
+            const title = document.getElementById('new-sec-title').value.trim();
+            const icon = document.getElementById('new-sec-icon').value.trim();
+            if(!id || !title) return alert("املاً البيانات");
+            db.sections[id] = { title, icon, color: "0xFFD4AF37", visible_home: true };
+            if(!db.content[id]) db.content[id] = [];
+            renderNav(); renderSectionsList();
+        }
+
+        function deleteSection(k) {
+            if(confirm("حذف القسم ومحتوياته نهائياً؟")) { delete db.sections[k]; delete db.content[k]; renderNav(); renderSectionsList(); }
+        }
+
+        function renderDailyDuasList() {
+            const list = document.getElementById('daily-duas-list');
+            if(!list) return;
+            list.innerHTML = '<h6 class="fw-bold mb-3">الأدعية المضافة حالياً:</h6>';
+            Object.keys(db.daily_duas || {}).forEach(day => {
+                list.innerHTML += `<div class="alert alert-light border d-flex justify-content-between">
+                    <span><b>${day}:</b> ${db.daily_duas[day].title}</span>
+                    <button class="btn btn-sm text-danger" onclick="deleteDailyDua('${day}')">حذف</button>
+                </div>`;
+            });
+        }
+
+        function saveDailyDua() {
+            const day = document.getElementById('dua-day').value;
+            const title = document.getElementById('dua-title').value;
+            const content = document.getElementById('dua-content').value;
+            if(!title || !content) return alert("املاً البيانات");
+            db.daily_duas[day] = { title, content };
+            renderDailyDuasList();
+        }
+
+        function deleteDailyDua(day) { delete db.daily_duas[day]; renderDailyDuasList(); }
 
         function clearImg(type) {
             if(type === 'logo') { db.settings.custom_logo_base64 = null; document.getElementById('logo-prev').src = '../../assets/images/logo.png'; }

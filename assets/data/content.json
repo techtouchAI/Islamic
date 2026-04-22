@@ -6,7 +6,8 @@
     "tafsir": {"title": "التفسير", "icon": "menu_book", "color": "0xFFD4AF37", "visible_home": true},
     "dreams": {"title": "تفسير الأحلام", "icon": "bedtime", "color": "0xFFD4AF37", "visible_home": true},
     "stories": {"title": "قصص الأنبياء", "icon": "history_edu", "color": "0xFFD4AF37", "visible_home": true},
-    "imam_ali": {"title": "موسوعة الإمام علي (ع)", "icon": "shield", "color": "0xFFD4AF37", "visible_home": true}
+    "imam_ali": {"title": "موسوعة الإمام علي (ع)", "icon": "shield", "color": "0xFFD4AF37", "visible_home": true},
+    "sahifa_sajjadiya": {"title": "الصحيفة السجادية", "icon": "menu_book", "color": "0xFFD4AF37", "visible_home": true}
   },
   "content": {
     "quran": [
@@ -23,7 +24,11 @@
     "tafsir": [],
     "dreams": [],
     "stories": [],
-    "imam_ali": []
+    "imam_ali": [],
+    "sahifa_sajjadiya": [
+      {"id": 1, "title": "دعاؤه إذا ابتدأ بالتحميد لله عز وجل", "content": "الْحَمْدُ لِلَّهِ الْأَوَّلِ بِلَا أَوَّلٍ كَانَ قَبْلَهُ ، وَالْآخِرِ بِلَا آخِرٍ يَكُونُ بَعْدَهُ ..."},
+      {"id": 2, "title": "دعاؤه بعد هذا في الصلاة على رسول الله (ص)", "content": "وَالْحَمْدُ لِلَّهِ الَّذِي مَنَّ عَلَيْنَا بِمُحَمَّدٍ نَبِيِّهِ صَلَّى اللَّهُ عَلَيْهِ وَآلِهِ دُونَ الْأُمَمِ الْمَاضِيَةِ ..."}
+    ]
   },
   "about": {
     "developer_name": "فريق التطوير الإسلامي",

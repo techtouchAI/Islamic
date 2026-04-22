@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 class DataManager {
   static Map<String, dynamic>? _db;
+  static Map<String, dynamic>? getDB() => _db;
 
   static Future<void> loadContent() async {
     try {
