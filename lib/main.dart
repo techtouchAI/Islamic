@@ -1787,8 +1787,7 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
             initialTime: TimeOfDay.fromDateTime(adjTime),
           );
           if (picked != null) {
-            final now = DateTime.now();
-            final pickedDT = DateTime(now.year, now.month, now.day, picked.hour, picked.minute);
+            final pickedDT = DateTime(originalTime.year, originalTime.month, originalTime.day, picked.hour, picked.minute);
             final diff = pickedDT.difference(originalTime).inMinutes;
             setState(() {
                _manualAdjustments[key] = diff;

@@ -285,23 +285,37 @@
                 `;
             } else if (id === 'adhan_settings') {
                 title.innerText = "إعدادات الأذان والتوقيت"; icon.innerText = "notifications_active";
-                if(!db.settings.adhan) db.settings.adhan = { ringtone: "adhan.mp3", global_offset: 0 };
+                if(!db.settings.adhan) db.settings.adhan = { ringtone: "adhan.mp3", global_offset: 0, adhan_base64: null };
                 ws.innerHTML = `
-                    <div class="card card-lux p-4 shadow-sm" style="max-width:700px; margin:auto;">
+                    <div class="card card-lux p-4 shadow-sm mb-4">
                         <h6 class="fw-bold mb-4"><i class="material-icons align-middle me-2">volume_up</i> تخصيص نغمة الأذان</h6>
-                        <div class="mb-4">
-                            <label class="small fw-bold mb-2">اسم ملف الصوت (يجب أن يكون في assets/audio)</label>
-                            <input type="text" class="form-control" value="${db.settings.adhan.ringtone}" onchange="db.settings.adhan.ringtone=this.value">
+                        <div class="upload-card" onclick="document.getElementById('adhan-file').click()">
+                            <i class="material-icons text-gold" style="font-size:3rem">audiotrack</i>
+                            <h6>${db.settings.adhan.adhan_base64 ? 'تم رفع ملف صوتي مخصص' : 'انقر لرفع ملف الأذان (MP3)'}</h6>
+                            <input type="file" id="adhan-file" hidden accept="audio/*" onchange="processAdhanAudio(this)">
                         </div>
-                        <div class="mb-4">
+                        <div class="mt-3 text-center">
                             <label class="small fw-bold mb-2">إزاحة التوقيت الكلية (بالدقائق)</label>
-                            <input type="number" class="form-control" value="${db.settings.adhan.global_offset}" onchange="db.settings.adhan.global_offset=parseInt(this.value)">
-                            <p class="text-muted small mt-2">هذا التعديل سيطبق على كافة أوقات الصلاة تلقائياً.</p>
+                            <input type="number" class="form-control text-center mx-auto" style="max-width:100px" value="${db.settings.adhan.global_offset}" onchange="db.settings.adhan.global_offset=parseInt(this.value)">
                         </div>
-                        <hr>
-                        <p class="small text-danger">ملاحظة: تأكد من أن ملف الصوت المذكور أعلاه موجود في المستودع لكي يعمل التنبيه بشكل صحيح.</p>
+                    </div>
+
+                    <div class="card card-lux p-4 shadow-sm">
+                        <h6 class="fw-bold mb-3">جدولة الأوقات يدوياً (اختياري)</h6>
+                        <p class="small text-muted">أضف أوقات محددة لتاريخ معين لتجاوز الحسابات التلقائية.</p>
+                        <div class="row g-2 mb-3">
+                            <div class="col-md-2"><input type="date" id="man-date" class="form-control"></div>
+                            <div class="col"><input type="text" id="man-fajr" class="form-control" placeholder="الفجر (05:30)"></div>
+                            <div class="col"><input type="text" id="man-dhuhr" class="form-control" placeholder="الظهر"></div>
+                            <div class="col"><input type="text" id="man-asr" class="form-control" placeholder="العصر"></div>
+                            <div class="col"><input type="text" id="man-magh" class="form-control" placeholder="المغرب"></div>
+                            <div class="col"><input type="text" id="man-isha" class="form-control" placeholder="العشاء"></div>
+                            <div class="col-md-2"><button class="btn btn-gold w-100" onclick="addManualSchedule()">إضافة</button></div>
+                        </div>
+                        <div id="manual-schedules-list"></div>
                     </div>
                 `;
+                renderManualSchedules();
             } else if (id === 'sections_manager') {
                 title.innerText = "إدارة الأقسام"; icon.innerText = "category";
                 ws.innerHTML = `
@@ -549,6 +563,42 @@
         }
 
         function deleteDailyDua(day) { delete db.daily_duas[day]; renderDailyDuasList(); }
+
+        function processAdhanAudio(input) {
+            if(!input.files.length) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                db.settings.adhan.adhan_base64 = e.target.result;
+                alert("تم تحميل ملف الأذان. سيتم دمجه في النسخة القادمة.");
+                loadView('adhan_settings');
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+
+        function renderManualSchedules() {
+            const list = document.getElementById('manual-schedules-list');
+            if(!list) return;
+            if(!db.settings.adhan.manual_schedules) db.settings.adhan.manual_schedules = [];
+            list.innerHTML = '';
+            db.settings.adhan.manual_schedules.forEach((s, i) => {
+                list.innerHTML += `<div class="alert alert-secondary d-flex justify-content-between py-2 small">
+                    <span><b>${s.date}:</b> ف ${s.fajr} | ظ ${s.dhuhr} | ع ${s.asr} | م ${s.maghrib} | ع ${s.isha}</span>
+                    <button class="btn btn-sm text-danger" onclick="db.settings.adhan.manual_schedules.splice(${i},1);renderManualSchedules();">حذف</button>
+                </div>`;
+            });
+        }
+
+        function addManualSchedule() {
+            const date = document.getElementById('man-date').value;
+            const fajr = document.getElementById('man-fajr').value;
+            const dhuhr = document.getElementById('man-dhuhr').value;
+            const asr = document.getElementById('man-asr').value;
+            const magh = document.getElementById('man-magh').value;
+            const isha = document.getElementById('man-isha').value;
+            if(!date || !fajr) return alert("حدد التاريخ والوقت");
+            db.settings.adhan.manual_schedules.push({date, fajr, dhuhr, asr, maghrib: magh, isha});
+            renderManualSchedules();
+        }
 
         function clearImg(type) {
             if(type === 'logo') { db.settings.custom_logo_base64 = null; document.getElementById('logo-prev').src = '../../assets/images/logo.png'; }
