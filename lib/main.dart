@@ -7,7 +7,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:timezone/data/latest_all.dart' as tz;
+import 'package:timezone/data/latest_all.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'dart:async';
@@ -99,24 +99,9 @@ Widget _buildImage(String? path, {double? height, BoxFit fit = BoxFit.contain}) 
 
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
 
-void main() async {
-  runZonedGuarded(() async {
-    WidgetsFlutterBinding.ensureInitialized();
-    await initializeDateFormatting('ar_SA', null);
-    HijriCalendar.setLocal('ar');
-    await DataManager.loadContent();
-    // Background Sync
-    DataManager.syncCloudData();
-
-    tz.initializeTimeZones();
-    const AndroidInitializationSettings initializationSettingsAndroid = AndroidInitializationSettings('ic_launcher');
-    const InitializationSettings initializationSettings = InitializationSettings(android: initializationSettingsAndroid);
-    await flutterLocalNotificationsPlugin.initialize(settings: initializationSettings);
-
-    runApp(const AlDhakereenApp());
-  }, (error, stackTrace) {
-    debugPrint('Global error: $error');
-  });
+void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  runApp(const AlDhakereenApp());
 }
 
 class AlDhakereenApp extends StatefulWidget {
@@ -135,11 +120,33 @@ class _AlDhakereenAppState extends State<AlDhakereenApp> {
   String? _selectedBase64Bg;
   Color _cardColor = Colors.white;
   Map<String, bool> _homeVisibility = {};
+  bool _isInitialized = false;
 
   @override
   void initState() {
     super.initState();
-    _loadSettings();
+    _initializeApp();
+  }
+
+  Future<void> _initializeApp() async {
+    try {
+      await initializeDateFormatting('ar_SA', null);
+      HijriCalendar.setLocal('ar');
+      await DataManager.loadContent();
+
+      tz_data.initializeTimeZones();
+      const AndroidInitializationSettings initializationSettingsAndroid = AndroidInitializationSettings('ic_launcher');
+      const InitializationSettings initializationSettings = InitializationSettings(android: initializationSettingsAndroid);
+      await flutterLocalNotificationsPlugin.initialize(settings: initializationSettings);
+
+      await _loadSettings();
+
+      DataManager.syncCloudData(); // Async background sync
+    } catch (e) {
+      debugPrint("Initialization Error: $e");
+    } finally {
+      if (mounted) setState(() => _isInitialized = true);
+    }
   }
 
   Future<void> _loadSettings() async {
@@ -188,6 +195,24 @@ class _AlDhakereenAppState extends State<AlDhakereenApp> {
 
   @override
   Widget build(BuildContext context) {
+    if (!_isInitialized) {
+       return MaterialApp(
+         debugShowCheckedModeBanner: false,
+         home: Scaffold(
+           body: Center(
+             child: Column(
+               mainAxisAlignment: MainAxisAlignment.center,
+               children: [
+                 _buildImage('assets/images/logo.png', height: 100),
+                 const SizedBox(height: 20),
+                 const CircularProgressIndicator(),
+               ],
+             ),
+           ),
+         ),
+       );
+    }
+
     return MaterialApp(
       title: 'الذاكرين',
       debugShowCheckedModeBanner: false,
