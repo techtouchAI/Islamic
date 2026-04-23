@@ -22,6 +22,7 @@ import 'dart:io';
 
 import 'data/data_manager.dart';
 import 'data/daily_duas.dart';
+import 'services/prayer_times_service.dart';
 
 class IslamicPatternPainter extends CustomPainter {
   final Color color;
@@ -1543,7 +1544,7 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
   PrayerTimes? _prayerTimes;
   Position? _currentPosition;
   bool _loading = true;
-  final AudioPlayer _audioPlayer = AudioPlayer();
+  final PrayerTimesService _prayerService = PrayerTimesService();
   Map<String, bool> _enabledPrayers = {
     'fajr': true, 'dhuhr': true, 'asr': true, 'maghrib': true, 'isha': true
   };
@@ -1600,26 +1601,22 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
 
   Future<void> _getLocationAndPrayers() async {
     try {
-      Coordinates coordinates;
+      Position pos;
       if (_currentPosition != null) {
-        coordinates = Coordinates(_currentPosition!.latitude, _currentPosition!.longitude);
+        pos = _currentPosition!;
       } else {
         final coords = _iraqProvinces[_selectedProvince]!;
-        coordinates = Coordinates(coords[0], coords[1]);
+        pos = Position(
+          latitude: coords[0], longitude: coords[1],
+          timestamp: DateTime.now(), accuracy: 0, altitude: 0, heading: 0, speed: 0, speedAccuracy: 0,
+          altitudeAccuracy: 0, headingAccuracy: 0,
+        );
       }
 
-      // Iraq Shia Method
-      final params = CalculationMethodParameters.tehran();
-      params.madhab = Madhab.shafi;
+      // استخدام الخدمة الجديدة للحساب الشيعي الدقيق
+      final pt = _prayerService.calculatePrayerTimes(pos);
 
-      final pt = PrayerTimes(
-        coordinates: coordinates,
-        date: DateTime.now(),
-        calculationParameters: params,
-        precision: true
-      );
-
-      // Check for Manual Overrides from CMS
+      // تطبيق التعديلات اليدوية من CMS إن وجدت
       final db = DataManager.getDB();
       final todayStr = intl.DateFormat('yyyy-MM-dd').format(DateTime.now());
       if (db != null && db['settings'] != null && db['settings']['adhan'] != null && db['settings']['adhan']['manual_schedules'] != null) {
@@ -1639,7 +1636,9 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
         _prayerTimes = pt;
         _loading = false;
       });
-      _scheduleNotifications();
+
+      // جدولة التنبيهات لمدة 7 أيام عبر الخدمة الجديدة
+      await _prayerService.scheduleAdhanNotifications(pos, _enabledPrayers);
     } catch (e) {
       debugPrint("Prayer times error: $e");
       setState(() => _loading = false);
@@ -1654,81 +1653,16 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
 
   Future<void> _useGPS() async {
     setState(() => _loading = true);
-    try {
-      if (await Permission.location.request().isGranted) {
-        final pos = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
-        setState(() {
-          _currentPosition = pos;
-        });
-        _getLocationAndPrayers();
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('الرجاء منح صلاحية الوصول للموقع')));
-        setState(() => _loading = false);
-      }
-    } catch (e) {
-      debugPrint("GPS Error: $e");
+    final pos = await _prayerService.getCurrentLocation();
+    if (pos != null) {
+      setState(() {
+        _currentPosition = pos;
+      });
+      _getLocationAndPrayers();
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('الرجاء منح صلاحية الوصول للموقع')));
       setState(() => _loading = false);
     }
-  }
-
-  Future<void> _scheduleNotifications() async {
-    if (_prayerTimes == null) return;
-    await flutterLocalNotificationsPlugin.cancelAll();
-
-    if (await Permission.notification.request().isDenied) return;
-
-    _schedulePrayer('fajr', 'صلاة الفجر', _prayerTimes!.fajr, 1);
-    _schedulePrayer('dhuhr', 'صلاة الظهر', _prayerTimes!.dhuhr, 2);
-    _schedulePrayer('asr', 'صلاة العصر', _prayerTimes!.asr, 3);
-    _schedulePrayer('maghrib', 'صلاة المغرب', _prayerTimes!.maghrib, 4);
-    _schedulePrayer('isha', 'صلاة العشاء', _prayerTimes!.isha, 5);
-  }
-
-  Future<void> _schedulePrayer(String key, String title, DateTime time, int id) async {
-     if (!(_enabledPrayers[key] ?? true)) return;
-
-     final adjTime = time.add(Duration(minutes: _manualAdjustments[key] ?? 0));
-     if (adjTime.isBefore(DateTime.now())) return;
-
-     const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
-        'adhan_channel', 'الأذان والتنبيهات',
-        importance: Importance.max, priority: Priority.high,
-        sound: RawResourceAndroidNotificationSound('adhan'),
-        playSound: true,
-     );
-
-     await flutterLocalNotificationsPlugin.zonedSchedule(
-        id: id,
-        title: 'حان وقت $title',
-        body: 'حي على الصلاة',
-        scheduledDate: tz.TZDateTime.from(adjTime, tz.local),
-        notificationDetails: const NotificationDetails(android: androidDetails),
-        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-     );
-  }
-
-  void _checkAdhan() {
-     Timer.periodic(const Duration(minutes: 1), (timer) {
-        if (_prayerTimes == null) return;
-        final now = DateTime.now();
-        _checkTime('fajr', _prayerTimes!.fajr, now);
-        _checkTime('dhuhr', _prayerTimes!.dhuhr, now);
-        _checkTime('asr', _prayerTimes!.asr, now);
-        _checkTime('maghrib', _prayerTimes!.maghrib, now);
-        _checkTime('isha', _prayerTimes!.isha, now);
-     });
-  }
-
-  void _checkTime(String key, DateTime? time, DateTime now) {
-     if (time == null || !(_enabledPrayers[key] ?? false)) return;
-     final adjTime = time.add(Duration(minutes: _manualAdjustments[key] ?? 0));
-     if (now.hour == adjTime.hour && now.minute == adjTime.minute) {
-        _playAdhan();
-     }
-  }
-
-  Future<void> _playAdhan() async {
-    await _audioPlayer.play(AssetSource('audio/adhan.mp3'));
   }
 
   @override
@@ -1827,7 +1761,7 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
             });
             final prefs = await SharedPreferences.getInstance();
             await prefs.setInt('adj_$key', diff);
-            _scheduleNotifications();
+            _getLocationAndPrayers(); // Re-fetch and re-schedule
           }
         },
       ),
@@ -1847,7 +1781,7 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
                setState(() => _enabledPrayers[key] = v);
                final prefs = await SharedPreferences.getInstance();
                await prefs.setBool('adhan_$key', v);
-               _scheduleNotifications();
+               _getLocationAndPrayers(); // Re-schedule
              },
            ),
          ],
