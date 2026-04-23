@@ -180,6 +180,7 @@
             list.innerHTML = '';
             const links = [
                 {id: 'settings', title: 'الهوية والوسائط', icon: 'palette'},
+                {id: 'adhan_settings', title: 'إعدادات الأذان', icon: 'notifications_active'},
                 {id: 'about', title: 'ملف المطور', icon: 'person_pin'},
                 {id: 'sections_manager', title: 'إدارة الأقسام', icon: 'category'},
                 {id: 'universal_batch', title: 'استيراد شامل بالدفعة', icon: 'dynamic_feed'},
@@ -280,6 +281,25 @@
                                 <textarea class="form-control" rows="6" onchange="db.about.app_info=this.value">${db.about.app_info}</textarea>
                             </div>
                         </div>
+                    </div>
+                `;
+            } else if (id === 'adhan_settings') {
+                title.innerText = "إعدادات الأذان والتوقيت"; icon.innerText = "notifications_active";
+                if(!db.settings.adhan) db.settings.adhan = { ringtone: "adhan.mp3", global_offset: 0 };
+                ws.innerHTML = `
+                    <div class="card card-lux p-4 shadow-sm" style="max-width:700px; margin:auto;">
+                        <h6 class="fw-bold mb-4"><i class="material-icons align-middle me-2">volume_up</i> تخصيص نغمة الأذان</h6>
+                        <div class="mb-4">
+                            <label class="small fw-bold mb-2">اسم ملف الصوت (يجب أن يكون في assets/audio)</label>
+                            <input type="text" class="form-control" value="${db.settings.adhan.ringtone}" onchange="db.settings.adhan.ringtone=this.value">
+                        </div>
+                        <div class="mb-4">
+                            <label class="small fw-bold mb-2">إزاحة التوقيت الكلية (بالدقائق)</label>
+                            <input type="number" class="form-control" value="${db.settings.adhan.global_offset}" onchange="db.settings.adhan.global_offset=parseInt(this.value)">
+                            <p class="text-muted small mt-2">هذا التعديل سيطبق على كافة أوقات الصلاة تلقائياً.</p>
+                        </div>
+                        <hr>
+                        <p class="small text-danger">ملاحظة: تأكد من أن ملف الصوت المذكور أعلاه موجود في المستودع لكي يعمل التنبيه بشكل صحيح.</p>
                     </div>
                 `;
             } else if (id === 'sections_manager') {

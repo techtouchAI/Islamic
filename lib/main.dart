@@ -152,6 +152,9 @@ class _AlDhakereenAppState extends State<AlDhakereenApp> {
   Future<void> _loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
     final dbSettings = DataManager.getSettings();
+    DataManager.dbNotifier.addListener(() {
+       if (mounted) setState(() {});
+    });
 
     if (dbSettings.isEmpty) {
        debugPrint("Warning: Config database is empty or failed to load.");
@@ -1567,10 +1570,19 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
   Future<void> _loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
-      _enabledPrayers.forEach((k, v) {
-        _enabledPrayers[k] = prefs.getBool('adhan_$k') ?? true;
-        _manualAdjustments[k] = prefs.getInt('adj_$k') ?? 0;
-      });
+      _enabledPrayers['fajr'] = prefs.getBool('adhan_fajr') ?? true;
+      _enabledPrayers['dhuhr'] = prefs.getBool('adhan_dhuhr') ?? true;
+      _enabledPrayers['asr'] = prefs.getBool('adhan_asr') ?? true;
+      _enabledPrayers['maghrib'] = prefs.getBool('adhan_maghrib') ?? true;
+      _enabledPrayers['isha'] = prefs.getBool('adhan_isha') ?? true;
+
+      _manualAdjustments['fajr'] = prefs.getInt('adj_fajr') ?? 0;
+      _manualAdjustments['dhuhr'] = prefs.getInt('adj_dhuhr') ?? 0;
+      _manualAdjustments['asr'] = prefs.getInt('adj_asr') ?? 0;
+      _manualAdjustments['maghrib'] = prefs.getInt('adj_maghrib') ?? 0;
+      _manualAdjustments['isha'] = prefs.getInt('adj_isha') ?? 0;
+
+      _selectedProvince = prefs.getString('prayer_city') ?? "بغداد";
     });
   }
 
@@ -1711,8 +1723,10 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
                     DropdownButton<String>(
                       value: _selectedProvince,
                       underline: const SizedBox(),
-                      onChanged: (v) {
+                      onChanged: (v) async {
                         if (v != null) {
+                          final prefs = await SharedPreferences.getInstance();
+                          await prefs.setString('prayer_city', v);
                           setState(() {
                              _selectedProvince = v;
                              _currentPosition = null;
@@ -1754,16 +1768,18 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
     final adjTime = originalTime.add(Duration(minutes: _manualAdjustments[key] ?? 0));
     return Card(
       margin: const EdgeInsets.only(bottom: 15),
+      elevation: 4,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(15),
-        side: BorderSide(color: Theme.of(context).colorScheme.primary)
+        borderRadius: BorderRadius.circular(20),
+        side: BorderSide(color: Theme.of(context).colorScheme.primary, width: 1.5)
       ),
       child: ListTile(
-        title: Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
-        subtitle: const Text('اضغط لتعديل الوقت يدوياً', style: TextStyle(fontSize: 10)),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        title: Text(label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+        subtitle: const Text('اضغط لتعديل الوقت يدوياً', style: TextStyle(fontSize: 11, color: Colors.grey)),
         trailing: Text(
           intl.DateFormat('hh:mm a').format(adjTime),
-          style: TextStyle(fontSize: 18, color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold)
+          style: TextStyle(fontSize: 22, color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold, fontFamily: 'monospace')
         ),
         onTap: () async {
           final TimeOfDay? picked = await showTimePicker(

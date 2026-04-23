@@ -7,6 +7,7 @@ import 'package:flutter/foundation.dart';
 
 class DataManager {
   static Map<String, dynamic>? _db;
+  static final ValueNotifier<int> dbNotifier = ValueNotifier(0);
   static const String _repoUrl = "https://raw.githubusercontent.com/techtouchAI/Islamic/main/assets/data/content.json";
 
   static Map<String, dynamic>? getDB() => _db;
@@ -43,6 +44,7 @@ class DataManager {
           final localFile = await _getLocalFile();
           await localFile.writeAsString(content);
           _db = Map<String, dynamic>.from(newDb);
+          dbNotifier.value++;
           debugPrint("DataManager: Cloud sync successful.");
         }
       }
