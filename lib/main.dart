@@ -31,24 +31,39 @@ class IslamicPatternPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = color
-      ..strokeWidth = 0.5
+      ..color = color.withValues(alpha: 0.1)
+      ..strokeWidth = 0.8
       ..style = PaintingStyle.stroke;
 
-    const double step = 40;
-    for (double x = 0; x < size.width; x += step) {
-      for (double y = 0; y < size.height; y += step) {
-        final path = Path();
-        path.moveTo(x + step / 2, y);
-        path.lineTo(x + step, y + step / 2);
-        path.lineTo(x + step / 2, y + step);
-        path.lineTo(x, y + step / 2);
-        path.close();
+    const double step = 60;
+    for (double x = 0; x < size.width + step; x += step) {
+      for (double y = 0; y < size.height + step; y += step) {
+        // Draw an 8-pointed Islamic star
+        final center = Offset(x, y);
+        _drawStar(canvas, center, step * 0.4, paint);
 
-        canvas.drawPath(path, paint);
-        canvas.drawCircle(Offset(x + step / 2, y + step / 2), step / 4, paint);
+        // Connecting lines for a luxury geometric feel
+        canvas.drawCircle(center, step * 0.1, paint);
       }
     }
+  }
+
+  void _drawStar(Canvas canvas, Offset center, double radius, Paint paint) {
+    final path = Path();
+    for (int i = 0; i < 8; i++) {
+      double angle = (i * 45) * pi / 180;
+      double x = center.dx + radius * cos(angle);
+      double y = center.dy + radius * sin(angle);
+      if (i == 0) path.moveTo(x, y); else path.lineTo(x, y);
+
+      // Points in between to create the star shape
+      double nextAngle = (i * 45 + 22.5) * pi / 180;
+      double nextX = center.dx + (radius * 0.7) * cos(nextAngle);
+      double nextY = center.dy + (radius * 0.7) * sin(nextAngle);
+      path.lineTo(nextX, nextY);
+    }
+    path.close();
+    canvas.drawPath(path, paint);
   }
 
   @override
@@ -674,33 +689,58 @@ class _HomeSectionState extends State<HomeSection> {
         content: data['content'].toString(),
         fontSizeFactor: widget.fontSizeFactor,
       ))),
-      child: Card(
-        elevation: 5,
-        color: widget.cardColor.withValues(alpha: widget.uiOpacity),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: BorderSide(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3))),
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(icon, color: Theme.of(context).colorScheme.primary, size: 18),
-                  const SizedBox(width: 8),
-                  Text(tag, style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold, fontSize: 16)),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Text(
-                data['content'].toString(),
-                textAlign: TextAlign.center,
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
-                style: GoogleFonts.notoNaskhArabic(fontSize: 16, height: 1.8, color: textColor),
-              ),
-              const SizedBox(height: 10),
-              Text('— ${data["title"]} —', style: TextStyle(fontSize: 12, color: textColor.withValues(alpha: 0.6))),
-            ],
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(25),
+          boxShadow: [
+             BoxShadow(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.15), blurRadius: 15, offset: const Offset(0, 8))
+          ],
+        ),
+        child: Card(
+          elevation: 0,
+          color: widget.cardColor.withValues(alpha: widget.uiOpacity),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(25),
+            side: BorderSide(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.5), width: 1.5)
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(icon, color: Theme.of(context).colorScheme.primary, size: 20),
+                    ),
+                    const SizedBox(width: 12),
+                    Text(tag, style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold, fontSize: 18, letterSpacing: 0.5)),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  data['content'].toString(),
+                  textAlign: TextAlign.center,
+                  maxLines: 4,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.notoNaskhArabic(fontSize: 17, height: 1.9, color: textColor, fontWeight: FontWeight.w500),
+                ),
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2)),
+                    borderRadius: BorderRadius.circular(15),
+                  ),
+                  child: Text(data["title"].toString(), style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold)),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -1354,6 +1394,8 @@ class SettingsSection extends StatelessWidget {
             _visToggle('dreams', 'تفسير الأحلام'),
             _visToggle('stories', 'قصص الأنبياء'),
             _visToggle('imam_ali', 'موسوعة الإمام علي (ع)'),
+            _visToggle('owraths', 'الأذكار والأوراد'),
+            _visToggle('sahifa_sajjadiya', 'الصحيفة السجادية'),
           ]),
         ],
       ),
