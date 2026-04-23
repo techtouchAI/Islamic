@@ -52,22 +52,30 @@ class PrayerTimesService {
     }
   }
 
-  /// حساب أوقات الصلاة ليوم معين وموقع معين
-  PrayerTimes calculatePrayerTimes(Position position, {DateTime? date}) {
+  /// حساب أوقات الصلاة ليوم معين وموقع معين مع التحويل الصارم للتوقيت المحلي
+  Map<String, DateTime> calculatePrayerTimes(Position position, {DateTime? date}) {
     final coordinates = Coordinates(position.latitude, position.longitude);
     final calculationDate = date ?? DateTime.now();
 
-    return PrayerTimes(
+    final pt = PrayerTimes(
       coordinates: coordinates,
       date: calculationDate,
       calculationParameters: shiaJafariParams,
       precision: true,
     );
+
+    // تحويل إجباري للتوقيت المحلي (toLocal) لضمان الدقة في العرض والجدولة
+    return {
+      'fajr': pt.fajr!.toLocal(),
+      'dhuhr': pt.dhuhr!.toLocal(),
+      'asr': pt.asr!.toLocal(),
+      'maghrib': pt.maghrib!.toLocal(),
+      'isha': pt.isha!.toLocal(),
+    };
   }
 
   /// جدولة التنبيهات لمدة 7 أيام قادمة
-  Future<void> scheduleAdhanNotifications(Position position, Map<String, bool> enabledPrayers) async {
-    // التحقق من صلاحية الإشعارات (أندرويد 13+)
+  Future<void> scheduleAdhanNotifications(Position position, Map<String, bool> enabledPrayers, Map<String, int> offsets) async {
     if (await Permission.notification.isDenied) {
       await Permission.notification.request();
     }
@@ -77,13 +85,35 @@ class PrayerTimesService {
     final now = DateTime.now();
     for (int i = 0; i < 7; i++) {
       final date = now.add(Duration(days: i));
-      final prayerTimes = calculatePrayerTimes(position, date: date);
+      final times = calculatePrayerTimes(position, date: date);
 
-      _scheduleSingleNotification(100 + i, "الفجر", prayerTimes.fajr, enabledPrayers['fajr'] ?? true);
-      _scheduleSingleNotification(200 + i, "الظهر", prayerTimes.dhuhr, enabledPrayers['dhuhr'] ?? true);
-      _scheduleSingleNotification(300 + i, "العصر", prayerTimes.asr, enabledPrayers['asr'] ?? true);
-      _scheduleSingleNotification(400 + i, "المغرب", prayerTimes.maghrib, enabledPrayers['maghrib'] ?? true);
-      _scheduleSingleNotification(500 + i, "العشاء", prayerTimes.isha, enabledPrayers['isha'] ?? true);
+      times.forEach((key, time) {
+        final adjustedTime = time.add(Duration(minutes: offsets[key] ?? 0));
+        final name = _getPrayerNameAr(key);
+        _scheduleSingleNotification(i * 10 + _getPrayerId(key), name, adjustedTime, enabledPrayers[key] ?? true);
+      });
+    }
+  }
+
+  String _getPrayerNameAr(String key) {
+    switch (key) {
+      case 'fajr': return "الفجر";
+      case 'dhuhr': return "الظهر";
+      case 'asr': return "العصر";
+      case 'maghrib': return "المغرب";
+      case 'isha': return "العشاء";
+      default: return "";
+    }
+  }
+
+  int _getPrayerId(String key) {
+    switch (key) {
+      case 'fajr': return 1;
+      case 'dhuhr': return 2;
+      case 'asr': return 3;
+      case 'maghrib': return 4;
+      case 'isha': return 5;
+      default: return 0;
     }
   }
 

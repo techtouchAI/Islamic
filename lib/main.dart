@@ -142,7 +142,18 @@ class _AlDhakereenAppState extends State<AlDhakereenApp> {
 
       await _loadSettings();
 
-      DataManager.syncCloudData(); // Async background sync
+      // التحديث التلقائي في الخلفية عند فتح التطبيق
+      DataManager.syncCloudData().then((updated) {
+        if (updated && mounted) {
+           ScaffoldMessenger.of(context).showSnackBar(
+             const SnackBar(
+               content: Text('تم تحديث المحتوى بنجاح', textAlign: TextAlign.center),
+               duration: Duration(seconds: 2),
+               backgroundColor: Colors.green,
+             ),
+           );
+        }
+      });
     } catch (e) {
       debugPrint("Initialization Error: $e");
     } finally {
@@ -1333,17 +1344,6 @@ class SettingsSection extends StatelessWidget {
             ),
           ]),
 
-          _buildGroup(context, 'نظام البيانات والمزامنة', [
-             ListTile(
-               title: const Text('تحديث المحتوى الآن'),
-               subtitle: const Text('جلب آخر الأدعية والصور من السحاب'),
-               trailing: const Icon(Icons.cloud_download),
-               onTap: () async {
-                  await DataManager.syncCloudData();
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم تحديث البيانات بنجاح')));
-               },
-             ),
-          ]),
 
           _buildGroup(context, 'إعدادات ظهور الصفحة الرئيسية', [
             _visToggle('inspiration', 'إلهام اليوم'),
@@ -1541,7 +1541,7 @@ class PrayerTimesSection extends StatefulWidget {
 }
 
 class _PrayerTimesSectionState extends State<PrayerTimesSection> {
-  PrayerTimes? _prayerTimes;
+  Map<String, DateTime>? _prayerTimes;
   Position? _currentPosition;
   bool _loading = true;
   final PrayerTimesService _prayerService = PrayerTimesService();
@@ -1564,7 +1564,7 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
     "العمارة": [31.8453, 47.1420],
     "الناصرية": [31.0577, 46.2573],
     "الكوت": [32.5020, 45.8202],
-    "الحلة": [32.4810, 44.4305],
+    "الحلة": [32.4815, 44.4331],
     "الديوانية": [31.9904, 44.9258],
     "بعقوبة": [33.7431, 44.6361],
     "الرمادي": [33.4219, 43.3032],
@@ -1613,10 +1613,10 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
         );
       }
 
-      // استخدام الخدمة الجديدة للحساب الشيعي الدقيق
+      // جلب أوقات الصلاة المحسوبة (بالتوقيت المحلي الصارم)
       final pt = _prayerService.calculatePrayerTimes(pos);
 
-      // تطبيق التعديلات اليدوية من CMS إن وجدت
+      // تطبيق التعديلات اليدوية من CMS إن وجدت (تحسب كفرق دقائق)
       final db = DataManager.getDB();
       final todayStr = intl.DateFormat('yyyy-MM-dd').format(DateTime.now());
       if (db != null && db['settings'] != null && db['settings']['adhan'] != null && db['settings']['adhan']['manual_schedules'] != null) {
@@ -1624,11 +1624,11 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
           final manual = list.firstWhere((s) => s['date'] == todayStr, orElse: () => null);
           if (manual != null) {
              final now = DateTime.now();
-             pt.fajr = _parseManualTime(manual['fajr'], now);
-             pt.dhuhr = _parseManualTime(manual['dhuhr'], now);
-             pt.asr = _parseManualTime(manual['asr'], now);
-             pt.maghrib = _parseManualTime(manual['maghrib'], now);
-             pt.isha = _parseManualTime(manual['isha'], now);
+             pt['fajr'] = _applyManualTime(pt['fajr']!, manual['fajr']);
+             pt['dhuhr'] = _applyManualTime(pt['dhuhr']!, manual['dhuhr']);
+             pt['asr'] = _applyManualTime(pt['asr']!, manual['asr']);
+             pt['maghrib'] = _applyManualTime(pt['maghrib']!, manual['maghrib']);
+             pt['isha'] = _applyManualTime(pt['isha']!, manual['isha']);
           }
       }
 
@@ -1637,18 +1637,23 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
         _loading = false;
       });
 
-      // جدولة التنبيهات لمدة 7 أيام عبر الخدمة الجديدة
-      await _prayerService.scheduleAdhanNotifications(pos, _enabledPrayers);
+      // جدولة التنبيهات لمدة 7 أيام مع مراعاة التعديلات اليدوية
+      await _prayerService.scheduleAdhanNotifications(pos, _enabledPrayers, _manualAdjustments);
     } catch (e) {
       debugPrint("Prayer times error: $e");
       setState(() => _loading = false);
     }
   }
 
-  DateTime _parseManualTime(String? timeStr, DateTime base) {
-    if (timeStr == null || !timeStr.contains(':')) return base;
-    final parts = timeStr.split(':');
-    return DateTime(base.year, base.month, base.day, int.parse(parts[0]), int.parse(parts[1]));
+  DateTime _applyManualTime(DateTime calculated, String? manualTimeStr) {
+    if (manualTimeStr == null || !manualTimeStr.contains(':')) return calculated;
+    try {
+      final parts = manualTimeStr.split(':');
+      final target = DateTime(calculated.year, calculated.month, calculated.day, int.parse(parts[0]), int.parse(parts[1]));
+      return target;
+    } catch (e) {
+      return calculated;
+    }
   }
 
   Future<void> _useGPS() async {
@@ -1716,11 +1721,11 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
             ),
           ),
           const SizedBox(height: 20),
-          _buildPrayerCard('الفجر', _prayerTimes?.fajr, 'fajr'),
-          _buildPrayerCard('الظهر', _prayerTimes?.dhuhr, 'dhuhr'),
-          _buildPrayerCard('العصر', _prayerTimes?.asr, 'asr'),
-          _buildPrayerCard('المغرب', _prayerTimes?.maghrib, 'maghrib'),
-          _buildPrayerCard('العشاء', _prayerTimes?.isha, 'isha'),
+          _buildPrayerCard('الفجر', _prayerTimes?['fajr'], 'fajr'),
+          _buildPrayerCard('الظهر', _prayerTimes?['dhuhr'], 'dhuhr'),
+          _buildPrayerCard('العصر', _prayerTimes?['asr'], 'asr'),
+          _buildPrayerCard('المغرب', _prayerTimes?['maghrib'], 'maghrib'),
+          _buildPrayerCard('العشاء', _prayerTimes?['isha'], 'isha'),
           const SizedBox(height: 30),
           const Divider(),
           const Text('إعدادات الأذان والتنبيهات', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
@@ -1732,7 +1737,9 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
 
   Widget _buildPrayerCard(String label, DateTime? originalTime, String key) {
     if (originalTime == null) return const SizedBox();
+    // تطبيق إزاحة الدقائق فقط فوق الوقت المحسوب فلكياً
     final adjTime = originalTime.add(Duration(minutes: _manualAdjustments[key] ?? 0));
+
     return Card(
       margin: const EdgeInsets.only(bottom: 15),
       elevation: 4,
@@ -1743,7 +1750,7 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
         title: Text(label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-        subtitle: const Text('اضغط لتعديل الوقت يدوياً', style: TextStyle(fontSize: 11, color: Colors.grey)),
+        subtitle: const Text('اضغط لتعديل الوقت يدوياً (دقائق)', style: TextStyle(fontSize: 11, color: Colors.grey)),
         trailing: Text(
           intl.DateFormat('hh:mm a').format(adjTime),
           style: TextStyle(fontSize: 22, color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold, fontFamily: 'monospace')
@@ -1754,14 +1761,19 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
             initialTime: TimeOfDay.fromDateTime(adjTime),
           );
           if (picked != null) {
+            // حساب الفارق بالدقائق بدقة بين الوقت المختار والوقت الأصلي المحسوب
             final pickedDT = DateTime(originalTime.year, originalTime.month, originalTime.day, picked.hour, picked.minute);
-            final diff = pickedDT.difference(originalTime).inMinutes;
+            final diffInMinutes = pickedDT.difference(originalTime).inMinutes;
+
             setState(() {
-               _manualAdjustments[key] = diff;
+               _manualAdjustments[key] = diffInMinutes;
             });
+
             final prefs = await SharedPreferences.getInstance();
-            await prefs.setInt('adj_$key', diff);
-            _getLocationAndPrayers(); // Re-fetch and re-schedule
+            await prefs.setInt('adj_$key', diffInMinutes);
+
+            // إعادة الجدولة فوراً لتطبيق التنبيهات بالوقت الجديد
+            _getLocationAndPrayers();
           }
         },
       ),

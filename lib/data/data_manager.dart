@@ -33,24 +33,32 @@ class DataManager {
     }
   }
 
-  static Future<void> syncCloudData() async {
+  static Future<bool> syncCloudData() async {
     try {
       final response = await http.get(Uri.parse(_repoUrl));
       if (response.statusCode == 200) {
         final content = response.body;
-        // Validate JSON before saving
+
+        // التحقق من وجود تغييرات فعلية لتجنب إعادة التحميل غير الضرورية
+        final localFile = await _getLocalFile();
+        if (await localFile.exists()) {
+           final oldContent = await localFile.readAsString();
+           if (oldContent == content) return false;
+        }
+
         final newDb = json.decode(content);
         if (newDb is Map && newDb.containsKey('sections')) {
-          final localFile = await _getLocalFile();
           await localFile.writeAsString(content);
           _db = Map<String, dynamic>.from(newDb);
           dbNotifier.value++;
           debugPrint("DataManager: Cloud sync successful.");
+          return true;
         }
       }
     } catch (e) {
       debugPrint("DataManager Sync Error: $e");
     }
+    return false;
   }
 
   static Future<File> _getLocalFile() async {
