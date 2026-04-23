@@ -30,6 +30,9 @@ jobs:
       - name: Install Python dependencies
         run: pip3 install Pillow
 
+      - name: Ensure Signing Keystore
+        run: python3 scripts/ensure_keystore.py
+
       - name: Update App Resources from CMS (Icons & Audio)
         run: python3 scripts/update_resources.py
 

@@ -43,6 +43,8 @@ android {
             keyPassword = "android"
             storeFile = file("debug.keystore")
             storePassword = "android"
+            enableV1Signing = true
+            enableV2Signing = true
         }
     }
 

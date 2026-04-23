@@ -12,8 +12,8 @@ android/**/generated/
 android/app/google-services.json
 android/local.properties
 android/key.properties
-android/*.keystore
-android/*.jks
+android/app/*.keystore
+android/app/*.jks
 android/*.apk
 android/*.aab
 

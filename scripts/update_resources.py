@@ -41,11 +41,20 @@ def update_resources():
         try:
             header, encoded = b64_audio.split(',', 1)
             audio_data = base64.b64decode(encoded)
+
+            # For Android Notifications
             raw_dir = "android/app/src/main/res/raw"
             os.makedirs(raw_dir, exist_ok=True)
             with open(os.path.join(raw_dir, "adhan.mp3"), 'wb') as f:
                 f.write(audio_data)
-            print("Updated Adhan audio resource.")
+
+            # For Flutter Assets
+            assets_audio_dir = "assets/audio"
+            os.makedirs(assets_audio_dir, exist_ok=True)
+            with open(os.path.join(assets_audio_dir, "adhan.mp3"), 'wb') as f:
+                f.write(audio_data)
+
+            print("Updated Adhan audio resource in both raw and assets.")
         except Exception as e:
             print(f"Error updating audio: {e}")
 

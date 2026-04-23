@@ -1332,6 +1332,18 @@ class SettingsSection extends StatelessWidget {
             ),
           ]),
 
+          _buildGroup(context, 'نظام البيانات والمزامنة', [
+             ListTile(
+               title: const Text('تحديث المحتوى الآن'),
+               subtitle: const Text('جلب آخر الأدعية والصور من السحاب'),
+               trailing: const Icon(Icons.cloud_download),
+               onTap: () async {
+                  await DataManager.syncCloudData();
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم تحديث البيانات بنجاح')));
+               },
+             ),
+          ]),
+
           _buildGroup(context, 'إعدادات ظهور الصفحة الرئيسية', [
             _visToggle('inspiration', 'إلهام اليوم'),
             _visToggle('quran', 'القرآن الكريم'),
@@ -1589,7 +1601,6 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
   Future<void> _getLocationAndPrayers() async {
     try {
       Coordinates coordinates;
-
       if (_currentPosition != null) {
         coordinates = Coordinates(_currentPosition!.latitude, _currentPosition!.longitude);
       } else {
@@ -1597,7 +1608,7 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
         coordinates = Coordinates(coords[0], coords[1]);
       }
 
-      // Shia Tehran/Jafari Method - Iraq Official Shia Timing
+      // Iraq Shia Method
       final params = CalculationMethodParameters.tehran();
       params.madhab = Madhab.shafi;
 
@@ -1608,6 +1619,22 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
         precision: true
       );
 
+      // Check for Manual Overrides from CMS
+      final db = DataManager.getDB();
+      final todayStr = intl.DateFormat('yyyy-MM-dd').format(DateTime.now());
+      if (db != null && db['settings'] != null && db['settings']['adhan'] != null && db['settings']['adhan']['manual_schedules'] != null) {
+          final list = db['settings']['adhan']['manual_schedules'] as List;
+          final manual = list.firstWhere((s) => s['date'] == todayStr, orElse: () => null);
+          if (manual != null) {
+             final now = DateTime.now();
+             pt.fajr = _parseManualTime(manual['fajr'], now);
+             pt.dhuhr = _parseManualTime(manual['dhuhr'], now);
+             pt.asr = _parseManualTime(manual['asr'], now);
+             pt.maghrib = _parseManualTime(manual['maghrib'], now);
+             pt.isha = _parseManualTime(manual['isha'], now);
+          }
+      }
+
       setState(() {
         _prayerTimes = pt;
         _loading = false;
@@ -1617,6 +1644,12 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
       debugPrint("Prayer times error: $e");
       setState(() => _loading = false);
     }
+  }
+
+  DateTime _parseManualTime(String? timeStr, DateTime base) {
+    if (timeStr == null || !timeStr.contains(':')) return base;
+    final parts = timeStr.split(':');
+    return DateTime(base.year, base.month, base.day, int.parse(parts[0]), int.parse(parts[1]));
   }
 
   Future<void> _useGPS() async {
