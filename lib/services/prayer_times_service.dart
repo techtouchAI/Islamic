@@ -48,7 +48,7 @@ class PrayerTimesService {
         desiredAccuracy: LocationAccuracy.high,
       );
     } catch (e) {
-      debugPrint("خطأ في جلب الموقع: ");
+      debugPrint("خطأ في جلب الموقع: $e");
       return null;
     }
   }
@@ -140,7 +140,7 @@ class PrayerTimesService {
 
     await _notificationsPlugin.zonedSchedule(
       id: id,
-      title: 'حان وقت صلاة ',
+      title: 'حان وقت صلاة $name',
       body: 'حي على الصلاة، حي على الفلاح',
       scheduledDate: tz.TZDateTime.from(time, tz.local),
       notificationDetails: const NotificationDetails(android: androidDetails),
