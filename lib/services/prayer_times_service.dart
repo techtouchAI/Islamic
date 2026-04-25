@@ -18,12 +18,13 @@ class PrayerTimesService {
   /// يتم ضبط الزوايا بدقة: الفجر 16 درجة، العشاء 14 درجة، والمغرب 4 درجات.
   CalculationParameters get shiaJafariParams {
     final params = CalculationParameters(
-      method: CalculationMethod.other,
+      method: CalculationMethod.tehran, // Tehran method is base for Jafari
       fajrAngle: 16.0,
       ishaAngle: 14.0,
-      maghribAngle: 4.0, // زوال الحمرة المشرقية
+      maghribAngle: 4.0,
     );
-    params.madhab = Madhab.shafi; // الحساب الجعفري يتبع قواعد مشابهة للشافعي في طول الظل
+    params.madhab = Madhab.shafi;
+    params.highLatitudeRule = HighLatitudeRule.seventhOfTheNight;
     return params;
   }
 
@@ -47,7 +48,7 @@ class PrayerTimesService {
         desiredAccuracy: LocationAccuracy.high,
       );
     } catch (e) {
-      debugPrint("خطأ في جلب الموقع: $e");
+      debugPrint("خطأ في جلب الموقع: ");
       return null;
     }
   }
@@ -64,13 +65,20 @@ class PrayerTimesService {
       precision: true,
     );
 
-    // تحويل إجباري للتوقيت المحلي (toLocal) لضمان الدقة في العرض والجدولة
+    // Midnight calculation: Sunset to Dawn
+    final maghrib = pt.maghrib!.toLocal();
+    final nextFajr = pt.fajr!.add(const Duration(days: 1)).toLocal();
+    final duration = nextFajr.difference(maghrib);
+    final midnight = maghrib.add(Duration(seconds: (duration.inSeconds / 2).round()));
+
     return {
       'fajr': pt.fajr!.toLocal(),
+      'sunrise': pt.sunrise!.toLocal(),
       'dhuhr': pt.dhuhr!.toLocal(),
       'asr': pt.asr!.toLocal(),
       'maghrib': pt.maghrib!.toLocal(),
       'isha': pt.isha!.toLocal(),
+      'midnight': midnight,
     };
   }
 
@@ -132,7 +140,7 @@ class PrayerTimesService {
 
     await _notificationsPlugin.zonedSchedule(
       id: id,
-      title: 'حان وقت صلاة $name',
+      title: 'حان وقت صلاة ',
       body: 'حي على الصلاة، حي على الفلاح',
       scheduledDate: tz.TZDateTime.from(time, tz.local),
       notificationDetails: const NotificationDetails(android: androidDetails),
