@@ -173,8 +173,9 @@ class _AlDhakereenAppState extends State<AlDhakereenApp> {
       _cardColor = Color(prefs.getInt('cardColor') ?? defaultCard);
       _hijriAdjustment = prefs.getInt('hijriAdj') ?? 0;
       final sections = DataManager.getSections();
+      final allSections = {...sections, 'hadith': {}, 'names_allah': {}, 'adhkar': {}};
       _homeVisibility = {};
-      sections.forEach((key, value) {
+      allSections.forEach((key, value) {
         _homeVisibility[key] = prefs.getBool('vis_$key') ?? (value['visible_home'] ?? true);
       });
       _homeVisibility['inspiration'] = prefs.getBool('vis_inspiration') ?? (dbSettings['show_inspiration'] ?? true);
