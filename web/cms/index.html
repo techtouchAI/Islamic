@@ -215,9 +215,6 @@
             ];
             Object.keys(db.sections).forEach(k => links.push({id: k, title: db.sections[k].title, icon: db.sections[k].icon}));
 
-            // Add Daily Dua explicitly if not in sections
-            if(!db.sections['daily_duas']) links.push({id: 'daily_dua_manager', title: 'دعاء الأيام (الصفحة الرئيسية)', icon: 'today'});
-
             links.forEach(l => {
                 if(l.divider) return list.innerHTML += '<hr class="text-secondary opacity-25 my-3">';
                 list.innerHTML += `<a class="nav-link ${activeView===l.id?'active':''}" onclick="loadView('${l.id}')">
@@ -379,36 +376,6 @@
                     <div id="sections-list" class="row g-3"></div>
                 `;
                 renderSectionsList();
-            } else if (id === 'daily_dua_manager') {
-                title.innerText = "إدارة دعاء الأيام"; icon.innerText = "today";
-                if(!db.daily_duas) db.daily_duas = {};
-                ws.innerHTML = `
-                    <div class="card card-lux p-4 shadow-sm">
-                        <p class="small text-muted">هذا القسم مخصص للأدعية التي تظهر في الصفحة الرئيسية بناءً على يوم الأسبوع.</p>
-                        <div class="row g-3 mb-4">
-                            <div class="col-md-4">
-                                <label class="small fw-bold">اليوم</label>
-                                <select id="dua-day" class="form-select">
-                                    <option value="Friday">الجمعة</option><option value="Saturday">السبت</option>
-                                    <option value="Sunday">الأحد</option><option value="Monday">الاثنين</option>
-                                    <option value="Tuesday">الثلاثاء</option><option value="Wednesday">الأربعاء</option>
-                                    <option value="Thursday">الخميس</option>
-                                </select>
-                            </div>
-                            <div class="col-md-4">
-                                <label class="small fw-bold">العنوان</label>
-                                <input type="text" id="dua-title" class="form-control" placeholder="مثلاً: دعاء يوم الجمعة">
-                            </div>
-                            <div class="col-md-4 d-flex align-items-end">
-                                <button class="btn btn-gold w-100" onclick="saveDailyDua()">حفظ التعديل</button>
-                            </div>
-                        </div>
-                        <label class="small fw-bold">نص الدعاء</label>
-                        <textarea id="dua-content" class="form-control mb-3" rows="8" placeholder="الصق نص الدعاء هنا..."></textarea>
-                        <div id="daily-duas-list" class="mt-4 row g-3"></div>
-                    </div>
-                `;
-                renderDailyDuasList();
             } else if (id === 'universal_batch') {
                 title.innerText = "استيراد شامل لكل الأقسام"; icon.innerText = "dynamic_feed";
                 ws.innerHTML = `

@@ -554,9 +554,33 @@ class _HomeSectionState extends State<HomeSection> {
     final now = DateTime.now();
     final dayOfYear = int.parse(intl.DateFormat('D').format(now));
     _inspirationDua = DailyDuas.shortDuas[dayOfYear % DailyDuas.shortDuas.length];
-    final db = DataManager.getDB();
-    final dayName = intl.DateFormat('EEEE', 'en_US').format(now);
-    if (db != null && db['daily_duas'] != null && db['daily_duas'][dayName] != null) { _dayDua = db['daily_duas'][dayName]; }
+
+    final dayNameAr = intl.DateFormat('EEEE', 'ar_SA').format(now);
+    final allDaysDuas = DataManager.getItems('duas_days');
+
+    String _normalize(String s) => s.replaceAll('أ', 'ا').replaceAll('إ', 'ا').replaceAll('آ', 'ا').replaceAll('ة', 'ه').replaceAll('ى', 'ي');
+    final normalizedDay = _normalize(dayNameAr);
+
+    final itemsForToday = allDaysDuas.where((it) {
+      final title = _normalize(it['title'].toString());
+      return title.contains(normalizedDay);
+    }).toList();
+
+    if (itemsForToday.isNotEmpty) {
+      String combinedTitle = "أعمال يوم $dayNameAr";
+      StringBuffer combinedContent = StringBuffer();
+      for (var it in itemsForToday) {
+        combinedContent.writeln("✨ ${it['title']} ✨");
+        combinedContent.writeln("${it['content']}");
+        combinedContent.writeln("");
+      }
+      _dayDua = {
+        "title": combinedTitle,
+        "content": combinedContent.toString().trim()
+      };
+    } else {
+      _dayDua = null;
+    }
     setState(() {});
   }
 
@@ -819,8 +843,8 @@ class DynamicListSection extends StatelessWidget {
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15), side: BorderSide(color: Theme.of(context).colorScheme.primary, width: 1.5)),
                       child: ListTile(
                         contentPadding: const EdgeInsets.all(20),
-                        title: Text(data[index]['title'].toString(), style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, fontFamily: isQuran ? 'Amiri' : null)),
-                        subtitle: Padding(padding: const EdgeInsets.only(top: 10), child: Text(data[index]['content'].toString(), maxLines: 2, overflow: TextOverflow.ellipsis, style: isQuran ? GoogleFonts.amiri(fontSize: 18, height: 1.6) : GoogleFonts.amiri(fontSize: 16))),
+                        title: Text(data[index]['title'].toString(), style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, fontFamily: isQuran ? 'Scheherazade New' : null)),
+                        subtitle: Padding(padding: const EdgeInsets.only(top: 10), child: Text(data[index]['content'].toString(), maxLines: 2, overflow: TextOverflow.ellipsis, style: isQuran ? GoogleFonts.scheherazadeNew(fontSize: 20, height: 1.6) : GoogleFonts.amiri(fontSize: 16))),
                         onTap: () => Navigator.push(context, MaterialPageRoute(builder: (c) => ReaderPage(title: data[index]['title'].toString(), content: data[index]['content'].toString(), fontSizeFactor: fontSizeFactor, isQuran: isQuran))),
                       ),
                     ),
@@ -859,7 +883,7 @@ class _ReaderPageState extends State<ReaderPage> {
       ),
       body: Column(
         children: [
-          Expanded(child: SingleChildScrollView(padding: const EdgeInsets.all(24), child: Container(width: double.infinity, padding: const EdgeInsets.all(24), decoration: BoxDecoration(border: Border.all(color: Theme.of(context).colorScheme.primary, width: 3), borderRadius: BorderRadius.circular(25), color: _customBgColor ?? Theme.of(context).colorScheme.primary.withValues(alpha: 0.02), boxShadow: [BoxShadow(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1), blurRadius: 15, spreadRadius: 2)]), child: Column(children: [Text("بسم الله الرحمن الرحيم", style: GoogleFonts.notoNaskhArabic(fontSize: 24, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.primary)), const SizedBox(height: 15), Row(mainAxisAlignment: MainAxisAlignment.center, children: List.generate(5, (index) => Icon(Icons.star, size: 12, color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.5)))), const SizedBox(height: 25), Text(widget.content, textAlign: TextAlign.center, style: (widget.isQuran ? GoogleFonts.amiri : GoogleFonts.notoNaskhArabic)(fontSize: 20 * _factor, height: widget.isQuran ? 1.8 : 2.2, color: _customBgColor != null ? (_customBgColor!.computeLuminance() > 0.5 ? Colors.black : Colors.white) : null)), const SizedBox(height: 25), Row(mainAxisAlignment: MainAxisAlignment.center, children: List.generate(5, (index) => Icon(Icons.star, size: 12, color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.5)))), ])))),
+          Expanded(child: SingleChildScrollView(padding: const EdgeInsets.all(24), child: Container(width: double.infinity, padding: const EdgeInsets.all(24), decoration: BoxDecoration(border: Border.all(color: Theme.of(context).colorScheme.primary, width: 3), borderRadius: BorderRadius.circular(25), color: _customBgColor ?? Theme.of(context).colorScheme.primary.withValues(alpha: 0.02), boxShadow: [BoxShadow(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1), blurRadius: 15, spreadRadius: 2)]), child: Column(children: [Text("بسم الله الرحمن الرحيم", style: GoogleFonts.notoNaskhArabic(fontSize: 24, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.primary)), const SizedBox(height: 15), Row(mainAxisAlignment: MainAxisAlignment.center, children: List.generate(5, (index) => Icon(Icons.star, size: 12, color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.5)))), const SizedBox(height: 25), Text(widget.content, textAlign: TextAlign.center, style: (widget.isQuran ? GoogleFonts.scheherazadeNew : GoogleFonts.notoNaskhArabic)(fontSize: (widget.isQuran ? 24 : 20) * _factor, height: widget.isQuran ? 1.8 : 2.2, color: _customBgColor != null ? (_customBgColor!.computeLuminance() > 0.5 ? Colors.black : Colors.white) : null)), const SizedBox(height: 25), Row(mainAxisAlignment: MainAxisAlignment.center, children: List.generate(5, (index) => Icon(Icons.star, size: 12, color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.5)))), ])))),
           Container(
             padding: EdgeInsets.fromLTRB(20, 10, 20, MediaQuery.of(context).padding.bottom + 10),
             decoration: BoxDecoration(color: Theme.of(context).cardColor, boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10)]),
