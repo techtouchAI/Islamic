@@ -511,13 +511,27 @@
             list.innerHTML = '';
             Object.keys(db.sections).forEach(k => {
                 list.innerHTML += `
-                    <div class="col-md-4">
-                        <div class="card card-lux p-3 d-flex flex-row justify-content-between align-items-center">
-                            <div><i class="material-icons align-middle me-2">${db.sections[k].icon}</i> <b>${db.sections[k].title}</b></div>
-                            <button class="btn btn-sm btn-outline-danger" onclick="deleteSection('${k}')"><i class="material-icons small">delete</i></button>
+                    <div class="col-md-6">
+                        <div class="card card-lux p-3">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <div><i class="material-icons align-middle me-2">${db.sections[k].icon}</i> <b>${db.sections[k].title}</b></div>
+                                <div class="d-flex gap-2">
+                                    <button class="btn btn-sm btn-outline-primary" onclick="openRenameSection('${k}')"><i class="material-icons small">edit</i></button>
+                                    <button class="btn btn-sm btn-outline-danger" onclick="deleteSection('${k}')"><i class="material-icons small">delete</i></button>
+                                </div>
+                            </div>
+                            <div class="small text-muted">ID: ${k} | العناصر: ${db.content[k] ? db.content[k].length : 0}</div>
                         </div>
                     </div>`;
             });
+        }
+
+        function openRenameSection(k) {
+            const newTitle = prompt("أدخل الاسم الجديد للقسم:", db.sections[k].title);
+            if(newTitle && newTitle !== db.sections[k].title) {
+                db.sections[k].title = newTitle;
+                renderNav(); renderSectionsList();
+            }
         }
 
         function addNewSection() {

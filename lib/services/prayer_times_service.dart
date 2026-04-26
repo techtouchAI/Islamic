@@ -45,7 +45,7 @@ class PrayerTimesService {
 
       // جلب الإحداثيات بدقة عالية
       return await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
+        locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
       );
     } catch (e) {
       debugPrint("خطأ في جلب الموقع: $e");
@@ -66,18 +66,18 @@ class PrayerTimesService {
     );
 
     // Midnight calculation: Sunset to Dawn
-    final maghrib = pt.maghrib!.toLocal();
-    final nextFajr = pt.fajr!.add(const Duration(days: 1)).toLocal();
+    final maghrib = pt.maghrib.toLocal();
+    final nextFajr = pt.fajr.add(const Duration(days: 1)).toLocal();
     final duration = nextFajr.difference(maghrib);
     final midnight = maghrib.add(Duration(seconds: (duration.inSeconds / 2).round()));
 
     return {
-      'fajr': pt.fajr!.toLocal(),
-      'sunrise': pt.sunrise!.toLocal(),
-      'dhuhr': pt.dhuhr!.toLocal(),
-      'asr': pt.asr!.toLocal(),
-      'maghrib': pt.maghrib!.toLocal(),
-      'isha': pt.isha!.toLocal(),
+      'fajr': pt.fajr.toLocal(),
+      'sunrise': pt.sunrise.toLocal(),
+      'dhuhr': pt.dhuhr.toLocal(),
+      'asr': pt.asr.toLocal(),
+      'maghrib': pt.maghrib.toLocal(),
+      'isha': pt.isha.toLocal(),
       'midnight': midnight,
     };
   }

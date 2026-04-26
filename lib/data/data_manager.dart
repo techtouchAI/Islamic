@@ -67,8 +67,28 @@ class DataManager {
   }
 
   static List<dynamic> getItems(String section) {
-    if (_db == null || _db!['content'] == null || _db!['content'][section] == null) return [];
-    return _db!['content'][section] as List<dynamic>;
+    if (_db == null || _db!['content'] == null) return [];
+    if (section == 'adhkar') {
+      List all = [];
+      all.addAll(_db!['content']['adhkar_munajat'] ?? []);
+      all.addAll(_db!['content']['adhkar_tasbihs'] ?? []);
+      return all;
+    }
+    if (section == 'duas') {
+      List all = [];
+      all.addAll(_db!['content']['duas_days'] ?? []);
+      all.addAll(_db!['content']['duas_taqeebat'] ?? []);
+      all.addAll(_db!['content']['duas_general'] ?? []);
+      all.addAll(_db!['content']['duas_salawat'] ?? []);
+      return all;
+    }
+    if (section == 'visits') {
+      List all = [];
+      all.addAll(_db!['content']['visits_days'] ?? []);
+      all.addAll(_db!['content']['visits_general'] ?? []);
+      return all;
+    }
+    return _db!['content'][section] as List<dynamic>? ?? [];
   }
 
   static Map<String, dynamic> getAbout() {
