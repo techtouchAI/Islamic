@@ -178,6 +178,7 @@ class _AlDhakereenAppState extends State<AlDhakereenApp> {
         _homeVisibility[key] = prefs.getBool('vis_$key') ?? (value['visible_home'] ?? true);
       });
       _homeVisibility['inspiration'] = prefs.getBool('vis_inspiration') ?? (dbSettings['show_inspiration'] ?? true);
+      _homeVisibility['day_dua'] = prefs.getBool('vis_day_dua') ?? true;
     });
   }
 
@@ -628,8 +629,8 @@ class _HomeSectionState extends State<HomeSection> {
               ),
             ),
             const SizedBox(height: 20),
-            if (_dayDua != null) _buildSpecialCard(context, 'دعاء اليوم', _dayDua!, textColor, Icons.calendar_today),
-            const SizedBox(height: 15),
+            if (_dayDua != null && (widget.visibility['day_dua'] ?? true)) _buildSpecialCard(context, 'دعاء اليوم', _dayDua!, textColor, Icons.calendar_today),
+            if (_dayDua != null && (widget.visibility['day_dua'] ?? true)) const SizedBox(height: 15),
             if (_inspirationDua != null && (widget.visibility['inspiration'] ?? true)) _buildSpecialCard(context, 'إلهام اليوم', _inspirationDua!, textColor, Icons.auto_awesome),
             const SizedBox(height: 25),
             Align(alignment: Alignment.centerRight, child: Text('مقتطفات إيمانية', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Theme.of(context).brightness == Brightness.dark ? Colors.white70 : Colors.black87))),
@@ -954,7 +955,17 @@ class SettingsSection extends StatelessWidget {
             SizedBox(height: 100, child: _buildBgGallery(context, (img) { onBase64BgChanged(img); })),
           ]),
           _buildGroup(context, 'إعدادات ظهور الصفحة الرئيسية', [
-            _visToggle('inspiration', 'إلهام اليوم'), _visToggle('quran', 'القرآن الكريم'), _visToggle('duas', 'الأدعية'), _visToggle('visits', 'الزيارات'), _visToggle('tafsir', 'التفسير'), _visToggle('dreams', 'تفسير الأحلام'), _visToggle('stories', 'قصص الأنبياء'), _visToggle('imam_ali', 'موسوعة الإمام علي (ع)'), _visToggle('owraths', 'الأذكار والأوراد'), _visToggle('sahifa_sajjadiya', 'الصحيفة السجادية'),
+            _visToggle('inspiration', 'إلهام اليوم'),
+            _visToggle('day_dua', 'دعاء اليوم'),
+            _visToggle('quran', 'القرآن الكريم'),
+            _visToggle('duas', 'الأدعية'),
+            _visToggle('visits', 'الزيارات'),
+            _visToggle('tafsir', 'التفسير'),
+            _visToggle('dreams', 'تفسير الأحلام'),
+            _visToggle('stories', 'قصص الأنبياء'),
+            _visToggle('imam_ali', 'موسوعة الإمام علي (ع)'),
+            _visToggle('owraths', 'الأذكار والأوراد'),
+            _visToggle('sahifa_sajjadiya', 'الصحيفة السجادية'),
           ]),
         ],
       ),

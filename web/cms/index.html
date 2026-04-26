@@ -145,6 +145,14 @@
             <div class="modal-content border-0" style="border-radius: 25px;">
                 <div class="modal-body p-5">
                     <h4 class="fw-bold mb-4">تحرير المحتوى</h4>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-12">
+                            <label class="small fw-bold mb-1">القسم / التبويب المستهدف</label>
+                            <select id="m-target-key" class="form-select shadow-sm"></select>
+                        </div>
+                    </div>
+
                     <input type="text" id="m-title" class="form-control form-control-lg mb-4 shadow-sm" placeholder="العنوان...">
                     <textarea id="m-content" class="form-control shadow-sm" rows="12" placeholder="المحتوى الكامل هنا..." style="white-space: pre-wrap; border-radius: 15px;"></textarea>
                     <div class="mt-4 text-end">
@@ -160,7 +168,26 @@
     <script>
         let db = null;
         let activeView = 'settings';
+        let activeSubView = null;
         let editIdx = -1;
+
+        const subSections = {
+            'duas': [
+                { id: 'duas_days', title: 'أدعية الأيام' },
+                { id: 'duas_taqeebat', title: 'تعقيبات الصلاة' },
+                { id: 'duas_general', title: 'الأدعية العامة' },
+                { id: 'duas_salawat', title: 'الصلوات' }
+            ],
+            'visits': [
+                { id: 'visits_days', title: 'زيارات الأيام' },
+                { id: 'visits_general', title: 'الزيارات العامة' }
+            ],
+            'adhkar': [
+                { id: 'adhkar_munajat', title: 'المناجاة' },
+                { id: 'adhkar_tasbihs', title: 'التسبيحات' }
+            ]
+        };
+
         const modal = new bootstrap.Modal(document.getElementById('editModal'));
         const importModal = new bootstrap.Modal(document.getElementById('importModal'));
         const helpModal = new bootstrap.Modal(document.getElementById('helpModal'));
@@ -198,8 +225,15 @@
             });
         }
 
-        function loadView(id) {
+        function loadView(id, subId = null) {
             activeView = id;
+            activeSubView = subId;
+
+            // Auto-select first sub-section if not specified
+            if (!subId && subSections[id]) {
+                activeSubView = subSections[id][0].id;
+            }
+
             renderNav();
             const ws = document.getElementById('workspace');
             const acts = document.getElementById('view-actions');
@@ -210,6 +244,7 @@
             if (db.sections[id]) {
                 const s = db.sections[id];
                 title.innerText = s.title; icon.innerText = s.icon;
+
                 acts.innerHTML = `
                     <div class="btn-group-sm-responsive">
                         <button class="btn btn-outline-dark px-3" onclick="helpModal.show()">تعليمات الاستيراد</button>
@@ -218,7 +253,20 @@
                         <button class="btn btn-gold" onclick="openAdd()">إضافة موضوع</button>
                     </div>
                 `;
-                ws.innerHTML = `<div id="list-container" class="row g-3"></div>`;
+
+                // Render Sub-section Tabs if available
+                if (subSections[id]) {
+                    let tabsHtml = `<div class="nav nav-pills mb-4 bg-white p-2 rounded shadow-sm">`;
+                    subSections[id].forEach(sub => {
+                        tabsHtml += `
+                            <button class="nav-link py-2 px-4 me-2 ${activeSubView === sub.id ? 'active' : 'text-dark'}"
+                                    onclick="loadView('${id}', '${sub.id}')">${sub.title}</button>`;
+                    });
+                    tabsHtml += `</div>`;
+                    ws.innerHTML += tabsHtml;
+                }
+
+                ws.innerHTML += `<div id="list-container" class="row g-3"></div>`;
                 renderItems();
             } else if (id === 'settings') {
                 title.innerText = "الهوية والوسائط"; icon.innerText = "photo_library";
@@ -390,8 +438,12 @@
 
         function renderItems() {
             const container = document.getElementById('list-container');
+            if (!container) return;
             container.innerHTML = '';
-            const items = db.content[activeView] || [];
+
+            const contentKey = activeSubView || activeView;
+            const items = db.content[contentKey] || [];
+
             items.forEach((it, i) => {
                 container.innerHTML += `
                     <div class="col-md-6">
@@ -439,8 +491,9 @@
             if(!txt) return;
             try {
                 const data = JSON.parse(txt);
+                const contentKey = activeSubView || activeView;
                 if(Array.isArray(data)) {
-                    db.content[activeView] = [...(db.content[activeView] || []), ...data];
+                    db.content[contentKey] = [...(db.content[contentKey] || []), ...data];
                     renderItems();
                     batchModal.hide();
                     alert("تم إضافة " + data.length + " عنصر بنجاح.");
@@ -619,16 +672,60 @@
             if(type === 'bg') { db.settings.custom_bg_base64 = null; document.getElementById('bg-prev').src = '../../assets/images/default_bg.png'; }
         }
 
+        function populateTargetKey() {
+            const select = document.getElementById('m-target-key');
+            if (!select) return;
+            select.innerHTML = '';
+            Object.keys(db.sections).forEach(k => {
+                if (subSections[k]) {
+                    subSections[k].forEach(sub => {
+                        select.innerHTML += `<option value="${sub.id}">${db.sections[k].title} - ${sub.title}</option>`;
+                    });
+                } else {
+                    select.innerHTML += `<option value="${k}">${db.sections[k].title}</option>`;
+                }
+            });
+        }
+
         function openAdd() { openEdit(-1); }
-        function openEdit(i) { editIdx = i; const it = i === -1 ? {title:'', content:''} : db.content[activeView][i]; document.getElementById('m-title').value = it.title; document.getElementById('m-content').value = it.content; modal.show(); }
+        function openEdit(i) {
+            editIdx = i;
+            const contentKey = activeSubView || activeView;
+            populateTargetKey();
+            document.getElementById('m-target-key').value = contentKey;
+
+            const it = i === -1 ? {title:'', content:''} : (db.content[contentKey] ? db.content[contentKey][i] : {title:'', content:''});
+            document.getElementById('m-title').value = it.title;
+            document.getElementById('m-content').value = it.content;
+            modal.show();
+        }
         function saveItem() {
-            const t = document.getElementById('m-title').value; const c = document.getElementById('m-content').value;
+            const t = document.getElementById('m-title').value;
+            const c = document.getElementById('m-content').value;
+            const targetKey = document.getElementById('m-target-key').value;
+            const currentKey = activeSubView || activeView;
+
             if(!t || !c) return alert("املاً الحقول");
-            if(editIdx === -1) db.content[activeView].push({id:Date.now(), title:t, content:c});
-            else { db.content[activeView][editIdx].title = t; db.content[activeView][editIdx].content = c; }
+
+            if(editIdx === -1) {
+                if(!db.content[targetKey]) db.content[targetKey] = [];
+                db.content[targetKey].push({id:Date.now(), title:t, content:c});
+            } else {
+                if (targetKey === currentKey) {
+                    db.content[currentKey][editIdx].title = t;
+                    db.content[currentKey][editIdx].content = c;
+                } else {
+                    db.content[currentKey].splice(editIdx, 1);
+                    if(!db.content[targetKey]) db.content[targetKey] = [];
+                    db.content[targetKey].push({id:Date.now(), title:t, content:c});
+                }
+            }
             modal.hide(); renderItems();
         }
-        function deleteItem(i) { if(confirm("حذف؟")) { db.content[activeView].splice(i, 1); renderItems(); } }
+        function deleteItem(i) {
+            const contentKey = activeSubView || activeView;
+            if(confirm("حذف؟")) { db.content[contentKey].splice(i, 1); renderItems(); }
+        }
 
         async function saveToGitHub() {
             const token = prompt("أدخل GitHub Personal Access Token:"); if(!token) return;
