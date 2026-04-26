@@ -371,8 +371,10 @@ class _MainScaffoldState extends State<MainScaffold> {
         ),
         body: Stack(
           children: [
-            if (widget.backgroundImagePath != null) Positioned.fill(child: Image.file(File(widget.backgroundImagePath!), fit: BoxFit.cover)),
-            if (widget.backgroundImagePath == null) Positioned.fill(child: _buildImage(widget.selectedBase64Bg ?? settings['custom_bg_base64']?.toString() ?? settings['bg_image']?.toString(), fit: BoxFit.cover)),
+            if (_currentSection == 'home') ...[
+              if (widget.backgroundImagePath != null) Positioned.fill(child: Image.file(File(widget.backgroundImagePath!), fit: BoxFit.cover)),
+              if (widget.backgroundImagePath == null) Positioned.fill(child: _buildImage(widget.selectedBase64Bg ?? settings['custom_bg_base64']?.toString() ?? settings['bg_image']?.toString(), fit: BoxFit.cover)),
+            ],
             Positioned.fill(child: Opacity(opacity: 0.03, child: CustomPaint(painter: IslamicPatternPainter(color: Theme.of(context).colorScheme.primary)))),
             SafeArea(child: AnimatedSwitcher(duration: const Duration(milliseconds: 400), child: _buildBody(context))),
           ],
@@ -383,7 +385,7 @@ class _MainScaffoldState extends State<MainScaffold> {
 
   Widget _buildBody(BuildContext context) {
     switch (_currentSection) {
-      case 'home': return HomeSection(key: const ValueKey('home'), fontSizeFactor: widget.fontSizeFactor, uiOpacity: widget.uiOpacity, cardColor: widget.cardColor, visibility: widget.homeVisibility, hijriAdjustment: widget.hijriAdjustment);
+      case 'home': return HomeSection(key: const ValueKey('home'), fontSizeFactor: widget.fontSizeFactor, uiOpacity: widget.uiOpacity, cardColor: widget.cardColor, visibility: widget.homeVisibility, hijriAdjustment: widget.hijriAdjustment, onPrayerCardTap: () => _navigateTo('prayer_times'));
       case 'settings': return SettingsSection(key: const ValueKey('settings'), onThemeToggled: widget.onThemeToggled, primaryColor: widget.primaryColor, onColorChanged: widget.onColorChanged, uiOpacity: widget.uiOpacity, onOpacityChanged: widget.onOpacityChanged, onBackgroundImageChanged: widget.onBackgroundImageChanged, onBase64BgChanged: widget.onBase64BgChanged, backgroundImagePath: widget.backgroundImagePath, cardColor: widget.cardColor, onCardColorChanged: widget.onCardColorChanged, visibility: widget.homeVisibility, onVisibilityChanged: widget.onVisibilityChanged, hijriAdjustment: widget.hijriAdjustment, onHijriAdjustmentChanged: widget.onHijriAdjustmentChanged);
       case 'about': return const AboutSection(key: ValueKey('about'));
       case 'tasbih': return const TasbihSection(key: ValueKey('tasbih'));
@@ -490,7 +492,8 @@ class HomeSection extends StatefulWidget {
   final Color cardColor;
   final Map<String, bool> visibility;
   final int hijriAdjustment;
-  const HomeSection({super.key, required this.fontSizeFactor, required this.uiOpacity, required this.cardColor, required this.visibility, required this.hijriAdjustment});
+  final VoidCallback? onPrayerCardTap;
+  const HomeSection({super.key, required this.fontSizeFactor, required this.uiOpacity, required this.cardColor, required this.visibility, required this.hijriAdjustment, this.onPrayerCardTap});
 
   @override
   State<HomeSection> createState() => _HomeSectionState();
@@ -609,22 +612,26 @@ class _HomeSectionState extends State<HomeSection> {
         padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
         child: Column(
           children: [
-            Card(
-              elevation: 10,
-              color: Theme.of(context).brightness == Brightness.dark ? Colors.white.withValues(alpha: widget.uiOpacity) : Colors.black.withValues(alpha: widget.uiOpacity),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25), side: BorderSide(color: Theme.of(context).colorScheme.primary, width: 2.5)),
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 15),
-                child: Column(
-                  children: [
-                    if (_currentPrayerName.isNotEmpty) Container(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4), decoration: BoxDecoration(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(10)), child: Text("الصلاة القادمة: $_currentPrayerName", style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold, fontSize: 12))),
-                    const SizedBox(height: 10),
-                    _ClockWidget(color: Theme.of(context).colorScheme.primary),
-                    const SizedBox(height: 8),
-                    Text('${hijri.hDay} ${hijri.longMonthName} ${hijri.hYear} هـ', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontSize: 20, fontWeight: FontWeight.bold)),
-                    Text(intl.DateFormat('EEEE, d MMMM yyyy', 'ar_SA').format(now), style: TextStyle(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.8), fontSize: 14, fontWeight: FontWeight.w500)),
-                  ],
+            InkWell(
+              onTap: widget.onPrayerCardTap,
+              borderRadius: BorderRadius.circular(25),
+              child: Card(
+                elevation: 10,
+                color: Theme.of(context).brightness == Brightness.dark ? Colors.white.withValues(alpha: widget.uiOpacity) : Colors.black.withValues(alpha: widget.uiOpacity),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25), side: BorderSide(color: Theme.of(context).colorScheme.primary, width: 2.5)),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 15),
+                  child: Column(
+                    children: [
+                      if (_currentPrayerName.isNotEmpty) Container(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4), decoration: BoxDecoration(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(10)), child: Text("الصلاة القادمة: $_currentPrayerName", style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold, fontSize: 12))),
+                      const SizedBox(height: 10),
+                      _ClockWidget(color: Theme.of(context).colorScheme.primary),
+                      const SizedBox(height: 8),
+                      Text('${hijri.hDay} ${hijri.longMonthName} ${hijri.hYear} هـ', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontSize: 20, fontWeight: FontWeight.bold)),
+                      Text(intl.DateFormat('EEEE, d MMMM yyyy', 'ar_SA').format(now), style: TextStyle(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.8), fontSize: 14, fontWeight: FontWeight.w500)),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -762,14 +769,24 @@ class TabbedSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return DefaultTabController(
       length: tabs.length,
       child: Column(
         children: [
-          TabBar(
-            isScrollable: true, tabAlignment: TabAlignment.center,
-            indicatorColor: Theme.of(context).colorScheme.primary, labelColor: Theme.of(context).colorScheme.primary,
-            tabs: List.generate(tabs.length, (i) => Tab(child: Row(mainAxisSize: MainAxisSize.min, children: [Text(tabs[i]), const SizedBox(width: 6), _CountBadge(count: DataManager.getItems(sectionKeys[i]).length)]))),
+          Container(
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: isDark ? Colors.black.withValues(alpha: 0.5) : const Color(0xFFFDFBF7),
+              border: Border(bottom: BorderSide(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2))),
+            ),
+            child: TabBar(
+              isScrollable: true, tabAlignment: TabAlignment.center,
+              indicatorColor: Theme.of(context).colorScheme.primary,
+              labelColor: Theme.of(context).colorScheme.primary,
+              unselectedLabelColor: isDark ? Colors.white70 : Colors.black54,
+              tabs: List.generate(tabs.length, (i) => Tab(child: Row(mainAxisSize: MainAxisSize.min, children: [Text(tabs[i]), const SizedBox(width: 6), _CountBadge(count: DataManager.getItems(sectionKeys[i]).length)]))),
+            ),
           ),
           Expanded(child: TabBarView(children: sectionKeys.map((key) => DynamicListSection(title: '', sectionKey: key, fontSizeFactor: fontSizeFactor, uiOpacity: uiOpacity)).toList())),
         ],
@@ -788,6 +805,7 @@ class DynamicListSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final data = DataManager.getItems(sectionKey);
+    final isQuran = sectionKey == 'quran';
     return Column(
       children: [
         Expanded(
@@ -800,9 +818,9 @@ class DynamicListSection extends StatelessWidget {
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15), side: BorderSide(color: Theme.of(context).colorScheme.primary, width: 1.5)),
                       child: ListTile(
                         contentPadding: const EdgeInsets.all(20),
-                        title: Text(data[index]['title'].toString(), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-                        subtitle: Padding(padding: const EdgeInsets.only(top: 10), child: Text(data[index]['content'].toString(), maxLines: 2, overflow: TextOverflow.ellipsis, style: GoogleFonts.amiri(fontSize: 16))),
-                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (c) => ReaderPage(title: data[index]['title'].toString(), content: data[index]['content'].toString(), fontSizeFactor: fontSizeFactor))),
+                        title: Text(data[index]['title'].toString(), style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, fontFamily: isQuran ? 'Amiri' : null)),
+                        subtitle: Padding(padding: const EdgeInsets.only(top: 10), child: Text(data[index]['content'].toString(), maxLines: 2, overflow: TextOverflow.ellipsis, style: isQuran ? GoogleFonts.amiri(fontSize: 18, height: 1.6) : GoogleFonts.amiri(fontSize: 16))),
+                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (c) => ReaderPage(title: data[index]['title'].toString(), content: data[index]['content'].toString(), fontSizeFactor: fontSizeFactor, isQuran: isQuran))),
                       ),
                     ),
                 ),
@@ -815,7 +833,8 @@ class DynamicListSection extends StatelessWidget {
 class ReaderPage extends StatefulWidget {
   final String title, content;
   final double fontSizeFactor;
-  const ReaderPage({super.key, required this.title, required this.content, required this.fontSizeFactor});
+  final bool isQuran;
+  const ReaderPage({super.key, required this.title, required this.content, required this.fontSizeFactor, this.isQuran = false});
   @override
   State<ReaderPage> createState() => _ReaderPageState();
 }
@@ -839,7 +858,7 @@ class _ReaderPageState extends State<ReaderPage> {
       ),
       body: Column(
         children: [
-          Expanded(child: SingleChildScrollView(padding: const EdgeInsets.all(24), child: Container(width: double.infinity, padding: const EdgeInsets.all(24), decoration: BoxDecoration(border: Border.all(color: Theme.of(context).colorScheme.primary, width: 3), borderRadius: BorderRadius.circular(25), color: _customBgColor ?? Theme.of(context).colorScheme.primary.withValues(alpha: 0.02), boxShadow: [BoxShadow(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1), blurRadius: 15, spreadRadius: 2)]), child: Column(children: [Text("بسم الله الرحمن الرحيم", style: GoogleFonts.notoNaskhArabic(fontSize: 24, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.primary)), const SizedBox(height: 15), Row(mainAxisAlignment: MainAxisAlignment.center, children: List.generate(5, (index) => Icon(Icons.star, size: 12, color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.5)))), const SizedBox(height: 25), Text(widget.content, textAlign: TextAlign.center, style: GoogleFonts.notoNaskhArabic(fontSize: 20 * _factor, height: 2.2, color: _customBgColor != null ? (_customBgColor!.computeLuminance() > 0.5 ? Colors.black : Colors.white) : null)), const SizedBox(height: 25), Row(mainAxisAlignment: MainAxisAlignment.center, children: List.generate(5, (index) => Icon(Icons.star, size: 12, color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.5)))), ])))),
+          Expanded(child: SingleChildScrollView(padding: const EdgeInsets.all(24), child: Container(width: double.infinity, padding: const EdgeInsets.all(24), decoration: BoxDecoration(border: Border.all(color: Theme.of(context).colorScheme.primary, width: 3), borderRadius: BorderRadius.circular(25), color: _customBgColor ?? Theme.of(context).colorScheme.primary.withValues(alpha: 0.02), boxShadow: [BoxShadow(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1), blurRadius: 15, spreadRadius: 2)]), child: Column(children: [Text("بسم الله الرحمن الرحيم", style: GoogleFonts.notoNaskhArabic(fontSize: 24, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.primary)), const SizedBox(height: 15), Row(mainAxisAlignment: MainAxisAlignment.center, children: List.generate(5, (index) => Icon(Icons.star, size: 12, color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.5)))), const SizedBox(height: 25), Text(widget.content, textAlign: TextAlign.center, style: (widget.isQuran ? GoogleFonts.amiri : GoogleFonts.notoNaskhArabic)(fontSize: 20 * _factor, height: widget.isQuran ? 1.8 : 2.2, color: _customBgColor != null ? (_customBgColor!.computeLuminance() > 0.5 ? Colors.black : Colors.white) : null)), const SizedBox(height: 25), Row(mainAxisAlignment: MainAxisAlignment.center, children: List.generate(5, (index) => Icon(Icons.star, size: 12, color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.5)))), ])))),
           Container(
             padding: EdgeInsets.fromLTRB(20, 10, 20, MediaQuery.of(context).padding.bottom + 10),
             decoration: BoxDecoration(color: Theme.of(context).cardColor, boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10)]),
@@ -957,15 +976,7 @@ class SettingsSection extends StatelessWidget {
           _buildGroup(context, 'إعدادات ظهور الصفحة الرئيسية', [
             _visToggle('inspiration', 'إلهام اليوم'),
             _visToggle('day_dua', 'دعاء اليوم'),
-            _visToggle('quran', 'القرآن الكريم'),
-            _visToggle('duas', 'الأدعية'),
-            _visToggle('visits', 'الزيارات'),
-            _visToggle('tafsir', 'التفسير'),
-            _visToggle('dreams', 'تفسير الأحلام'),
-            _visToggle('stories', 'قصص الأنبياء'),
-            _visToggle('imam_ali', 'موسوعة الإمام علي (ع)'),
-            _visToggle('owraths', 'الأذكار والأوراد'),
-            _visToggle('sahifa_sajjadiya', 'الصحيفة السجادية'),
+            ...DataManager.getSections().entries.map((e) => _visToggle(e.key, e.value['title'].toString())),
           ]),
         ],
       ),

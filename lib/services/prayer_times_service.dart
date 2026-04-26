@@ -136,6 +136,9 @@ class PrayerTimesService {
       priority: Priority.high,
       sound: RawResourceAndroidNotificationSound('adhan'),
       playSound: true,
+      enableVibration: true,
+      fullScreenIntent: true,
+      audioAttributesUsage: AudioAttributesUsage.alarm,
     );
 
     await _notificationsPlugin.zonedSchedule(
