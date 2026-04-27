@@ -47,7 +47,11 @@ class IslamicPatternPainter extends CustomPainter {
       double angle = (i * 45) * pi / 180;
       double x = center.dx + radius * cos(angle);
       double y = center.dy + radius * sin(angle);
-      if (i == 0) path.moveTo(x, y); else path.lineTo(x, y);
+      if (i == 0) {
+        path.moveTo(x, y);
+      } else {
+        path.lineTo(x, y);
+      }
       double nextAngle = (i * 45 + 22.5) * pi / 180;
       double nextX = center.dx + (radius * 0.7) * cos(nextAngle);
       double nextY = center.dy + (radius * 0.7) * sin(nextAngle);
@@ -558,11 +562,11 @@ class _HomeSectionState extends State<HomeSection> {
     final dayNameAr = intl.DateFormat('EEEE', 'ar_SA').format(now);
     final allDaysDuas = DataManager.getItems('duas_days');
 
-    String _normalize(String s) => s.replaceAll('أ', 'ا').replaceAll('إ', 'ا').replaceAll('آ', 'ا').replaceAll('ة', 'ه').replaceAll('ى', 'ي');
-    final normalizedDay = _normalize(dayNameAr);
+    String normalize(String s) => s.replaceAll('أ', 'ا').replaceAll('إ', 'ا').replaceAll('آ', 'ا').replaceAll('ة', 'ه').replaceAll('ى', 'ي');
+    final normalizedDay = normalize(dayNameAr);
 
     final itemsForToday = allDaysDuas.where((it) {
-      final title = _normalize(it['title'].toString());
+      final title = normalize(it['title'].toString());
       return title.contains(normalizedDay);
     }).toList();
 
@@ -855,6 +859,57 @@ class DynamicListSection extends StatelessWidget {
   }
 }
 
+class SurahHeader extends StatelessWidget {
+  final String title;
+  final Color color;
+  const SurahHeader({super.key, required this.title, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 20),
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Container(
+            height: 50,
+            width: double.infinity,
+            margin: const EdgeInsets.symmetric(horizontal: 10),
+            decoration: BoxDecoration(
+              border: Border.all(color: color.withValues(alpha: 0.5), width: 1),
+              borderRadius: BorderRadius.circular(25),
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 5),
+            decoration: BoxDecoration(
+              color: Theme.of(context).scaffoldBackgroundColor,
+              border: Border.all(color: color, width: 2),
+              borderRadius: BorderRadius.circular(15),
+            ),
+            child: Text(
+              title,
+              style: GoogleFonts.scheherazadeNew(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                color: color,
+              ),
+            ),
+          ),
+          Positioned(
+            left: 20,
+            child: Icon(Icons.brightness_7, color: color.withValues(alpha: 0.6), size: 20),
+          ),
+          Positioned(
+            right: 20,
+            child: Icon(Icons.brightness_7, color: color.withValues(alpha: 0.6), size: 20),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class ReaderPage extends StatefulWidget {
   final String title, content;
   final double fontSizeFactor;
@@ -871,6 +926,7 @@ class _ReaderPageState extends State<ReaderPage> {
   void initState() { super.initState(); _factor = widget.fontSizeFactor; }
   @override
   Widget build(BuildContext context) {
+    final primary = Theme.of(context).colorScheme.primary;
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.title, style: const TextStyle(fontSize: 16)),
@@ -883,7 +939,54 @@ class _ReaderPageState extends State<ReaderPage> {
       ),
       body: Column(
         children: [
-          Expanded(child: SingleChildScrollView(padding: const EdgeInsets.all(24), child: Container(width: double.infinity, padding: const EdgeInsets.all(24), decoration: BoxDecoration(border: Border.all(color: Theme.of(context).colorScheme.primary, width: 3), borderRadius: BorderRadius.circular(25), color: _customBgColor ?? Theme.of(context).colorScheme.primary.withValues(alpha: 0.02), boxShadow: [BoxShadow(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1), blurRadius: 15, spreadRadius: 2)]), child: Column(children: [Text("بسم الله الرحمن الرحيم", style: GoogleFonts.notoNaskhArabic(fontSize: 24, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.primary)), const SizedBox(height: 15), Row(mainAxisAlignment: MainAxisAlignment.center, children: List.generate(5, (index) => Icon(Icons.star, size: 12, color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.5)))), const SizedBox(height: 25), Text(widget.content, textAlign: TextAlign.center, style: (widget.isQuran ? GoogleFonts.scheherazadeNew : GoogleFonts.notoNaskhArabic)(fontSize: (widget.isQuran ? 24 : 20) * _factor, height: widget.isQuran ? 1.8 : 2.2, color: _customBgColor != null ? (_customBgColor!.computeLuminance() > 0.5 ? Colors.black : Colors.white) : null)), const SizedBox(height: 25), Row(mainAxisAlignment: MainAxisAlignment.center, children: List.generate(5, (index) => Icon(Icons.star, size: 12, color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.5)))), ])))),
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  border: Border.all(color: primary, width: 3),
+                  borderRadius: BorderRadius.circular(25),
+                  color: _customBgColor ?? primary.withValues(alpha: 0.02),
+                  boxShadow: [BoxShadow(color: primary.withValues(alpha: 0.1), blurRadius: 15, spreadRadius: 2)]
+                ),
+                child: Column(
+                  children: [
+                    if (widget.isQuran) SurahHeader(title: widget.title, color: primary),
+                    Text(
+                      "بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ",
+                      style: GoogleFonts.scheherazadeNew(
+                        fontSize: 30,
+                        fontWeight: FontWeight.bold,
+                        color: primary,
+                      )
+                    ),
+                    const SizedBox(height: 15),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: List.generate(5, (index) => Icon(Icons.star, size: 12, color: primary.withValues(alpha: 0.5)))
+                    ),
+                    const SizedBox(height: 25),
+                    Text(
+                      widget.content,
+                      textAlign: TextAlign.center,
+                      style: (widget.isQuran ? GoogleFonts.scheherazadeNew : GoogleFonts.notoNaskhArabic)(
+                        fontSize: (widget.isQuran ? 26 : 20) * _factor,
+                        height: widget.isQuran ? 1.8 : 2.2,
+                        color: _customBgColor != null ? (_customBgColor!.computeLuminance() > 0.5 ? Colors.black : Colors.white) : null
+                      )
+                    ),
+                    const SizedBox(height: 25),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: List.generate(5, (index) => Icon(Icons.star, size: 12, color: primary.withValues(alpha: 0.5)))
+                    ),
+                  ]
+                )
+              )
+            )
+          ),
           Container(
             padding: EdgeInsets.fromLTRB(20, 10, 20, MediaQuery.of(context).padding.bottom + 10),
             decoration: BoxDecoration(color: Theme.of(context).cardColor, boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10)]),
@@ -1066,8 +1169,8 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
   Position? _currentPosition;
   bool _loading = true;
   final PrayerTimesService _prayerService = PrayerTimesService();
-  Map<String, bool> _enabledPrayers = {'fajr': true, 'dhuhr': true, 'asr': true, 'maghrib': true, 'isha': true};
-  Map<String, int> _manualAdjustments = {'fajr': 0, 'dhuhr': 0, 'asr': 0, 'maghrib': 0, 'isha': 0};
+  final Map<String, bool> _enabledPrayers = {'fajr': true, 'dhuhr': true, 'asr': true, 'maghrib': true, 'isha': true};
+  final Map<String, int> _manualAdjustments = {'fajr': 0, 'dhuhr': 0, 'asr': 0, 'maghrib': 0, 'isha': 0};
   String _selectedProvince = "بغداد";
   final Map<String, List<double>> _iraqProvinces = {"بغداد": [33.3128, 44.3615], "البصرة": [30.5081, 47.7835], "النجف الأشرف": [32.0259, 44.3462], "كربلاء المقدسة": [32.6160, 44.0248], "أربيل": [36.1901, 44.0094], "الموصل": [36.3489, 43.1577], "كركوك": [35.4681, 44.3922], "السليمانية": [35.5561, 45.4333], "العمارة": [31.8453, 47.1420], "الناصرية": [31.0577, 46.2573], "الكوت": [32.5020, 45.8202], "الحلة": [32.4815, 44.4331], "الديوانية": [31.9904, 44.9258], "بعقوبة": [33.7431, 44.6361], "الرمادي": [33.4219, 43.3032], "تكريت": [34.6074, 43.6766], "السماوة": [31.3120, 45.2810], "دهوك": [36.8679, 42.9431]};
 
@@ -1118,9 +1221,11 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
       await prefs.setDouble('gps_lat', pos.latitude);
       await prefs.setDouble('gps_lon', pos.longitude);
       await prefs.setString('prayer_city', "الموقع الحالي (GPS)");
+      if (!mounted) return;
       setState(() { _currentPosition = pos; _selectedProvince = "الموقع الحالي (GPS)"; });
       _getLocationAndPrayers();
     } else {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('الرجاء منح صلاحية الوصول للموقع')));
       setState(() => _loading = false);
     }
@@ -1164,7 +1269,7 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
           const SizedBox(height: 20),
           _buildPrayerCard('الفجر', _prayerTimes?['fajr'], 'fajr'), _buildPrayerCard('الظهر', _prayerTimes?['dhuhr'], 'dhuhr'), _buildPrayerCard('العصر', _prayerTimes?['asr'], 'asr'), _buildPrayerCard('المغرب', _prayerTimes?['maghrib'], 'maghrib'), _buildPrayerCard('العشاء', _prayerTimes?['isha'], 'isha'),
           const SizedBox(height: 30), const Divider(), const Text('إعدادات الأذان والتنبيهات', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-          ..._enabledPrayers.keys.map((k) => Card(margin: const EdgeInsets.only(bottom: 10), child: SwitchListTile(title: Text('تفعيل أذان ${{'fajr':'الفجر','dhuhr':'الظهر','asr':'العصر','maghrib':'المغرب','isha':'العشاء'}[k]}'), value: _enabledPrayers[k] ?? true, onChanged: (v) async { setState(() => _enabledPrayers[k] = v); final prefs = await SharedPreferences.getInstance(); await prefs.setBool('adhan_$k', v); _getLocationAndPrayers(); }))).toList(),
+          ..._enabledPrayers.keys.map((k) => Card(margin: const EdgeInsets.only(bottom: 10), child: SwitchListTile(title: Text('تفعيل أذان ${{'fajr':'الفجر','dhuhr':'الظهر','asr':'العصر','maghrib':'المغرب','isha':'العشاء'}[k]}'), value: _enabledPrayers[k] ?? true, onChanged: (v) async { setState(() => _enabledPrayers[k] = v); final prefs = await SharedPreferences.getInstance(); await prefs.setBool('adhan_$k', v); _getLocationAndPrayers(); }))),
       ]),
     );
   }
