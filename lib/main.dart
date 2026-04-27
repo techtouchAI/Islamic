@@ -20,6 +20,7 @@ import 'data/data_manager.dart';
 import 'data/daily_duas.dart';
 import 'services/prayer_times_service.dart';
 import 'services/prayer_notification_service.dart';
+import 'services/quran_service.dart';
 
 class IslamicPatternPainter extends CustomPainter {
   final Color color;
@@ -149,6 +150,7 @@ class _AlDhakereenAppState extends State<AlDhakereenApp> {
       await flutterLocalNotificationsPlugin.initialize(initializationSettings);
       await PrayerNotificationService.initNotifications();
       PrayerNotificationService.scheduleDailyPrayers();
+      await QuranService.initDB();
       await _loadSettings();
       DataManager.syncCloudData().then((updated) {
         if (updated && mounted) {
@@ -836,8 +838,46 @@ class DynamicListSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final data = DataManager.getItems(sectionKey);
     final isQuran = sectionKey == 'quran';
+    if (isQuran) {
+      return FutureBuilder<List<Map<String, dynamic>>>(
+        future: QuranService.getSurahs(),
+        builder: (context, snapshot) {
+          if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+          final data = snapshot.data!;
+          return ListView.builder(
+            physics: const BouncingScrollPhysics(),
+            itemCount: data.length,
+            padding: const EdgeInsets.only(bottom: 20),
+            itemBuilder: (context, index) {
+              final surah = data[index];
+              return Card(
+                color: Theme.of(context).cardColor.withValues(alpha: uiOpacity),
+                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15), side: BorderSide(color: Theme.of(context).colorScheme.primary, width: 1.5)),
+                child: ListTile(
+                  contentPadding: const EdgeInsets.all(20),
+                  title: Text(surah['name'].toString(), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, fontFamily: 'Scheherazade New')),
+                  subtitle: Padding(
+                    padding: const EdgeInsets.only(top: 10),
+                    child: Text("سورة ${surah['name']} - آياتها ${surah['total_ayahs']}", style: GoogleFonts.scheherazadeNew(fontSize: 18)),
+                  ),
+                  onTap: () async {
+                    final ayahs = await QuranService.getAyahs(surah['id']);
+                    // Combine ayahs with their numbers for a professional Quranic display
+                    final content = ayahs.map((a) => "${a['ar_text']} \uFD3F${a['ayah_surah_index']}\uFD3E").join(" ");
+                    if (!context.mounted) return;
+                    Navigator.push(context, MaterialPageRoute(builder: (c) => ReaderPage(title: "سورة ${surah['name']}", content: content, fontSizeFactor: fontSizeFactor, isQuran: true)));
+                  },
+                ),
+              );
+            },
+          );
+        },
+      );
+    }
+
+    final data = DataManager.getItems(sectionKey);
     return Column(
       children: [
         Expanded(
@@ -850,9 +890,9 @@ class DynamicListSection extends StatelessWidget {
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15), side: BorderSide(color: Theme.of(context).colorScheme.primary, width: 1.5)),
                       child: ListTile(
                         contentPadding: const EdgeInsets.all(20),
-                        title: Text(data[index]['title'].toString(), style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, fontFamily: isQuran ? 'Scheherazade New' : null)),
-                        subtitle: Padding(padding: const EdgeInsets.only(top: 10), child: Text(data[index]['content'].toString(), maxLines: 2, overflow: TextOverflow.ellipsis, style: isQuran ? GoogleFonts.scheherazadeNew(fontSize: 20, height: 1.6) : GoogleFonts.amiri(fontSize: 16))),
-                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (c) => ReaderPage(title: data[index]['title'].toString(), content: data[index]['content'].toString(), fontSizeFactor: fontSizeFactor, isQuran: isQuran))),
+                        title: Text(data[index]['title'].toString(), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                        subtitle: Padding(padding: const EdgeInsets.only(top: 10), child: Text(data[index]['content'].toString(), maxLines: 2, overflow: TextOverflow.ellipsis, style: GoogleFonts.amiri(fontSize: 16))),
+                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (c) => ReaderPage(title: data[index]['title'].toString(), content: data[index]['content'].toString(), fontSizeFactor: fontSizeFactor, isQuran: false))),
                       ),
                     ),
                 ),
