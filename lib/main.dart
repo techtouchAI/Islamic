@@ -1079,6 +1079,12 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
       _enabledPrayers['fajr'] = prefs.getBool('adhan_fajr') ?? true; _enabledPrayers['dhuhr'] = prefs.getBool('adhan_dhuhr') ?? true; _enabledPrayers['asr'] = prefs.getBool('adhan_asr') ?? true; _enabledPrayers['maghrib'] = prefs.getBool('adhan_maghrib') ?? true; _enabledPrayers['isha'] = prefs.getBool('adhan_isha') ?? true;
       _manualAdjustments['fajr'] = prefs.getInt('adj_fajr') ?? 0; _manualAdjustments['dhuhr'] = prefs.getInt('adj_dhuhr') ?? 0; _manualAdjustments['asr'] = prefs.getInt('adj_asr') ?? 0; _manualAdjustments['maghrib'] = prefs.getInt('adj_maghrib') ?? 0; _manualAdjustments['isha'] = prefs.getInt('adj_isha') ?? 0;
       _selectedProvince = prefs.getString('prayer_city') ?? "بغداد";
+
+      final lat = prefs.getDouble('gps_lat');
+      final lon = prefs.getDouble('gps_lon');
+      if (lat != null && lon != null && _selectedProvince == "الموقع الحالي (GPS)") {
+        _currentPosition = Position(latitude: lat, longitude: lon, timestamp: DateTime.now(), accuracy: 0, altitude: 0, heading: 0, speed: 0, speedAccuracy: 0, altitudeAccuracy: 0, headingAccuracy: 0);
+      }
     });
   }
 
@@ -1104,7 +1110,21 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
     try { final parts = man.split(':'); return DateTime(calc.year, calc.month, calc.day, int.parse(parts[0]), int.parse(parts[1])); } catch (e) { return calc; }
   }
 
-  Future<void> _useGPS() async { setState(() => _loading = true); final pos = await _prayerService.getCurrentLocation(); if (pos != null) { setState(() { _currentPosition = pos; }); _getLocationAndPrayers(); } else { ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('الرجاء منح صلاحية الوصول للموقع'))); setState(() => _loading = false); } }
+  Future<void> _useGPS() async {
+    setState(() => _loading = true);
+    final pos = await _prayerService.getCurrentLocation();
+    if (pos != null) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setDouble('gps_lat', pos.latitude);
+      await prefs.setDouble('gps_lon', pos.longitude);
+      await prefs.setString('prayer_city', "الموقع الحالي (GPS)");
+      setState(() { _currentPosition = pos; _selectedProvince = "الموقع الحالي (GPS)"; });
+      _getLocationAndPrayers();
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('الرجاء منح صلاحية الوصول للموقع')));
+      setState(() => _loading = false);
+    }
+  }
 
   @override Widget build(BuildContext context) {
     if (_loading) return const Center(child: CircularProgressIndicator());
@@ -1112,7 +1132,32 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
       padding: const EdgeInsets.all(20),
       child: Column(children: [
           Container(padding: const EdgeInsets.all(15), decoration: BoxDecoration(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(15)), child: Column(children: [
-                Row(children: [const Icon(Icons.location_on), const SizedBox(width: 10), const Text('المحافظة:', style: TextStyle(fontWeight: FontWeight.bold)), const Spacer(), DropdownButton<String>(value: _selectedProvince, underline: const SizedBox(), onChanged: (v) async { if (v != null) { final prefs = await SharedPreferences.getInstance(); await prefs.setString('prayer_city', v); setState(() { _selectedProvince = v; _currentPosition = null; _loading = true; }); _getLocationAndPrayers(); } }, items: _iraqProvinces.keys.map((p) => DropdownMenuItem(value: p, child: Text(p))).toList())]),
+                Row(children: [
+                  const Icon(Icons.location_on),
+                  const SizedBox(width: 10),
+                  const Text('المحافظة:', style: TextStyle(fontWeight: FontWeight.bold)),
+                  const Spacer(),
+                  DropdownButton<String>(
+                    value: _selectedProvince,
+                    underline: const SizedBox(),
+                    onChanged: (v) async {
+                      if (v != null) {
+                        final prefs = await SharedPreferences.getInstance();
+                        await prefs.setString('prayer_city', v);
+                        if (v != "الموقع الحالي (GPS)") {
+                          await prefs.remove('gps_lat');
+                          await prefs.remove('gps_lon');
+                        }
+                        setState(() { _selectedProvince = v; if (v != "الموقع الحالي (GPS)") _currentPosition = null; _loading = true; });
+                        _getLocationAndPrayers();
+                      }
+                    },
+                    items: [
+                      ..._iraqProvinces.keys.map((p) => DropdownMenuItem(value: p, child: Text(p))),
+                      if (_selectedProvince == "الموقع الحالي (GPS)") const DropdownMenuItem(value: "الموقع الحالي (GPS)", child: Text("الموقع الحالي (GPS)"))
+                    ]
+                  )
+                ]),
                 const Divider(),
                 TextButton.icon(onPressed: _useGPS, icon: const Icon(Icons.my_location), label: Text(_currentPosition == null ? 'استخدام الموقع الحالي (GPS)' : 'موقعك محدد حالياً عبر GPS')),
           ])),
