@@ -142,12 +142,13 @@ class PrayerTimesService {
     );
 
     await _notificationsPlugin.zonedSchedule(
-      id: id,
-      title: 'حان وقت صلاة $name',
-      body: 'حي على الصلاة، حي على الفلاح',
-      scheduledDate: tz.TZDateTime.from(time, tz.local),
-      notificationDetails: const NotificationDetails(android: androidDetails),
+      id,
+      'حان وقت صلاة $name',
+      'حي على الصلاة، حي على الفلاح',
+      tz.TZDateTime.from(time, tz.local),
+      const NotificationDetails(android: androidDetails),
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
     );
   }
 }

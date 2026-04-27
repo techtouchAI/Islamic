@@ -19,6 +19,7 @@ import 'dart:io';
 import 'data/data_manager.dart';
 import 'data/daily_duas.dart';
 import 'services/prayer_times_service.dart';
+import 'services/prayer_notification_service.dart';
 
 class IslamicPatternPainter extends CustomPainter {
   final Color color;
@@ -145,7 +146,9 @@ class _AlDhakereenAppState extends State<AlDhakereenApp> {
       tz_data.initializeTimeZones();
       const AndroidInitializationSettings initializationSettingsAndroid = AndroidInitializationSettings('ic_launcher');
       const InitializationSettings initializationSettings = InitializationSettings(android: initializationSettingsAndroid);
-      await flutterLocalNotificationsPlugin.initialize(settings: initializationSettings);
+      await flutterLocalNotificationsPlugin.initialize(initializationSettings);
+      await PrayerNotificationService.initNotifications();
+      PrayerNotificationService.scheduleDailyPrayers();
       await _loadSettings();
       DataManager.syncCloudData().then((updated) {
         if (updated && mounted) {
