@@ -865,7 +865,11 @@ class DynamicListSection extends StatelessWidget {
                   onTap: () async {
                     final ayahs = await QuranService.getAyahs(surah['id']);
                     // Combine ayahs with their numbers for a professional Quranic display
-                    final content = ayahs.map((a) => "${a['ar_text']} \uFD3F${a['ayah_surah_index']}\uFD3E").join(" ");
+                    final content = ayahs.map((a) {
+                      final text = a['ar_text'].toString().trim();
+                      final index = a['ayah_surah_index'].toString();
+                      return index.isEmpty ? text : "$text \uFD3F$index\uFD3E";
+                    }).join(" ");
                     if (!context.mounted) return;
                     Navigator.push(context, MaterialPageRoute(builder: (c) => ReaderPage(title: "سورة ${surah['name']}", content: content, fontSizeFactor: fontSizeFactor, isQuran: true)));
                   },
