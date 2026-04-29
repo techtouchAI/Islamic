@@ -29,23 +29,24 @@ class IslamicPatternPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = color.withValues(alpha: 0.05)
-      ..strokeWidth = 0.5
+      ..color = color.withValues(alpha: 0.1)
+      ..strokeWidth = 0.8
       ..style = PaintingStyle.stroke;
 
-    const double step = 80;
+    const double step = 60;
     for (double x = 0; x < size.width + step; x += step) {
       for (double y = 0; y < size.height + step; y += step) {
         final center = Offset(x, y);
-        _drawGeometry(canvas, center, step * 0.45, paint);
+        _drawStar(canvas, center, step * 0.4, paint);
+        canvas.drawCircle(center, step * 0.1, paint);
       }
     }
   }
 
-  void _drawGeometry(Canvas canvas, Offset center, double radius, Paint paint) {
+  void _drawStar(Canvas canvas, Offset center, double radius, Paint paint) {
     final path = Path();
-    for (int i = 0; i < 12; i++) {
-      double angle = (i * 30) * pi / 180;
+    for (int i = 0; i < 8; i++) {
+      double angle = (i * 45) * pi / 180;
       double x = center.dx + radius * cos(angle);
       double y = center.dy + radius * sin(angle);
       if (i == 0) {
@@ -53,15 +54,13 @@ class IslamicPatternPainter extends CustomPainter {
       } else {
         path.lineTo(x, y);
       }
-
-      double innerAngle = (i * 30 + 15) * pi / 180;
-      double ix = center.dx + (radius * 0.6) * cos(innerAngle);
-      double iy = center.dy + (radius * 0.6) * sin(innerAngle);
-      path.lineTo(ix, iy);
+      double nextAngle = (i * 45 + 22.5) * pi / 180;
+      double nextX = center.dx + (radius * 0.7) * cos(nextAngle);
+      double nextY = center.dy + (radius * 0.7) * sin(nextAngle);
+      path.lineTo(nextX, nextY);
     }
     path.close();
     canvas.drawPath(path, paint);
-    canvas.drawCircle(center, radius * 0.2, paint);
   }
 
   @override
@@ -398,7 +397,6 @@ class _MainScaffoldState extends State<MainScaffold> {
     switch (_currentSection) {
       case 'home': return HomeSection(key: const ValueKey('home'), fontSizeFactor: widget.fontSizeFactor, uiOpacity: widget.uiOpacity, cardColor: widget.cardColor, visibility: widget.homeVisibility, hijriAdjustment: widget.hijriAdjustment, onPrayerCardTap: () => _navigateTo('prayer_times'));
       case 'settings': return SettingsSection(key: const ValueKey('settings'), onThemeToggled: widget.onThemeToggled, primaryColor: widget.primaryColor, onColorChanged: widget.onColorChanged, uiOpacity: widget.uiOpacity, onOpacityChanged: widget.onOpacityChanged, onBackgroundImageChanged: widget.onBackgroundImageChanged, onBase64BgChanged: widget.onBase64BgChanged, backgroundImagePath: widget.backgroundImagePath, cardColor: widget.cardColor, onCardColorChanged: widget.onCardColorChanged, visibility: widget.homeVisibility, onVisibilityChanged: widget.onVisibilityChanged, hijriAdjustment: widget.hijriAdjustment, onHijriAdjustmentChanged: widget.onHijriAdjustmentChanged);
-      case 'help': return const HelpSection(key: ValueKey('help'));
       case 'about': return const AboutSection(key: ValueKey('about'));
       case 'tasbih': return const TasbihSection(key: ValueKey('tasbih'));
       case 'prayer_times': return const PrayerTimesSection(key: ValueKey('prayer_times'));
@@ -418,7 +416,6 @@ class _MainScaffoldState extends State<MainScaffold> {
   String _getAppBarTitle(String section) {
     if (section == 'home') return 'الذاكرين';
     if (section == 'settings') return 'الإعدادات';
-    if (section == 'help') return 'دليل إضافة المحتوى';
     if (section == 'about') return 'حول المطور';
     if (section == 'universal_batch') return 'استيراد بالدفعة';
     return _getSectionTitle(section);
@@ -462,7 +459,6 @@ class AppDrawer extends StatelessWidget {
                 _buildItem(context, 'tasbih', 'المسبحة الإلكترونية', Icons.vibration),
                 ...sections.entries.map((e) => _buildItem(context, e.key, e.value['title'], getMaterialIcon(e.value['icon']))),
                 const Divider(),
-                _buildItem(context, 'help', 'كيفية إضافة أدعية', Icons.help_outline),
                 _buildItem(context, 'about', 'حول المطور', Icons.person),
                 _buildItem(context, 'settings', 'الإعدادات', Icons.settings),
               ],
@@ -761,59 +757,6 @@ class _ClockWidgetState extends State<_ClockWidget> {
   }
 }
 
-class HelpSection extends StatelessWidget {
-  const HelpSection({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        children: [
-          _buildHelpCard(context, "كيفية إضافة أدعية جديدة",
-            "يمكنك إضافة أدعية وزيارات جديدة للتطبيق من خلال تحديث ملف المحتوى الرئيسي (content.json) في مستودع GitHub الخاص بالتطبيق.",
-            Icons.add_circle_outline),
-          const SizedBox(height: 15),
-          _buildHelpCard(context, "الخطوات البرمجية",
-            "1. افتح ملف content.json في المجلد assets/data/\n2. ابحث عن قسم 'content' ثم القسم الفرعي المناسب (مثل 'duas_general').\n3. أضف عنصراً جديداً بصيغة JSON:\n   { \"title\": \"عنوان الدعاء\", \"content\": \"نص الدعاء...\" }\n4. سيقوم التطبيق بمزامنة البيانات تلقائياً عند فتحه في المرة القادمة.",
-            Icons.code),
-          const SizedBox(height: 15),
-          _buildHelpCard(context, "استخدام لوحة التحكم (CMS)",
-            "يتوفر نظام إدارة محتوى (CMS) سهل الاستخدام يسمح لك بإضافة وتعديل الأدعية دون الحاجة لكتابة كود JSON يدوياً. تواصل مع المطور للحصول على رابط لوحة التحكم.",
-            Icons.dashboard_customize),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildHelpCard(BuildContext context, String title, String content, IconData icon) {
-    final primary = Theme.of(context).colorScheme.primary;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: isDark ? Colors.black : Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: primary.withValues(alpha: 0.3), width: 1.5),
-        boxShadow: [BoxShadow(color: primary.withValues(alpha: 0.1), blurRadius: 10)]
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(children: [
-            Icon(icon, color: primary),
-            const SizedBox(width: 10),
-            Text(title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: primary)),
-          ]),
-          const Divider(height: 25),
-          Text(content, style: const TextStyle(fontSize: 14, height: 1.6)),
-        ],
-      ),
-    );
-  }
-}
-
 class AboutSection extends StatelessWidget {
   const AboutSection({super.key});
   @override
@@ -902,52 +845,34 @@ class DynamicListSection extends StatelessWidget {
         builder: (context, snapshot) {
           if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
           final data = snapshot.data!;
-          return ListView.separated(
+          return ListView.builder(
             physics: const BouncingScrollPhysics(),
             itemCount: data.length,
-            padding: const EdgeInsets.all(16),
-            separatorBuilder: (c, i) => const SizedBox(height: 12),
+            padding: const EdgeInsets.only(bottom: 20),
             itemBuilder: (context, index) {
               final surah = data[index];
-              return InkWell(
-                onTap: () async {
-                  final ayahs = await QuranService.getAyahs(surah['id']);
-                  final content = ayahs.map((a) {
-                    final text = a['ar_text'].toString().trim();
-                    final index = a['ayah_surah_index'].toString();
-                    return index.isEmpty ? text : "$text \u200F\uFD3F${intl.NumberFormat("", "ar").format(int.parse(index))}\uFD3E";
-                  }).join(" ");
-                  if (!context.mounted) return;
-                  Navigator.push(context, MaterialPageRoute(builder: (c) => ReaderPage(title: "سورة ${surah['name']}", content: content, fontSizeFactor: fontSizeFactor, isQuran: true)));
-                },
-                child: Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).cardColor.withValues(alpha: uiOpacity),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3)),
-                    boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4))]
+              return Card(
+                color: Theme.of(context).cardColor.withValues(alpha: uiOpacity),
+                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15), side: BorderSide(color: Theme.of(context).colorScheme.primary, width: 1.5)),
+                child: ListTile(
+                  contentPadding: const EdgeInsets.all(20),
+                  title: Text(surah['name'].toString(), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, fontFamily: 'Scheherazade New')),
+                  subtitle: Padding(
+                    padding: const EdgeInsets.only(top: 10),
+                    child: Text("سورة ${surah['name']} - آياتها ${surah['total_ayahs']}", style: GoogleFonts.scheherazadeNew(fontSize: 18)),
                   ),
-                  child: Row(
-                    children: [
-                      CustomPaint(
-                        size: const Size(45, 45),
-                        painter: QuranicFramePainter(color: Theme.of(context).colorScheme.primary),
-                        child: SizedBox(
-                          width: 45, height: 45,
-                          child: Center(child: Text("${index + 1}", style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.primary, fontSize: 12))),
-                        ),
-                      ),
-                      const SizedBox(width: 15),
-                      Expanded(
-                        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                          Text(surah['name'].toString(), style: GoogleFonts.notoKufiArabic(fontWeight: FontWeight.bold, fontSize: 16)),
-                          Text("آياتها ${surah['total_ayahs']}", style: TextStyle(fontSize: 12, color: Colors.grey[600])),
-                        ]),
-                      ),
-                      Text(surah['name'].toString(), style: GoogleFonts.scheherazadeNew(fontSize: 24, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.primary)),
-                    ],
-                  ),
+                  onTap: () async {
+                    final ayahs = await QuranService.getAyahs(surah['id']);
+                    // Combine ayahs with their numbers for a professional Quranic display
+                    final content = ayahs.map((a) {
+                      final text = a['ar_text'].toString().trim();
+                      final index = a['ayah_surah_index'].toString();
+                      return index.isEmpty ? text : "$text \uFD3F$index\uFD3E";
+                    }).join(" ");
+                    if (!context.mounted) return;
+                    Navigator.push(context, MaterialPageRoute(builder: (c) => ReaderPage(title: "سورة ${surah['name']}", content: content, fontSizeFactor: fontSizeFactor, isQuran: true)));
+                  },
                 ),
               );
             },
@@ -981,76 +906,51 @@ class DynamicListSection extends StatelessWidget {
   }
 }
 
-class QuranicFramePainter extends CustomPainter {
-  final Color color;
-  QuranicFramePainter({required this.color});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()..color = color..strokeWidth = 1.5..style = PaintingStyle.stroke;
-    final center = Offset(size.width / 2, size.height / 2);
-    final radius = size.width / 2;
-    for (int i = 0; i < 8; i++) {
-      double angle = (i * 45) * pi / 180;
-      double x = center.dx + radius * cos(angle);
-      double y = center.dy + radius * sin(angle);
-      canvas.drawCircle(Offset(x, y), 2, Paint()..color = color..style = PaintingStyle.fill);
-    }
-    canvas.drawCircle(center, radius * 0.85, paint);
-    final path = Path();
-    for (int i = 0; i < 16; i++) {
-      double angle = (i * 22.5) * pi / 180;
-      double r = (i % 2 == 0) ? radius : radius * 0.75;
-      double x = center.dx + r * cos(angle);
-      double y = center.dy + r * sin(angle);
-      if (i == 0) {
-        path.moveTo(x, y);
-      } else {
-        path.lineTo(x, y);
-      }
-    }
-    path.close();
-    canvas.drawPath(path, paint);
-  }
-  @override bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
-class SurahHeaderPainter extends CustomPainter {
-  final Color color;
-  SurahHeaderPainter({required this.color});
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()..color = color..strokeWidth = 2..style = PaintingStyle.stroke;
-    final fillPaint = Paint()..color = color.withValues(alpha: 0.05)..style = PaintingStyle.fill;
-    final rect = RRect.fromLTRBR(20, 10, size.width - 20, size.height - 10, const Radius.circular(40));
-    canvas.drawRRect(rect, fillPaint);
-    canvas.drawRRect(rect, paint);
-    final innerRect = RRect.fromLTRBR(30, 15, size.width - 30, size.height - 15, const Radius.circular(35));
-    canvas.drawRRect(innerRect, paint..strokeWidth = 0.5);
-    _drawOrnament(canvas, Offset(40, size.height / 2), color);
-    _drawOrnament(canvas, Offset(size.width - 40, size.height / 2), color);
-  }
-  void _drawOrnament(Canvas canvas, Offset center, Color color) {
-    final p = Paint()..color = color..style = PaintingStyle.fill;
-    canvas.drawCircle(center, 5, p);
-    canvas.drawCircle(center, 8, p..style = PaintingStyle.stroke..strokeWidth = 1);
-  }
-  @override bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
 class SurahHeader extends StatelessWidget {
   final String title;
   final Color color;
   const SurahHeader({super.key, required this.title, required this.color});
+
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.symmetric(vertical: 25),
+      margin: const EdgeInsets.symmetric(vertical: 20),
       child: Stack(
         alignment: Alignment.center,
         children: [
-          CustomPaint(size: const Size(double.infinity, 80), painter: SurahHeaderPainter(color: color)),
-          Text(title, style: GoogleFonts.scheherazadeNew(fontSize: 34, fontWeight: FontWeight.bold, color: color, shadows: [const Shadow(color: Colors.white, blurRadius: 4, offset: Offset(1, 1))])),
+          Container(
+            height: 50,
+            width: double.infinity,
+            margin: const EdgeInsets.symmetric(horizontal: 10),
+            decoration: BoxDecoration(
+              border: Border.all(color: color.withValues(alpha: 0.5), width: 1),
+              borderRadius: BorderRadius.circular(25),
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 5),
+            decoration: BoxDecoration(
+              color: Theme.of(context).scaffoldBackgroundColor,
+              border: Border.all(color: color, width: 2),
+              borderRadius: BorderRadius.circular(15),
+            ),
+            child: Text(
+              title,
+              style: GoogleFonts.scheherazadeNew(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                color: color,
+              ),
+            ),
+          ),
+          Positioned(
+            left: 20,
+            child: Icon(Icons.brightness_7, color: color.withValues(alpha: 0.6), size: 20),
+          ),
+          Positioned(
+            right: 20,
+            child: Icon(Icons.brightness_7, color: color.withValues(alpha: 0.6), size: 20),
+          ),
         ],
       ),
     );
@@ -1071,29 +971,13 @@ class _ReaderPageState extends State<ReaderPage> {
   Color? _customBgColor;
   @override
   void initState() { super.initState(); _factor = widget.fontSizeFactor; }
-
-  Widget _buildDivider(Color color) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Expanded(child: Divider(color: color.withValues(alpha: 0.3), thickness: 1, indent: 40, endIndent: 10)),
-        Icon(Icons.brightness_7, color: color, size: 15),
-        Expanded(child: Divider(color: color.withValues(alpha: 0.3), thickness: 1, indent: 10, endIndent: 40)),
-      ],
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final primary = Theme.of(context).colorScheme.primary;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
-      backgroundColor: _customBgColor ?? (isDark ? const Color(0xFF121212) : const Color(0xFFFDFBF7)),
       appBar: AppBar(
-        title: Text(widget.title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+        title: Text(widget.title, style: const TextStyle(fontSize: 16)),
         centerTitle: true,
-        elevation: 0,
-        backgroundColor: Colors.transparent,
         leading: IconButton(icon: const Icon(Icons.arrow_forward_ios), onPressed: () => Navigator.pop(context)),
         actions: [
           IconButton(icon: const Icon(Icons.content_copy), onPressed: () { Clipboard.setData(ClipboardData(text: widget.content)); ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم نسخ النص'))); }),
@@ -1104,44 +988,49 @@ class _ReaderPageState extends State<ReaderPage> {
         children: [
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-              child: Column(
-                children: [
-                  if (widget.isQuran) SurahHeader(title: widget.title, color: primary),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(25),
-                    decoration: BoxDecoration(
-                      color: isDark ? Colors.black26 : Colors.white70,
-                      borderRadius: BorderRadius.circular(30),
-                      border: Border.all(color: primary.withValues(alpha: 0.2), width: 1),
+              padding: const EdgeInsets.all(24),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  border: Border.all(color: primary, width: 3),
+                  borderRadius: BorderRadius.circular(25),
+                  color: _customBgColor ?? primary.withValues(alpha: 0.02),
+                  boxShadow: [BoxShadow(color: primary.withValues(alpha: 0.1), blurRadius: 15, spreadRadius: 2)]
+                ),
+                child: Column(
+                  children: [
+                    if (widget.isQuran) SurahHeader(title: widget.title, color: primary),
+                    Text(
+                      "بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ",
+                      style: GoogleFonts.scheherazadeNew(
+                        fontSize: 30,
+                        fontWeight: FontWeight.bold,
+                        color: primary,
+                      )
                     ),
-                    child: Column(
-                      children: [
-                        Text(
-                          "بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ",
-                          style: GoogleFonts.scheherazadeNew(fontSize: 36, fontWeight: FontWeight.bold, color: primary)
-                        ),
-                        const SizedBox(height: 20),
-                        _buildDivider(primary),
-                        const SizedBox(height: 30),
-                        SelectableText(
-                          widget.content,
-                          textAlign: TextAlign.center,
-                          style: (widget.isQuran ? GoogleFonts.scheherazadeNew : GoogleFonts.notoNaskhArabic)(
-                            fontSize: (widget.isQuran ? 28 : 20) * _factor,
-                            height: widget.isQuran ? 1.9 : 2.3,
-                            color: isDark ? Colors.white.withValues(alpha: 0.9) : Colors.black87,
-                            fontWeight: widget.isQuran ? FontWeight.w500 : FontWeight.normal,
-                          )
-                        ),
-                        const SizedBox(height: 40),
-                        _buildDivider(primary),
-                      ]
-                    )
-                  ),
-                  const SizedBox(height: 30),
-                ],
+                    const SizedBox(height: 15),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: List.generate(5, (index) => Icon(Icons.star, size: 12, color: primary.withValues(alpha: 0.5)))
+                    ),
+                    const SizedBox(height: 25),
+                    Text(
+                      widget.content,
+                      textAlign: TextAlign.center,
+                      style: (widget.isQuran ? GoogleFonts.scheherazadeNew : GoogleFonts.notoNaskhArabic)(
+                        fontSize: (widget.isQuran ? 26 : 20) * _factor,
+                        height: widget.isQuran ? 1.8 : 2.2,
+                        color: _customBgColor != null ? (_customBgColor!.computeLuminance() > 0.5 ? Colors.black : Colors.white) : null
+                      )
+                    ),
+                    const SizedBox(height: 25),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: List.generate(5, (index) => Icon(Icons.star, size: 12, color: primary.withValues(alpha: 0.5)))
+                    ),
+                  ]
+                )
               )
             )
           ),
