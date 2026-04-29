@@ -1064,7 +1064,8 @@ class GlobalSearchDelegate extends SearchDelegate {
   @override Widget? buildLeading(BuildContext context) => IconButton(icon: const Icon(Icons.arrow_back), onPressed: () => close(context, null));
   @override Widget buildResults(BuildContext context) => _buildSearchResults();
   @override Widget buildSuggestions(BuildContext context) => _buildSearchResults();
-  String _normalize(String text) => text.replaceAll(RegExp(r'[\u064B-\u0652]'), '').replaceAll('أ', 'ا').replaceAll('إ', 'ا').replaceAll('آ', 'ا').replaceAll('ة', 'ه').replaceAll('ى', 'ي');
+  static final RegExp _diacriticsRegex = RegExp(r'[\u064B-\u0652]');
+  String _normalize(String text) => text.replaceAll(_diacriticsRegex, '').replaceAll('أ', 'ا').replaceAll('إ', 'ا').replaceAll('آ', 'ا').replaceAll('ة', 'ه').replaceAll('ى', 'ي');
   Widget _buildSearchResults() {
     if (query.isEmpty) return const Center(child: Text('ابدأ الكتابة للبحث...'));
     final normalizedQuery = _normalize(query.trim());
