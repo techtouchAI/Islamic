@@ -3,8 +3,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart' as intl;
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:timezone/data/latest_all.dart' as tz_data;
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'dart:async';
 import 'dart:math';
@@ -108,7 +106,6 @@ Widget _buildImage(String? path, {double? height, BoxFit fit = BoxFit.contain}) 
   return Image.asset(path, height: height, fit: fit, errorBuilder: (c, e, s) => const Icon(Icons.image_not_supported));
 }
 
-final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -144,10 +141,6 @@ class _AlDhakereenAppState extends State<AlDhakereenApp> {
       await initializeDateFormatting('ar_SA', null);
       HijriCalendar.setLocal('ar');
       await DataManager.loadContent();
-      tz_data.initializeTimeZones();
-      const AndroidInitializationSettings initializationSettingsAndroid = AndroidInitializationSettings('ic_launcher');
-      const InitializationSettings initializationSettings = InitializationSettings(android: initializationSettingsAndroid);
-      await flutterLocalNotificationsPlugin.initialize(initializationSettings);
       await PrayerNotificationService.initNotifications();
       PrayerNotificationService.scheduleDailyPrayers();
       await QuranService.initDB();
