@@ -858,7 +858,6 @@ class DynamicListSection extends StatelessWidget {
                   ),
                   onTap: () async {
                     final ayahs = await QuranService.getAyahs(surah['id']);
-                    // Combine ayahs with their numbers for a professional Quranic display
                     final content = ayahs.map((a) {
                       final text = a['ar_text'].toString().trim();
                       final index = a['ayah_surah_index'].toString();
