@@ -5,6 +5,8 @@ on:
     branches: [ main, "feat/**", "fix/**", "feature/**" ]
     paths:
       - 'assets/data/content.json'
+      - 'assets/data/quran_db.db'
+      - 'quran_formatted.json'
       - 'lib/**'
       - 'pubspec.yaml'
       - 'android/**'
