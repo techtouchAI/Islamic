@@ -21,6 +21,7 @@ import 'data/daily_duas.dart';
 import 'services/prayer_times_service.dart';
 import 'services/prayer_notification_service.dart';
 import 'services/quran_service.dart';
+import 'data/iraq_provinces.dart';
 
 class IslamicPatternPainter extends CustomPainter {
   final Color color;
@@ -1219,7 +1220,6 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
   final Map<String, bool> _enabledPrayers = {'fajr': true, 'dhuhr': true, 'asr': true, 'maghrib': true, 'isha': true};
   final Map<String, int> _manualAdjustments = {'fajr': 0, 'dhuhr': 0, 'asr': 0, 'maghrib': 0, 'isha': 0};
   String _selectedProvince = "بغداد";
-  final Map<String, List<double>> _iraqProvinces = {"بغداد": [33.3128, 44.3615], "البصرة": [30.5081, 47.7835], "النجف الأشرف": [32.0259, 44.3462], "كربلاء المقدسة": [32.6160, 44.0248], "أربيل": [36.1901, 44.0094], "الموصل": [36.3489, 43.1577], "كركوك": [35.4681, 44.3922], "السليمانية": [35.5561, 45.4333], "العمارة": [31.8453, 47.1420], "الناصرية": [31.0577, 46.2573], "الكوت": [32.5020, 45.8202], "الحلة": [32.4815, 44.4331], "الديوانية": [31.9904, 44.9258], "بعقوبة": [33.7431, 44.6361], "الرمادي": [33.4219, 43.3032], "تكريت": [34.6074, 43.6766], "السماوة": [31.3120, 45.2810], "دهوك": [36.8679, 42.9431]};
 
   @override void initState() { super.initState(); _loadSettings(); _getLocationAndPrayers(); }
 
@@ -1241,7 +1241,7 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
   Future<void> _getLocationAndPrayers() async {
     try {
       Position pos;
-      if (_currentPosition != null) { pos = _currentPosition!; } else { final coords = _iraqProvinces[_selectedProvince]!; pos = Position(latitude: coords[0], longitude: coords[1], timestamp: DateTime.now(), accuracy: 0, altitude: 0, heading: 0, speed: 0, speedAccuracy: 0, altitudeAccuracy: 0, headingAccuracy: 0); }
+      if (_currentPosition != null) { pos = _currentPosition!; } else { final coords = iraqProvinces[_selectedProvince]!; pos = Position(latitude: coords[0], longitude: coords[1], timestamp: DateTime.now(), accuracy: 0, altitude: 0, heading: 0, speed: 0, speedAccuracy: 0, altitudeAccuracy: 0, headingAccuracy: 0); }
       final pt = _prayerService.calculatePrayerTimes(pos);
       final db = DataManager.getDB();
       final todayStr = intl.DateFormat('yyyy-MM-dd').format(DateTime.now());
@@ -1305,7 +1305,7 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
                       }
                     },
                     items: [
-                      ..._iraqProvinces.keys.map((p) => DropdownMenuItem(value: p, child: Text(p))),
+                      ...iraqProvinces.keys.map((p) => DropdownMenuItem(value: p, child: Text(p))),
                       if (_selectedProvince == "الموقع الحالي (GPS)") const DropdownMenuItem(value: "الموقع الحالي (GPS)", child: Text("الموقع الحالي (GPS)"))
                     ]
                   )
