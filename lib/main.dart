@@ -21,6 +21,7 @@ import 'data/daily_duas.dart';
 import 'services/prayer_times_service.dart';
 import 'services/prayer_notification_service.dart';
 import 'services/quran_service.dart';
+import 'utils/string_extensions.dart';
 
 class IslamicPatternPainter extends CustomPainter {
   final Color color;
@@ -567,11 +568,10 @@ class _HomeSectionState extends State<HomeSection> {
     final dayNameAr = intl.DateFormat('EEEE', 'ar_SA').format(now);
     final allDaysDuas = DataManager.getItems('duas_days');
 
-    String normalize(String s) => s.replaceAll('أ', 'ا').replaceAll('إ', 'ا').replaceAll('آ', 'ا').replaceAll('ة', 'ه').replaceAll('ى', 'ي');
-    final normalizedDay = normalize(dayNameAr);
+    final normalizedDay = dayNameAr.normalizeArabic();
 
     final itemsForToday = allDaysDuas.where((it) {
-      final title = normalize(it['title'].toString());
+      final title = it['title'].toString().normalizeArabic();
       return title.contains(normalizedDay);
     }).toList();
 
@@ -1064,15 +1064,14 @@ class GlobalSearchDelegate extends SearchDelegate {
   @override Widget? buildLeading(BuildContext context) => IconButton(icon: const Icon(Icons.arrow_back), onPressed: () => close(context, null));
   @override Widget buildResults(BuildContext context) => _buildSearchResults();
   @override Widget buildSuggestions(BuildContext context) => _buildSearchResults();
-  String _normalize(String text) => text.replaceAll(RegExp(r'[\u064B-\u0652]'), '').replaceAll('أ', 'ا').replaceAll('إ', 'ا').replaceAll('آ', 'ا').replaceAll('ة', 'ه').replaceAll('ى', 'ي');
   Widget _buildSearchResults() {
     if (query.isEmpty) return const Center(child: Text('ابدأ الكتابة للبحث...'));
-    final normalizedQuery = _normalize(query.trim());
+    final normalizedQuery = query.trim().normalizeArabic();
     final sections = DataManager.getSections();
     List<Map<String, dynamic>> results = [];
     sections.forEach((key, sec) {
       for (var it in DataManager.getItems(key)) {
-        if (_normalize(it['title'].toString()).contains(normalizedQuery) || _normalize(it['content'].toString()).contains(normalizedQuery)) { results.add({'section': sec['title'], 'title': it['title'], 'content': it['content']}); }
+        if (it['title'].toString().normalizeArabic().contains(normalizedQuery) || it['content'].toString().normalizeArabic().contains(normalizedQuery)) { results.add({'section': sec['title'], 'title': it['title'], 'content': it['content']}); }
       }
     });
     if (results.isEmpty) return const Center(child: Text('لا توجد نتائج مطابقة'));
