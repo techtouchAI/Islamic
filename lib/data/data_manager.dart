@@ -8,7 +8,8 @@ import 'package:flutter/foundation.dart';
 class DataManager {
   static Map<String, dynamic>? _db;
   static final ValueNotifier<int> dbNotifier = ValueNotifier(0);
-  static const String _repoUrl = "https://raw.githubusercontent.com/techtouchAI/Islamic/main/assets/data/content.json";
+  static const String _repoUrl =
+      "https://raw.githubusercontent.com/techtouchAI/Islamic/main/assets/data/content.json";
 
   static Map<String, dynamic>? getDB() => _db;
 
@@ -23,7 +24,8 @@ class DataManager {
         debugPrint("DataManager: Loaded from local storage.");
       } else {
         // 2. Fallback to bundled assets
-        final String response = await rootBundle.loadString('assets/data/content.json');
+        final String response =
+            await rootBundle.loadString('assets/data/content.json');
         _db = json.decode(response);
         debugPrint("DataManager: Loaded from bundled assets.");
       }
@@ -42,8 +44,8 @@ class DataManager {
         // التحقق من وجود تغييرات فعلية لتجنب إعادة التحميل غير الضرورية
         final localFile = await _getLocalFile();
         if (await localFile.exists()) {
-           final oldContent = await localFile.readAsString();
-           if (oldContent == content) return false;
+          final oldContent = await localFile.readAsString();
+          if (oldContent == content) return false;
         }
 
         final newDb = json.decode(content);
