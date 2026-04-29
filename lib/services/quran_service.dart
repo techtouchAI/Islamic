@@ -47,9 +47,13 @@ class QuranService {
   static Future<List<Map<String, dynamic>>> getAyahs(int surahId) async {
     if (kIsWeb || _db == null) {
       final items = DataManager.getItems('quran');
-      final found = items.firstWhere((e) => e['id'] == surahId, orElse: () => null);
-      if (found != null) {
-        return [{'ar_text': found['content'].toString(), 'ayah_surah_index': ''}];
+      // Fix type error for null fallback using dart casting properly
+      // or using firstWhereOrNull logic without extending external dependencies if possible
+      // Or we can just use an empty map instead of null or iterate
+      for (var item in items) {
+        if (item['id'] == surahId) {
+          return [{'ar_text': item['content'].toString(), 'ayah_surah_index': ''}];
+        }
       }
       return [];
     }

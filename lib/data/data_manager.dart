@@ -5,12 +5,18 @@ import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter/foundation.dart';
 
+
 class DataManager {
   static Map<String, dynamic>? _db;
   static final ValueNotifier<int> dbNotifier = ValueNotifier(0);
   static const String _repoUrl = "https://raw.githubusercontent.com/techtouchAI/Islamic/main/assets/data/content.json";
 
   static Map<String, dynamic>? getDB() => _db;
+
+  @visibleForTesting
+  static void setDBForTesting(Map<String, dynamic>? testDb) {
+    _db = testDb;
+  }
 
   static Future<void> loadContent() async {
     try {
