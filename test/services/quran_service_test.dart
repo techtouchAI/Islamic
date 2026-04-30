@@ -11,7 +11,8 @@ void main() {
   // We will setup the environment and clear DataManager states before each test.
   setUp(() {
     const channel = MethodChannel('plugins.flutter.io/path_provider');
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(
       channel,
       (MethodCall methodCall) async {
         if (methodCall.method == 'getApplicationDocumentsDirectory') {
@@ -32,9 +33,7 @@ void main() {
   group('QuranService Fallback Logic', () {
     test('getSurahs Empty Fallback returns hardcoded surahs', () async {
       // Setup DataManager with empty content
-      File('./content.json').writeAsStringSync(jsonEncode({
-        'content': {}
-      }));
+      File('./content.json').writeAsStringSync(jsonEncode({'content': {}}));
       await DataManager.loadContent();
 
       final surahs = await QuranService.getSurahs();

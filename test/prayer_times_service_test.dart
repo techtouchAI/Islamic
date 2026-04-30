@@ -8,10 +8,13 @@ void main() {
 
   group('PrayerTimesService getCurrentLocation tests', () {
     int checkPermissionStatusResult = PermissionStatus.granted.index;
-    Map<int, int> requestPermissionsResult = {Permission.location.value: PermissionStatus.granted.index};
+    Map<int, int> requestPermissionsResult = {
+      Permission.location.value: PermissionStatus.granted.index
+    };
 
     setUp(() {
-      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(
         const MethodChannel('flutter.baseflow.com/permissions/methods'),
         (MethodCall methodCall) async {
           if (methodCall.method == 'checkPermissionStatus') {
@@ -29,13 +32,15 @@ void main() {
     });
 
     tearDown(() {
-      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(
         const MethodChannel('flutter.baseflow.com/permissions/methods'),
         null,
       );
     });
 
-    test('returns null when permission is permanently denied initially', () async {
+    test('returns null when permission is permanently denied initially',
+        () async {
       checkPermissionStatusResult = PermissionStatus.permanentlyDenied.index;
 
       final service = PrayerTimesService();
@@ -44,9 +49,12 @@ void main() {
       expect(result, isNull);
     });
 
-    test('returns null when permission is denied and then requested and denied', () async {
+    test('returns null when permission is denied and then requested and denied',
+        () async {
       checkPermissionStatusResult = PermissionStatus.denied.index;
-      requestPermissionsResult = {Permission.location.value: PermissionStatus.denied.index};
+      requestPermissionsResult = {
+        Permission.location.value: PermissionStatus.denied.index
+      };
 
       final service = PrayerTimesService();
       final result = await service.getCurrentLocation();
@@ -54,9 +62,13 @@ void main() {
       expect(result, isNull);
     });
 
-    test('returns null when permission is denied and then requested and permanently denied', () async {
+    test(
+        'returns null when permission is denied and then requested and permanently denied',
+        () async {
       checkPermissionStatusResult = PermissionStatus.denied.index;
-      requestPermissionsResult = {Permission.location.value: PermissionStatus.permanentlyDenied.index};
+      requestPermissionsResult = {
+        Permission.location.value: PermissionStatus.permanentlyDenied.index
+      };
 
       final service = PrayerTimesService();
       final result = await service.getCurrentLocation();
@@ -65,7 +77,8 @@ void main() {
     });
 
     test('returns null when an exception is thrown', () async {
-      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(
         const MethodChannel('flutter.baseflow.com/permissions/methods'),
         (MethodCall methodCall) async {
           throw Exception('Simulated Exception');

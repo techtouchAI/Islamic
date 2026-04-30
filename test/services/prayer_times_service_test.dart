@@ -28,7 +28,9 @@ void main() {
       );
     }
 
-    test('should return correct map of prayer times for a given position and date', () {
+    test(
+        'should return correct map of prayer times for a given position and date',
+        () {
       // Mecca coordinates
       final position = createDummyPosition(21.4225, 39.8262);
       final date = DateTime(2023, 10, 15);
@@ -49,7 +51,9 @@ void main() {
       expect(times['dhuhr']!.day, 15);
     });
 
-    test('should return prayer times even if date is not provided (defaults to now)', () {
+    test(
+        'should return prayer times even if date is not provided (defaults to now)',
+        () {
       final position = createDummyPosition(21.4225, 39.8262);
 
       final times = service.calculatePrayerTimes(position);
@@ -60,7 +64,9 @@ void main() {
       expect(times['dhuhr']!.day, now.day);
     });
 
-    test('should correctly calculate midnight as halfway between maghrib and next fajr based on service logic', () {
+    test(
+        'should correctly calculate midnight as halfway between maghrib and next fajr based on service logic',
+        () {
       final position = createDummyPosition(33.3152, 44.3661); // Baghdad
       final date = DateTime(2023, 1, 1);
 
@@ -81,7 +87,8 @@ void main() {
       final maghrib = pt.maghrib.toLocal();
       final nextFajr = pt.fajr.add(const Duration(days: 1)).toLocal();
       final expectedDuration = nextFajr.difference(maghrib);
-      final expectedMidnight = maghrib.add(Duration(seconds: (expectedDuration.inSeconds / 2).round()));
+      final expectedMidnight = maghrib
+          .add(Duration(seconds: (expectedDuration.inSeconds / 2).round()));
 
       expect(midnight.isAtSameMomentAs(expectedMidnight), isTrue);
     });
