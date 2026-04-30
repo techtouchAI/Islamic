@@ -53,7 +53,8 @@ void main() {
     });
 
     test('returns false when HTTP response status is not 200', () async {
-      when(mockClient.get(any)).thenAnswer((_) async => http.Response('Not Found', 404));
+      when(mockClient.get(any))
+          .thenAnswer((_) async => http.Response('Not Found', 404));
 
       final result = await DataManager.syncCloudData(client: mockClient);
 
@@ -61,25 +62,34 @@ void main() {
     });
 
     test('returns false when JSON response is invalid', () async {
-      when(mockClient.get(any)).thenAnswer((_) async => http.Response('Invalid JSON', 200));
+      when(mockClient.get(any))
+          .thenAnswer((_) async => http.Response('Invalid JSON', 200));
 
       final result = await DataManager.syncCloudData(client: mockClient);
 
       expect(result, isFalse);
     });
 
-    test('returns false when JSON response is valid but missing "sections"', () async {
+    test('returns false when JSON response is valid but missing "sections"',
+        () async {
       final jsonResponse = jsonEncode({'about': {}, 'settings': {}});
-      when(mockClient.get(any)).thenAnswer((_) async => http.Response(jsonResponse, 200));
+      when(mockClient.get(any))
+          .thenAnswer((_) async => http.Response(jsonResponse, 200));
 
       final result = await DataManager.syncCloudData(client: mockClient);
 
       expect(result, isFalse);
     });
 
-    test('returns true and writes file when sync is successful and local file does not exist', () async {
-      final jsonResponse = jsonEncode({'sections': {}, 'content': {'duas': []}});
-      when(mockClient.get(any)).thenAnswer((_) async => http.Response(jsonResponse, 200));
+    test(
+        'returns true and writes file when sync is successful and local file does not exist',
+        () async {
+      final jsonResponse = jsonEncode({
+        'sections': {},
+        'content': {'duas': []}
+      });
+      when(mockClient.get(any))
+          .thenAnswer((_) async => http.Response(jsonResponse, 200));
 
       final result = await DataManager.syncCloudData(client: mockClient);
 
@@ -88,21 +98,35 @@ void main() {
       expect(await localFile.readAsString(), jsonResponse);
     });
 
-    test('returns false when local file exists and content is identical', () async {
-      final jsonResponse = jsonEncode({'sections': {}, 'content': {'duas': []}});
+    test('returns false when local file exists and content is identical',
+        () async {
+      final jsonResponse = jsonEncode({
+        'sections': {},
+        'content': {'duas': []}
+      });
       await localFile.writeAsString(jsonResponse);
-      when(mockClient.get(any)).thenAnswer((_) async => http.Response(jsonResponse, 200));
+      when(mockClient.get(any))
+          .thenAnswer((_) async => http.Response(jsonResponse, 200));
 
       final result = await DataManager.syncCloudData(client: mockClient);
 
       expect(result, isFalse);
     });
 
-    test('returns true, updates file, and increments notifier when sync is successful and local file exists with different content', () async {
-      final oldJsonResponse = jsonEncode({'sections': {}, 'content': {'duas': []}});
-      final newJsonResponse = jsonEncode({'sections': {}, 'content': {'duas': [], 'new': 'data'}});
+    test(
+        'returns true, updates file, and increments notifier when sync is successful and local file exists with different content',
+        () async {
+      final oldJsonResponse = jsonEncode({
+        'sections': {},
+        'content': {'duas': []}
+      });
+      final newJsonResponse = jsonEncode({
+        'sections': {},
+        'content': {'duas': [], 'new': 'data'}
+      });
       await localFile.writeAsString(oldJsonResponse);
-      when(mockClient.get(any)).thenAnswer((_) async => http.Response(newJsonResponse, 200));
+      when(mockClient.get(any))
+          .thenAnswer((_) async => http.Response(newJsonResponse, 200));
 
       final initialNotifierValue = DataManager.dbNotifier.value;
       final result = await DataManager.syncCloudData(client: mockClient);
