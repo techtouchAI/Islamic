@@ -10,7 +10,16 @@ class DataManager {
   static final ValueNotifier<int> dbNotifier = ValueNotifier(0);
   static const String _repoUrl = "https://raw.githubusercontent.com/techtouchAI/Islamic/main/assets/data/content.json";
 
+  // Allows dependency injection for testing
+  static http.Client? httpClient;
+  static Future<File> Function()? getLocalFileOverride;
+
   static Map<String, dynamic>? getDB() => _db;
+
+  @visibleForTesting
+  static void setDB(Map<String, dynamic>? newDb) {
+    _db = newDb;
+  }
 
   static Future<void> loadContent() async {
     try {
@@ -35,7 +44,8 @@ class DataManager {
 
   static Future<bool> syncCloudData() async {
     try {
-      final response = await http.get(Uri.parse(_repoUrl));
+      final client = httpClient ?? http.Client();
+      final response = await client.get(Uri.parse(_repoUrl));
       if (response.statusCode == 200) {
         final content = response.body;
 
@@ -62,6 +72,9 @@ class DataManager {
   }
 
   static Future<File> _getLocalFile() async {
+    if (getLocalFileOverride != null) {
+      return await getLocalFileOverride!();
+    }
     final directory = await getApplicationDocumentsDirectory();
     return File('${directory.path}/content.json');
   }
@@ -101,10 +114,5 @@ class DataManager {
 
   static Map<String, dynamic> getSections() {
     return (_db?['sections'] as Map<String, dynamic>?) ?? {};
-  }
-
-  @visibleForTesting
-  static void setDBForTesting(Map<String, dynamic>? mockDb) {
-    _db = mockDb;
   }
 }
