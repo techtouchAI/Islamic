@@ -47,8 +47,11 @@ class QuranService {
   static Future<List<Map<String, dynamic>>> getAyahs(int surahId) async {
     if (kIsWeb || _db == null) {
       final items = DataManager.getItems('quran');
-      final found = items.firstWhere((e) => e['id'] == surahId, orElse: () => null);
-      if (found != null) {
+      final found = items.cast<Map<String, dynamic>>().firstWhere(
+        (e) => e['id'] == surahId,
+        orElse: () => <String, dynamic>{},
+      );
+      if (found.isNotEmpty) {
         return [{'ar_text': found['content'].toString(), 'ayah_surah_index': ''}];
       }
       return [];

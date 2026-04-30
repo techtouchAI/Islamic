@@ -102,4 +102,9 @@ class DataManager {
   static Map<String, dynamic> getSections() {
     return (_db?['sections'] as Map<String, dynamic>?) ?? {};
   }
+
+  @visibleForTesting
+  static void setDBForTesting(Map<String, dynamic>? mockDb) {
+    _db = mockDb;
+  }
 }
