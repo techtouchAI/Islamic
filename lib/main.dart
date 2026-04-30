@@ -1025,8 +1025,9 @@ class _ReaderPageState extends State<ReaderPage> {
                             textAlign: TextAlign.center,
                             textDirection: TextDirection.rtl,
                             text: TextSpan(
-                              style: GoogleFonts.scheherazadeNew(
-                                fontSize: 26 * _factor,
+                              style: TextStyle(
+                                fontFamily: 'me_quran',
+                                fontSize: 32 * _factor,
                                 height: 1.8,
                                 color: _customBgColor != null ? (_customBgColor!.computeLuminance() > 0.5 ? Colors.black : Colors.white) : Theme.of(context).textTheme.bodyLarge?.color ?? Colors.black,
                               ),
