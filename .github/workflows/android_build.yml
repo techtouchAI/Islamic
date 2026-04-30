@@ -1,4 +1,4 @@
-Name: Build Android APK
+name: Build Android APK
 
 on:
   push:
@@ -27,7 +27,7 @@ jobs:
 
       - name: Ensure Signing Keystore
         run: python3 scripts/ensure_keystore.py
-        env: # تم إضافة المتغيرات هنا
+        env:
           KEYSTORE_STOREPASS: ${{ secrets.KEYSTORE_STOREPASS }}
           KEYSTORE_KEYPASS: ${{ secrets.KEYSTORE_KEYPASS }}
 
