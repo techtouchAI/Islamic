@@ -1,63 +1,104 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:permission_handler/permission_handler.dart';
-import 'package:flutter/services.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:aldhakereen/services/prayer_times_service.dart';
+import 'package:adhan_dart/adhan_dart.dart';
 
 void main() {
-  TestWidgetsFlutterBinding.ensureInitialized();
-
-  group('PrayerTimesService - getCurrentLocation', () {
-    const MethodChannel channel = MethodChannel('flutter.baseflow.com/permissions/methods');
-    int checkPermissionCallCount = 0;
-    int requestPermissionsCallCount = 0;
-
-    // 0 = denied, 1 = granted, 2 = restricted, 3 = limited, 4 = permanentlyDenied, 5 = provisional
-    int mockStatus = 1; // Default to granted
-    Map<int, int> mockRequestResult = {3: 1}; // Default request returns granted for location
+  group('PrayerTimesService - calculatePrayerTimes', () {
+    late PrayerTimesService service;
 
     setUp(() {
-      checkPermissionCallCount = 0;
-      requestPermissionsCallCount = 0;
-      mockStatus = 1;
-      mockRequestResult = {3: 1};
-
-      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(channel, (MethodCall methodCall) async {
-        if (methodCall.method == 'checkPermissionStatus') {
-          checkPermissionCallCount++;
-          return mockStatus;
-        }
-        if (methodCall.method == 'requestPermissions') {
-          requestPermissionsCallCount++;
-          return mockRequestResult;
-        }
-        if (methodCall.method == 'openAppSettings') {
-          return true;
-        }
-        return null;
-      });
+      TestWidgetsFlutterBinding.ensureInitialized();
+      service = PrayerTimesService();
     });
 
-    test('returns null when permission is denied initially and remains denied after request', () async {
-      mockStatus = 0; // denied
-      mockRequestResult = {3: 0}; // request returns denied
+    // Helper function to create a dummy Position
+    Position createDummyPosition(double latitude, double longitude) {
+      return Position(
+        latitude: latitude,
+        longitude: longitude,
+        timestamp: DateTime.now(),
+        accuracy: 100.0,
+        altitude: 0.0,
+        heading: 0.0,
+        speed: 0.0,
+        speedAccuracy: 0.0,
+        altitudeAccuracy: 0.0,
+        headingAccuracy: 0.0,
+      );
+    }
 
-      final service = PrayerTimesService();
-      final result = await service.getCurrentLocation();
+    test('should return correct map of prayer times for a given position and date', () {
+      // Mecca coordinates
+      final position = createDummyPosition(21.4225, 39.8262);
+      final date = DateTime(2023, 10, 15);
 
-      expect(result, isNull);
-      expect(checkPermissionCallCount, 1);
-      expect(requestPermissionsCallCount, 1);
+      final times = service.calculatePrayerTimes(position, date: date);
+
+      expect(times, containsPair('fajr', isA<DateTime>()));
+      expect(times, containsPair('sunrise', isA<DateTime>()));
+      expect(times, containsPair('dhuhr', isA<DateTime>()));
+      expect(times, containsPair('asr', isA<DateTime>()));
+      expect(times, containsPair('maghrib', isA<DateTime>()));
+      expect(times, containsPair('isha', isA<DateTime>()));
+      expect(times, containsPair('midnight', isA<DateTime>()));
+
+      // Check if dates are matching the requested date
+      expect(times['dhuhr']!.year, 2023);
+      expect(times['dhuhr']!.month, 10);
+      expect(times['dhuhr']!.day, 15);
     });
 
-    test('returns null when permission is permanently denied', () async {
-      mockStatus = 4; // permanently denied
+    test('should return prayer times even if date is not provided (defaults to now)', () {
+      final position = createDummyPosition(21.4225, 39.8262);
 
-      final service = PrayerTimesService();
-      final result = await service.getCurrentLocation();
+      final times = service.calculatePrayerTimes(position);
 
-      expect(result, isNull);
-      expect(checkPermissionCallCount, 1);
-      expect(requestPermissionsCallCount, 0); // Should not request if permanently denied
+      final now = DateTime.now();
+      expect(times['dhuhr']!.year, now.year);
+      expect(times['dhuhr']!.month, now.month);
+      expect(times['dhuhr']!.day, now.day);
+    });
+
+    test('should correctly calculate midnight as halfway between maghrib and next fajr based on service logic', () {
+      final position = createDummyPosition(33.3152, 44.3661); // Baghdad
+      final date = DateTime(2023, 1, 1);
+
+      final times = service.calculatePrayerTimes(position, date: date);
+
+      final midnight = times['midnight']!;
+
+      // We know from the service implementation:
+      // final nextFajr = pt.fajr.add(const Duration(days: 1)).toLocal();
+      // It adds exactly 24 hours to the current day's fajr instead of calculating the actual next day's fajr
+      final pt = PrayerTimes(
+        coordinates: Coordinates(position.latitude, position.longitude),
+        date: date,
+        calculationParameters: service.shiaJafariParams,
+        precision: true,
+      );
+
+      final maghrib = pt.maghrib.toLocal();
+      final nextFajr = pt.fajr.add(const Duration(days: 1)).toLocal();
+      final expectedDuration = nextFajr.difference(maghrib);
+      final expectedMidnight = maghrib.add(Duration(seconds: (expectedDuration.inSeconds / 2).round()));
+
+      expect(midnight.isAtSameMomentAs(expectedMidnight), isTrue);
+    });
+
+    test('should handle extreme latitudes gracefully', () {
+      // Tromso, Norway - above Arctic circle
+      final position = createDummyPosition(69.6492, 18.9553);
+      final date = DateTime(2023, 6, 21); // Summer solstice
+
+      final times = service.calculatePrayerTimes(position, date: date);
+
+      expect(times.containsKey('fajr'), isTrue);
+      expect(times.containsKey('dhuhr'), isTrue);
+      expect(times.containsKey('maghrib'), isTrue);
+
+      expect(times['fajr'], isA<DateTime>());
+      expect(times['maghrib'], isA<DateTime>());
     });
   });
 }

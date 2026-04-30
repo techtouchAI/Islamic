@@ -33,6 +33,9 @@ jobs:
         run: pip3 install Pillow
 
       - name: Ensure Signing Keystore
+        env:
+          KEYSTORE_STOREPASS: ${{ secrets.KEYSTORE_STOREPASS || 'android' }}
+          KEYSTORE_KEYPASS: ${{ secrets.KEYSTORE_KEYPASS || 'android' }}
         run: python3 scripts/ensure_keystore.py
 
       - name: Update App Resources from CMS (Icons & Audio)
