@@ -1378,7 +1378,9 @@ class DynamicListSection extends StatelessWidget {
                                 title: "سورة ${surah['name']}",
                                 content: content,
                                 fontSizeFactor: fontSizeFactor,
-                                isQuran: true)));
+                                isQuran: true,
+                                surahName: surah['name'].toString(),
+                                ayahs: ayahs)));
                   },
                 ),
               );
@@ -1495,12 +1497,14 @@ class ReaderPage extends StatefulWidget {
   final double fontSizeFactor;
   final bool isQuran;
   final List<Map<String, dynamic>>? ayahs;
+  final String? surahName;
   const ReaderPage(
       {super.key,
       required this.title,
       required this.content,
       required this.fontSizeFactor,
       this.isQuran = false,
+      this.surahName,
       this.ayahs});
   @override
   State<ReaderPage> createState() => _ReaderPageState();
@@ -1571,21 +1575,25 @@ class _ReaderPageState extends State<ReaderPage> {
                       child: Column(children: [
                         if (widget.isQuran)
                           SurahHeader(title: widget.title, color: primary),
-                        Text("بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ",
-                            style: GoogleFonts.scheherazadeNew(
-                              fontSize: 30,
-                              fontWeight: FontWeight.bold,
-                              color: primary,
-                            )),
-                        const SizedBox(height: 15),
-                        Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: List.generate(
-                                5,
-                                (index) => Icon(Icons.star,
-                                    size: 12,
-                                    color: primary.withValues(alpha: 0.5)))),
-                        const SizedBox(height: 25),
+                        if (widget.isQuran &&
+                            widget.surahName != 'الفاتحة' &&
+                            widget.surahName != 'التوبة') ...[
+                          Text("بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ",
+                              style: GoogleFonts.scheherazadeNew(
+                                fontSize: 30,
+                                fontWeight: FontWeight.bold,
+                                color: primary,
+                              )),
+                          const SizedBox(height: 15),
+                          Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: List.generate(
+                                  5,
+                                  (index) => Icon(Icons.star,
+                                      size: 12,
+                                      color: primary.withValues(alpha: 0.5)))),
+                          const SizedBox(height: 25),
+                        ],
                         widget.isQuran &&
                                 widget.ayahs != null &&
                                 widget.ayahs!.isNotEmpty
@@ -1618,7 +1626,8 @@ class _ReaderPageState extends State<ReaderPage> {
 
                                     // Remove trailing english or arabic numbers from the text itself
                                     text = text
-                                        .replaceAll(RegExp(r'[0-9٠-٩]+$'), '')
+                                        .replaceAll(
+                                            RegExp(r'[\s\xa0]*[0-9٠-٩]+$'), '')
                                         .trim();
 
                                     return TextSpan(
