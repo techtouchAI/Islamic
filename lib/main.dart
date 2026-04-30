@@ -854,17 +854,18 @@ class DynamicListSection extends StatelessWidget {
                   title: Text(surah['name'].toString(), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, fontFamily: 'Scheherazade New')),
                   subtitle: Padding(
                     padding: const EdgeInsets.only(top: 10),
-                    child: Text("سورة ${surah['name']} - آياتها ${surah['total_ayahs']}", style: GoogleFonts.scheherazadeNew(fontSize: 18)),
+                    child: Text("سورة ${surah['name']} - آياتها ${surah['total_ayahs']}", style: GoogleFonts.notoNaskhArabic(fontSize: 18)),
                   ),
                   onTap: () async {
                     final ayahs = await QuranService.getAyahs(surah['id']);
-                    final content = ayahs.map((a) {
-                      final text = a['ar_text'].toString().trim();
-                      final index = a['ayah_surah_index'].toString();
-                      return index.isEmpty ? text : "$text \uFD3F$index\uFD3E";
-                    }).join(" ");
                     if (!context.mounted) return;
-                    Navigator.push(context, MaterialPageRoute(builder: (c) => ReaderPage(title: "سورة ${surah['name']}", content: content, fontSizeFactor: fontSizeFactor, isQuran: true)));
+                    Navigator.push(context, MaterialPageRoute(builder: (c) => ReaderPage(
+                      title: "سورة ${surah['name']}",
+                      content: "", 
+                      fontSizeFactor: fontSizeFactor,
+                      isQuran: true,
+                      ayahs: ayahs,
+                    )));
                   },
                 ),
               );
@@ -929,7 +930,7 @@ class SurahHeader extends StatelessWidget {
             ),
             child: Text(
               title,
-              style: GoogleFonts.scheherazadeNew(
+              style: GoogleFonts.notoNaskhArabic(
                 fontSize: 28,
                 fontWeight: FontWeight.bold,
                 color: color,
@@ -1008,7 +1009,7 @@ class _ReaderPageState extends State<ReaderPage> {
                     if (widget.isQuran) SurahHeader(title: widget.title, color: primary),
                     Text(
                       "بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ",
-                      style: GoogleFonts.scheherazadeNew(
+                      style: GoogleFonts.notoNaskhArabic(
                         fontSize: 30,
                         fontWeight: FontWeight.bold,
                         color: primary,
@@ -1025,7 +1026,7 @@ class _ReaderPageState extends State<ReaderPage> {
                             textAlign: TextAlign.center,
                             textDirection: TextDirection.rtl,
                             text: TextSpan(
-                              style: GoogleFonts.scheherazadeNew(
+                              style: GoogleFonts.notoNaskhArabic(
                                 fontSize: 26 * _factor,
                                 height: 1.8,
                                 color: _customBgColor != null ? (_customBgColor!.computeLuminance() > 0.5 ? Colors.black : Colors.white) : Theme.of(context).textTheme.bodyLarge?.color ?? Colors.black,
@@ -1053,7 +1054,7 @@ class _ReaderPageState extends State<ReaderPage> {
                         : Text(
                             widget.content,
                             textAlign: TextAlign.center,
-                            style: (widget.isQuran ? GoogleFonts.scheherazadeNew : GoogleFonts.notoNaskhArabic)(
+                            style: GoogleFonts.notoNaskhArabic(
                               fontSize: (widget.isQuran ? 26 : 20) * _factor,
                               height: widget.isQuran ? 1.8 : 2.2,
                               color: _customBgColor != null ? (_customBgColor!.computeLuminance() > 0.5 ? Colors.black : Colors.white) : null
