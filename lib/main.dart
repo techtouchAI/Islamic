@@ -3,8 +3,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart' as intl;
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:timezone/data/latest_all.dart' as tz_data;
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'dart:async';
 import 'dart:math';
@@ -18,9 +16,11 @@ import 'dart:io';
 
 import 'data/data_manager.dart';
 import 'data/daily_duas.dart';
+import 'utils/string_extensions.dart';
 import 'services/prayer_times_service.dart';
 import 'services/prayer_notification_service.dart';
 import 'services/quran_service.dart';
+import 'data/iraq_provinces.dart';
 
 class IslamicPatternPainter extends CustomPainter {
   final Color color;
@@ -108,7 +108,6 @@ Widget _buildImage(String? path, {double? height, BoxFit fit = BoxFit.contain}) 
   return Image.asset(path, height: height, fit: fit, errorBuilder: (c, e, s) => const Icon(Icons.image_not_supported));
 }
 
-final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -144,10 +143,6 @@ class _AlDhakereenAppState extends State<AlDhakereenApp> {
       await initializeDateFormatting('ar_SA', null);
       HijriCalendar.setLocal('ar');
       await DataManager.loadContent();
-      tz_data.initializeTimeZones();
-      const AndroidInitializationSettings initializationSettingsAndroid = AndroidInitializationSettings('ic_launcher');
-      const InitializationSettings initializationSettings = InitializationSettings(android: initializationSettingsAndroid);
-      await flutterLocalNotificationsPlugin.initialize(initializationSettings);
       await PrayerNotificationService.initNotifications();
       PrayerNotificationService.scheduleDailyPrayers();
       await QuranService.initDB();
@@ -567,11 +562,10 @@ class _HomeSectionState extends State<HomeSection> {
     final dayNameAr = intl.DateFormat('EEEE', 'ar_SA').format(now);
     final allDaysDuas = DataManager.getItems('duas_days');
 
-    String normalize(String s) => s.replaceAll('أ', 'ا').replaceAll('إ', 'ا').replaceAll('آ', 'ا').replaceAll('ة', 'ه').replaceAll('ى', 'ي');
-    final normalizedDay = normalize(dayNameAr);
+    final normalizedDay = dayNameAr.normalizeArabic();
 
     final itemsForToday = allDaysDuas.where((it) {
-      final title = normalize(it['title'].toString());
+      final title = it['title'].toString().normalizeArabic();
       return title.contains(normalizedDay);
     }).toList();
 
@@ -864,7 +858,6 @@ class DynamicListSection extends StatelessWidget {
                   ),
                   onTap: () async {
                     final ayahs = await QuranService.getAyahs(surah['id']);
-                    // Combine ayahs with their numbers for a professional Quranic display
                     final content = ayahs.map((a) {
                       final text = a['ar_text'].toString().trim();
                       final index = a['ayah_surah_index'].toString();
@@ -1064,15 +1057,14 @@ class GlobalSearchDelegate extends SearchDelegate {
   @override Widget? buildLeading(BuildContext context) => IconButton(icon: const Icon(Icons.arrow_back), onPressed: () => close(context, null));
   @override Widget buildResults(BuildContext context) => _buildSearchResults();
   @override Widget buildSuggestions(BuildContext context) => _buildSearchResults();
-  String _normalize(String text) => text.replaceAll(RegExp(r'[\u064B-\u0652]'), '').replaceAll('أ', 'ا').replaceAll('إ', 'ا').replaceAll('آ', 'ا').replaceAll('ة', 'ه').replaceAll('ى', 'ي');
   Widget _buildSearchResults() {
     if (query.isEmpty) return const Center(child: Text('ابدأ الكتابة للبحث...'));
-    final normalizedQuery = _normalize(query.trim());
+    final normalizedQuery = query.trim().normalizeArabic();
     final sections = DataManager.getSections();
     List<Map<String, dynamic>> results = [];
     sections.forEach((key, sec) {
       for (var it in DataManager.getItems(key)) {
-        if (_normalize(it['title'].toString()).contains(normalizedQuery) || _normalize(it['content'].toString()).contains(normalizedQuery)) { results.add({'section': sec['title'], 'title': it['title'], 'content': it['content']}); }
+        if (it['title'].toString().normalizeArabic().contains(normalizedQuery) || it['content'].toString().normalizeArabic().contains(normalizedQuery)) { results.add({'section': sec['title'], 'title': it['title'], 'content': it['content']}); }
       }
     });
     if (results.isEmpty) return const Center(child: Text('لا توجد نتائج مطابقة'));
@@ -1219,7 +1211,6 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
   final Map<String, bool> _enabledPrayers = {'fajr': true, 'dhuhr': true, 'asr': true, 'maghrib': true, 'isha': true};
   final Map<String, int> _manualAdjustments = {'fajr': 0, 'dhuhr': 0, 'asr': 0, 'maghrib': 0, 'isha': 0};
   String _selectedProvince = "بغداد";
-  final Map<String, List<double>> _iraqProvinces = {"بغداد": [33.3128, 44.3615], "البصرة": [30.5081, 47.7835], "النجف الأشرف": [32.0259, 44.3462], "كربلاء المقدسة": [32.6160, 44.0248], "أربيل": [36.1901, 44.0094], "الموصل": [36.3489, 43.1577], "كركوك": [35.4681, 44.3922], "السليمانية": [35.5561, 45.4333], "العمارة": [31.8453, 47.1420], "الناصرية": [31.0577, 46.2573], "الكوت": [32.5020, 45.8202], "الحلة": [32.4815, 44.4331], "الديوانية": [31.9904, 44.9258], "بعقوبة": [33.7431, 44.6361], "الرمادي": [33.4219, 43.3032], "تكريت": [34.6074, 43.6766], "السماوة": [31.3120, 45.2810], "دهوك": [36.8679, 42.9431]};
 
   @override void initState() { super.initState(); _loadSettings(); _getLocationAndPrayers(); }
 
@@ -1241,7 +1232,7 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
   Future<void> _getLocationAndPrayers() async {
     try {
       Position pos;
-      if (_currentPosition != null) { pos = _currentPosition!; } else { final coords = _iraqProvinces[_selectedProvince]!; pos = Position(latitude: coords[0], longitude: coords[1], timestamp: DateTime.now(), accuracy: 0, altitude: 0, heading: 0, speed: 0, speedAccuracy: 0, altitudeAccuracy: 0, headingAccuracy: 0); }
+      if (_currentPosition != null) { pos = _currentPosition!; } else { final coords = iraqProvinces[_selectedProvince]!; pos = Position(latitude: coords[0], longitude: coords[1], timestamp: DateTime.now(), accuracy: 0, altitude: 0, heading: 0, speed: 0, speedAccuracy: 0, altitudeAccuracy: 0, headingAccuracy: 0); }
       final pt = _prayerService.calculatePrayerTimes(pos);
       final db = DataManager.getDB();
       final todayStr = intl.DateFormat('yyyy-MM-dd').format(DateTime.now());
@@ -1305,7 +1296,7 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
                       }
                     },
                     items: [
-                      ..._iraqProvinces.keys.map((p) => DropdownMenuItem(value: p, child: Text(p))),
+                      ...iraqProvinces.keys.map((p) => DropdownMenuItem(value: p, child: Text(p))),
                       if (_selectedProvince == "الموقع الحالي (GPS)") const DropdownMenuItem(value: "الموقع الحالي (GPS)", child: Text("الموقع الحالي (GPS)"))
                     ]
                   )
