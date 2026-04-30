@@ -46,3 +46,8 @@ flutter:
     - assets/images/logo.png
     - assets/audio/adhan.mp3
     - assets/data/quran_db.db
+
+  fonts:
+    - family: me_quran
+      fonts:
+        - asset: assets/font/me_quran.ttf
