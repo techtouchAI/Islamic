@@ -3,14 +3,7 @@ name: Build Android APK
 on:
   push:
     branches: [ main, "feat/**", "fix/**", "feature/**" ]
-    paths:
-      - 'assets/data/content.json'
-      - 'assets/data/quran_db.db'
-      - 'quran_formatted.json'
-      - 'lib/**'
-      - 'pubspec.yaml'
-      - 'android/**'
-      - 'scripts/**'
+  workflow_dispatch:
 
 jobs:
   build:
@@ -33,9 +26,6 @@ jobs:
         run: pip3 install Pillow
 
       - name: Ensure Signing Keystore
-        env:
-          KEYSTORE_STOREPASS: ${{ secrets.KEYSTORE_STOREPASS || 'android' }}
-          KEYSTORE_KEYPASS: ${{ secrets.KEYSTORE_KEYPASS || 'android' }}
         run: python3 scripts/ensure_keystore.py
 
       - name: Update App Resources from CMS (Icons & Audio)
@@ -44,11 +34,11 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Build APK
-        run: flutter build apk --release
+      - name: Build APK (64-bit architecture)
+        run: flutter build apk --release --target-platform android-arm64,android-x64 --split-per-abi
 
-      - name: Upload APK
+      - name: Upload APKs
         uses: actions/upload-artifact@v4
         with:
-          name: aldhakereen-apk
+          name: aldhakereen-apks
           path: build/app/outputs/flutter-apk/*.apk
