@@ -33,9 +33,11 @@ class DataManager {
     }
   }
 
-  static Future<bool> syncCloudData() async {
+  static Future<bool> syncCloudData({http.Client? client}) async {
     try {
-      final response = await http.get(Uri.parse(_repoUrl));
+      final response = client != null
+          ? await client.get(Uri.parse(_repoUrl))
+          : await http.get(Uri.parse(_repoUrl));
       if (response.statusCode == 200) {
         final content = response.body;
 
