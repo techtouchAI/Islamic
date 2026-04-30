@@ -44,7 +44,10 @@ class DataManager {
 
   static Future<bool> syncCloudData({http.Client? client}) async {
     try {
-      client = client ?? httpClient ?? http.Client();
+<<<<<<< HEAD
+      final client = httpClient ?? http.Client();
+      final response = await client.get(Uri.parse(_repoUrl));
+=======
       final response = client != null
           ? await client.get(Uri.parse(_repoUrl))
           : await http.get(Uri.parse(_repoUrl));
