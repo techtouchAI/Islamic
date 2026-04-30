@@ -39,7 +39,7 @@ jobs:
 
       - name: Build APK (64-bit architecture)
         run: flutter build apk --release
-        run: flutter build apk --release 
+        run: flutter build apk --release
         env: # <--- هذه هي الإضافة التي نسيتها في رسالتك
           KEYSTORE_STOREPASS: ${{ secrets.KEYSTORE_STOREPASS }}
           KEYSTORE_KEYPASS: ${{ secrets.KEYSTORE_KEYPASS }}
