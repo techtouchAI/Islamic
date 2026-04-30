@@ -6,6 +6,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'dart:async';
 import 'dart:math';
+import 'dart:ui';
 import 'package:share_plus/share_plus.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -845,22 +846,32 @@ class _HomeSectionState extends State<HomeSection> {
               blurRadius: 15,
               offset: const Offset(0, 8))
         ]),
-        child: Card(
-          elevation: 0,
-          color: widget.cardColor.withValues(alpha: widget.uiOpacity),
-          shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(25),
-              side: BorderSide(
-                  color: Theme.of(context)
-                      .colorScheme
-                      .primary
-                      .withValues(alpha: 0.5),
-                  width: 1.5)),
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              children: [
-                Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(25),
+          child: Stack(
+            children: [
+              Positioned.fill(
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: widget.cardColor.withValues(alpha: widget.uiOpacity * 0.8),
+                      borderRadius: BorderRadius.circular(25),
+                      border: Border.all(
+                          color: Theme.of(context)
+                              .colorScheme
+                              .primary
+                              .withValues(alpha: 0.5),
+                          width: 1.5),
+                    ),
+                  ),
+                ),
+              ),
+                Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    children: [
+                      Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                   Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
@@ -906,9 +917,11 @@ class _HomeSectionState extends State<HomeSection> {
                             fontSize: 13,
                             color: Theme.of(context).colorScheme.primary,
                             fontWeight: FontWeight.bold))),
+                      ],
+                    ),
+                  ),
               ],
             ),
-          ),
         ),
       ),
     );
@@ -1074,10 +1087,7 @@ class _HomeSmallCard extends StatelessWidget {
         width: (MediaQuery.of(context).size.width - 48) / 2,
         height: 100,
         decoration: BoxDecoration(
-            color: cardColor.withValues(alpha: uiOpacity),
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-                color: Theme.of(context).colorScheme.primary, width: 2),
             boxShadow: [
               BoxShadow(
                   color: Theme.of(context)
@@ -1087,9 +1097,24 @@ class _HomeSmallCard extends StatelessWidget {
                   blurRadius: 10,
                   offset: const Offset(0, 5))
             ]),
-        child: Stack(
-          children: [
-            Positioned(
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(20),
+          child: Stack(
+            children: [
+              Positioned.fill(
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: cardColor.withValues(alpha: uiOpacity * 0.8),
+                      border: Border.all(
+                          color: Theme.of(context).colorScheme.primary, width: 2),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                  ),
+                ),
+              ),
+              Positioned(
                 right: -10,
                 bottom: -10,
                 child: Opacity(
@@ -1097,31 +1122,32 @@ class _HomeSmallCard extends StatelessWidget {
                     child: Icon(Icons.star,
                         size: 80,
                         color: Theme.of(context).colorScheme.primary))),
-            Padding(
-              padding: const EdgeInsets.all(15),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(tag,
-                      style: TextStyle(
-                          fontSize: 10,
-                          color: Theme.of(context).colorScheme.primary,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 1.2)),
-                  const SizedBox(height: 4),
-                  Text(title,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.bold,
-                          color: textColor,
-                          height: 1.2)),
-                ],
+              Padding(
+                padding: const EdgeInsets.all(15),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(tag,
+                        style: TextStyle(
+                            fontSize: 10,
+                            color: Theme.of(context).colorScheme.primary,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 1.2)),
+                    const SizedBox(height: 4),
+                    Text(title,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                            color: textColor,
+                            height: 1.2)),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -1400,36 +1426,49 @@ class DynamicListSection extends StatelessWidget {
                   physics: const BouncingScrollPhysics(),
                   itemCount: data.length,
                   padding: const EdgeInsets.only(bottom: 20),
-                  itemBuilder: (context, index) => Card(
-                    color: Theme.of(context)
-                        .cardColor
-                        .withValues(alpha: uiOpacity),
-                    margin:
-                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(15),
-                        side: BorderSide(
-                            color: Theme.of(context).colorScheme.primary,
-                            width: 1.5)),
-                    child: ListTile(
-                      contentPadding: const EdgeInsets.all(20),
-                      title: Text(data[index]['title'].toString(),
-                          style: const TextStyle(
-                              fontWeight: FontWeight.bold, fontSize: 18)),
-                      subtitle: Padding(
-                          padding: const EdgeInsets.only(top: 10),
-                          child: Text(data[index]['content'].toString(),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: GoogleFonts.amiri(fontSize: 16))),
-                      onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (c) => ReaderPage(
-                                  title: data[index]['title'].toString(),
-                                  content: data[index]['content'].toString(),
-                                  fontSizeFactor: fontSizeFactor,
-                                  isQuran: false))),
+                  itemBuilder: (context, index) => Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(15),
+                      child: Stack(
+                        children: [
+                          Positioned.fill(
+                            child: BackdropFilter(
+                              filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context).cardColor.withValues(alpha: uiOpacity * 0.8),
+                                  borderRadius: BorderRadius.circular(15),
+                                  border: Border.all(
+                                    color: Theme.of(context).colorScheme.primary,
+                                    width: 1.5,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                          ListTile(
+                              contentPadding: const EdgeInsets.all(20),
+                              title: Text(data[index]['title'].toString(),
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.bold, fontSize: 18)),
+                              subtitle: Padding(
+                                  padding: const EdgeInsets.only(top: 10),
+                                  child: Text(data[index]['content'].toString(),
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: GoogleFonts.amiri(fontSize: 16))),
+                              onTap: () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (c) => ReaderPage(
+                                          title: data[index]['title'].toString(),
+                                          content: data[index]['content'].toString(),
+                                          fontSizeFactor: fontSizeFactor,
+                                          isQuran: false))),
+                            ),
+                          ],
+                        ),
                     ),
                   ),
                 ),
@@ -1564,8 +1603,13 @@ class _ReaderPageState extends State<ReaderPage> {
                       decoration: BoxDecoration(
                           border: Border.all(color: primary, width: 3),
                           borderRadius: BorderRadius.circular(25),
-                          color:
-                              _customBgColor ?? primary.withValues(alpha: 0.02),
+                          gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [
+                                _customBgColor ?? primary.withValues(alpha: 0.02),
+                                (_customBgColor ?? primary.withValues(alpha: 0.02)).withValues(alpha: 0.5),
+                              ]),
                           boxShadow: [
                             BoxShadow(
                                 color: primary.withValues(alpha: 0.1),
@@ -2037,42 +2081,53 @@ class _TasbihSectionState extends State<TasbihSection> {
                     fontWeight: FontWeight.bold,
                     color: Theme.of(context).colorScheme.primary))),
         const SizedBox(height: 50),
-        GestureDetector(
-            onTap: () {
-              setState(() => _counter++);
-              HapticFeedback.lightImpact();
-            },
-            child: Stack(alignment: Alignment.center, children: [
-              Container(
-                  width: 250,
-                  height: 250,
-                  decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                          color: Theme.of(context).colorScheme.primary,
-                          width: 8),
-                      boxShadow: [
-                        BoxShadow(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .primary
-                                .withValues(alpha: 0.2),
-                            blurRadius: 30,
-                            spreadRadius: 5)
-                      ])),
-              Container(
+        Stack(alignment: Alignment.center, children: [
+          Container(
+              width: 250,
+              height: 250,
+              decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                      color: Theme.of(context).colorScheme.primary,
+                      width: 8),
+                  boxShadow: [
+                    BoxShadow(
+                        color: Theme.of(context)
+                            .colorScheme
+                            .primary
+                            .withValues(alpha: 0.2),
+                        blurRadius: 30,
+                        spreadRadius: 5)
+                  ])),
+          Material(
+            type: MaterialType.transparency,
+            child: InkWell(
+              customBorder: const CircleBorder(),
+              onTap: () {
+                setState(() => _counter++);
+                HapticFeedback.lightImpact();
+              },
+              child: Ink(
                   width: 220,
                   height: 220,
                   decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: isDark ? Colors.black : Colors.white),
+                      gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            isDark ? const Color(0xFF222222) : Colors.white,
+                            isDark ? Colors.black : const Color(0xFFF0F0F0)
+                          ])),
                   child: Center(
                       child: Text('$_counter',
                           style: GoogleFonts.notoSans(
                               fontSize: 70,
                               fontWeight: FontWeight.bold,
                               color: Theme.of(context).colorScheme.primary)))),
-            ])),
+            ),
+          ),
+        ]),
         const SizedBox(height: 50),
         Row(mainAxisAlignment: MainAxisAlignment.center, children: [
           IconButton(
