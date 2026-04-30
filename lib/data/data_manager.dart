@@ -8,10 +8,18 @@ import 'package:flutter/foundation.dart';
 class DataManager {
   static Map<String, dynamic>? _db;
   static final ValueNotifier<int> dbNotifier = ValueNotifier(0);
-  static const String _repoUrl =
-      "https://raw.githubusercontent.com/techtouchAI/Islamic/main/assets/data/content.json";
+  static const String _repoUrl = "https://raw.githubusercontent.com/techtouchAI/Islamic/main/assets/data/content.json";
+
+  // Allows dependency injection for testing
+  static http.Client? httpClient;
+  static Future<File> Function()? getLocalFileOverride;
 
   static Map<String, dynamic>? getDB() => _db;
+
+  @visibleForTesting
+  static void setDB(Map<String, dynamic>? newDb) {
+    _db = newDb;
+  }
 
   static Future<void> loadContent() async {
     try {
@@ -24,8 +32,7 @@ class DataManager {
         debugPrint("DataManager: Loaded from local storage.");
       } else {
         // 2. Fallback to bundled assets
-        final String response =
-            await rootBundle.loadString('assets/data/content.json');
+        final String response = await rootBundle.loadString('assets/data/content.json');
         _db = json.decode(response);
         debugPrint("DataManager: Loaded from bundled assets.");
       }
@@ -37,15 +44,16 @@ class DataManager {
 
   static Future<bool> syncCloudData() async {
     try {
-      final response = await http.get(Uri.parse(_repoUrl));
+      final client = httpClient ?? http.Client();
+      final response = await client.get(Uri.parse(_repoUrl));
       if (response.statusCode == 200) {
         final content = response.body;
 
         // التحقق من وجود تغييرات فعلية لتجنب إعادة التحميل غير الضرورية
         final localFile = await _getLocalFile();
         if (await localFile.exists()) {
-          final oldContent = await localFile.readAsString();
-          if (oldContent == content) return false;
+           final oldContent = await localFile.readAsString();
+           if (oldContent == content) return false;
         }
 
         final newDb = json.decode(content);
@@ -64,6 +72,9 @@ class DataManager {
   }
 
   static Future<File> _getLocalFile() async {
+    if (getLocalFileOverride != null) {
+      return await getLocalFileOverride!();
+    }
     final directory = await getApplicationDocumentsDirectory();
     return File('${directory.path}/content.json');
   }
