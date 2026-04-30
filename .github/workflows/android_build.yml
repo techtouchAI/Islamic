@@ -39,6 +39,9 @@ jobs:
 
       - name: Build APK (64-bit architecture)
         run: flutter build apk --release --target-platform android-arm64,android-x64 --split-per-abi
+        env: # <--- هذه هي الإضافة التي نسيتها في رسالتك
+          KEYSTORE_STOREPASS: ${{ secrets.KEYSTORE_STOREPASS }}
+          KEYSTORE_KEYPASS: ${{ secrets.KEYSTORE_KEYPASS }}
 
       - name: Upload APKs
         uses: actions/upload-artifact@v4
