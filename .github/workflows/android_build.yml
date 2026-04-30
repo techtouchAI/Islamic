@@ -3,14 +3,7 @@ name: Build Android APK
 on:
   push:
     branches: [ main, "feat/**", "fix/**", "feature/**" ]
-    paths:
-      - 'assets/data/content.json'
-      - 'assets/data/quran_db.db'
-      - 'quran_formatted.json'
-      - 'lib/**'
-      - 'pubspec.yaml'
-      - 'android/**'
-      - 'scripts/**'
+  workflow_dispatch:
 
 jobs:
   build:
@@ -34,6 +27,9 @@ jobs:
 
       - name: Ensure Signing Keystore
         run: python3 scripts/ensure_keystore.py
+        env:
+          KEYSTORE_STOREPASS: ${{ secrets.KEYSTORE_STOREPASS }}
+          KEYSTORE_KEYPASS: ${{ secrets.KEYSTORE_KEYPASS }}
 
       - name: Update App Resources from CMS (Icons & Audio)
         run: python3 scripts/update_resources.py
@@ -41,11 +37,14 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Build APK
+      - name: Build APK (64-bit architecture)
         run: flutter build apk --release
+        env: # <--- هذه هي الإضافة التي نسيتها في رسالتك
+          KEYSTORE_STOREPASS: ${{ secrets.KEYSTORE_STOREPASS }}
+          KEYSTORE_KEYPASS: ${{ secrets.KEYSTORE_KEYPASS }}
 
-      - name: Upload APK
+      - name: Upload APKs
         uses: actions/upload-artifact@v4
         with:
-          name: aldhakereen-apk
+          name: aldhakereen-apks
           path: build/app/outputs/flutter-apk/*.apk

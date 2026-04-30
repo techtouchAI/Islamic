@@ -7,6 +7,7 @@ import '../data/data_manager.dart';
 
 class QuranService {
   static Database? _db;
+  static final Map<int, List<Map<String, dynamic>>> _ayahsCache = {};
 
   static Future<void> initDB() async {
     if (kIsWeb) return;
@@ -45,18 +46,23 @@ class QuranService {
   }
 
   static Future<List<Map<String, dynamic>>> getAyahs(int surahId) async {
+    if (_ayahsCache.containsKey(surahId)) {
+      return _ayahsCache[surahId]!;
+    }
+
     if (kIsWeb || _db == null) {
       final items = DataManager.getItems('quran');
-      final found = items.cast<Map<String, dynamic>>().firstWhere(
-        (e) => e['id'] == surahId,
-        orElse: () => <String, dynamic>{},
-      );
-      if (found.isNotEmpty) {
-        return [{'ar_text': found['content'].toString(), 'ayah_surah_index': ''}];
+      final found = items.firstWhere((e) => e['id'] == surahId, orElse: () => null);
+      if (found != null) {
+        final result = [{'ar_text': found['content'].toString(), 'ayah_surah_index': ''}];
+        _ayahsCache[surahId] = result;
+        return result;
       }
       return [];
     }
     // Using 'text' column for full Tashkeel
-    return await _db!.query('ayah', where: 'sid = ?', columns: ['text as ar_text', 'anum', 'ayah_surah_index'], whereArgs: [surahId], orderBy: 'anum ASC');
+    final result = await _db!.query('ayah', where: 'sid = ?', columns: ['text as ar_text', 'anum', 'ayah_surah_index'], whereArgs: [surahId], orderBy: 'anum ASC');
+    _ayahsCache[surahId] = result;
+    return result;
   }
 }
