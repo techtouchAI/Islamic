@@ -858,13 +858,14 @@ class DynamicListSection extends StatelessWidget {
                   ),
                   onTap: () async {
                     final ayahs = await QuranService.getAyahs(surah['id']);
-                    final content = ayahs.map((a) {
-                      final text = a['ar_text'].toString().trim();
-                      final index = a['ayah_surah_index'].toString();
-                      return index.isEmpty ? text : "$text \uFD3F$index\uFD3E";
-                    }).join(" ");
                     if (!context.mounted) return;
-                    Navigator.push(context, MaterialPageRoute(builder: (c) => ReaderPage(title: "سورة ${surah['name']}", content: content, fontSizeFactor: fontSizeFactor, isQuran: true)));
+                    Navigator.push(context, MaterialPageRoute(builder: (c) => ReaderPage(
+                      title: "سورة ${surah['name']}",
+                      content: "", // Content will be drawn from ayahs
+                      fontSizeFactor: fontSizeFactor,
+                      isQuran: true,
+                      ayahs: ayahs,
+                    )));
                   },
                 ),
               );
@@ -1008,15 +1009,45 @@ class _ReaderPageState extends State<ReaderPage> {
                       children: List.generate(5, (index) => Icon(Icons.star, size: 12, color: primary.withValues(alpha: 0.5)))
                     ),
                     const SizedBox(height: 25),
-                    Text(
-                      widget.content,
-                      textAlign: TextAlign.center,
-                      style: (widget.isQuran ? GoogleFonts.scheherazadeNew : GoogleFonts.notoNaskhArabic)(
-                        fontSize: (widget.isQuran ? 26 : 20) * _factor,
-                        height: widget.isQuran ? 1.8 : 2.2,
-                        color: _customBgColor != null ? (_customBgColor!.computeLuminance() > 0.5 ? Colors.black : Colors.white) : null
-                      )
-                    ),
+                    widget.isQuran && widget.ayahs != null && widget.ayahs!.isNotEmpty
+                        ? RichText(
+                            textAlign: TextAlign.center,
+                            textDirection: TextDirection.rtl,
+                            text: TextSpan(
+                              style: GoogleFonts.scheherazadeNew(
+                                fontSize: 26 * _factor,
+                                height: 1.8,
+                                color: _customBgColor != null ? (_customBgColor!.computeLuminance() > 0.5 ? Colors.black : Colors.white) : Theme.of(context).textTheme.bodyLarge?.color ?? Colors.black,
+                              ),
+                              children: widget.ayahs!.map((a) {
+                                final text = a['ar_text'].toString().trim();
+                                final index = a['ayah_surah_index'].toString();
+                                final arabicIndex = _convertToArabicNumber(index);
+                                return TextSpan(
+                                  children: [
+                                    TextSpan(text: '$text '),
+                                    if (arabicIndex.isNotEmpty)
+                                      TextSpan(
+                                        text: '﴿$arabicIndex﴾ ',
+                                        style: TextStyle(
+                                          color: Colors.amber[700],
+                                          fontSize: 24 * _factor,
+                                        ),
+                                      ),
+                                  ],
+                                );
+                              }).toList(),
+                            ),
+                          )
+                        : Text(
+                            widget.content,
+                            textAlign: TextAlign.center,
+                            style: (widget.isQuran ? GoogleFonts.scheherazadeNew : GoogleFonts.notoNaskhArabic)(
+                              fontSize: (widget.isQuran ? 26 : 20) * _factor,
+                              height: widget.isQuran ? 1.8 : 2.2,
+                              color: _customBgColor != null ? (_customBgColor!.computeLuminance() > 0.5 ? Colors.black : Colors.white) : null
+                            )
+                          ),
                     const SizedBox(height: 25),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
