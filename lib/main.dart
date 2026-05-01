@@ -1832,14 +1832,15 @@ class GlobalSearchDelegate extends SearchDelegate {
     List<Map<String, dynamic>> results = [];
     sections.forEach((key, sec) {
       for (var it in DataManager.getItems(key)) {
-        if (it['title']
-                .toString()
-                .normalizeArabic()
-                .contains(normalizedQuery) ||
-            it['content']
-                .toString()
-                .normalizeArabic()
-                .contains(normalizedQuery)) {
+        final title = it['_normalized_title'] ??
+            it['title']?.toString().normalizeArabic() ??
+            '';
+        final contentStr = it['_normalized_content'] ??
+            it['content']?.toString().normalizeArabic() ??
+            '';
+
+        if (title.contains(normalizedQuery) ||
+            contentStr.contains(normalizedQuery)) {
           results.add({
             'section': sec['title'],
             'title': it['title'],
