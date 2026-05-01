@@ -199,6 +199,19 @@
                 const res = await fetch('../../assets/data/content.json');
                 db = await res.json();
                 renderNav();
+                                // Populate fatawa subSections dynamically
+                if (db.fatawa_categories) {
+                    subSections['fatawa'] = db.fatawa_categories.map(c => ({
+                        id: 'fatawa_cat_' + c.id,
+                        title: c.title
+                    }));
+
+                    // also ensure these keys exist in db for editing
+                    db.fatawa_categories.forEach(c => {
+                        db['fatawa_cat_' + c.id] = c.items || [];
+                    });
+                }
+
                 loadView('settings');
             } catch (e) { alert("خطأ في تحميل قاعدة البيانات."); }
         }
