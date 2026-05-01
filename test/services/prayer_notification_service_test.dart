@@ -20,15 +20,19 @@ void main() {
     mockPlugin = MockFlutterLocalNotificationsPlugin();
     PrayerNotificationService.notificationsPlugin = mockPlugin;
 
-    when(mockPlugin.zonedSchedule(
-      any,
-      any,
-      any,
-      any,
-      any,
-      androidScheduleMode: anyNamed('androidScheduleMode'),
-      uiLocalNotificationDateInterpretation: anyNamed('uiLocalNotificationDateInterpretation'),
-    )).thenAnswer((_) async {});
+    when(
+      mockPlugin.zonedSchedule(
+        any,
+        any,
+        any,
+        any,
+        any,
+        androidScheduleMode: anyNamed('androidScheduleMode'),
+        uiLocalNotificationDateInterpretation: anyNamed(
+          'uiLocalNotificationDateInterpretation',
+        ),
+      ),
+    ).thenAnswer((_) async {});
   });
 
   group('PrayerNotificationService.scheduleDailyPrayers', () {
@@ -40,114 +44,156 @@ void main() {
       PrayerNotificationService.scheduleDailyPrayers(now: testTime);
 
       // Should schedule Fajr, Dhuhr, and Maghrib
-      verify(mockPlugin.zonedSchedule(
-        any,
-        argThat(contains('الفجر')),
-        any,
-        any,
-        any,
-        androidScheduleMode: anyNamed('androidScheduleMode'),
-        uiLocalNotificationDateInterpretation: anyNamed('uiLocalNotificationDateInterpretation'),
-      )).called(1);
+      verify(
+        mockPlugin.zonedSchedule(
+          any,
+          argThat(contains('الفجر')),
+          any,
+          any,
+          any,
+          androidScheduleMode: anyNamed('androidScheduleMode'),
+          uiLocalNotificationDateInterpretation: anyNamed(
+            'uiLocalNotificationDateInterpretation',
+          ),
+        ),
+      ).called(1);
 
-      verify(mockPlugin.zonedSchedule(
-        any,
-        argThat(contains('الظهر')),
-        any,
-        any,
-        any,
-        androidScheduleMode: anyNamed('androidScheduleMode'),
-        uiLocalNotificationDateInterpretation: anyNamed('uiLocalNotificationDateInterpretation'),
-      )).called(1);
+      verify(
+        mockPlugin.zonedSchedule(
+          any,
+          argThat(contains('الظهر')),
+          any,
+          any,
+          any,
+          androidScheduleMode: anyNamed('androidScheduleMode'),
+          uiLocalNotificationDateInterpretation: anyNamed(
+            'uiLocalNotificationDateInterpretation',
+          ),
+        ),
+      ).called(1);
 
-      verify(mockPlugin.zonedSchedule(
-        any,
-        argThat(contains('المغرب')),
-        any,
-        any,
-        any,
-        androidScheduleMode: anyNamed('androidScheduleMode'),
-        uiLocalNotificationDateInterpretation: anyNamed('uiLocalNotificationDateInterpretation'),
-      )).called(1);
+      verify(
+        mockPlugin.zonedSchedule(
+          any,
+          argThat(contains('المغرب')),
+          any,
+          any,
+          any,
+          androidScheduleMode: anyNamed('androidScheduleMode'),
+          uiLocalNotificationDateInterpretation: anyNamed(
+            'uiLocalNotificationDateInterpretation',
+          ),
+        ),
+      ).called(1);
     });
 
-    test('schedules Dhuhr and Maghrib when current time is after Fajr but before Dhuhr', () {
-      // 5:00 AM UTC (After Fajr 02:38, before Dhuhr 09:06)
-      final testTime = DateTime.utc(2023, 1, 1, 5, 0, 0);
+    test(
+      'schedules Dhuhr and Maghrib when current time is after Fajr but before Dhuhr',
+      () {
+        // 5:00 AM UTC (After Fajr 02:38, before Dhuhr 09:06)
+        final testTime = DateTime.utc(2023, 1, 1, 5, 0, 0);
 
-      PrayerNotificationService.scheduleDailyPrayers(now: testTime);
+        PrayerNotificationService.scheduleDailyPrayers(now: testTime);
 
-      // Should not schedule Fajr
-      verifyNever(mockPlugin.zonedSchedule(
-        any,
-        argThat(contains('الفجر')),
-        any,
-        any,
-        any,
-        androidScheduleMode: anyNamed('androidScheduleMode'),
-        uiLocalNotificationDateInterpretation: anyNamed('uiLocalNotificationDateInterpretation'),
-      ));
+        // Should not schedule Fajr
+        verifyNever(
+          mockPlugin.zonedSchedule(
+            any,
+            argThat(contains('الفجر')),
+            any,
+            any,
+            any,
+            androidScheduleMode: anyNamed('androidScheduleMode'),
+            uiLocalNotificationDateInterpretation: anyNamed(
+              'uiLocalNotificationDateInterpretation',
+            ),
+          ),
+        );
 
-      // Should schedule Dhuhr and Maghrib
-      verify(mockPlugin.zonedSchedule(
-        any,
-        argThat(contains('الظهر')),
-        any,
-        any,
-        any,
-        androidScheduleMode: anyNamed('androidScheduleMode'),
-        uiLocalNotificationDateInterpretation: anyNamed('uiLocalNotificationDateInterpretation'),
-      )).called(1);
+        // Should schedule Dhuhr and Maghrib
+        verify(
+          mockPlugin.zonedSchedule(
+            any,
+            argThat(contains('الظهر')),
+            any,
+            any,
+            any,
+            androidScheduleMode: anyNamed('androidScheduleMode'),
+            uiLocalNotificationDateInterpretation: anyNamed(
+              'uiLocalNotificationDateInterpretation',
+            ),
+          ),
+        ).called(1);
 
-      verify(mockPlugin.zonedSchedule(
-        any,
-        argThat(contains('المغرب')),
-        any,
-        any,
-        any,
-        androidScheduleMode: anyNamed('androidScheduleMode'),
-        uiLocalNotificationDateInterpretation: anyNamed('uiLocalNotificationDateInterpretation'),
-      )).called(1);
-    });
+        verify(
+          mockPlugin.zonedSchedule(
+            any,
+            argThat(contains('المغرب')),
+            any,
+            any,
+            any,
+            androidScheduleMode: anyNamed('androidScheduleMode'),
+            uiLocalNotificationDateInterpretation: anyNamed(
+              'uiLocalNotificationDateInterpretation',
+            ),
+          ),
+        ).called(1);
+      },
+    );
 
-    test('schedules only Maghrib when current time is after Dhuhr but before Maghrib', () {
-      // 10:00 AM UTC (After Dhuhr 09:06, before Maghrib 14:27)
-      final testTime = DateTime.utc(2023, 1, 1, 10, 0, 0);
+    test(
+      'schedules only Maghrib when current time is after Dhuhr but before Maghrib',
+      () {
+        // 10:00 AM UTC (After Dhuhr 09:06, before Maghrib 14:27)
+        final testTime = DateTime.utc(2023, 1, 1, 10, 0, 0);
 
-      PrayerNotificationService.scheduleDailyPrayers(now: testTime);
+        PrayerNotificationService.scheduleDailyPrayers(now: testTime);
 
-      // Should not schedule Fajr or Dhuhr
-      verifyNever(mockPlugin.zonedSchedule(
-        any,
-        argThat(contains('الفجر')),
-        any,
-        any,
-        any,
-        androidScheduleMode: anyNamed('androidScheduleMode'),
-        uiLocalNotificationDateInterpretation: anyNamed('uiLocalNotificationDateInterpretation'),
-      ));
+        // Should not schedule Fajr or Dhuhr
+        verifyNever(
+          mockPlugin.zonedSchedule(
+            any,
+            argThat(contains('الفجر')),
+            any,
+            any,
+            any,
+            androidScheduleMode: anyNamed('androidScheduleMode'),
+            uiLocalNotificationDateInterpretation: anyNamed(
+              'uiLocalNotificationDateInterpretation',
+            ),
+          ),
+        );
 
-      verifyNever(mockPlugin.zonedSchedule(
-        any,
-        argThat(contains('الظهر')),
-        any,
-        any,
-        any,
-        androidScheduleMode: anyNamed('androidScheduleMode'),
-        uiLocalNotificationDateInterpretation: anyNamed('uiLocalNotificationDateInterpretation'),
-      ));
+        verifyNever(
+          mockPlugin.zonedSchedule(
+            any,
+            argThat(contains('الظهر')),
+            any,
+            any,
+            any,
+            androidScheduleMode: anyNamed('androidScheduleMode'),
+            uiLocalNotificationDateInterpretation: anyNamed(
+              'uiLocalNotificationDateInterpretation',
+            ),
+          ),
+        );
 
-      // Should schedule Maghrib
-      verify(mockPlugin.zonedSchedule(
-        any,
-        argThat(contains('المغرب')),
-        any,
-        any,
-        any,
-        androidScheduleMode: anyNamed('androidScheduleMode'),
-        uiLocalNotificationDateInterpretation: anyNamed('uiLocalNotificationDateInterpretation'),
-      )).called(1);
-    });
+        // Should schedule Maghrib
+        verify(
+          mockPlugin.zonedSchedule(
+            any,
+            argThat(contains('المغرب')),
+            any,
+            any,
+            any,
+            androidScheduleMode: anyNamed('androidScheduleMode'),
+            uiLocalNotificationDateInterpretation: anyNamed(
+              'uiLocalNotificationDateInterpretation',
+            ),
+          ),
+        ).called(1);
+      },
+    );
 
     test('schedules no prayers when current time is after Maghrib', () {
       // 15:00 UTC (3:00 PM, After Maghrib 14:27)
@@ -156,15 +202,19 @@ void main() {
       PrayerNotificationService.scheduleDailyPrayers(now: testTime);
 
       // Should not schedule any prayers
-      verifyNever(mockPlugin.zonedSchedule(
-        any,
-        any,
-        any,
-        any,
-        any,
-        androidScheduleMode: anyNamed('androidScheduleMode'),
-        uiLocalNotificationDateInterpretation: anyNamed('uiLocalNotificationDateInterpretation'),
-      ));
+      verifyNever(
+        mockPlugin.zonedSchedule(
+          any,
+          any,
+          any,
+          any,
+          any,
+          androidScheduleMode: anyNamed('androidScheduleMode'),
+          uiLocalNotificationDateInterpretation: anyNamed(
+            'uiLocalNotificationDateInterpretation',
+          ),
+        ),
+      );
     });
   });
 }

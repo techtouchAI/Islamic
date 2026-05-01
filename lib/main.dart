@@ -95,30 +95,39 @@ IconData getMaterialIcon(String? name) {
   return iconMap[name] ?? Icons.star;
 }
 
-Widget _buildImage(String? path,
-    {double? height, BoxFit fit = BoxFit.contain}) {
+Widget _buildImage(
+  String? path, {
+  double? height,
+  BoxFit fit = BoxFit.contain,
+}) {
   if (path == null || path.isEmpty) return const SizedBox();
   if (path.startsWith('data:image')) {
     try {
       final bytes = Uri.parse(path).data!.contentAsBytes();
-      return Image.memory(Uint8List.fromList(bytes),
-          height: height,
-          fit: fit,
-          errorBuilder: (c, e, s) => const Icon(Icons.broken_image));
+      return Image.memory(
+        Uint8List.fromList(bytes),
+        height: height,
+        fit: fit,
+        errorBuilder: (c, e, s) => const Icon(Icons.broken_image),
+      );
     } catch (e) {
       return const Icon(Icons.broken_image);
     }
   }
   if (path.startsWith('http')) {
-    return Image.network(path,
-        height: height,
-        fit: fit,
-        errorBuilder: (c, e, s) => const Icon(Icons.error));
-  }
-  return Image.asset(path,
+    return Image.network(
+      path,
       height: height,
       fit: fit,
-      errorBuilder: (c, e, s) => const Icon(Icons.image_not_supported));
+      errorBuilder: (c, e, s) => const Icon(Icons.error),
+    );
+  }
+  return Image.asset(
+    path,
+    height: height,
+    fit: fit,
+    errorBuilder: (c, e, s) => const Icon(Icons.image_not_supported),
+  );
 }
 
 void main() {
@@ -163,10 +172,13 @@ class _AlDhakereenAppState extends State<AlDhakereenApp> {
         if (updated && mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-                content:
-                    Text('تم تحديث المحتوى بنجاح', textAlign: TextAlign.center),
-                duration: Duration(seconds: 2),
-                backgroundColor: Colors.green),
+              content: Text(
+                'تم تحديث المحتوى بنجاح',
+                textAlign: TextAlign.center,
+              ),
+              duration: Duration(seconds: 2),
+              backgroundColor: Colors.green,
+            ),
           );
         }
       });
@@ -193,7 +205,8 @@ class _AlDhakereenAppState extends State<AlDhakereenApp> {
           : ThemeMode.dark;
       _fontSizeFactor = prefs.getDouble('fontSize') ?? 1.0;
       _primaryColor = Color(prefs.getInt('primaryColor') ?? defaultPrimary);
-      _uiOpacity = prefs.getDouble('uiOpacity') ??
+      _uiOpacity =
+          prefs.getDouble('uiOpacity') ??
           (dbSettings['ui_opacity']?.toDouble() ?? 1.0);
       _backgroundImagePath = prefs.getString('backgroundImage');
       _selectedBase64Bg = prefs.getString('custom_bg_base64_selected');
@@ -204,14 +217,15 @@ class _AlDhakereenAppState extends State<AlDhakereenApp> {
         ...sections,
         'hadith': {},
         'names_allah': {},
-        'adhkar': {}
+        'adhkar': {},
       };
       _homeVisibility = {};
       allSections.forEach((key, value) {
         _homeVisibility[key] =
             prefs.getBool('vis_$key') ?? (value['visible_home'] ?? true);
       });
-      _homeVisibility['inspiration'] = prefs.getBool('vis_inspiration') ??
+      _homeVisibility['inspiration'] =
+          prefs.getBool('vis_inspiration') ??
           (dbSettings['show_inspiration'] ?? true);
       _homeVisibility['day_dua'] = prefs.getBool('vis_day_dua') ?? true;
     });
@@ -226,8 +240,9 @@ class _AlDhakereenAppState extends State<AlDhakereenApp> {
 
   void _toggleTheme() {
     setState(() {
-      _themeMode =
-          _themeMode == ThemeMode.light ? ThemeMode.dark : ThemeMode.light;
+      _themeMode = _themeMode == ThemeMode.light
+          ? ThemeMode.dark
+          : ThemeMode.light;
       _saveSetting('theme', _themeMode == ThemeMode.light ? 'light' : 'dark');
     });
   }
@@ -265,19 +280,22 @@ class _AlDhakereenAppState extends State<AlDhakereenApp> {
         useMaterial3: true,
         textTheme: GoogleFonts.notoKufiArabicTextTheme(),
         colorScheme: ColorScheme.fromSeed(
-            seedColor: _primaryColor,
-            brightness: Brightness.light,
-            primary: _primaryColor),
+          seedColor: _primaryColor,
+          brightness: Brightness.light,
+          primary: _primaryColor,
+        ),
         scaffoldBackgroundColor: const Color(0xFFFDFBF7),
       ),
       darkTheme: ThemeData(
         useMaterial3: true,
-        textTheme:
-            GoogleFonts.notoKufiArabicTextTheme(ThemeData.dark().textTheme),
+        textTheme: GoogleFonts.notoKufiArabicTextTheme(
+          ThemeData.dark().textTheme,
+        ),
         colorScheme: ColorScheme.fromSeed(
-            seedColor: _primaryColor,
-            brightness: Brightness.dark,
-            primary: _primaryColor),
+          seedColor: _primaryColor,
+          brightness: Brightness.dark,
+          primary: _primaryColor,
+        ),
         scaffoldBackgroundColor: const Color(0xFF0A0A0A),
       ),
       themeMode: _themeMode,
@@ -426,15 +444,15 @@ class _MainScaffoldState extends State<MainScaffold> {
           },
         ),
         appBar: AppBar(
-          title: Text(_getAppBarTitle(_currentSection),
-              style:
-                  const TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
+          title: Text(
+            _getAppBarTitle(_currentSection),
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+          ),
           centerTitle: true,
           elevation: 0,
-          backgroundColor: Theme.of(context)
-              .appBarTheme
-              .backgroundColor
-              ?.withValues(alpha: widget.uiOpacity),
+          backgroundColor: Theme.of(
+            context,
+          ).appBarTheme.backgroundColor?.withValues(alpha: widget.uiOpacity),
           leading: Builder(
             builder: (context) => IconButton(
               icon: const Icon(Icons.notes),
@@ -447,17 +465,20 @@ class _MainScaffoldState extends State<MainScaffold> {
               icon: const Icon(Icons.search),
               onPressed: () {
                 showSearch(
-                    context: context,
-                    delegate: GlobalSearchDelegate(
-                        fontSizeFactor: widget.fontSizeFactor));
+                  context: context,
+                  delegate: GlobalSearchDelegate(
+                    fontSizeFactor: widget.fontSizeFactor,
+                  ),
+                );
               },
               tooltip: 'بحث شامل',
             ),
             if (isSubPage)
               IconButton(
-                  icon: const Icon(Icons.arrow_forward_ios),
-                  onPressed: _onBack,
-                  tooltip: 'رجوع'),
+                icon: const Icon(Icons.arrow_forward_ios),
+                onPressed: _onBack,
+                tooltip: 'رجوع',
+              ),
             if (!isSubPage) const SizedBox(width: 4),
           ],
         ),
@@ -466,26 +487,37 @@ class _MainScaffoldState extends State<MainScaffold> {
             if (_currentSection == 'home') ...[
               if (widget.backgroundImagePath != null)
                 Positioned.fill(
-                    child: Image.file(File(widget.backgroundImagePath!),
-                        fit: BoxFit.cover)),
+                  child: Image.file(
+                    File(widget.backgroundImagePath!),
+                    fit: BoxFit.cover,
+                  ),
+                ),
               if (widget.backgroundImagePath == null)
                 Positioned.fill(
-                    child: _buildImage(
-                        widget.selectedBase64Bg ??
-                            settings['custom_bg_base64']?.toString() ??
-                            settings['bg_image']?.toString(),
-                        fit: BoxFit.cover)),
+                  child: _buildImage(
+                    widget.selectedBase64Bg ??
+                        settings['custom_bg_base64']?.toString() ??
+                        settings['bg_image']?.toString(),
+                    fit: BoxFit.cover,
+                  ),
+                ),
             ],
             Positioned.fill(
-                child: Opacity(
-                    opacity: 0.03,
-                    child: CustomPaint(
-                        painter: IslamicPatternPainter(
-                            color: Theme.of(context).colorScheme.primary)))),
+              child: Opacity(
+                opacity: 0.03,
+                child: CustomPaint(
+                  painter: IslamicPatternPainter(
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                ),
+              ),
+            ),
             SafeArea(
-                child: AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 400),
-                    child: _buildBody(context))),
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 400),
+                child: _buildBody(context),
+              ),
+            ),
           ],
         ),
       ),
@@ -496,30 +528,32 @@ class _MainScaffoldState extends State<MainScaffold> {
     switch (_currentSection) {
       case 'home':
         return HomeSection(
-            key: const ValueKey('home'),
-            fontSizeFactor: widget.fontSizeFactor,
-            uiOpacity: widget.uiOpacity,
-            cardColor: widget.cardColor,
-            visibility: widget.homeVisibility,
-            hijriAdjustment: widget.hijriAdjustment,
-            onPrayerCardTap: () => _navigateTo('prayer_times'));
+          key: const ValueKey('home'),
+          fontSizeFactor: widget.fontSizeFactor,
+          uiOpacity: widget.uiOpacity,
+          cardColor: widget.cardColor,
+          visibility: widget.homeVisibility,
+          hijriAdjustment: widget.hijriAdjustment,
+          onPrayerCardTap: () => _navigateTo('prayer_times'),
+        );
       case 'settings':
         return SettingsSection(
-            key: const ValueKey('settings'),
-            onThemeToggled: widget.onThemeToggled,
-            primaryColor: widget.primaryColor,
-            onColorChanged: widget.onColorChanged,
-            uiOpacity: widget.uiOpacity,
-            onOpacityChanged: widget.onOpacityChanged,
-            onBackgroundImageChanged: widget.onBackgroundImageChanged,
-            onBase64BgChanged: widget.onBase64BgChanged,
-            backgroundImagePath: widget.backgroundImagePath,
-            cardColor: widget.cardColor,
-            onCardColorChanged: widget.onCardColorChanged,
-            visibility: widget.homeVisibility,
-            onVisibilityChanged: widget.onVisibilityChanged,
-            hijriAdjustment: widget.hijriAdjustment,
-            onHijriAdjustmentChanged: widget.onHijriAdjustmentChanged);
+          key: const ValueKey('settings'),
+          onThemeToggled: widget.onThemeToggled,
+          primaryColor: widget.primaryColor,
+          onColorChanged: widget.onColorChanged,
+          uiOpacity: widget.uiOpacity,
+          onOpacityChanged: widget.onOpacityChanged,
+          onBackgroundImageChanged: widget.onBackgroundImageChanged,
+          onBase64BgChanged: widget.onBase64BgChanged,
+          backgroundImagePath: widget.backgroundImagePath,
+          cardColor: widget.cardColor,
+          onCardColorChanged: widget.onCardColorChanged,
+          visibility: widget.homeVisibility,
+          onVisibilityChanged: widget.onVisibilityChanged,
+          hijriAdjustment: widget.hijriAdjustment,
+          onHijriAdjustmentChanged: widget.onHijriAdjustmentChanged,
+        );
       case 'about':
         return const AboutSection(key: ValueKey('about'));
       case 'tasbih':
@@ -528,42 +562,46 @@ class _MainScaffoldState extends State<MainScaffold> {
         return const PrayerTimesSection(key: ValueKey('prayer_times'));
       case 'duas':
         return TabbedSection(
-            key: const ValueKey('duas'),
-            tabs: const [
-              'أدعية الأيام',
-              'تعقيبات الصلاة',
-              'الأدعية العامة',
-              'الصلوات'
-            ],
-            sectionKeys: const [
-              'duas_days',
-              'duas_taqeebat',
-              'duas_general',
-              'duas_salawat'
-            ],
-            fontSizeFactor: widget.fontSizeFactor,
-            uiOpacity: widget.uiOpacity);
+          key: const ValueKey('duas'),
+          tabs: const [
+            'أدعية الأيام',
+            'تعقيبات الصلاة',
+            'الأدعية العامة',
+            'الصلوات',
+          ],
+          sectionKeys: const [
+            'duas_days',
+            'duas_taqeebat',
+            'duas_general',
+            'duas_salawat',
+          ],
+          fontSizeFactor: widget.fontSizeFactor,
+          uiOpacity: widget.uiOpacity,
+        );
       case 'visits':
         return TabbedSection(
-            key: const ValueKey('visits'),
-            tabs: const ['زيارات الأيام', 'الزيارات العامة'],
-            sectionKeys: const ['visits_days', 'visits_general'],
-            fontSizeFactor: widget.fontSizeFactor,
-            uiOpacity: widget.uiOpacity);
+          key: const ValueKey('visits'),
+          tabs: const ['زيارات الأيام', 'الزيارات العامة'],
+          sectionKeys: const ['visits_days', 'visits_general'],
+          fontSizeFactor: widget.fontSizeFactor,
+          uiOpacity: widget.uiOpacity,
+        );
       case 'adhkar':
         return TabbedSection(
-            key: const ValueKey('adhkar'),
-            tabs: const ['المناجاة', 'التسبيحات'],
-            sectionKeys: const ['adhkar_munajat', 'adhkar_tasbihs'],
-            fontSizeFactor: widget.fontSizeFactor,
-            uiOpacity: widget.uiOpacity);
+          key: const ValueKey('adhkar'),
+          tabs: const ['المناجاة', 'التسبيحات'],
+          sectionKeys: const ['adhkar_munajat', 'adhkar_tasbihs'],
+          fontSizeFactor: widget.fontSizeFactor,
+          uiOpacity: widget.uiOpacity,
+        );
       default:
         return DynamicListSection(
-            key: ValueKey(_currentSection),
-            title: _getSectionTitle(_currentSection),
-            sectionKey: _currentSection,
-            fontSizeFactor: widget.fontSizeFactor,
-            uiOpacity: widget.uiOpacity);
+          key: ValueKey(_currentSection),
+          title: _getSectionTitle(_currentSection),
+          sectionKey: _currentSection,
+          fontSizeFactor: widget.fontSizeFactor,
+          uiOpacity: widget.uiOpacity,
+        );
     }
   }
 
@@ -585,8 +623,11 @@ class _MainScaffoldState extends State<MainScaffold> {
 class AppDrawer extends StatelessWidget {
   final String currentSection;
   final ValueChanged<String> onNavigate;
-  const AppDrawer(
-      {super.key, required this.currentSection, required this.onNavigate});
+  const AppDrawer({
+    super.key,
+    required this.currentSection,
+    required this.onNavigate,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -599,30 +640,37 @@ class AppDrawer extends StatelessWidget {
           DrawerHeader(
             padding: EdgeInsets.zero,
             decoration: BoxDecoration(
-                gradient: LinearGradient(
-                    begin: Alignment.topRight,
-                    end: Alignment.bottomLeft,
-                    colors: [
+              gradient: LinearGradient(
+                begin: Alignment.topRight,
+                end: Alignment.bottomLeft,
+                colors: [
                   Theme.of(context).colorScheme.primary,
-                  Theme.of(context).colorScheme.primary.withValues(alpha: 0.8)
-                ])),
+                  Theme.of(context).colorScheme.primary.withValues(alpha: 0.8),
+                ],
+              ),
+            ),
             child: Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   _buildImage(
-                      settings['custom_logo_base64']?.toString() ??
-                          settings['logo_image']?.toString(),
-                      height: 60),
+                    settings['custom_logo_base64']?.toString() ??
+                        settings['logo_image']?.toString(),
+                    height: 60,
+                  ),
                   const SizedBox(height: 10),
-                  const Text('تطبيق الذاكرين',
-                      style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold)),
-                  Text(about['developer_name']?.toString() ?? '',
-                      style:
-                          const TextStyle(color: Colors.white70, fontSize: 12)),
+                  const Text(
+                    'تطبيق الذاكرين',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Text(
+                    about['developer_name']?.toString() ?? '',
+                    style: const TextStyle(color: Colors.white70, fontSize: 12),
+                  ),
                 ],
               ),
             ),
@@ -633,11 +681,25 @@ class AppDrawer extends StatelessWidget {
               children: [
                 _buildItem(context, 'home', 'الرئيسية', Icons.home),
                 _buildItem(
-                    context, 'prayer_times', 'أوقات الصلاة', Icons.access_time),
+                  context,
+                  'prayer_times',
+                  'أوقات الصلاة',
+                  Icons.access_time,
+                ),
                 _buildItem(
-                    context, 'tasbih', 'المسبحة الإلكترونية', Icons.vibration),
-                ...sections.entries.map((e) => _buildItem(context, e.key,
-                    e.value['title'], getMaterialIcon(e.value['icon']))),
+                  context,
+                  'tasbih',
+                  'المسبحة الإلكترونية',
+                  Icons.vibration,
+                ),
+                ...sections.entries.map(
+                  (e) => _buildItem(
+                    context,
+                    e.key,
+                    e.value['title'],
+                    getMaterialIcon(e.value['icon']),
+                  ),
+                ),
                 const Divider(),
                 _buildItem(context, 'about', 'حول المطور', Icons.person),
                 _buildItem(context, 'settings', 'الإعدادات', Icons.settings),
@@ -650,20 +712,30 @@ class AppDrawer extends StatelessWidget {
   }
 
   Widget _buildItem(
-      BuildContext context, String id, String title, IconData icon) {
+    BuildContext context,
+    String id,
+    String title,
+    IconData icon,
+  ) {
     final bool active = currentSection == id;
     final int count = DataManager.getItems(id).length;
     return ListTile(
-      leading: Icon(icon,
-          color: active ? Theme.of(context).colorScheme.primary : null),
-      title: Text(title,
-          style: TextStyle(
-              fontWeight: active ? FontWeight.bold : FontWeight.normal,
-              fontSize: 15)),
+      leading: Icon(
+        icon,
+        color: active ? Theme.of(context).colorScheme.primary : null,
+      ),
+      title: Text(
+        title,
+        style: TextStyle(
+          fontWeight: active ? FontWeight.bold : FontWeight.normal,
+          fontSize: 15,
+        ),
+      ),
       trailing: count > 0 ? _CountBadge(count: count) : null,
       selected: active,
-      selectedTileColor:
-          Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+      selectedTileColor: Theme.of(
+        context,
+      ).colorScheme.primary.withValues(alpha: 0.1),
       onTap: () => onNavigate(id),
     );
   }
@@ -677,13 +749,17 @@ class _CountBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
-          borderRadius: BorderRadius.circular(10)),
-      child: Text('$count',
-          style: TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.bold,
-              color: Theme.of(context).colorScheme.primary)),
+        color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Text(
+        '$count',
+        style: TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.bold,
+          color: Theme.of(context).colorScheme.primary,
+        ),
+      ),
     );
   }
 }
@@ -695,14 +771,15 @@ class HomeSection extends StatefulWidget {
   final Map<String, bool> visibility;
   final int hijriAdjustment;
   final VoidCallback? onPrayerCardTap;
-  const HomeSection(
-      {super.key,
-      required this.fontSizeFactor,
-      required this.uiOpacity,
-      required this.cardColor,
-      required this.visibility,
-      required this.hijriAdjustment,
-      this.onPrayerCardTap});
+  const HomeSection({
+    super.key,
+    required this.fontSizeFactor,
+    required this.uiOpacity,
+    required this.cardColor,
+    required this.visibility,
+    required this.hijriAdjustment,
+    this.onPrayerCardTap,
+  });
 
   @override
   State<HomeSection> createState() => _HomeSectionState();
@@ -723,7 +800,9 @@ class _HomeSectionState extends State<HomeSection> {
     _loadDailyDua();
     _initPrayerTimes();
     _prayerTimer = Timer.periodic(
-        const Duration(minutes: 1), (t) => _updateCurrentPrayer());
+      const Duration(minutes: 1),
+      (t) => _updateCurrentPrayer(),
+    );
   }
 
   @override
@@ -735,16 +814,17 @@ class _HomeSectionState extends State<HomeSection> {
   Future<void> _initPrayerTimes() async {
     final service = PrayerTimesService();
     final pos = Position(
-        latitude: 33.3128,
-        longitude: 44.3615,
-        timestamp: DateTime.now(),
-        accuracy: 0,
-        altitude: 0,
-        heading: 0,
-        speed: 0,
-        speedAccuracy: 0,
-        altitudeAccuracy: 0,
-        headingAccuracy: 0);
+      latitude: 33.3128,
+      longitude: 44.3615,
+      timestamp: DateTime.now(),
+      accuracy: 0,
+      altitude: 0,
+      heading: 0,
+      speed: 0,
+      speedAccuracy: 0,
+      altitudeAccuracy: 0,
+      headingAccuracy: 0,
+    );
     _prayerTimes = service.calculatePrayerTimes(pos);
     _updateCurrentPrayer();
   }
@@ -772,7 +852,7 @@ class _HomeSectionState extends State<HomeSection> {
       'asr': 'العصر',
       'maghrib': 'المغرب',
       'isha': 'العشاء',
-      'midnight': 'منتصف الليل'
+      'midnight': 'منتصف الليل',
     };
     return map[key] ?? key;
   }
@@ -783,7 +863,9 @@ class _HomeSectionState extends State<HomeSection> {
     items = {};
     sections.forEach((key, value) {
       if (widget.visibility[key] ?? true) {
-        final safeItem = Map<String, dynamic>.from(_safeGet(DataManager.getItems(key), random));
+        final safeItem = Map<String, dynamic>.from(
+          _safeGet(DataManager.getItems(key), random),
+        );
         safeItem['sectionKey'] = key;
         items[value['title']] = safeItem;
       }
@@ -816,7 +898,7 @@ class _HomeSectionState extends State<HomeSection> {
       }
       _dayDua = {
         "title": combinedTitle,
-        "content": combinedContent.toString().trim()
+        "content": combinedContent.toString().trim(),
       };
     } else {
       _dayDua = null;
@@ -829,25 +911,37 @@ class _HomeSectionState extends State<HomeSection> {
     return list[r.nextInt(list.length)];
   }
 
-  Widget _buildSpecialCard(BuildContext context, String tag,
-      Map<String, dynamic> data, Color textColor, IconData icon) {
+  Widget _buildSpecialCard(
+    BuildContext context,
+    String tag,
+    Map<String, dynamic> data,
+    Color textColor,
+    IconData icon,
+  ) {
     return InkWell(
       onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(
-              builder: (c) => ReaderPage(
-                  title: data['title'].toString(),
-                  content: data['content'].toString(),
-                  fontSizeFactor: widget.fontSizeFactor))),
+        context,
+        MaterialPageRoute(
+          builder: (c) => ReaderPage(
+            title: data['title'].toString(),
+            content: data['content'].toString(),
+            fontSizeFactor: widget.fontSizeFactor,
+          ),
+        ),
+      ),
       child: Container(
-        decoration:
-            BoxDecoration(borderRadius: BorderRadius.circular(25), boxShadow: [
-          BoxShadow(
-              color:
-                  Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(25),
+          boxShadow: [
+            BoxShadow(
+              color: Theme.of(
+                context,
+              ).colorScheme.primary.withValues(alpha: 0.15),
               blurRadius: 15,
-              offset: const Offset(0, 8))
-        ]),
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(25),
           child: Stack(
@@ -857,73 +951,94 @@ class _HomeSectionState extends State<HomeSection> {
                   filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
                   child: Container(
                     decoration: BoxDecoration(
-                      color: widget.cardColor.withValues(alpha: widget.uiOpacity * 0.8),
+                      color: widget.cardColor.withValues(
+                        alpha: widget.uiOpacity * 0.8,
+                      ),
                       borderRadius: BorderRadius.circular(25),
                       border: Border.all(
-                          color: Theme.of(context)
-                              .colorScheme
-                              .primary
-                              .withValues(alpha: 0.5),
-                          width: 1.5),
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.primary.withValues(alpha: 0.5),
+                        width: 1.5,
+                      ),
                     ),
                   ),
                 ),
               ),
-                Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
-                    children: [
-                      Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                  Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                          color: Theme.of(context)
-                              .colorScheme
-                              .primary
-                              .withValues(alpha: 0.1),
-                          shape: BoxShape.circle),
-                      child: Icon(icon,
-                          color: Theme.of(context).colorScheme.primary,
-                          size: 20)),
-                  const SizedBox(width: 12),
-                  Text(tag,
-                      style: TextStyle(
-                          color: Theme.of(context).colorScheme.primary,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 18,
-                          letterSpacing: 0.5)),
-                ]),
-                const SizedBox(height: 16),
-                Text(data['content'].toString(),
-                    textAlign: TextAlign.center,
-                    maxLines: 4,
-                    overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.notoNaskhArabic(
+              Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.primary.withValues(alpha: 0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            icon,
+                            color: Theme.of(context).colorScheme.primary,
+                            size: 20,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Text(
+                          tag,
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.primary,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      data['content'].toString(),
+                      textAlign: TextAlign.center,
+                      maxLines: 4,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.notoNaskhArabic(
                         fontSize: 17,
                         height: 1.9,
                         color: textColor,
-                        fontWeight: FontWeight.w500)),
-                const SizedBox(height: 16),
-                Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                    decoration: BoxDecoration(
-                        border: Border.all(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .primary
-                                .withValues(alpha: 0.2)),
-                        borderRadius: BorderRadius.circular(15)),
-                    child: Text(data["title"].toString(),
-                        style: TextStyle(
-                            fontSize: 13,
-                            color: Theme.of(context).colorScheme.primary,
-                            fontWeight: FontWeight.bold))),
-                      ],
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
-                  ),
-              ],
-            ),
+                    const SizedBox(height: 16),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.primary.withValues(alpha: 0.2),
+                        ),
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                      child: Text(
+                        data["title"].toString(),
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Theme.of(context).colorScheme.primary,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -963,52 +1078,67 @@ class _HomeSectionState extends State<HomeSection> {
                     ? Colors.white.withValues(alpha: widget.uiOpacity)
                     : Colors.black.withValues(alpha: widget.uiOpacity),
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(25),
-                    side: BorderSide(
-                        color: Theme.of(context).colorScheme.primary,
-                        width: 2.5)),
+                  borderRadius: BorderRadius.circular(25),
+                  side: BorderSide(
+                    color: Theme.of(context).colorScheme.primary,
+                    width: 2.5,
+                  ),
+                ),
                 child: Container(
                   width: double.infinity,
-                  padding:
-                      const EdgeInsets.symmetric(vertical: 20, horizontal: 15),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 20,
+                    horizontal: 15,
+                  ),
                   child: Column(
                     children: [
                       if (_currentPrayerName.isNotEmpty)
                         Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 12, vertical: 4),
-                            decoration: BoxDecoration(
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .primary
-                                    .withValues(alpha: 0.2),
-                                borderRadius: BorderRadius.circular(10)),
-                            child: Text("الصلاة القادمة: $_currentPrayerName",
-                                style: TextStyle(
-                                    color:
-                                        Theme.of(context).colorScheme.primary,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 12))),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.primary.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Text(
+                            "الصلاة القادمة: $_currentPrayerName",
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.primary,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
                       const SizedBox(height: 10),
                       _ClockWidget(
-                          color: Theme.of(context).colorScheme.primary),
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
                       const SizedBox(height: 8),
                       Text(
-                          '${hijri.hDay} ${hijri.longMonthName} ${hijri.hYear} هـ',
-                          style: TextStyle(
-                              color: Theme.of(context).colorScheme.primary,
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold)),
+                        '${hijri.hDay} ${hijri.longMonthName} ${hijri.hYear} هـ',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.primary,
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                       Text(
-                          intl.DateFormat('EEEE, d MMMM yyyy', 'ar_SA')
-                              .format(now),
-                          style: TextStyle(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .primary
-                                  .withValues(alpha: 0.8),
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500)),
+                        intl.DateFormat(
+                          'EEEE, d MMMM yyyy',
+                          'ar_SA',
+                        ).format(now),
+                        style: TextStyle(
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.primary.withValues(alpha: 0.8),
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -1016,67 +1146,97 @@ class _HomeSectionState extends State<HomeSection> {
             ),
             const SizedBox(height: 20),
             if (_dayDua != null && (widget.visibility['day_dua'] ?? true))
-              _buildSpecialCard(context, 'دعاء اليوم', _dayDua!, textColor,
-                  Icons.calendar_today),
+              _buildSpecialCard(
+                context,
+                'دعاء اليوم',
+                _dayDua!,
+                textColor,
+                Icons.calendar_today,
+              ),
             if (_dayDua != null && (widget.visibility['day_dua'] ?? true))
               const SizedBox(height: 15),
             if (_inspirationDua != null &&
                 (widget.visibility['inspiration'] ?? true))
-              _buildSpecialCard(context, 'إلهام اليوم', _inspirationDua!,
-                  textColor, Icons.auto_awesome),
+              _buildSpecialCard(
+                context,
+                'إلهام اليوم',
+                _inspirationDua!,
+                textColor,
+                Icons.auto_awesome,
+              ),
             const SizedBox(height: 25),
             Align(
-                alignment: Alignment.centerRight,
-                child: Text('مقتطفات إيمانية',
-                    style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Theme.of(context).brightness == Brightness.dark
-                            ? Colors.white70
-                            : Colors.black87))),
+              alignment: Alignment.centerRight,
+              child: Text(
+                'مقتطفات إيمانية',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? Colors.white70
+                      : Colors.black87,
+                ),
+              ),
+            ),
             const SizedBox(height: 15),
             Wrap(
               spacing: 12,
               runSpacing: 12,
               children: items.entries
-                  .map((e) => RepaintBoundary(
-                        child: _HomeSmallCard(
-                            tag: e.key,
-                            title: e.value['title'].toString(),
-                            uiOpacity: widget.uiOpacity,
-                            cardColor: widget.cardColor,
-                            onTap: () async {
-                              final sectionKey = e.value['sectionKey'];
-                              final isQuran = sectionKey == 'quran';
-                              List<Map<String, dynamic>>? ayahs;
-                              String contentStr = e.value['content'].toString();
+                  .map(
+                    (e) => RepaintBoundary(
+                      child: _HomeSmallCard(
+                        tag: e.key,
+                        title: e.value['title'].toString(),
+                        uiOpacity: widget.uiOpacity,
+                        cardColor: widget.cardColor,
+                        onTap: () async {
+                          final sectionKey = e.value['sectionKey'];
+                          final isQuran = sectionKey == 'quran';
+                          List<Map<String, dynamic>>? ayahs;
+                          String contentStr = e.value['content'].toString();
 
-                              if (isQuran) {
-                                final surahId = e.value['id'];
-                                if (surahId != null) {
-                                  ayahs = await QuranService.getAyahs(surahId);
-                                  contentStr = ayahs.map((a) {
+                          if (isQuran) {
+                            final surahId = e.value['id'];
+                            if (surahId != null) {
+                              ayahs = await QuranService.getAyahs(surahId);
+                              contentStr = ayahs
+                                  .map((a) {
                                     final text = a['ar_text'].toString().trim();
-                                    final index = a['anum']?.toString() ?? a['ayah_surah_index'].toString();
-                                    return index.isEmpty ? text : "$text \uFD3F$index\uFD3E";
-                                  }).join(" ");
-                                }
-                              }
+                                    final index =
+                                        a['anum']?.toString() ??
+                                        a['ayah_surah_index'].toString();
+                                    return index.isEmpty
+                                        ? text
+                                        : "$text \uFD3F$index\uFD3E";
+                                  })
+                                  .join(" ");
+                            }
+                          }
 
-                              if (!context.mounted) return;
-                              Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                      builder: (c) => ReaderPage(
-                                          title: e.value['title'].toString(),
-                                          content: contentStr,
-                                          fontSizeFactor: widget.fontSizeFactor,
-                                          isQuran: isQuran,
-                                          surahName: isQuran ? e.value['title'].toString().replaceAll('سورة ', '') : null,
-                                          ayahs: ayahs,
-                                      )));
-                            }),
-                      ))
+                          if (!context.mounted) return;
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (c) => ReaderPage(
+                                title: e.value['title'].toString(),
+                                content: contentStr,
+                                fontSizeFactor: widget.fontSizeFactor,
+                                isQuran: isQuran,
+                                surahName: isQuran
+                                    ? e.value['title'].toString().replaceAll(
+                                        'سورة ',
+                                        '',
+                                      )
+                                    : null,
+                                ayahs: ayahs,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  )
                   .toList(),
             ),
           ],
@@ -1091,12 +1251,13 @@ class _HomeSmallCard extends StatelessWidget {
   final double uiOpacity;
   final Color cardColor;
   final VoidCallback onTap;
-  const _HomeSmallCard(
-      {required this.tag,
-      required this.title,
-      required this.uiOpacity,
-      required this.cardColor,
-      required this.onTap});
+  const _HomeSmallCard({
+    required this.tag,
+    required this.title,
+    required this.uiOpacity,
+    required this.cardColor,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1109,16 +1270,17 @@ class _HomeSmallCard extends StatelessWidget {
         width: (MediaQuery.of(context).size.width - 48) / 2,
         height: 100,
         decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              BoxShadow(
-                  color: Theme.of(context)
-                      .colorScheme
-                      .primary
-                      .withValues(alpha: 0.15),
-                  blurRadius: 10,
-                  offset: const Offset(0, 5))
-            ]),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Theme.of(
+                context,
+              ).colorScheme.primary.withValues(alpha: 0.15),
+              blurRadius: 10,
+              offset: const Offset(0, 5),
+            ),
+          ],
+        ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(20),
           child: Stack(
@@ -1130,7 +1292,9 @@ class _HomeSmallCard extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: cardColor.withValues(alpha: uiOpacity * 0.8),
                       border: Border.all(
-                          color: Theme.of(context).colorScheme.primary, width: 2),
+                        color: Theme.of(context).colorScheme.primary,
+                        width: 2,
+                      ),
                       borderRadius: BorderRadius.circular(20),
                     ),
                   ),
@@ -1140,31 +1304,41 @@ class _HomeSmallCard extends StatelessWidget {
                 right: -10,
                 bottom: -10,
                 child: Opacity(
-                    opacity: 0.1,
-                    child: Icon(Icons.star,
-                        size: 80,
-                        color: Theme.of(context).colorScheme.primary))),
+                  opacity: 0.1,
+                  child: Icon(
+                    Icons.star,
+                    size: 80,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                ),
+              ),
               Padding(
                 padding: const EdgeInsets.all(15),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text(tag,
-                        style: TextStyle(
-                            fontSize: 10,
-                            color: Theme.of(context).colorScheme.primary,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 1.2)),
+                    Text(
+                      tag,
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: Theme.of(context).colorScheme.primary,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1.2,
+                      ),
+                    ),
                     const SizedBox(height: 4),
-                    Text(title,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.bold,
-                            color: textColor,
-                            height: 1.2)),
+                    Text(
+                      title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                        color: textColor,
+                        height: 1.2,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -1190,8 +1364,10 @@ class _ClockWidgetState extends State<_ClockWidget> {
   void initState() {
     super.initState();
     _updateTime();
-    _timer =
-        Timer.periodic(const Duration(seconds: 1), (Timer t) => _updateTime());
+    _timer = Timer.periodic(
+      const Duration(seconds: 1),
+      (Timer t) => _updateTime(),
+    );
   }
 
   @override
@@ -1202,10 +1378,13 @@ class _ClockWidgetState extends State<_ClockWidget> {
   }
 
   void _updateTime() {
-    final String formattedTime =
-        intl.DateFormat('hh:mm:ss a', 'en_US').format(DateTime.now());
-    _timeNotifier.value =
-        formattedTime.replaceFirst('AM', 'ص').replaceFirst('PM', 'م');
+    final String formattedTime = intl.DateFormat(
+      'hh:mm:ss a',
+      'en_US',
+    ).format(DateTime.now());
+    _timeNotifier.value = formattedTime
+        .replaceFirst('AM', 'ص')
+        .replaceFirst('PM', 'م');
   }
 
   @override
@@ -1214,14 +1393,18 @@ class _ClockWidgetState extends State<_ClockWidget> {
       child: ValueListenableBuilder<String>(
         valueListenable: _timeNotifier,
         builder: (context, value, child) => FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Text(value,
-                maxLines: 1,
-                style: TextStyle(
-                    color: widget.color,
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    fontFamily: 'monospace'))),
+          fit: BoxFit.scaleDown,
+          child: Text(
+            value,
+            maxLines: 1,
+            style: TextStyle(
+              color: widget.color,
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              fontFamily: 'monospace',
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -1238,43 +1421,54 @@ class AboutSection extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(30),
           decoration: BoxDecoration(
-              color: Theme.of(context).cardColor,
-              borderRadius: BorderRadius.circular(30),
-              border: Border.all(
-                  color: Theme.of(context).colorScheme.primary, width: 2),
-              boxShadow: [
-                BoxShadow(
-                    color: Theme.of(context)
-                        .colorScheme
-                        .primary
-                        .withValues(alpha: 0.1),
-                    blurRadius: 20,
-                    offset: const Offset(0, 10))
-              ]),
+            color: Theme.of(context).cardColor,
+            borderRadius: BorderRadius.circular(30),
+            border: Border.all(
+              color: Theme.of(context).colorScheme.primary,
+              width: 2,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Theme.of(
+                  context,
+                ).colorScheme.primary.withValues(alpha: 0.1),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
+              ),
+            ],
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               CircleAvatar(
-                  radius: 50,
-                  backgroundColor: Theme.of(context)
-                      .colorScheme
-                      .primary
-                      .withValues(alpha: 0.1),
-                  child: Icon(
-                      getMaterialIcon(
-                          about['developer_icon']?.toString() ?? 'person'),
-                      size: 60,
-                      color: Theme.of(context).colorScheme.primary)),
+                radius: 50,
+                backgroundColor: Theme.of(
+                  context,
+                ).colorScheme.primary.withValues(alpha: 0.1),
+                child: Icon(
+                  getMaterialIcon(
+                    about['developer_icon']?.toString() ?? 'person',
+                  ),
+                  size: 60,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+              ),
               const SizedBox(height: 20),
-              Text(about['developer_name']?.toString() ?? 'المطور',
-                  style: const TextStyle(
-                      fontSize: 24, fontWeight: FontWeight.bold)),
+              Text(
+                about['developer_name']?.toString() ?? 'المطور',
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
               const SizedBox(height: 15),
               const Divider(),
               const SizedBox(height: 15),
-              Text(about['app_info']?.toString() ?? '',
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(fontSize: 16, height: 1.6)),
+              Text(
+                about['app_info']?.toString() ?? '',
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 16, height: 1.6),
+              ),
               const SizedBox(height: 30),
               if (about['developer_page'] != null)
                 ElevatedButton.icon(
@@ -1283,12 +1477,16 @@ class AboutSection extends StatelessWidget {
                   icon: const Icon(Icons.link),
                   label: const Text('زيارة الموقع الشخصي'),
                   style: ElevatedButton.styleFrom(
-                      backgroundColor: Theme.of(context).colorScheme.primary,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 20, vertical: 12),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(15))),
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 12,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                  ),
                 ),
             ],
           ),
@@ -1303,12 +1501,13 @@ class TabbedSection extends StatelessWidget {
   final List<String> sectionKeys;
   final double fontSizeFactor;
   final double uiOpacity;
-  const TabbedSection(
-      {super.key,
-      required this.tabs,
-      required this.sectionKeys,
-      required this.fontSizeFactor,
-      required this.uiOpacity});
+  const TabbedSection({
+    super.key,
+    required this.tabs,
+    required this.sectionKeys,
+    required this.fontSizeFactor,
+    required this.uiOpacity,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1324,11 +1523,12 @@ class TabbedSection extends StatelessWidget {
                   ? Colors.black.withValues(alpha: 0.5)
                   : const Color(0xFFFDFBF7),
               border: Border(
-                  bottom: BorderSide(
-                      color: Theme.of(context)
-                          .colorScheme
-                          .primary
-                          .withValues(alpha: 0.2))),
+                bottom: BorderSide(
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.primary.withValues(alpha: 0.2),
+                ),
+              ),
             ),
             child: TabBar(
               isScrollable: true,
@@ -1337,25 +1537,36 @@ class TabbedSection extends StatelessWidget {
               labelColor: Theme.of(context).colorScheme.primary,
               unselectedLabelColor: isDark ? Colors.white70 : Colors.black54,
               tabs: List.generate(
-                  tabs.length,
-                  (i) => Tab(
-                          child: Row(mainAxisSize: MainAxisSize.min, children: [
-                        Text(tabs[i]),
-                        const SizedBox(width: 6),
-                        _CountBadge(
-                            count: DataManager.getItems(sectionKeys[i]).length)
-                      ]))),
+                tabs.length,
+                (i) => Tab(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(tabs[i]),
+                      const SizedBox(width: 6),
+                      _CountBadge(
+                        count: DataManager.getItems(sectionKeys[i]).length,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ),
           ),
           Expanded(
-              child: TabBarView(
-                  children: sectionKeys
-                      .map((key) => DynamicListSection(
-                          title: '',
-                          sectionKey: key,
-                          fontSizeFactor: fontSizeFactor,
-                          uiOpacity: uiOpacity))
-                      .toList())),
+            child: TabBarView(
+              children: sectionKeys
+                  .map(
+                    (key) => DynamicListSection(
+                      title: '',
+                      sectionKey: key,
+                      fontSizeFactor: fontSizeFactor,
+                      uiOpacity: uiOpacity,
+                    ),
+                  )
+                  .toList(),
+            ),
+          ),
         ],
       ),
     );
@@ -1367,12 +1578,13 @@ class DynamicListSection extends StatelessWidget {
   final String sectionKey;
   final double fontSizeFactor;
   final double uiOpacity;
-  const DynamicListSection(
-      {super.key,
-      required this.title,
-      required this.sectionKey,
-      required this.fontSizeFactor,
-      required this.uiOpacity});
+  const DynamicListSection({
+    super.key,
+    required this.title,
+    required this.sectionKey,
+    required this.fontSizeFactor,
+    required this.uiOpacity,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1394,41 +1606,56 @@ class DynamicListSection extends StatelessWidget {
                 color: Theme.of(context).cardColor.withValues(alpha: uiOpacity),
                 margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(15),
-                    side: BorderSide(
-                        color: Theme.of(context).colorScheme.primary,
-                        width: 1.5)),
+                  borderRadius: BorderRadius.circular(15),
+                  side: BorderSide(
+                    color: Theme.of(context).colorScheme.primary,
+                    width: 1.5,
+                  ),
+                ),
                 child: ListTile(
                   contentPadding: const EdgeInsets.all(20),
-                  title: Text(surah['name'].toString(),
-                      style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 18,
-                          fontFamily: 'Scheherazade New')),
+                  title: Text(
+                    surah['name'].toString(),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                      fontFamily: 'Scheherazade New',
+                    ),
+                  ),
                   subtitle: Padding(
                     padding: const EdgeInsets.only(top: 10),
                     child: Text(
-                        "سورة ${surah['name']} - آياتها ${surah['total_ayahs']}",
-                        style: GoogleFonts.scheherazadeNew(fontSize: 18)),
+                      "سورة ${surah['name']} - آياتها ${surah['total_ayahs']}",
+                      style: GoogleFonts.scheherazadeNew(fontSize: 18),
+                    ),
                   ),
                   onTap: () async {
                     final ayahs = await QuranService.getAyahs(surah['id']);
-                    final content = ayahs.map((a) {
-                      final text = a['ar_text'].toString().trim();
-                      final index = a['anum']?.toString() ?? a['ayah_surah_index'].toString();
-                      return index.isEmpty ? text : "$text \uFD3F$index\uFD3E";
-                    }).join(" ");
+                    final content = ayahs
+                        .map((a) {
+                          final text = a['ar_text'].toString().trim();
+                          final index =
+                              a['anum']?.toString() ??
+                              a['ayah_surah_index'].toString();
+                          return index.isEmpty
+                              ? text
+                              : "$text \uFD3F$index\uFD3E";
+                        })
+                        .join(" ");
                     if (!context.mounted) return;
                     Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (c) => ReaderPage(
-                                title: "سورة ${surah['name']}",
-                                content: content,
-                                fontSizeFactor: fontSizeFactor,
-                                isQuran: true,
-                                surahName: surah['name'].toString(),
-                                ayahs: ayahs)));
+                      context,
+                      MaterialPageRoute(
+                        builder: (c) => ReaderPage(
+                          title: "سورة ${surah['name']}",
+                          content: content,
+                          fontSizeFactor: fontSizeFactor,
+                          isQuran: true,
+                          surahName: surah['name'].toString(),
+                          ayahs: ayahs,
+                        ),
+                      ),
+                    );
                   },
                 ),
               );
@@ -1449,7 +1676,10 @@ class DynamicListSection extends StatelessWidget {
                   itemCount: data.length,
                   padding: const EdgeInsets.only(bottom: 20),
                   itemBuilder: (context, index) => Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    margin: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(15),
                       child: Stack(
@@ -1459,10 +1689,14 @@ class DynamicListSection extends StatelessWidget {
                               filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
                               child: Container(
                                 decoration: BoxDecoration(
-                                  color: Theme.of(context).cardColor.withValues(alpha: uiOpacity * 0.8),
+                                  color: Theme.of(context).cardColor.withValues(
+                                    alpha: uiOpacity * 0.8,
+                                  ),
                                   borderRadius: BorderRadius.circular(15),
                                   border: Border.all(
-                                    color: Theme.of(context).colorScheme.primary,
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.primary,
                                     width: 1.5,
                                   ),
                                 ),
@@ -1470,27 +1704,37 @@ class DynamicListSection extends StatelessWidget {
                             ),
                           ),
                           ListTile(
-                              contentPadding: const EdgeInsets.all(20),
-                              title: Text(data[index]['title'].toString(),
-                                  style: const TextStyle(
-                                      fontWeight: FontWeight.bold, fontSize: 18)),
-                              subtitle: Padding(
-                                  padding: const EdgeInsets.only(top: 10),
-                                  child: Text(data[index]['content'].toString(),
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: GoogleFonts.amiri(fontSize: 16))),
-                              onTap: () => Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                      builder: (c) => ReaderPage(
-                                          title: data[index]['title'].toString(),
-                                          content: data[index]['content'].toString(),
-                                          fontSizeFactor: fontSizeFactor,
-                                          isQuran: false))),
+                            contentPadding: const EdgeInsets.all(20),
+                            title: Text(
+                              data[index]['title'].toString(),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 18,
+                              ),
                             ),
-                          ],
-                        ),
+                            subtitle: Padding(
+                              padding: const EdgeInsets.only(top: 10),
+                              child: Text(
+                                data[index]['content'].toString(),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: GoogleFonts.amiri(fontSize: 16),
+                              ),
+                            ),
+                            onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (c) => ReaderPage(
+                                  title: data[index]['title'].toString(),
+                                  content: data[index]['content'].toString(),
+                                  fontSizeFactor: fontSizeFactor,
+                                  isQuran: false,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -1539,13 +1783,19 @@ class SurahHeader extends StatelessWidget {
           ),
           Positioned(
             left: 20,
-            child: Icon(Icons.brightness_7,
-                color: color.withValues(alpha: 0.6), size: 20),
+            child: Icon(
+              Icons.brightness_7,
+              color: color.withValues(alpha: 0.6),
+              size: 20,
+            ),
           ),
           Positioned(
             right: 20,
-            child: Icon(Icons.brightness_7,
-                color: color.withValues(alpha: 0.6), size: 20),
+            child: Icon(
+              Icons.brightness_7,
+              color: color.withValues(alpha: 0.6),
+              size: 20,
+            ),
           ),
         ],
       ),
@@ -1559,14 +1809,15 @@ class ReaderPage extends StatefulWidget {
   final bool isQuran;
   final List<Map<String, dynamic>>? ayahs;
   final String? surahName;
-  const ReaderPage(
-      {super.key,
-      required this.title,
-      required this.content,
-      required this.fontSizeFactor,
-      this.isQuran = false,
-      this.surahName,
-      this.ayahs});
+  const ReaderPage({
+    super.key,
+    required this.title,
+    required this.content,
+    required this.fontSizeFactor,
+    this.isQuran = false,
+    this.surahName,
+    this.ayahs,
+  });
   @override
   State<ReaderPage> createState() => _ReaderPageState();
 }
@@ -1599,188 +1850,248 @@ class _ReaderPageState extends State<ReaderPage> {
         title: Text(widget.title, style: const TextStyle(fontSize: 16)),
         centerTitle: true,
         leading: IconButton(
-            icon: const Icon(Icons.arrow_forward_ios),
-            onPressed: () => Navigator.pop(context)),
+          icon: const Icon(Icons.arrow_forward_ios),
+          onPressed: () => Navigator.pop(context),
+        ),
         actions: [
           IconButton(
-              icon: const Icon(Icons.content_copy),
-              onPressed: () {
-                Clipboard.setData(ClipboardData(text: widget.content));
-                ScaffoldMessenger.of(context)
-                    .showSnackBar(const SnackBar(content: Text('تم نسخ النص')));
-              }),
+            icon: const Icon(Icons.content_copy),
+            onPressed: () {
+              Clipboard.setData(ClipboardData(text: widget.content));
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(const SnackBar(content: Text('تم نسخ النص')));
+            },
+          ),
           IconButton(
-              icon: const Icon(Icons.share),
-              onPressed: () => Share.share(widget.content)),
+            icon: const Icon(Icons.share),
+            onPressed: () => Share.share(widget.content),
+          ),
         ],
       ),
       body: Column(
         children: [
           Expanded(
-              child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(24),
-                  child: Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(24),
-                      decoration: BoxDecoration(
-                          border: Border.all(color: primary, width: 3),
-                          borderRadius: BorderRadius.circular(25),
-                          gradient: LinearGradient(
-                              begin: Alignment.topCenter,
-                              end: Alignment.bottomCenter,
-                              colors: [
-                                _customBgColor ?? primary.withValues(alpha: 0.02),
-                                (_customBgColor ?? primary.withValues(alpha: 0.02)).withValues(alpha: 0.5),
-                              ]),
-                          boxShadow: [
-                            BoxShadow(
-                                color: primary.withValues(alpha: 0.1),
-                                blurRadius: 15,
-                                spreadRadius: 2)
-                          ]),
-                      child: Column(children: [
-                        if (widget.isQuran)
-                          SurahHeader(title: widget.title, color: primary),
-                        if (widget.isQuran &&
-                            widget.surahName != 'الفاتحة' &&
-                            widget.surahName != 'التوبة') ...[
-                          Text("بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ",
-                              style: GoogleFonts.scheherazadeNew(
-                                fontSize: 30,
-                                fontWeight: FontWeight.bold,
-                                color: primary,
-                              )),
-                          const SizedBox(height: 15),
-                          Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: List.generate(
-                                  5,
-                                  (index) => Icon(Icons.star,
-                                      size: 12,
-                                      color: primary.withValues(alpha: 0.5)))),
-                          const SizedBox(height: 25),
-                        ],
-                        widget.isQuran &&
-                                widget.ayahs != null &&
-                                widget.ayahs!.isNotEmpty
-                            ? RichText(
-                                textAlign: TextAlign.center,
-                                textDirection: TextDirection.rtl,
-                                text: TextSpan(
-                                  style: TextStyle(
-                                    fontFamily: 'me_quran',
-                                    fontSize: 32 * _factor,
-                                    height: 1.8,
-                                    color: _customBgColor != null
-                                        ? (_customBgColor!.computeLuminance() >
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  border: Border.all(color: primary, width: 3),
+                  borderRadius: BorderRadius.circular(25),
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      _customBgColor ?? primary.withValues(alpha: 0.02),
+                      (_customBgColor ?? primary.withValues(alpha: 0.02))
+                          .withValues(alpha: 0.5),
+                    ],
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: primary.withValues(alpha: 0.1),
+                      blurRadius: 15,
+                      spreadRadius: 2,
+                    ),
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    if (widget.isQuran)
+                      SurahHeader(title: widget.title, color: primary),
+                    if (widget.isQuran &&
+                        widget.surahName != 'الفاتحة' &&
+                        widget.surahName != 'التوبة') ...[
+                      Text(
+                        "بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ",
+                        style: GoogleFonts.scheherazadeNew(
+                          fontSize: 30,
+                          fontWeight: FontWeight.bold,
+                          color: primary,
+                        ),
+                      ),
+                      const SizedBox(height: 15),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: List.generate(
+                          5,
+                          (index) => Icon(
+                            Icons.star,
+                            size: 12,
+                            color: primary.withValues(alpha: 0.5),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 25),
+                    ],
+                    widget.isQuran &&
+                            widget.ayahs != null &&
+                            widget.ayahs!.isNotEmpty
+                        ? RichText(
+                            textAlign: TextAlign.center,
+                            textDirection: TextDirection.rtl,
+                            text: TextSpan(
+                              style: TextStyle(
+                                fontFamily: 'me_quran',
+                                fontSize: 32 * _factor,
+                                height: 1.8,
+                                color: _customBgColor != null
+                                    ? (_customBgColor!.computeLuminance() > 0.5
+                                          ? Colors.black
+                                          : Colors.white)
+                                    : Theme.of(
+                                            context,
+                                          ).textTheme.bodyLarge?.color ??
+                                          Colors.black,
+                              ),
+                              children: widget.ayahs!.map((a) {
+                                String text = a['ar_text'].toString().trim();
+                                final index =
+                                    a['anum']?.toString() ??
+                                    a['ayah_surah_index'].toString();
+                                final arabicIndex = _convertToArabicNumber(
+                                  index,
+                                );
+
+                                // Remove trailing english or arabic numbers from the text itself
+                                text = text
+                                    .replaceAll(
+                                      RegExp(r'[\s\xa0]*[0-9٠-٩]+$'),
+                                      '',
+                                    )
+                                    .trim();
+
+                                return TextSpan(
+                                  children: [
+                                    TextSpan(text: '$text '),
+                                    if (arabicIndex.isNotEmpty)
+                                      TextSpan(
+                                        text: '﴿$arabicIndex﴾ ',
+                                        style: TextStyle(
+                                          color: Colors.amber[700],
+                                          fontSize: 24 * _factor,
+                                        ),
+                                      ),
+                                  ],
+                                );
+                              }).toList(),
+                            ),
+                          )
+                        : Text(
+                            widget.content,
+                            textAlign: TextAlign.center,
+                            style:
+                                (widget.isQuran
+                                ? GoogleFonts.scheherazadeNew
+                                : GoogleFonts.notoNaskhArabic)(
+                                  fontSize:
+                                      (widget.isQuran ? 26 : 20) * _factor,
+                                  height: widget.isQuran ? 1.8 : 2.2,
+                                  color: _customBgColor != null
+                                      ? (_customBgColor!.computeLuminance() >
                                                 0.5
                                             ? Colors.black
                                             : Colors.white)
-                                        : Theme.of(context)
-                                                .textTheme
-                                                .bodyLarge
-                                                ?.color ??
-                                            Colors.black,
-                                  ),
-                                  children: widget.ayahs!.map((a) {
-                                    String text =
-                                        a['ar_text'].toString().trim();
-                                    final index = a['anum']?.toString() ??
-                                        a['ayah_surah_index'].toString();
-                                    final arabicIndex =
-                                        _convertToArabicNumber(index);
-
-                                    // Remove trailing english or arabic numbers from the text itself
-                                    text = text
-                                        .replaceAll(
-                                            RegExp(r'[\s\xa0]*[0-9٠-٩]+$'), '')
-                                        .trim();
-
-                                    return TextSpan(
-                                      children: [
-                                        TextSpan(text: '$text '),
-                                        if (arabicIndex.isNotEmpty)
-                                          TextSpan(
-                                            text: '﴿$arabicIndex﴾ ',
-                                            style: TextStyle(
-                                              color: Colors.amber[700],
-                                              fontSize: 24 * _factor,
-                                            ),
-                                          ),
-                                      ],
-                                    );
-                                  }).toList(),
+                                      : null,
                                 ),
-                              )
-                            : Text(widget.content,
-                                textAlign: TextAlign.center,
-                                style: (widget.isQuran
-                                        ? GoogleFonts.scheherazadeNew
-                                        : GoogleFonts.notoNaskhArabic)(
-                                    fontSize:
-                                        (widget.isQuran ? 26 : 20) * _factor,
-                                    height: widget.isQuran ? 1.8 : 2.2,
-                                    color: _customBgColor != null
-                                        ? (_customBgColor!.computeLuminance() >
-                                                0.5
-                                            ? Colors.black
-                                            : Colors.white)
-                                        : null)),
-                        const SizedBox(height: 25),
-                        Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: List.generate(
-                                5,
-                                (index) => Icon(Icons.star,
-                                    size: 12,
-                                    color: primary.withValues(alpha: 0.5)))),
-                      ])))),
+                          ),
+                    const SizedBox(height: 25),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: List.generate(
+                        5,
+                        (index) => Icon(
+                          Icons.star,
+                          size: 12,
+                          color: primary.withValues(alpha: 0.5),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
           Container(
             padding: EdgeInsets.fromLTRB(
-                20, 10, 20, MediaQuery.of(context).padding.bottom + 10),
+              20,
+              10,
+              20,
+              MediaQuery.of(context).padding.bottom + 10,
+            ),
             decoration: BoxDecoration(
-                color: Theme.of(context).cardColor,
-                boxShadow: [
-                  BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.05),
-                      blurRadius: 10)
-                ]),
-            child: Column(mainAxisSize: MainAxisSize.min, children: [
-              Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
-                const Text('لون البطاقة:',
-                    style:
-                        TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                ...[
-                  null,
-                  const Color(0xFFFDF5E6),
-                  const Color(0xFFE0EEE0),
-                  const Color(0xFFE6E6FA),
-                  const Color(0xFF2C2C2C)
-                ].map((c) => GestureDetector(
-                    onTap: () => setState(() => _customBgColor = c),
-                    child: CircleAvatar(
-                        radius: 14,
-                        backgroundColor: c ?? Colors.grey[300],
-                        child: _customBgColor == c
-                            ? const Icon(Icons.check,
-                                size: 14, color: Colors.blue)
-                            : null))),
-              ]),
-              const Divider(height: 15),
-              Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                IconButton(
-                    icon: const Icon(Icons.remove_circle_outline),
-                    onPressed: () =>
-                        setState(() => _factor = max(0.5, _factor - 0.1))),
-                const Text(' Aa ',
-                    style:
-                        TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                IconButton(
-                    icon: const Icon(Icons.add_circle_outline),
-                    onPressed: () =>
-                        setState(() => _factor = min(3.0, _factor + 0.1))),
-              ]),
-            ]),
+              color: Theme.of(context).cardColor,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.05),
+                  blurRadius: 10,
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    const Text(
+                      'لون البطاقة:',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    ...[
+                      null,
+                      const Color(0xFFFDF5E6),
+                      const Color(0xFFE0EEE0),
+                      const Color(0xFFE6E6FA),
+                      const Color(0xFF2C2C2C),
+                    ].map(
+                      (c) => GestureDetector(
+                        onTap: () => setState(() => _customBgColor = c),
+                        child: CircleAvatar(
+                          radius: 14,
+                          backgroundColor: c ?? Colors.grey[300],
+                          child: _customBgColor == c
+                              ? const Icon(
+                                  Icons.check,
+                                  size: 14,
+                                  color: Colors.blue,
+                                )
+                              : null,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const Divider(height: 15),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.remove_circle_outline),
+                      onPressed: () =>
+                          setState(() => _factor = max(0.5, _factor - 0.1)),
+                    ),
+                    const Text(
+                      ' Aa ',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.add_circle_outline),
+                      onPressed: () =>
+                          setState(() => _factor = min(3.0, _factor + 0.1)),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -1794,12 +2105,14 @@ class GlobalSearchDelegate extends SearchDelegate {
   @override
   String get searchFieldLabel => 'ابحث في كل الأقسام...';
   @override
-  List<Widget>? buildActions(BuildContext context) =>
-      [IconButton(icon: const Icon(Icons.clear), onPressed: () => query = '')];
+  List<Widget>? buildActions(BuildContext context) => [
+    IconButton(icon: const Icon(Icons.clear), onPressed: () => query = ''),
+  ];
   @override
   Widget? buildLeading(BuildContext context) => IconButton(
-      icon: const Icon(Icons.arrow_back),
-      onPressed: () => close(context, null));
+    icon: const Icon(Icons.arrow_back),
+    onPressed: () => close(context, null),
+  );
   @override
   Widget buildResults(BuildContext context) => _buildSearchResults();
   @override
@@ -1812,18 +2125,16 @@ class GlobalSearchDelegate extends SearchDelegate {
     List<Map<String, dynamic>> results = [];
     sections.forEach((key, sec) {
       for (var it in DataManager.getItems(key)) {
-        if (it['title']
-                .toString()
-                .normalizeArabic()
-                .contains(normalizedQuery) ||
-            it['content']
-                .toString()
-                .normalizeArabic()
-                .contains(normalizedQuery)) {
+        if (it['title'].toString().normalizeArabic().contains(
+              normalizedQuery,
+            ) ||
+            it['content'].toString().normalizeArabic().contains(
+              normalizedQuery,
+            )) {
           results.add({
             'section': sec['title'],
             'title': it['title'],
-            'content': it['content']
+            'content': it['content'],
           });
         }
       }
@@ -1831,23 +2142,31 @@ class GlobalSearchDelegate extends SearchDelegate {
     if (results.isEmpty)
       return const Center(child: Text('لا توجد نتائج مطابقة'));
     return ListView.builder(
-        itemCount: results.length,
-        itemBuilder: (context, i) => ListTile(
-            title: Text(results[i]['title'],
-                style: const TextStyle(fontWeight: FontWeight.bold)),
-            subtitle: Text(
-                '${results[i]['section']} - ${results[i]['content']}',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis),
-            onTap: () {
-              Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (c) => ReaderPage(
-                          title: results[i]['title'],
-                          content: results[i]['content'],
-                          fontSizeFactor: fontSizeFactor)));
-            }));
+      itemCount: results.length,
+      itemBuilder: (context, i) => ListTile(
+        title: Text(
+          results[i]['title'],
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
+        subtitle: Text(
+          '${results[i]['section']} - ${results[i]['content']}',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (c) => ReaderPage(
+                title: results[i]['title'],
+                content: results[i]['content'],
+                fontSizeFactor: fontSizeFactor,
+              ),
+            ),
+          );
+        },
+      ),
+    );
   }
 }
 
@@ -1894,7 +2213,7 @@ class SettingsSection extends StatelessWidget {
       const Color(0xFFE0EEE0),
       const Color(0xFFE6E6FA),
       const Color(0xFF2C2C2C),
-      Colors.black
+      Colors.black,
     ];
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
@@ -1902,110 +2221,148 @@ class SettingsSection extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildGroup(context, 'التقويم الهجري', [
-            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-              const Text('تعديل التاريخ الهجري:',
-                  style: TextStyle(fontSize: 14)),
-              Row(children: [
-                IconButton(
-                    icon: const Icon(Icons.remove_circle_outline),
-                    onPressed: () =>
-                        onHijriAdjustmentChanged(hijriAdjustment - 1)),
-                Text('$hijriAdjustment',
-                    style: const TextStyle(fontWeight: FontWeight.bold)),
-                IconButton(
-                    icon: const Icon(Icons.add_circle_outline),
-                    onPressed: () =>
-                        onHijriAdjustmentChanged(hijriAdjustment + 1)),
-              ]),
-            ]),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'تعديل التاريخ الهجري:',
+                  style: TextStyle(fontSize: 14),
+                ),
+                Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.remove_circle_outline),
+                      onPressed: () =>
+                          onHijriAdjustmentChanged(hijriAdjustment - 1),
+                    ),
+                    Text(
+                      '$hijriAdjustment',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.add_circle_outline),
+                      onPressed: () =>
+                          onHijriAdjustmentChanged(hijriAdjustment + 1),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ]),
           _buildGroup(context, 'المظهر العام', [
             SwitchListTile(
-                title: const Text('الوضع الليلي'),
-                value: Theme.of(context).brightness == Brightness.dark,
-                onChanged: (v) => onThemeToggled(),
-                contentPadding: EdgeInsets.zero),
+              title: const Text('الوضع الليلي'),
+              value: Theme.of(context).brightness == Brightness.dark,
+              onChanged: (v) => onThemeToggled(),
+              contentPadding: EdgeInsets.zero,
+            ),
             const SizedBox(height: 10),
-            const Text('لون سمة التطبيق',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+            const Text(
+              'لون سمة التطبيق',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+            ),
             const SizedBox(height: 10),
             Wrap(
-                spacing: 12,
-                children: [
-                  const Color(0xFFD4AF37),
-                  Colors.blueGrey,
-                  Colors.teal,
-                  Colors.brown
-                ]
-                    .map((c) => GestureDetector(
-                        onTap: () => onColorChanged(c),
-                        child: CircleAvatar(
+              spacing: 12,
+              children:
+                  [
+                        const Color(0xFFD4AF37),
+                        Colors.blueGrey,
+                        Colors.teal,
+                        Colors.brown,
+                      ]
+                      .map(
+                        (c) => GestureDetector(
+                          onTap: () => onColorChanged(c),
+                          child: CircleAvatar(
                             backgroundColor: c,
                             radius: 18,
                             child: primaryColor.toARGB32() == c.toARGB32()
-                                ? const Icon(Icons.check,
-                                    color: Colors.white, size: 16)
-                                : null)))
-                    .toList()),
+                                ? const Icon(
+                                    Icons.check,
+                                    color: Colors.white,
+                                    size: 16,
+                                  )
+                                : null,
+                          ),
+                        ),
+                      )
+                      .toList(),
+            ),
           ]),
           _buildGroup(context, 'تخصيص البطاقات', [
-            const Text('لون خلفية البطاقات (مريح للعين)',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+            const Text(
+              'لون خلفية البطاقات (مريح للعين)',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+            ),
             const SizedBox(height: 10),
             Wrap(
-                spacing: 10,
-                runSpacing: 10,
-                children: comfortColors
-                    .map((c) => GestureDetector(
-                        onTap: () => onCardColorChanged(c),
-                        child: CircleAvatar(
-                            backgroundColor: c,
-                            radius: 18,
-                            child: cardColor.toARGB32() == c.toARGB32()
-                                ? Icon(Icons.check,
-                                    color: c.computeLuminance() > 0.5
-                                        ? Colors.black
-                                        : Colors.white,
-                                    size: 16)
-                                : null)))
-                    .toList()),
+              spacing: 10,
+              runSpacing: 10,
+              children: comfortColors
+                  .map(
+                    (c) => GestureDetector(
+                      onTap: () => onCardColorChanged(c),
+                      child: CircleAvatar(
+                        backgroundColor: c,
+                        radius: 18,
+                        child: cardColor.toARGB32() == c.toARGB32()
+                            ? Icon(
+                                Icons.check,
+                                color: c.computeLuminance() > 0.5
+                                    ? Colors.black
+                                    : Colors.white,
+                                size: 16,
+                              )
+                            : null,
+                      ),
+                    ),
+                  )
+                  .toList(),
+            ),
             const SizedBox(height: 15),
-            const Text('مستوى الشفافية',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+            const Text(
+              'مستوى الشفافية',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+            ),
             Slider(
-                value: uiOpacity,
-                min: 0.3,
-                max: 1.0,
-                onChanged: onOpacityChanged,
-                activeColor: primaryColor),
+              value: uiOpacity,
+              min: 0.3,
+              max: 1.0,
+              onChanged: onOpacityChanged,
+              activeColor: primaryColor,
+            ),
           ]),
           _buildGroup(context, 'الوسائط', [
             ListTile(
-                title: const Text('اختيار خلفية مخصصة'),
-                trailing: const Icon(Icons.image_search),
-                contentPadding: EdgeInsets.zero,
-                onTap: () async {
-                  final picker = ImagePicker();
-                  final img =
-                      await picker.pickImage(source: ImageSource.gallery);
-                  if (img != null) onBackgroundImageChanged(img.path);
-                }),
+              title: const Text('اختيار خلفية مخصصة'),
+              trailing: const Icon(Icons.image_search),
+              contentPadding: EdgeInsets.zero,
+              onTap: () async {
+                final picker = ImagePicker();
+                final img = await picker.pickImage(source: ImageSource.gallery);
+                if (img != null) onBackgroundImageChanged(img.path);
+              },
+            ),
             const SizedBox(height: 10),
-            const Text('معرض الخلفيات المرفوعة',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+            const Text(
+              'معرض الخلفيات المرفوعة',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+            ),
             const SizedBox(height: 10),
             SizedBox(
-                height: 100,
-                child: _buildBgGallery(context, (img) {
-                  onBase64BgChanged(img);
-                })),
+              height: 100,
+              child: _buildBgGallery(context, (img) {
+                onBase64BgChanged(img);
+              }),
+            ),
           ]),
           _buildGroup(context, 'إعدادات ظهور الصفحة الرئيسية', [
             _visToggle('inspiration', 'إلهام اليوم'),
             _visToggle('day_dua', 'دعاء اليوم'),
-            ...DataManager.getSections()
-                .entries
-                .map((e) => _visToggle(e.key, e.value['title'].toString())),
+            ...DataManager.getSections().entries.map(
+              (e) => _visToggle(e.key, e.value['title'].toString()),
+            ),
           ]),
         ],
       ),
@@ -2013,63 +2370,83 @@ class SettingsSection extends StatelessWidget {
   }
 
   Widget _buildBgGallery(
-      BuildContext context, ValueChanged<String> onSelected) {
+    BuildContext context,
+    ValueChanged<String> onSelected,
+  ) {
     final gallery =
         (DataManager.getSettings()['bg_gallery'] as List<dynamic>? ?? []);
     if (gallery.isEmpty)
       return const Center(
-          child: Text('المعرض فارغ', style: TextStyle(fontSize: 12)));
+        child: Text('المعرض فارغ', style: TextStyle(fontSize: 12)),
+      );
     return ListView.builder(
-        scrollDirection: Axis.horizontal,
-        itemCount: gallery.length,
-        itemBuilder: (context, index) {
-          final img = gallery[index].toString();
-          return GestureDetector(
-              onTap: () async {
-                final prefs = await SharedPreferences.getInstance();
-                await prefs.setString('custom_bg_base64_selected', img);
-                await prefs.remove('backgroundImage');
-                onSelected(img);
-              },
-              child: Container(
-                  margin: const EdgeInsets.only(left: 10),
-                  width: 80,
-                  decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: primaryColor, width: 1)),
-                  child: ClipRRect(
-                      borderRadius: BorderRadius.circular(9),
-                      child: _buildImage(img, fit: BoxFit.cover))));
-        });
+      scrollDirection: Axis.horizontal,
+      itemCount: gallery.length,
+      itemBuilder: (context, index) {
+        final img = gallery[index].toString();
+        return GestureDetector(
+          onTap: () async {
+            final prefs = await SharedPreferences.getInstance();
+            await prefs.setString('custom_bg_base64_selected', img);
+            await prefs.remove('backgroundImage');
+            onSelected(img);
+          },
+          child: Container(
+            margin: const EdgeInsets.only(left: 10),
+            width: 80,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: primaryColor, width: 1),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(9),
+              child: _buildImage(img, fit: BoxFit.cover),
+            ),
+          ),
+        );
+      },
+    );
   }
 
   Widget _buildGroup(
-      BuildContext context, String title, List<Widget> children) {
+    BuildContext context,
+    String title,
+    List<Widget> children,
+  ) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
-        width: double.infinity,
-        margin: const EdgeInsets.only(bottom: 20),
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-            color: isDark ? Colors.black : Colors.white,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: primaryColor, width: 2)),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(title,
-              style: TextStyle(
-                  color: primaryColor,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 15)),
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 20),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: isDark ? Colors.black : Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: primaryColor, width: 2),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: TextStyle(
+              color: primaryColor,
+              fontWeight: FontWeight.bold,
+              fontSize: 15,
+            ),
+          ),
           const SizedBox(height: 15),
-          ...children
-        ]));
+          ...children,
+        ],
+      ),
+    );
   }
 
   Widget _visToggle(String key, String title) => SwitchListTile(
-      title: Text(title, style: const TextStyle(fontSize: 14)),
-      value: visibility[key] ?? true,
-      onChanged: (v) => onVisibilityChanged(key, v),
-      dense: true);
+    title: Text(title, style: const TextStyle(fontSize: 14)),
+    value: visibility[key] ?? true,
+    onChanged: (v) => onVisibilityChanged(key, v),
+    dense: true,
+  );
 }
 
 class TasbihSection extends StatefulWidget {
@@ -2089,106 +2466,145 @@ class _TasbihSectionState extends State<TasbihSection> {
       height: double.infinity,
       color: isDark ? const Color(0xFF0A0A0A) : const Color(0xFFFDFBF7),
       padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-        Container(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
             padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
             decoration: BoxDecoration(
-                color: isDark ? Colors.black : Colors.white,
-                borderRadius: BorderRadius.circular(50),
-                border: Border.all(
-                    color: Theme.of(context).colorScheme.primary, width: 2)),
-            child: Text(_currentDhikr,
-                style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Theme.of(context).colorScheme.primary))),
-        const SizedBox(height: 50),
-        Stack(alignment: Alignment.center, children: [
-          Container(
-              width: 250,
-              height: 250,
-              decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                      color: Theme.of(context).colorScheme.primary,
-                      width: 8),
-                  boxShadow: [
-                    BoxShadow(
-                        color: Theme.of(context)
-                            .colorScheme
-                            .primary
-                            .withValues(alpha: 0.2),
-                        blurRadius: 30,
-                        spreadRadius: 5)
-                  ])),
-          Material(
-            type: MaterialType.transparency,
-            child: InkWell(
-              customBorder: const CircleBorder(),
-              onTap: () {
-                setState(() => _counter++);
-                HapticFeedback.lightImpact();
-              },
-              child: Ink(
-                  width: 220,
-                  height: 220,
-                  decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            isDark ? const Color(0xFF222222) : Colors.white,
-                            isDark ? Colors.black : const Color(0xFFF0F0F0)
-                          ])),
-                  child: Center(
-                      child: Text('$_counter',
-                          style: GoogleFonts.notoSans(
-                              fontSize: 70,
-                              fontWeight: FontWeight.bold,
-                              color: Theme.of(context).colorScheme.primary)))),
+              color: isDark ? Colors.black : Colors.white,
+              borderRadius: BorderRadius.circular(50),
+              border: Border.all(
+                color: Theme.of(context).colorScheme.primary,
+                width: 2,
+              ),
+            ),
+            child: Text(
+              _currentDhikr,
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.primary,
+              ),
             ),
           ),
-        ]),
-        const SizedBox(height: 50),
-        Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-          IconButton(
-              icon: const Icon(Icons.refresh, size: 30),
-              onPressed: () => setState(() => _counter = 0),
-              color: Theme.of(context).colorScheme.primary,
-              tooltip: 'تصفير'),
-          const SizedBox(width: 30),
-          Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              decoration: BoxDecoration(
+          const SizedBox(height: 50),
+          Stack(
+            alignment: Alignment.center,
+            children: [
+              Container(
+                width: 250,
+                height: 250,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: Theme.of(context).colorScheme.primary,
+                    width: 8,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.primary.withValues(alpha: 0.2),
+                      blurRadius: 30,
+                      spreadRadius: 5,
+                    ),
+                  ],
+                ),
+              ),
+              Material(
+                type: MaterialType.transparency,
+                child: InkWell(
+                  customBorder: const CircleBorder(),
+                  onTap: () {
+                    setState(() => _counter++);
+                    HapticFeedback.lightImpact();
+                  },
+                  child: Ink(
+                    width: 220,
+                    height: 220,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          isDark ? const Color(0xFF222222) : Colors.white,
+                          isDark ? Colors.black : const Color(0xFFF0F0F0),
+                        ],
+                      ),
+                    ),
+                    child: Center(
+                      child: Text(
+                        '$_counter',
+                        style: GoogleFonts.notoSans(
+                          fontSize: 70,
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 50),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.refresh, size: 30),
+                onPressed: () => setState(() => _counter = 0),
+                color: Theme.of(context).colorScheme.primary,
+                tooltip: 'تصفير',
+              ),
+              const SizedBox(width: 30),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(15),
                   border: Border.all(
-                      color: Theme.of(context)
-                          .colorScheme
-                          .primary
-                          .withValues(alpha: 0.5))),
-              child: DropdownButton<String>(
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.primary.withValues(alpha: 0.5),
+                  ),
+                ),
+                child: DropdownButton<String>(
                   value: _currentDhikr,
                   underline: const SizedBox(),
-                  icon: Icon(Icons.arrow_drop_down,
-                      color: Theme.of(context).colorScheme.primary),
+                  icon: Icon(
+                    Icons.arrow_drop_down,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
                   onChanged: (v) {
                     if (v != null) setState(() => _currentDhikr = v);
                   },
-                  items: [
-                    'سبحان الله',
-                    'الحمد لله',
-                    'لا إله إلا الله',
-                    'الله أكبر',
-                    'أستغفر الله',
-                    'اللهم صل على محمد وآل محمد'
-                  ]
-                      .map((v) => DropdownMenuItem(
-                          value: v,
-                          child: Text(v, style: const TextStyle(fontSize: 14))))
-                      .toList())),
-        ]),
-      ]),
+                  items:
+                      [
+                            'سبحان الله',
+                            'الحمد لله',
+                            'لا إله إلا الله',
+                            'الله أكبر',
+                            'أستغفر الله',
+                            'اللهم صل على محمد وآل محمد',
+                          ]
+                          .map(
+                            (v) => DropdownMenuItem(
+                              value: v,
+                              child: Text(
+                                v,
+                                style: const TextStyle(fontSize: 14),
+                              ),
+                            ),
+                          )
+                          .toList(),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }
@@ -2209,14 +2625,14 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
     'dhuhr': true,
     'asr': true,
     'maghrib': true,
-    'isha': true
+    'isha': true,
   };
   final Map<String, int> _manualAdjustments = {
     'fajr': 0,
     'dhuhr': 0,
     'asr': 0,
     'maghrib': 0,
-    'isha': 0
+    'isha': 0,
   };
   String _selectedProvince = "بغداد";
 
@@ -2248,16 +2664,17 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
           lon != null &&
           _selectedProvince == "الموقع الحالي (GPS)") {
         _currentPosition = Position(
-            latitude: lat,
-            longitude: lon,
-            timestamp: DateTime.now(),
-            accuracy: 0,
-            altitude: 0,
-            heading: 0,
-            speed: 0,
-            speedAccuracy: 0,
-            altitudeAccuracy: 0,
-            headingAccuracy: 0);
+          latitude: lat,
+          longitude: lon,
+          timestamp: DateTime.now(),
+          accuracy: 0,
+          altitude: 0,
+          heading: 0,
+          speed: 0,
+          speedAccuracy: 0,
+          altitudeAccuracy: 0,
+          headingAccuracy: 0,
+        );
       }
     });
   }
@@ -2270,16 +2687,17 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
       } else {
         final coords = iraqProvinces[_selectedProvince]!;
         pos = Position(
-            latitude: coords[0],
-            longitude: coords[1],
-            timestamp: DateTime.now(),
-            accuracy: 0,
-            altitude: 0,
-            heading: 0,
-            speed: 0,
-            speedAccuracy: 0,
-            altitudeAccuracy: 0,
-            headingAccuracy: 0);
+          latitude: coords[0],
+          longitude: coords[1],
+          timestamp: DateTime.now(),
+          accuracy: 0,
+          altitude: 0,
+          heading: 0,
+          speed: 0,
+          speedAccuracy: 0,
+          altitudeAccuracy: 0,
+          headingAccuracy: 0,
+        );
       }
       final pt = _prayerService.calculatePrayerTimes(pos);
       final db = DataManager.getDB();
@@ -2289,8 +2707,10 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
           db['settings']['adhan'] != null &&
           db['settings']['adhan']['manual_schedules'] != null) {
         final list = db['settings']['adhan']['manual_schedules'] as List;
-        final manual =
-            list.firstWhere((s) => s['date'] == todayStr, orElse: () => null);
+        final manual = list.firstWhere(
+          (s) => s['date'] == todayStr,
+          orElse: () => null,
+        );
         if (manual != null) {
           pt['fajr'] = _applyManualTime(pt['fajr']!, manual['fajr']);
           pt['dhuhr'] = _applyManualTime(pt['dhuhr']!, manual['dhuhr']);
@@ -2304,7 +2724,10 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
         _loading = false;
       });
       await _prayerService.scheduleAdhanNotifications(
-          pos, _enabledPrayers, _manualAdjustments);
+        pos,
+        _enabledPrayers,
+        _manualAdjustments,
+      );
     } catch (e) {
       debugPrint("Prayer times error: $e");
       setState(() => _loading = false);
@@ -2315,8 +2738,13 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
     if (man == null || !man.contains(':')) return calc;
     try {
       final parts = man.split(':');
-      return DateTime(calc.year, calc.month, calc.day, int.parse(parts[0]),
-          int.parse(parts[1]));
+      return DateTime(
+        calc.year,
+        calc.month,
+        calc.day,
+        int.parse(parts[0]),
+        int.parse(parts[1]),
+      );
     } catch (e) {
       return calc;
     }
@@ -2339,7 +2767,8 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
     } else {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('الرجاء منح صلاحية الوصول للموقع')));
+        const SnackBar(content: Text('الرجاء منح صلاحية الوصول للموقع')),
+      );
       setState(() => _loading = false);
     }
   }
@@ -2349,131 +2778,166 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
     if (_loading) return const Center(child: CircularProgressIndicator());
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
-      child: Column(children: [
-        Container(
+      child: Column(
+        children: [
+          Container(
             padding: const EdgeInsets.all(15),
             decoration: BoxDecoration(
-                color: Theme.of(context)
-                    .colorScheme
-                    .primary
-                    .withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(15)),
-            child: Column(children: [
-              Row(children: [
-                const Icon(Icons.location_on),
-                const SizedBox(width: 10),
-                const Text('المحافظة:',
-                    style: TextStyle(fontWeight: FontWeight.bold)),
-                const Spacer(),
-                DropdownButton<String>(
-                    value: _selectedProvince,
-                    underline: const SizedBox(),
-                    onChanged: (v) async {
-                      if (v != null) {
-                        final prefs = await SharedPreferences.getInstance();
-                        await prefs.setString('prayer_city', v);
-                        if (v != "الموقع الحالي (GPS)") {
-                          await prefs.remove('gps_lat');
-                          await prefs.remove('gps_lon');
+              color: Theme.of(
+                context,
+              ).colorScheme.primary.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(15),
+            ),
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.location_on),
+                    const SizedBox(width: 10),
+                    const Text(
+                      'المحافظة:',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    const Spacer(),
+                    DropdownButton<String>(
+                      value: _selectedProvince,
+                      underline: const SizedBox(),
+                      onChanged: (v) async {
+                        if (v != null) {
+                          final prefs = await SharedPreferences.getInstance();
+                          await prefs.setString('prayer_city', v);
+                          if (v != "الموقع الحالي (GPS)") {
+                            await prefs.remove('gps_lat');
+                            await prefs.remove('gps_lon');
+                          }
+                          setState(() {
+                            _selectedProvince = v;
+                            if (v != "الموقع الحالي (GPS)")
+                              _currentPosition = null;
+                            _loading = true;
+                          });
+                          _getLocationAndPrayers();
                         }
-                        setState(() {
-                          _selectedProvince = v;
-                          if (v != "الموقع الحالي (GPS)")
-                            _currentPosition = null;
-                          _loading = true;
-                        });
-                        _getLocationAndPrayers();
-                      }
-                    },
-                    items: [
-                      ...iraqProvinces.keys.map(
-                          (p) => DropdownMenuItem(value: p, child: Text(p))),
-                      if (_selectedProvince == "الموقع الحالي (GPS)")
-                        const DropdownMenuItem(
+                      },
+                      items: [
+                        ...iraqProvinces.keys.map(
+                          (p) => DropdownMenuItem(value: p, child: Text(p)),
+                        ),
+                        if (_selectedProvince == "الموقع الحالي (GPS)")
+                          const DropdownMenuItem(
                             value: "الموقع الحالي (GPS)",
-                            child: Text("الموقع الحالي (GPS)"))
-                    ])
-              ]),
-              const Divider(),
-              TextButton.icon(
+                            child: Text("الموقع الحالي (GPS)"),
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
+                const Divider(),
+                TextButton.icon(
                   onPressed: _useGPS,
                   icon: const Icon(Icons.my_location),
-                  label: Text(_currentPosition == null
-                      ? 'استخدام الموقع الحالي (GPS)'
-                      : 'موقعك محدد حالياً عبر GPS')),
-            ])),
-        const SizedBox(height: 20),
-        _buildPrayerCard('الفجر', _prayerTimes?['fajr'], 'fajr'),
-        _buildPrayerCard('الظهر', _prayerTimes?['dhuhr'], 'dhuhr'),
-        _buildPrayerCard('العصر', _prayerTimes?['asr'], 'asr'),
-        _buildPrayerCard('المغرب', _prayerTimes?['maghrib'], 'maghrib'),
-        _buildPrayerCard('العشاء', _prayerTimes?['isha'], 'isha'),
-        const SizedBox(height: 30),
-        const Divider(),
-        const Text('إعدادات الأذان والتنبيهات',
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-        ..._enabledPrayers.keys.map((k) => Card(
-            margin: const EdgeInsets.only(bottom: 10),
-            child: SwitchListTile(
-                title: Text('تفعيل أذان ${{
-                  'fajr': 'الفجر',
-                  'dhuhr': 'الظهر',
-                  'asr': 'العصر',
-                  'maghrib': 'المغرب',
-                  'isha': 'العشاء'
-                }[k]}'),
+                  label: Text(
+                    _currentPosition == null
+                        ? 'استخدام الموقع الحالي (GPS)'
+                        : 'موقعك محدد حالياً عبر GPS',
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+          _buildPrayerCard('الفجر', _prayerTimes?['fajr'], 'fajr'),
+          _buildPrayerCard('الظهر', _prayerTimes?['dhuhr'], 'dhuhr'),
+          _buildPrayerCard('العصر', _prayerTimes?['asr'], 'asr'),
+          _buildPrayerCard('المغرب', _prayerTimes?['maghrib'], 'maghrib'),
+          _buildPrayerCard('العشاء', _prayerTimes?['isha'], 'isha'),
+          const SizedBox(height: 30),
+          const Divider(),
+          const Text(
+            'إعدادات الأذان والتنبيهات',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+          ),
+          ..._enabledPrayers.keys.map(
+            (k) => Card(
+              margin: const EdgeInsets.only(bottom: 10),
+              child: SwitchListTile(
+                title: Text(
+                  'تفعيل أذان ${{'fajr': 'الفجر', 'dhuhr': 'الظهر', 'asr': 'العصر', 'maghrib': 'المغرب', 'isha': 'العشاء'}[k]}',
+                ),
                 value: _enabledPrayers[k] ?? true,
                 onChanged: (v) async {
                   setState(() => _enabledPrayers[k] = v);
                   final prefs = await SharedPreferences.getInstance();
                   await prefs.setBool('adhan_$k', v);
                   _getLocationAndPrayers();
-                }))),
-      ]),
+                },
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
   Widget _buildPrayerCard(String label, DateTime? originalTime, String key) {
     if (originalTime == null) return const SizedBox();
-    final adjTime =
-        originalTime.add(Duration(minutes: _manualAdjustments[key] ?? 0));
+    final adjTime = originalTime.add(
+      Duration(minutes: _manualAdjustments[key] ?? 0),
+    );
     return Card(
-        margin: const EdgeInsets.only(bottom: 15),
-        elevation: 4,
-        shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-            side: BorderSide(
-                color: Theme.of(context).colorScheme.primary, width: 1.5)),
-        child: ListTile(
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-            title: Text(label,
-                style:
-                    const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-            subtitle: const Text('اضغط لتعديل الوقت يدوياً (دقائق)',
-                style: TextStyle(fontSize: 11, color: Colors.grey)),
-            trailing: Text(intl.DateFormat('hh:mm a').format(adjTime),
-                style: TextStyle(
-                    fontSize: 22,
-                    color: Theme.of(context).colorScheme.primary,
-                    fontWeight: FontWeight.bold,
-                    fontFamily: 'monospace')),
-            onTap: () async {
-              final TimeOfDay? picked = await showTimePicker(
-                  context: context,
-                  initialTime: TimeOfDay.fromDateTime(adjTime));
-              if (picked != null) {
-                final diff = DateTime(originalTime.year, originalTime.month,
-                        originalTime.day, picked.hour, picked.minute)
-                    .difference(originalTime)
-                    .inMinutes;
-                setState(() {
-                  _manualAdjustments[key] = diff;
-                });
-                final prefs = await SharedPreferences.getInstance();
-                await prefs.setInt('adj_$key', diff);
-                _getLocationAndPrayers();
-              }
-            }));
+      margin: const EdgeInsets.only(bottom: 15),
+      elevation: 4,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: BorderSide(
+          color: Theme.of(context).colorScheme.primary,
+          width: 1.5,
+        ),
+      ),
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 20,
+          vertical: 10,
+        ),
+        title: Text(
+          label,
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+        ),
+        subtitle: const Text(
+          'اضغط لتعديل الوقت يدوياً (دقائق)',
+          style: TextStyle(fontSize: 11, color: Colors.grey),
+        ),
+        trailing: Text(
+          intl.DateFormat('hh:mm a').format(adjTime),
+          style: TextStyle(
+            fontSize: 22,
+            color: Theme.of(context).colorScheme.primary,
+            fontWeight: FontWeight.bold,
+            fontFamily: 'monospace',
+          ),
+        ),
+        onTap: () async {
+          final TimeOfDay? picked = await showTimePicker(
+            context: context,
+            initialTime: TimeOfDay.fromDateTime(adjTime),
+          );
+          if (picked != null) {
+            final diff = DateTime(
+              originalTime.year,
+              originalTime.month,
+              originalTime.day,
+              picked.hour,
+              picked.minute,
+            ).difference(originalTime).inMinutes;
+            setState(() {
+              _manualAdjustments[key] = diff;
+            });
+            final prefs = await SharedPreferences.getInstance();
+            await prefs.setInt('adj_$key', diff);
+            _getLocationAndPrayers();
+          }
+        },
+      ),
+    );
   }
 }

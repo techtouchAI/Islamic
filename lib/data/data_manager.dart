@@ -33,8 +33,9 @@ class DataManager {
         debugPrint("DataManager: Loaded from local storage.");
       } else {
         // 2. Fallback to bundled assets
-        final String response =
-            await rootBundle.loadString('assets/data/content.json');
+        final String response = await rootBundle.loadString(
+          'assets/data/content.json',
+        );
         _db = json.decode(response);
         debugPrint("DataManager: Loaded from bundled assets.");
       }
@@ -60,7 +61,16 @@ class DataManager {
 
         final newDb = json.decode(content);
         if (newDb is Map && newDb.containsKey('sections')) {
-          await localFile.writeAsString(content);
+          final tempFile = File('${localFile.path}.tmp');
+          try {
+            await tempFile.writeAsString(content, flush: true);
+            await tempFile.rename(localFile.path);
+          } catch (e) {
+            if (await tempFile.exists()) {
+              await tempFile.delete();
+            }
+            rethrow;
+          }
           _db = Map<String, dynamic>.from(newDb);
           dbNotifier.value++;
           debugPrint("DataManager: Cloud sync successful.");
