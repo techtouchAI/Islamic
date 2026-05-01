@@ -36,8 +36,9 @@ class DataManager {
         debugPrint("DataManager: Loaded from local storage.");
       } else {
         // 2. Fallback to bundled assets
-        final String response =
-            await rootBundle.loadString('assets/data/content.json');
+        final String response = await rootBundle.loadString(
+          'assets/data/content.json',
+        );
         _db = json.decode(response);
         _normalizeDB(_db);
         debugPrint("DataManager: Loaded from bundled assets.");
@@ -132,12 +133,14 @@ class DataManager {
           for (var item in section) {
             if (item is Map) {
               if (item['title'] != null) {
-                item['_normalized_title'] =
-                    item['title'].toString().normalizeArabic();
+                item['_normalized_title'] = item['title']
+                    .toString()
+                    .normalizeArabic();
               }
               if (item['content'] != null) {
-                item['_normalized_content'] =
-                    item['content'].toString().normalizeArabic();
+                item['_normalized_content'] = item['content']
+                    .toString()
+                    .normalizeArabic();
               }
             }
           }

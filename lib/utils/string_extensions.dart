@@ -1,4 +1,4 @@
-final _diacriticsRegExp = RegExp(r'[\u064B-\u0652]');
+final _diacriticsRegExp = RegExp(r'[\u064B-\u065F\u0670]');
 
 extension ArabicStringNormalization on String {
   String normalizeArabic() {

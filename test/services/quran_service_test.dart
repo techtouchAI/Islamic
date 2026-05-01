@@ -12,15 +12,12 @@ void main() {
   setUp(() {
     const channel = MethodChannel('plugins.flutter.io/path_provider');
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-        .setMockMethodCallHandler(
-      channel,
-      (MethodCall methodCall) async {
-        if (methodCall.method == 'getApplicationDocumentsDirectory') {
-          return '.';
-        }
-        return null;
-      },
-    );
+        .setMockMethodCallHandler(channel, (MethodCall methodCall) async {
+          if (methodCall.method == 'getApplicationDocumentsDirectory') {
+            return '.';
+          }
+          return null;
+        });
   });
 
   tearDown(() {
@@ -50,14 +47,20 @@ void main() {
 
     test('getSurahs CMS Fallback returns formatted surahs', () async {
       // Setup DataManager with mock quran items
-      File('./content.json').writeAsStringSync(jsonEncode({
-        'content': {
-          'quran': [
-            {'id': 112, 'title': 'سورة الإخلاص', 'content': 'قل هو الله أحد'},
-            {'id': 113, 'title': 'سورة الفلق', 'content': 'قل أعوذ برب الفلق'}
-          ]
-        }
-      }));
+      File('./content.json').writeAsStringSync(
+        jsonEncode({
+          'content': {
+            'quran': [
+              {'id': 112, 'title': 'سورة الإخلاص', 'content': 'قل هو الله أحد'},
+              {
+                'id': 113,
+                'title': 'سورة الفلق',
+                'content': 'قل أعوذ برب الفلق',
+              },
+            ],
+          },
+        }),
+      );
       await DataManager.loadContent();
 
       final surahs = await QuranService.getSurahs();
@@ -73,13 +76,15 @@ void main() {
     });
 
     test('getAyahs CMS Fallback returns properly formatted ayahs', () async {
-      File('./content.json').writeAsStringSync(jsonEncode({
-        'content': {
-          'quran': [
-            {'id': 112, 'title': 'سورة الإخلاص', 'content': 'قل هو الله أحد'},
-          ]
-        }
-      }));
+      File('./content.json').writeAsStringSync(
+        jsonEncode({
+          'content': {
+            'quran': [
+              {'id': 112, 'title': 'سورة الإخلاص', 'content': 'قل هو الله أحد'},
+            ],
+          },
+        }),
+      );
       await DataManager.loadContent();
 
       final ayahs = await QuranService.getAyahs(112);
@@ -90,13 +95,15 @@ void main() {
     });
 
     test('getAyahs Empty Fallback returns empty list', () async {
-      File('./content.json').writeAsStringSync(jsonEncode({
-        'content': {
-          'quran': [
-            {'id': 112, 'title': 'سورة الإخلاص', 'content': 'قل هو الله أحد'},
-          ]
-        }
-      }));
+      File('./content.json').writeAsStringSync(
+        jsonEncode({
+          'content': {
+            'quran': [
+              {'id': 112, 'title': 'سورة الإخلاص', 'content': 'قل هو الله أحد'},
+            ],
+          },
+        }),
+      );
       await DataManager.loadContent();
 
       final ayahs = await QuranService.getAyahs(999);
