@@ -1060,14 +1060,7 @@ class _HomeSectionState extends State<HomeSection> {
                                 final surahId = e.value['id'];
                                 if (surahId != null) {
                                   ayahs = await QuranService.getAyahs(surahId);
-                                  contentStr = ayahs.map((a) {
-                                    final text = a['ar_text'].toString().trim();
-                                    final index = a['anum']?.toString() ??
-                                        a['ayah_surah_index'].toString();
-                                    return index.isEmpty
-                                        ? text
-                                        : "$text \uFD3F$index\uFD3E";
-                                  }).join(" ");
+                                  contentStr = QuranService.getFormattedContent(surahId, ayahs);
                                 }
                               }
 
@@ -1424,12 +1417,7 @@ class DynamicListSection extends StatelessWidget {
                   ),
                   onTap: () async {
                     final ayahs = await QuranService.getAyahs(surah['id']);
-                    final content = ayahs.map((a) {
-                      final text = a['ar_text'].toString().trim();
-                      final index = a['anum']?.toString() ??
-                          a['ayah_surah_index'].toString();
-                      return index.isEmpty ? text : "$text \uFD3F$index\uFD3E";
-                    }).join(" ");
+                    final content = QuranService.getFormattedContent(surah['id'], ayahs);
                     if (!context.mounted) return;
                     Navigator.push(
                         context,
