@@ -136,4 +136,32 @@ void main() {
       expect(DataManager.dbNotifier.value, initialNotifierValue + 1);
     });
   });
+
+  group('DataManager.getSections', () {
+    test('returns empty map when _db is null', () {
+      DataManager.setDB(null);
+      expect(DataManager.getSections(), {});
+    });
+
+    test('returns empty map when _db is empty', () {
+      DataManager.setDB({});
+      expect(DataManager.getSections(), {});
+    });
+
+    test('returns empty map when "sections" key is missing', () {
+      DataManager.setDB({'other': {}});
+      expect(DataManager.getSections(), {});
+    });
+
+    test('returns empty map when "sections" is null', () {
+      DataManager.setDB({'sections': null});
+      expect(DataManager.getSections(), {});
+    });
+
+    test('returns the sections map when it exists', () {
+      final sections = {'quran': 'Quran', 'duas': 'Duas'};
+      DataManager.setDB({'sections': sections});
+      expect(DataManager.getSections(), sections);
+    });
+  });
 }
