@@ -591,14 +591,6 @@ class _MainScaffoldState extends State<MainScaffold> {
           fontSizeFactor: widget.fontSizeFactor,
           uiOpacity: widget.uiOpacity,
         );
-      case 'dreams':
-        return TabbedSection(
-          key: const ValueKey('dreams'),
-          tabs: const ['بالقرآن', 'لابن سيرين'],
-          sectionKeys: const ['dreams_quran', 'dreams_sirin'],
-          fontSizeFactor: widget.fontSizeFactor,
-          uiOpacity: widget.uiOpacity,
-        );
       default:
         return DynamicListSection(
           key: ValueKey(_currentSection),
