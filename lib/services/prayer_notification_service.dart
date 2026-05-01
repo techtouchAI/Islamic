@@ -1,11 +1,17 @@
 import 'package:adhan/adhan.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 
 class PrayerNotificationService {
-  static final FlutterLocalNotificationsPlugin _notificationsPlugin =
+  static FlutterLocalNotificationsPlugin _notificationsPlugin =
       FlutterLocalNotificationsPlugin();
+
+  @visibleForTesting
+  static set notificationsPlugin(FlutterLocalNotificationsPlugin plugin) {
+    _notificationsPlugin = plugin;
+  }
 
   // 1. تهيئة الإشعارات
   static Future<void> initNotifications() async {
@@ -21,7 +27,9 @@ class PrayerNotificationService {
   }
 
   // 2. حساب أوقات الصلاة (المذهب الجعفري - جامعة طهران)
-  static void scheduleDailyPrayers() {
+  static void scheduleDailyPrayers({DateTime? now}) {
+    final DateTime currentTime = now ?? DateTime.now();
+
     // إحداثيات الموقع (الحلة)
     final coordinates = Coordinates(32.4682, 44.4361);
 
@@ -29,17 +37,17 @@ class PrayerNotificationService {
     final params = CalculationMethod.tehran.getParameters();
     params.madhab = Madhab.shafi;
 
-    final date = DateComponents.from(DateTime.now());
+    final date = DateComponents.from(currentTime);
     final prayerTimes = PrayerTimes(coordinates, date, params);
 
     // جدولة الصلوات
-    if (prayerTimes.fajr.isAfter(DateTime.now())) {
+    if (prayerTimes.fajr.isAfter(currentTime)) {
       _schedulePrayerNotification(prayerTimes.fajr, 'الفجر');
     }
-    if (prayerTimes.dhuhr.isAfter(DateTime.now())) {
+    if (prayerTimes.dhuhr.isAfter(currentTime)) {
       _schedulePrayerNotification(prayerTimes.dhuhr, 'الظهر');
     }
-    if (prayerTimes.maghrib.isAfter(DateTime.now())) {
+    if (prayerTimes.maghrib.isAfter(currentTime)) {
       _schedulePrayerNotification(prayerTimes.maghrib, 'المغرب');
     }
   }
