@@ -709,6 +709,10 @@ class HomeSection extends StatefulWidget {
 }
 
 class _HomeSectionState extends State<HomeSection> {
+  static String? _cachedDuaKey;
+  static Map<String, dynamic>? _cachedInspirationDua;
+  static Map<String, dynamic>? _cachedDayDua;
+
   late Map<String, dynamic> items;
   Map<String, dynamic>? _inspirationDua;
   Map<String, dynamic>? _dayDua;
@@ -720,7 +724,6 @@ class _HomeSectionState extends State<HomeSection> {
   void initState() {
     super.initState();
     _refreshItems();
-    _loadDailyDua();
     _initPrayerTimes();
     _prayerTimer = Timer.periodic(
         const Duration(minutes: 1), (t) => _updateCurrentPrayer());
@@ -793,6 +796,15 @@ class _HomeSectionState extends State<HomeSection> {
 
   void _loadDailyDua() {
     final now = DateTime.now();
+    final dateKey = intl.DateFormat('yyyy-MM-dd').format(now);
+    final cacheKey = "${dateKey}_${DataManager.dbNotifier.value}";
+
+    if (_cachedDuaKey == cacheKey) {
+      _inspirationDua = _cachedInspirationDua;
+      _dayDua = _cachedDayDua;
+      return;
+    }
+
     final dayOfYear = int.parse(intl.DateFormat('D').format(now));
     _inspirationDua =
         DailyDuas.shortDuas[dayOfYear % DailyDuas.shortDuas.length];
@@ -825,7 +837,10 @@ class _HomeSectionState extends State<HomeSection> {
     } else {
       _dayDua = null;
     }
-    setState(() {});
+
+    _cachedDuaKey = cacheKey;
+    _cachedInspirationDua = _inspirationDua;
+    _cachedDayDua = _dayDua;
   }
 
   dynamic _safeGet(List list, Random r) {
@@ -936,6 +951,7 @@ class _HomeSectionState extends State<HomeSection> {
 
   @override
   Widget build(BuildContext context) {
+    _loadDailyDua();
     final now = DateTime.now();
     final hijri = HijriCalendar.now();
     if (widget.hijriAdjustment != 0) {
