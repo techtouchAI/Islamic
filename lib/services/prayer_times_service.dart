@@ -46,8 +46,9 @@ class PrayerTimesService {
 
       // جلب الإحداثيات بدقة عالية
       return await Geolocator.getCurrentPosition(
-        locationSettings:
-            const LocationSettings(accuracy: LocationAccuracy.high),
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+        ),
       );
     } catch (e) {
       debugPrint("خطأ في جلب الموقع: $e");
@@ -56,8 +57,10 @@ class PrayerTimesService {
   }
 
   /// حساب أوقات الصلاة ليوم معين وموقع معين مع التحويل الصارم للتوقيت المحلي
-  Map<String, DateTime> calculatePrayerTimes(Position position,
-      {DateTime? date}) {
+  Map<String, DateTime> calculatePrayerTimes(
+    Position position, {
+    DateTime? date,
+  }) {
     final coordinates = Coordinates(position.latitude, position.longitude);
     final calculationDate = date ?? DateTime.now();
 
@@ -72,8 +75,9 @@ class PrayerTimesService {
     final maghrib = pt.maghrib.toLocal();
     final nextFajr = pt.fajr.add(const Duration(days: 1)).toLocal();
     final duration = nextFajr.difference(maghrib);
-    final midnight =
-        maghrib.add(Duration(seconds: (duration.inSeconds / 2).round()));
+    final midnight = maghrib.add(
+      Duration(seconds: (duration.inSeconds / 2).round()),
+    );
 
     return {
       'fajr': pt.fajr.toLocal(),
@@ -87,8 +91,11 @@ class PrayerTimesService {
   }
 
   /// جدولة التنبيهات لمدة 7 أيام قادمة
-  Future<void> scheduleAdhanNotifications(Position position,
-      Map<String, bool> enabledPrayers, Map<String, int> offsets) async {
+  Future<void> scheduleAdhanNotifications(
+    Position position,
+    Map<String, bool> enabledPrayers,
+    Map<String, int> offsets,
+  ) async {
     if (await Permission.notification.isDenied) {
       await Permission.notification.request();
     }
@@ -103,8 +110,12 @@ class PrayerTimesService {
       times.forEach((key, time) {
         final adjustedTime = time.add(Duration(minutes: offsets[key] ?? 0));
         final name = _getPrayerNameAr(key);
-        _scheduleSingleNotification(i * 10 + _getPrayerId(key), name,
-            adjustedTime, enabledPrayers[key] ?? true);
+        _scheduleSingleNotification(
+          i * 10 + _getPrayerId(key),
+          name,
+          adjustedTime,
+          enabledPrayers[key] ?? true,
+        );
       });
     }
   }
@@ -144,7 +155,11 @@ class PrayerTimesService {
   }
 
   void _scheduleSingleNotification(
-      int id, String name, DateTime time, bool isEnabled) async {
+    int id,
+    String name,
+    DateTime time,
+    bool isEnabled,
+  ) async {
     if (!isEnabled || time.isBefore(DateTime.now())) return;
 
     const androidDetails = AndroidNotificationDetails(

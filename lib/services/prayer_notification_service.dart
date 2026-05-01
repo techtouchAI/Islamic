@@ -54,24 +54,27 @@ class PrayerNotificationService {
 
   // 3. جدولة الإشعار الصوتي الاحترافي
   static Future<void> _schedulePrayerNotification(
-      DateTime prayerTime, String prayerName) async {
+    DateTime prayerTime,
+    String prayerName,
+  ) async {
     const String channelId = 'adhan_channel_v2';
 
     const AndroidNotificationDetails androidPlatformChannelSpecifics =
         AndroidNotificationDetails(
-      channelId,
-      'أوقات الصلاة',
-      channelDescription: 'تنبيهات الأذان لأوقات الصلاة',
-      importance: Importance.max,
-      priority: Priority.high,
-      playSound: true,
-      sound: RawResourceAndroidNotificationSound('adhan_sound'),
-      enableVibration: true,
-      fullScreenIntent: true,
-    );
+          channelId,
+          'أوقات الصلاة',
+          channelDescription: 'تنبيهات الأذان لأوقات الصلاة',
+          importance: Importance.max,
+          priority: Priority.high,
+          playSound: true,
+          sound: RawResourceAndroidNotificationSound('adhan_sound'),
+          enableVibration: true,
+          fullScreenIntent: true,
+        );
 
-    const NotificationDetails platformChannelSpecifics =
-        NotificationDetails(android: androidPlatformChannelSpecifics);
+    const NotificationDetails platformChannelSpecifics = NotificationDetails(
+      android: androidPlatformChannelSpecifics,
+    );
 
     await _notificationsPlugin.zonedSchedule(
       prayerName.hashCode,

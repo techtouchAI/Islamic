@@ -33,8 +33,9 @@ class DataManager {
         debugPrint("DataManager: Loaded from local storage.");
       } else {
         // 2. Fallback to bundled assets
-        final String response =
-            await rootBundle.loadString('assets/data/content.json');
+        final String response = await rootBundle.loadString(
+          'assets/data/content.json',
+        );
         _db = json.decode(response);
         debugPrint("DataManager: Loaded from bundled assets.");
       }
