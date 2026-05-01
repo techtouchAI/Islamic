@@ -803,7 +803,10 @@ class _HomeSectionState extends State<HomeSection> {
     final normalizedDay = dayNameAr.normalizeArabic();
 
     final itemsForToday = allDaysDuas.where((it) {
-      final title = it['title'].toString().normalizeArabic();
+      if (it['_normalized_title'] == null) {
+        it['_normalized_title'] = it['title'].toString().normalizeArabic();
+      }
+      final title = it['_normalized_title'] as String;
       return title.contains(normalizedDay);
     }).toList();
 
@@ -1057,8 +1060,7 @@ class _HomeSectionState extends State<HomeSection> {
                                 final surahId = e.value['id'];
                                 if (surahId != null) {
                                   ayahs = await QuranService.getAyahs(surahId);
-                                  contentStr = QuranService.getFormattedContent(
-                                      surahId, ayahs);
+                                  contentStr = QuranService.getFormattedContent(surahId, ayahs);
                                 }
                               }
 
@@ -1415,8 +1417,7 @@ class DynamicListSection extends StatelessWidget {
                   ),
                   onTap: () async {
                     final ayahs = await QuranService.getAyahs(surah['id']);
-                    final content =
-                        QuranService.getFormattedContent(surah['id'], ayahs);
+                    final content = QuranService.getFormattedContent(surah['id'], ayahs);
                     if (!context.mounted) return;
                     Navigator.push(
                         context,
@@ -1819,14 +1820,15 @@ class GlobalSearchDelegate extends SearchDelegate {
     List<Map<String, dynamic>> results = [];
     sections.forEach((key, sec) {
       for (var it in DataManager.getItems(key)) {
-        if (it['title']
-                .toString()
-                .normalizeArabic()
-                .contains(normalizedQuery) ||
-            it['content']
-                .toString()
-                .normalizeArabic()
-                .contains(normalizedQuery)) {
+        final title = it['_normalized_title'] ??
+            it['title']?.toString().normalizeArabic() ??
+            '';
+        final contentStr = it['_normalized_content'] ??
+            it['content']?.toString().normalizeArabic() ??
+            '';
+
+        if (title.contains(normalizedQuery) ||
+            contentStr.contains(normalizedQuery)) {
           results.add({
             'section': sec['title'],
             'title': it['title'],

@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter/foundation.dart';
+import '../utils/string_extensions.dart';
 
 class DataManager {
   static Map<String, dynamic>? _db;
@@ -20,6 +21,7 @@ class DataManager {
   @visibleForTesting
   static void setDB(Map<String, dynamic>? newDb) {
     _db = newDb;
+    _normalizeDB(_db);
   }
 
   static Future<void> loadContent() async {
@@ -30,12 +32,14 @@ class DataManager {
       if (await localFile.exists()) {
         final content = await localFile.readAsString();
         _db = json.decode(content);
+        _normalizeDB(_db);
         debugPrint("DataManager: Loaded from local storage.");
       } else {
         // 2. Fallback to bundled assets
         final String response =
             await rootBundle.loadString('assets/data/content.json');
         _db = json.decode(response);
+        _normalizeDB(_db);
         debugPrint("DataManager: Loaded from bundled assets.");
       }
     } catch (e) {
@@ -62,6 +66,7 @@ class DataManager {
         if (newDb is Map && newDb.containsKey('sections')) {
           await localFile.writeAsString(content);
           _db = Map<String, dynamic>.from(newDb);
+          _normalizeDB(_db);
           dbNotifier.value++;
           debugPrint("DataManager: Cloud sync successful.");
           return true;
@@ -116,5 +121,28 @@ class DataManager {
 
   static Map<String, dynamic> getSections() {
     return (_db?['sections'] as Map<String, dynamic>?) ?? {};
+  }
+
+  static void _normalizeDB(Map<String, dynamic>? db) {
+    if (db == null || db['content'] == null) return;
+    final content = db['content'];
+    if (content is Map) {
+      for (var section in content.values) {
+        if (section is List) {
+          for (var item in section) {
+            if (item is Map) {
+              if (item['title'] != null) {
+                item['_normalized_title'] =
+                    item['title'].toString().normalizeArabic();
+              }
+              if (item['content'] != null) {
+                item['_normalized_content'] =
+                    item['content'].toString().normalizeArabic();
+              }
+            }
+          }
+        }
+      }
+    }
   }
 }
