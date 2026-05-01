@@ -25,8 +25,10 @@ void main() {
     });
 
     test('should handle mixed normalization cases', () {
-      expect('أَلْحَمْدُ لِلَّهِ رَبِّ الْعَالَمِينَ'.normalizeArabic(), 'الحمد لله رب العالمين');
-      expect('آتِنَا فِي الدُّنْيَا حَسَنَةً'.normalizeArabic(), 'اتنا في الدنيا حسنه');
+      expect('أَلْحَمْدُ لِلَّهِ رَبِّ الْعَالَمِينَ'.normalizeArabic(),
+          'الحمد لله رب العالمين');
+      expect('آتِنَا فِي الدُّنْيَا حَسَنَةً'.normalizeArabic(),
+          'اتنا في الدنيا حسنه');
     });
 
     test('should handle empty strings', () {

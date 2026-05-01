@@ -27,7 +27,8 @@ void main() {
       any,
       any,
       androidScheduleMode: anyNamed('androidScheduleMode'),
-      uiLocalNotificationDateInterpretation: anyNamed('uiLocalNotificationDateInterpretation'),
+      uiLocalNotificationDateInterpretation:
+          anyNamed('uiLocalNotificationDateInterpretation'),
     )).thenAnswer((_) async {});
   });
 
@@ -47,7 +48,8 @@ void main() {
         any,
         any,
         androidScheduleMode: anyNamed('androidScheduleMode'),
-        uiLocalNotificationDateInterpretation: anyNamed('uiLocalNotificationDateInterpretation'),
+        uiLocalNotificationDateInterpretation:
+            anyNamed('uiLocalNotificationDateInterpretation'),
       )).called(1);
 
       verify(mockPlugin.zonedSchedule(
@@ -57,7 +59,8 @@ void main() {
         any,
         any,
         androidScheduleMode: anyNamed('androidScheduleMode'),
-        uiLocalNotificationDateInterpretation: anyNamed('uiLocalNotificationDateInterpretation'),
+        uiLocalNotificationDateInterpretation:
+            anyNamed('uiLocalNotificationDateInterpretation'),
       )).called(1);
 
       verify(mockPlugin.zonedSchedule(
@@ -67,11 +70,14 @@ void main() {
         any,
         any,
         androidScheduleMode: anyNamed('androidScheduleMode'),
-        uiLocalNotificationDateInterpretation: anyNamed('uiLocalNotificationDateInterpretation'),
+        uiLocalNotificationDateInterpretation:
+            anyNamed('uiLocalNotificationDateInterpretation'),
       )).called(1);
     });
 
-    test('schedules Dhuhr and Maghrib when current time is after Fajr but before Dhuhr', () {
+    test(
+        'schedules Dhuhr and Maghrib when current time is after Fajr but before Dhuhr',
+        () {
       // 5:00 AM UTC (After Fajr 02:38, before Dhuhr 09:06)
       final testTime = DateTime.utc(2023, 1, 1, 5, 0, 0);
 
@@ -85,7 +91,8 @@ void main() {
         any,
         any,
         androidScheduleMode: anyNamed('androidScheduleMode'),
-        uiLocalNotificationDateInterpretation: anyNamed('uiLocalNotificationDateInterpretation'),
+        uiLocalNotificationDateInterpretation:
+            anyNamed('uiLocalNotificationDateInterpretation'),
       ));
 
       // Should schedule Dhuhr and Maghrib
@@ -96,7 +103,8 @@ void main() {
         any,
         any,
         androidScheduleMode: anyNamed('androidScheduleMode'),
-        uiLocalNotificationDateInterpretation: anyNamed('uiLocalNotificationDateInterpretation'),
+        uiLocalNotificationDateInterpretation:
+            anyNamed('uiLocalNotificationDateInterpretation'),
       )).called(1);
 
       verify(mockPlugin.zonedSchedule(
@@ -106,11 +114,14 @@ void main() {
         any,
         any,
         androidScheduleMode: anyNamed('androidScheduleMode'),
-        uiLocalNotificationDateInterpretation: anyNamed('uiLocalNotificationDateInterpretation'),
+        uiLocalNotificationDateInterpretation:
+            anyNamed('uiLocalNotificationDateInterpretation'),
       )).called(1);
     });
 
-    test('schedules only Maghrib when current time is after Dhuhr but before Maghrib', () {
+    test(
+        'schedules only Maghrib when current time is after Dhuhr but before Maghrib',
+        () {
       // 10:00 AM UTC (After Dhuhr 09:06, before Maghrib 14:27)
       final testTime = DateTime.utc(2023, 1, 1, 10, 0, 0);
 
@@ -124,7 +135,8 @@ void main() {
         any,
         any,
         androidScheduleMode: anyNamed('androidScheduleMode'),
-        uiLocalNotificationDateInterpretation: anyNamed('uiLocalNotificationDateInterpretation'),
+        uiLocalNotificationDateInterpretation:
+            anyNamed('uiLocalNotificationDateInterpretation'),
       ));
 
       verifyNever(mockPlugin.zonedSchedule(
@@ -134,7 +146,8 @@ void main() {
         any,
         any,
         androidScheduleMode: anyNamed('androidScheduleMode'),
-        uiLocalNotificationDateInterpretation: anyNamed('uiLocalNotificationDateInterpretation'),
+        uiLocalNotificationDateInterpretation:
+            anyNamed('uiLocalNotificationDateInterpretation'),
       ));
 
       // Should schedule Maghrib
@@ -145,7 +158,8 @@ void main() {
         any,
         any,
         androidScheduleMode: anyNamed('androidScheduleMode'),
-        uiLocalNotificationDateInterpretation: anyNamed('uiLocalNotificationDateInterpretation'),
+        uiLocalNotificationDateInterpretation:
+            anyNamed('uiLocalNotificationDateInterpretation'),
       )).called(1);
     });
 
@@ -163,7 +177,8 @@ void main() {
         any,
         any,
         androidScheduleMode: anyNamed('androidScheduleMode'),
-        uiLocalNotificationDateInterpretation: anyNamed('uiLocalNotificationDateInterpretation'),
+        uiLocalNotificationDateInterpretation:
+            anyNamed('uiLocalNotificationDateInterpretation'),
       ));
     });
   });

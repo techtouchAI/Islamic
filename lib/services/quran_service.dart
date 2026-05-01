@@ -8,6 +8,7 @@ import '../data/data_manager.dart';
 class QuranService {
   static Database? _db;
   static final Map<int, List<Map<String, dynamic>>> _ayahsCache = {};
+  static final Map<int, String> _formattedContentCache = {};
 
   static Future<void> initDB() async {
     if (kIsWeb) return;
@@ -74,5 +75,34 @@ class QuranService {
         orderBy: 'anum ASC');
     _ayahsCache[surahId] = result;
     return result;
+  }
+
+  static String getFormattedContent(
+      int surahId, List<Map<String, dynamic>> ayahs) {
+    if (_formattedContentCache.containsKey(surahId)) {
+      return _formattedContentCache[surahId]!;
+    }
+
+    final buffer = StringBuffer();
+    for (int i = 0; i < ayahs.length; i++) {
+      final a = ayahs[i];
+      final text = a['ar_text'].toString().trim();
+      final index = a['anum']?.toString() ?? a['ayah_surah_index'].toString();
+      if (index.isEmpty) {
+        buffer.write(text);
+      } else {
+        buffer.write(text);
+        buffer.write(" \uFD3F");
+        buffer.write(index);
+        buffer.write("\uFD3E");
+      }
+      if (i < ayahs.length - 1) {
+        buffer.write(" ");
+      }
+    }
+
+    final content = buffer.toString();
+    _formattedContentCache[surahId] = content;
+    return content;
   }
 }
