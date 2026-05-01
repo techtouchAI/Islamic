@@ -1,6 +1,8 @@
 extension ArabicStringNormalization on String {
+  static final _diacriticsRegex = RegExp(r'[\u064B-\u0652]');
+
   String normalizeArabic() {
-    return replaceAll(RegExp(r'[\u064B-\u0652]'), '')
+    return replaceAll(_diacriticsRegex, '')
         .replaceAll('أ', 'ا')
         .replaceAll('إ', 'ا')
         .replaceAll('آ', 'ا')

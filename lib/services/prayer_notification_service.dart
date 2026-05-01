@@ -4,7 +4,8 @@ import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 
 class PrayerNotificationService {
-  static final FlutterLocalNotificationsPlugin _notificationsPlugin = FlutterLocalNotificationsPlugin();
+  static final FlutterLocalNotificationsPlugin _notificationsPlugin =
+      FlutterLocalNotificationsPlugin();
 
   // 1. تهيئة الإشعارات
   static Future<void> initNotifications() async {
@@ -44,24 +45,28 @@ class PrayerNotificationService {
   }
 
   // 3. جدولة الإشعار الصوتي الاحترافي
-  static Future<void> _schedulePrayerNotification(DateTime prayerTime, String prayerName) async {
+  static Future<void> _schedulePrayerNotification(
+    DateTime prayerTime,
+    String prayerName,
+  ) async {
     const String channelId = 'adhan_channel_v2';
 
     const AndroidNotificationDetails androidPlatformChannelSpecifics =
         AndroidNotificationDetails(
-      channelId,
-      'أوقات الصلاة',
-      channelDescription: 'تنبيهات الأذان لأوقات الصلاة',
-      importance: Importance.max,
-      priority: Priority.high,
-      playSound: true,
-      sound: RawResourceAndroidNotificationSound('adhan_sound'),
-      enableVibration: true,
-      fullScreenIntent: true,
-    );
+          channelId,
+          'أوقات الصلاة',
+          channelDescription: 'تنبيهات الأذان لأوقات الصلاة',
+          importance: Importance.max,
+          priority: Priority.high,
+          playSound: true,
+          sound: RawResourceAndroidNotificationSound('adhan_sound'),
+          enableVibration: true,
+          fullScreenIntent: true,
+        );
 
-    const NotificationDetails platformChannelSpecifics =
-        NotificationDetails(android: androidPlatformChannelSpecifics);
+    const NotificationDetails platformChannelSpecifics = NotificationDetails(
+      android: androidPlatformChannelSpecifics,
+    );
 
     await _notificationsPlugin.zonedSchedule(
       prayerName.hashCode,
@@ -70,7 +75,8 @@ class PrayerNotificationService {
       tz.TZDateTime.from(prayerTime, tz.local),
       platformChannelSpecifics,
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-      uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
+      uiLocalNotificationDateInterpretation:
+          UILocalNotificationDateInterpretation.absoluteTime,
     );
   }
 }
