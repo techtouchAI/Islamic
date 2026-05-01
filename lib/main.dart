@@ -97,9 +97,7 @@ IconData getMaterialIcon(String? name) {
 }
 
 Widget buildImage(String? path, {double? height, BoxFit fit = BoxFit.contain}) {
-  if (path == null || path.isEmpty) {
-    return const SizedBox();
-  }
+  if (path == null || path.isEmpty) { return const SizedBox(); }
   if (path.startsWith('data:image')) {
     try {
       final bytes = Uri.parse(path).data!.contentAsBytes();
@@ -590,20 +588,6 @@ class _MainScaffoldState extends State<MainScaffold> {
           key: const ValueKey('adhkar'),
           tabs: const ['المناجاة', 'التسبيحات'],
           sectionKeys: const ['adhkar_munajat', 'adhkar_tasbihs'],
-          fontSizeFactor: widget.fontSizeFactor,
-          uiOpacity: widget.uiOpacity,
-        );
-      case 'imam_ali':
-        final imamAliCats = DataManager.getItems('imam_ali');
-        if (imamAliCats.isEmpty) {
-          return const Center(child: Text('لا يوجد محتوى متوفر حالياً'));
-        }
-        return TabbedSection(
-          key: const ValueKey('imam_ali'),
-          tabs: imamAliCats.map((c) => c['title'].toString()).toList(),
-          sectionKeys: imamAliCats
-              .map((c) => 'imam_ali_cat_${c['id']}')
-              .toList(),
           fontSizeFactor: widget.fontSizeFactor,
           uiOpacity: widget.uiOpacity,
         );
@@ -1988,7 +1972,10 @@ class _ReaderPageState extends State<ReaderPage> {
 
                                 // Remove trailing english or arabic numbers from the text itself
                                 text = text
-                                    .replaceAll(_trailingNumbersRegex, '')
+                                    .replaceAll(
+                                      _trailingNumbersRegex,
+                                      '',
+                                    )
                                     .trim();
 
                                 return TextSpan(
