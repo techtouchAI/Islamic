@@ -16,7 +16,7 @@ def scrape():
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
     }
-
+    
     print(f"Fetching categories from {url}...")
     try:
         response = requests.get(url, headers=headers)
@@ -36,26 +36,26 @@ def scrape():
                 full_url = f"https://www.sistani.org{href}" if href.startswith('/') else href
                 if full_url not in [c['url'] for c in categories]:
                     categories.append({'title': title, 'url': full_url})
-
+                    
     print(f"Found {len(categories)} categories. Processing...")
-
+    
     if args.limit > 0:
         categories = categories[:args.limit]
-
+    
     fatawa_list = []
     category_id = 1
-
+    
     for category in categories:
         cat_url = category['url']
         print(f"Scraping category {category_id}: {category['title']} - {cat_url}")
-
+        
         qa_data = []
         page = 1
-
+        
         while True:
             if args.pages > 0 and page > args.pages:
                 break
-
+                
             page_url = f"{cat_url}page/{page}/" if page > 1 else cat_url
             try:
                 res = requests.get(page_url, headers=headers)
@@ -66,7 +66,7 @@ def scrape():
                 elements = page_soup.find_all('div', class_='one-qa')
                 if not elements:
                     break
-
+                    
                 for item in elements:
                     text = item.text.strip()
                     q_split = text.split("السؤال:")
@@ -80,41 +80,41 @@ def scrape():
                                 "title": question,
                                 "content": answer
                             })
-
+                
                 # Check for pagination (if there's fewer than 10 elements, it's likely the last page)
                 if len(elements) < 10:
                     break
-
+                    
                 page += 1
                 time.sleep(0.5)
             except Exception as e:
                 print(f"Error on {page_url}: {e}")
                 break
-
+                
         if qa_data:
             # assign IDs to questions
             for idx, qa in enumerate(qa_data, 1):
                 qa['id'] = idx
-
+            
             fatawa_list.append({
                 "id": category_id,
                 "title": category['title'],
                 "items": qa_data
             })
             category_id += 1
-
+            
         time.sleep(0.5)
 
     print(f"Scraped {sum(len(c['items']) for c in fatawa_list)} items across {len(fatawa_list)} categories.")
-
+    
     # Update content.json
     content_path = 'assets/data/content.json'
     print(f"Updating {content_path}...")
-
+    
     try:
         with open(content_path, 'r', encoding='utf-8') as f:
             data = json.load(f)
-
+            
         if 'fatawa' not in data['sections']:
             data['sections']['fatawa'] = {
                 "title": "الاستفتاءات (السيد السيستاني)",
@@ -122,12 +122,12 @@ def scrape():
                 "color": "0xFFD4AF37",
                 "visible_home": True
             }
-
+            
         data['fatawa_categories'] = fatawa_list
-
+        
         with open(content_path, 'w', encoding='utf-8') as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
-
+            
         print("Success!")
     except Exception as e:
         print(f"Error updating JSON: {e}")

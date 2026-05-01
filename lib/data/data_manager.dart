@@ -109,6 +109,12 @@ class DataManager {
       all.addAll(_db!['content']['visits_general'] ?? []);
       return all;
     }
+    if (section == 'fatawa') {
+      // fatawa has categories, return the list of categories? Or the items?
+      // Since it's structured like fatawa_categories: [{id, title, items: []}]
+      // We should return fatawa_categories.
+      return _db!['fatawa_categories'] ?? [];
+    }
     return _db!['content'][section] as List<dynamic>? ?? [];
   }
 
