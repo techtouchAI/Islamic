@@ -94,7 +94,7 @@ IconData getMaterialIcon(String? name) {
   return iconMap[name] ?? Icons.star;
 }
 
-Widget _buildImage(String? path, {double? height, BoxFit fit = BoxFit.contain}) {
+Widget buildImage(String? path, {double? height, BoxFit fit = BoxFit.contain}) {
   if (path == null || path.isEmpty) return const SizedBox();
   if (path.startsWith('data:image')) {
      try {
@@ -102,8 +102,11 @@ Widget _buildImage(String? path, {double? height, BoxFit fit = BoxFit.contain}) 
        return Image.memory(Uint8List.fromList(bytes), height: height, fit: fit, errorBuilder: (c, e, s) => const Icon(Icons.broken_image));
      } catch (e) { return const Icon(Icons.broken_image); }
   }
-  if (path.startsWith('http')) {
+  if (path.startsWith('https://')) {
     return Image.network(path, height: height, fit: fit, errorBuilder: (c, e, s) => const Icon(Icons.error));
+  }
+  if (path.startsWith('http://')) {
+    return const Icon(Icons.security, color: Colors.red);
   }
   return Image.asset(path, height: height, fit: fit, errorBuilder: (c, e, s) => const Icon(Icons.image_not_supported));
 }
@@ -211,7 +214,7 @@ class _AlDhakereenAppState extends State<AlDhakereenApp> {
              child: Column(
                mainAxisAlignment: MainAxisAlignment.center,
                children: [
-                 _buildImage('assets/images/logo.png', height: 100),
+                 buildImage('assets/images/logo.png', height: 100),
                  const SizedBox(height: 20),
                  const CircularProgressIndicator(),
                ],
@@ -378,7 +381,7 @@ class _MainScaffoldState extends State<MainScaffold> {
           children: [
             if (_currentSection == 'home') ...[
               if (widget.backgroundImagePath != null) Positioned.fill(child: Image.file(File(widget.backgroundImagePath!), fit: BoxFit.cover)),
-              if (widget.backgroundImagePath == null) Positioned.fill(child: _buildImage(widget.selectedBase64Bg ?? settings['custom_bg_base64']?.toString() ?? settings['bg_image']?.toString(), fit: BoxFit.cover)),
+              if (widget.backgroundImagePath == null) Positioned.fill(child: buildImage(widget.selectedBase64Bg ?? settings['custom_bg_base64']?.toString() ?? settings['bg_image']?.toString(), fit: BoxFit.cover)),
             ],
             Positioned.fill(child: Opacity(opacity: 0.03, child: CustomPaint(painter: IslamicPatternPainter(color: Theme.of(context).colorScheme.primary)))),
             SafeArea(child: AnimatedSwitcher(duration: const Duration(milliseconds: 400), child: _buildBody(context))),
@@ -437,7 +440,7 @@ class AppDrawer extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  _buildImage(settings['custom_logo_base64']?.toString() ?? settings['logo_image']?.toString(), height: 60),
+                  buildImage(settings['custom_logo_base64']?.toString() ?? settings['logo_image']?.toString(), height: 60),
                   const SizedBox(height: 10),
                   const Text('تطبيق الذاكرين', style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)),
                   Text(about['developer_name']?.toString() ?? '', style: const TextStyle(color: Colors.white70, fontSize: 12)),
@@ -1202,7 +1205,7 @@ class SettingsSection extends StatelessWidget {
     if (gallery.isEmpty) return const Center(child: Text('المعرض فارغ', style: TextStyle(fontSize: 12)));
     return ListView.builder(scrollDirection: Axis.horizontal, itemCount: gallery.length, itemBuilder: (context, index) {
         final img = gallery[index].toString();
-        return GestureDetector(onTap: () async { final prefs = await SharedPreferences.getInstance(); await prefs.setString('custom_bg_base64_selected', img); await prefs.remove('backgroundImage'); onSelected(img); }, child: Container(margin: const EdgeInsets.only(left: 10), width: 80, decoration: BoxDecoration(borderRadius: BorderRadius.circular(10), border: Border.all(color: primaryColor, width: 1)), child: ClipRRect(borderRadius: BorderRadius.circular(9), child: _buildImage(img, fit: BoxFit.cover))));
+        return GestureDetector(onTap: () async { final prefs = await SharedPreferences.getInstance(); await prefs.setString('custom_bg_base64_selected', img); await prefs.remove('backgroundImage'); onSelected(img); }, child: Container(margin: const EdgeInsets.only(left: 10), width: 80, decoration: BoxDecoration(borderRadius: BorderRadius.circular(10), border: Border.all(color: primaryColor, width: 1)), child: ClipRRect(borderRadius: BorderRadius.circular(9), child: buildImage(img, fit: BoxFit.cover))));
     });
   }
 
