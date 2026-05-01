@@ -783,7 +783,8 @@ class _HomeSectionState extends State<HomeSection> {
     items = {};
     sections.forEach((key, value) {
       if (widget.visibility[key] ?? true) {
-        final safeItem = Map<String, dynamic>.from(_safeGet(DataManager.getItems(key), random));
+        final safeItem = Map<String, dynamic>.from(
+            _safeGet(DataManager.getItems(key), random));
         safeItem['sectionKey'] = key;
         items[value['title']] = safeItem;
       }
@@ -802,7 +803,10 @@ class _HomeSectionState extends State<HomeSection> {
     final normalizedDay = dayNameAr.normalizeArabic();
 
     final itemsForToday = allDaysDuas.where((it) {
-      final title = it['title'].toString().normalizeArabic();
+      if (it['_normalized_title'] == null) {
+        it['_normalized_title'] = it['title'].toString().normalizeArabic();
+      }
+      final title = it['_normalized_title'] as String;
       return title.contains(normalizedDay);
     }).toList();
 
@@ -857,7 +861,8 @@ class _HomeSectionState extends State<HomeSection> {
                   filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
                   child: Container(
                     decoration: BoxDecoration(
-                      color: widget.cardColor.withValues(alpha: widget.uiOpacity * 0.8),
+                      color: widget.cardColor
+                          .withValues(alpha: widget.uiOpacity * 0.8),
                       borderRadius: BorderRadius.circular(25),
                       border: Border.all(
                           color: Theme.of(context)
@@ -869,61 +874,61 @@ class _HomeSectionState extends State<HomeSection> {
                   ),
                 ),
               ),
-                Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
-                    children: [
-                      Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                  Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                          color: Theme.of(context)
-                              .colorScheme
-                              .primary
-                              .withValues(alpha: 0.1),
-                          shape: BoxShape.circle),
-                      child: Icon(icon,
-                          color: Theme.of(context).colorScheme.primary,
-                          size: 20)),
-                  const SizedBox(width: 12),
-                  Text(tag,
-                      style: TextStyle(
-                          color: Theme.of(context).colorScheme.primary,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 18,
-                          letterSpacing: 0.5)),
-                ]),
-                const SizedBox(height: 16),
-                Text(data['content'].toString(),
-                    textAlign: TextAlign.center,
-                    maxLines: 4,
-                    overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.notoNaskhArabic(
-                        fontSize: 17,
-                        height: 1.9,
-                        color: textColor,
-                        fontWeight: FontWeight.w500)),
-                const SizedBox(height: 16),
-                Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                    decoration: BoxDecoration(
-                        border: Border.all(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .primary
-                                .withValues(alpha: 0.2)),
-                        borderRadius: BorderRadius.circular(15)),
-                    child: Text(data["title"].toString(),
-                        style: TextStyle(
-                            fontSize: 13,
-                            color: Theme.of(context).colorScheme.primary,
-                            fontWeight: FontWeight.bold))),
-                      ],
-                    ),
-                  ),
-              ],
-            ),
+              Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  children: [
+                    Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                      Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .primary
+                                  .withValues(alpha: 0.1),
+                              shape: BoxShape.circle),
+                          child: Icon(icon,
+                              color: Theme.of(context).colorScheme.primary,
+                              size: 20)),
+                      const SizedBox(width: 12),
+                      Text(tag,
+                          style: TextStyle(
+                              color: Theme.of(context).colorScheme.primary,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 18,
+                              letterSpacing: 0.5)),
+                    ]),
+                    const SizedBox(height: 16),
+                    Text(data['content'].toString(),
+                        textAlign: TextAlign.center,
+                        maxLines: 4,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.notoNaskhArabic(
+                            fontSize: 17,
+                            height: 1.9,
+                            color: textColor,
+                            fontWeight: FontWeight.w500)),
+                    const SizedBox(height: 16),
+                    Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 4),
+                        decoration: BoxDecoration(
+                            border: Border.all(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .primary
+                                    .withValues(alpha: 0.2)),
+                            borderRadius: BorderRadius.circular(15)),
+                        child: Text(data["title"].toString(),
+                            style: TextStyle(
+                                fontSize: 13,
+                                color: Theme.of(context).colorScheme.primary,
+                                fontWeight: FontWeight.bold))),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -1057,8 +1062,11 @@ class _HomeSectionState extends State<HomeSection> {
                                   ayahs = await QuranService.getAyahs(surahId);
                                   contentStr = ayahs.map((a) {
                                     final text = a['ar_text'].toString().trim();
-                                    final index = a['anum']?.toString() ?? a['ayah_surah_index'].toString();
-                                    return index.isEmpty ? text : "$text \uFD3F$index\uFD3E";
+                                    final index = a['anum']?.toString() ??
+                                        a['ayah_surah_index'].toString();
+                                    return index.isEmpty
+                                        ? text
+                                        : "$text \uFD3F$index\uFD3E";
                                   }).join(" ");
                                 }
                               }
@@ -1068,13 +1076,18 @@ class _HomeSectionState extends State<HomeSection> {
                                   context,
                                   MaterialPageRoute(
                                       builder: (c) => ReaderPage(
-                                          title: e.value['title'].toString(),
-                                          content: contentStr,
-                                          fontSizeFactor: widget.fontSizeFactor,
-                                          isQuran: isQuran,
-                                          surahName: isQuran ? e.value['title'].toString().replaceAll('سورة ', '') : null,
-                                          ayahs: ayahs,
-                                      )));
+                                            title: e.value['title'].toString(),
+                                            content: contentStr,
+                                            fontSizeFactor:
+                                                widget.fontSizeFactor,
+                                            isQuran: isQuran,
+                                            surahName: isQuran
+                                                ? e.value['title']
+                                                    .toString()
+                                                    .replaceAll('سورة ', '')
+                                                : null,
+                                            ayahs: ayahs,
+                                          )));
                             }),
                       ))
                   .toList(),
@@ -1108,17 +1121,14 @@ class _HomeSmallCard extends StatelessWidget {
       child: Container(
         width: (MediaQuery.of(context).size.width - 48) / 2,
         height: 100,
-        decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              BoxShadow(
-                  color: Theme.of(context)
-                      .colorScheme
-                      .primary
-                      .withValues(alpha: 0.15),
-                  blurRadius: 10,
-                  offset: const Offset(0, 5))
-            ]),
+        decoration:
+            BoxDecoration(borderRadius: BorderRadius.circular(20), boxShadow: [
+          BoxShadow(
+              color:
+                  Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
+              blurRadius: 10,
+              offset: const Offset(0, 5))
+        ]),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(20),
           child: Stack(
@@ -1130,20 +1140,21 @@ class _HomeSmallCard extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: cardColor.withValues(alpha: uiOpacity * 0.8),
                       border: Border.all(
-                          color: Theme.of(context).colorScheme.primary, width: 2),
+                          color: Theme.of(context).colorScheme.primary,
+                          width: 2),
                       borderRadius: BorderRadius.circular(20),
                     ),
                   ),
                 ),
               ),
               Positioned(
-                right: -10,
-                bottom: -10,
-                child: Opacity(
-                    opacity: 0.1,
-                    child: Icon(Icons.star,
-                        size: 80,
-                        color: Theme.of(context).colorScheme.primary))),
+                  right: -10,
+                  bottom: -10,
+                  child: Opacity(
+                      opacity: 0.1,
+                      child: Icon(Icons.star,
+                          size: 80,
+                          color: Theme.of(context).colorScheme.primary))),
               Padding(
                 padding: const EdgeInsets.all(15),
                 child: Column(
@@ -1415,7 +1426,8 @@ class DynamicListSection extends StatelessWidget {
                     final ayahs = await QuranService.getAyahs(surah['id']);
                     final content = ayahs.map((a) {
                       final text = a['ar_text'].toString().trim();
-                      final index = a['anum']?.toString() ?? a['ayah_surah_index'].toString();
+                      final index = a['anum']?.toString() ??
+                          a['ayah_surah_index'].toString();
                       return index.isEmpty ? text : "$text \uFD3F$index\uFD3E";
                     }).join(" ");
                     if (!context.mounted) return;
@@ -1449,7 +1461,8 @@ class DynamicListSection extends StatelessWidget {
                   itemCount: data.length,
                   padding: const EdgeInsets.only(bottom: 20),
                   itemBuilder: (context, index) => Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    margin:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(15),
                       child: Stack(
@@ -1459,10 +1472,13 @@ class DynamicListSection extends StatelessWidget {
                               filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
                               child: Container(
                                 decoration: BoxDecoration(
-                                  color: Theme.of(context).cardColor.withValues(alpha: uiOpacity * 0.8),
+                                  color: Theme.of(context)
+                                      .cardColor
+                                      .withValues(alpha: uiOpacity * 0.8),
                                   borderRadius: BorderRadius.circular(15),
                                   border: Border.all(
-                                    color: Theme.of(context).colorScheme.primary,
+                                    color:
+                                        Theme.of(context).colorScheme.primary,
                                     width: 1.5,
                                   ),
                                 ),
@@ -1470,27 +1486,28 @@ class DynamicListSection extends StatelessWidget {
                             ),
                           ),
                           ListTile(
-                              contentPadding: const EdgeInsets.all(20),
-                              title: Text(data[index]['title'].toString(),
-                                  style: const TextStyle(
-                                      fontWeight: FontWeight.bold, fontSize: 18)),
-                              subtitle: Padding(
-                                  padding: const EdgeInsets.only(top: 10),
-                                  child: Text(data[index]['content'].toString(),
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: GoogleFonts.amiri(fontSize: 16))),
-                              onTap: () => Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                      builder: (c) => ReaderPage(
-                                          title: data[index]['title'].toString(),
-                                          content: data[index]['content'].toString(),
-                                          fontSizeFactor: fontSizeFactor,
-                                          isQuran: false))),
-                            ),
-                          ],
-                        ),
+                            contentPadding: const EdgeInsets.all(20),
+                            title: Text(data[index]['title'].toString(),
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.bold, fontSize: 18)),
+                            subtitle: Padding(
+                                padding: const EdgeInsets.only(top: 10),
+                                child: Text(data[index]['content'].toString(),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: GoogleFonts.amiri(fontSize: 16))),
+                            onTap: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (c) => ReaderPage(
+                                        title: data[index]['title'].toString(),
+                                        content:
+                                            data[index]['content'].toString(),
+                                        fontSizeFactor: fontSizeFactor,
+                                        isQuran: false))),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -1629,8 +1646,11 @@ class _ReaderPageState extends State<ReaderPage> {
                               begin: Alignment.topCenter,
                               end: Alignment.bottomCenter,
                               colors: [
-                                _customBgColor ?? primary.withValues(alpha: 0.02),
-                                (_customBgColor ?? primary.withValues(alpha: 0.02)).withValues(alpha: 0.5),
+                                _customBgColor ??
+                                    primary.withValues(alpha: 0.02),
+                                (_customBgColor ??
+                                        primary.withValues(alpha: 0.02))
+                                    .withValues(alpha: 0.5),
                               ]),
                           boxShadow: [
                             BoxShadow(
@@ -2110,8 +2130,7 @@ class _TasbihSectionState extends State<TasbihSection> {
               decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   border: Border.all(
-                      color: Theme.of(context).colorScheme.primary,
-                      width: 8),
+                      color: Theme.of(context).colorScheme.primary, width: 8),
                   boxShadow: [
                     BoxShadow(
                         color: Theme.of(context)
