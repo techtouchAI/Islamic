@@ -123,10 +123,10 @@ class DataManager {
       return [];
     }
     if (section == 'fatawa') {
-      // fatawa has categories, return the list of categories? Or the items?
-      // Since it's structured like fatawa_categories: [{id, title, items: []}]
-      // We should return fatawa_categories.
       return _db!['fatawa_categories'] ?? [];
+    }
+    if (section == 'dreams') {
+      return _db!['dreams_categories'] ?? [];
     }
     return _db!['content'][section] as List<dynamic>? ?? [];
   }
