@@ -734,6 +734,25 @@
         }
 
         async function saveToGitHub() {
+            // Repack fatawa and imam_ali before saving
+            if (db.fatawa_categories) {
+                db.fatawa_categories.forEach(c => {
+                    if (db['fatawa_cat_' + c.id]) {
+                        c.items = db['fatawa_cat_' + c.id];
+                        delete db['fatawa_cat_' + c.id];
+                    }
+                });
+            }
+
+            if (db.content && db.content.imam_ali) {
+                db.content.imam_ali.forEach(c => {
+                    if (db.content['imam_ali_cat_' + c.id]) {
+                        c.items = db.content['imam_ali_cat_' + c.id];
+                        delete db.content['imam_ali_cat_' + c.id];
+                    }
+                });
+            }
+
             const token = prompt("أدخل GitHub Personal Access Token:"); if(!token) return;
             const repo = "techtouchAI/Islamic"; const path = "assets/data/content.json";
             try {
@@ -744,6 +763,19 @@
                     method: "PUT", headers: {"Authorization": `token ${token}`},
                     body: JSON.stringify({ message: "CMS: Full Content & Media Update", content: btoa(unescape(encodeURIComponent(JSON.stringify(db, null, 2)))), sha: sha })
                 });
+
+                // Unpack again so editing can continue
+                if (db.fatawa_categories) {
+                    db.fatawa_categories.forEach(c => {
+                        db['fatawa_cat_' + c.id] = c.items || [];
+                    });
+                }
+                if (db.content && db.content.imam_ali) {
+                    db.content.imam_ali.forEach(c => {
+                        db.content['imam_ali_cat_' + c.id] = c.items || [];
+                    });
+                }
+
                 if(update.ok) alert("تم المزامنة بنجاح! سيتم بناء نسخة APK جديدة.");
                 else alert("فشل المزامنة.");
             } catch(e) { alert("خطأ: " + e.message); }

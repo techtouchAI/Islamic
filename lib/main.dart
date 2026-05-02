@@ -1236,7 +1236,12 @@ class _HomeSectionState extends State<HomeSection> {
                     (e) => RepaintBoundary(
                       child: _HomeSmallCard(
                         tag: e.key,
-                        title: e.value['title'].toString(),
+                        title: e.value['sectionKey']
+                                    ?.toString()
+                                    .contains('imam_ali') ==
+                                true
+                            ? 'قال أمير المؤمنين علي (عليه السلام)'
+                            : e.value['title'].toString(),
                         uiOpacity: widget.uiOpacity,
                         cardColor: widget.cardColor,
                         onTap: () async {
@@ -1741,7 +1746,9 @@ class DynamicListSection extends StatelessWidget {
                           ListTile(
                             contentPadding: const EdgeInsets.all(20),
                             title: Text(
-                              data[index]['title'].toString(),
+                              sectionKey.contains('imam_ali')
+                                  ? 'قال أمير المؤمنين علي (عليه السلام)'
+                                  : data[index]['title'].toString(),
                               style: const TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 18,
@@ -1751,9 +1758,15 @@ class DynamicListSection extends StatelessWidget {
                               padding: const EdgeInsets.only(top: 10),
                               child: Text(
                                 data[index]['content'].toString(),
-                                maxLines: 2,
+                                maxLines:
+                                    sectionKey.contains('imam_ali') ? 3 : 2,
                                 overflow: TextOverflow.ellipsis,
-                                style: GoogleFonts.amiri(fontSize: 16),
+                                style: sectionKey.contains('imam_ali')
+                                    ? TextStyle(
+                                        fontFamily: 'me_quran',
+                                        fontSize: 18,
+                                        height: 1.8)
+                                    : GoogleFonts.amiri(fontSize: 16),
                               ),
                             ),
                             onTap: () => Navigator.push(
