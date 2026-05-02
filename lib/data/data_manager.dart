@@ -152,14 +152,12 @@ class DataManager {
           for (var item in section) {
             if (item is Map) {
               if (item['title'] != null) {
-                item['_normalized_title'] = item['title']
-                    .toString()
-                    .normalizeArabic();
+                item['_normalized_title'] =
+                    item['title'].toString().normalizeArabic();
               }
               if (item['content'] != null) {
-                item['_normalized_content'] = item['content']
-                    .toString()
-                    .normalizeArabic();
+                item['_normalized_content'] =
+                    item['content'].toString().normalizeArabic();
               }
             }
           }

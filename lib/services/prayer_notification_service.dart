@@ -61,16 +61,16 @@ class PrayerNotificationService {
 
     const AndroidNotificationDetails androidPlatformChannelSpecifics =
         AndroidNotificationDetails(
-          channelId,
-          'أوقات الصلاة',
-          channelDescription: 'تنبيهات الأذان لأوقات الصلاة',
-          importance: Importance.max,
-          priority: Priority.high,
-          playSound: true,
-          sound: RawResourceAndroidNotificationSound('adhan_sound'),
-          enableVibration: true,
-          fullScreenIntent: true,
-        );
+      channelId,
+      'أوقات الصلاة',
+      channelDescription: 'تنبيهات الأذان لأوقات الصلاة',
+      importance: Importance.max,
+      priority: Priority.high,
+      playSound: true,
+      sound: RawResourceAndroidNotificationSound('adhan_sound'),
+      enableVibration: true,
+      fullScreenIntent: true,
+    );
 
     const NotificationDetails platformChannelSpecifics = NotificationDetails(
       android: androidPlatformChannelSpecifics,

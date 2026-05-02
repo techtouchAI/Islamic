@@ -15,28 +15,28 @@ void main() {
     setUp(() {
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockMethodCallHandler(
-            const MethodChannel('flutter.baseflow.com/permissions/methods'),
-            (MethodCall methodCall) async {
-              if (methodCall.method == 'checkPermissionStatus') {
-                return checkPermissionStatusResult;
-              }
-              if (methodCall.method == 'requestPermissions') {
-                return requestPermissionsResult;
-              }
-              if (methodCall.method == 'openAppSettings') {
-                return true;
-              }
-              return null;
-            },
-          );
+        const MethodChannel('flutter.baseflow.com/permissions/methods'),
+        (MethodCall methodCall) async {
+          if (methodCall.method == 'checkPermissionStatus') {
+            return checkPermissionStatusResult;
+          }
+          if (methodCall.method == 'requestPermissions') {
+            return requestPermissionsResult;
+          }
+          if (methodCall.method == 'openAppSettings') {
+            return true;
+          }
+          return null;
+        },
+      );
     });
 
     tearDown(() {
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockMethodCallHandler(
-            const MethodChannel('flutter.baseflow.com/permissions/methods'),
-            null,
-          );
+        const MethodChannel('flutter.baseflow.com/permissions/methods'),
+        null,
+      );
     });
 
     test(
@@ -84,11 +84,11 @@ void main() {
     test('returns null when an exception is thrown', () async {
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockMethodCallHandler(
-            const MethodChannel('flutter.baseflow.com/permissions/methods'),
-            (MethodCall methodCall) async {
-              throw Exception('Simulated Exception');
-            },
-          );
+        const MethodChannel('flutter.baseflow.com/permissions/methods'),
+        (MethodCall methodCall) async {
+          throw Exception('Simulated Exception');
+        },
+      );
 
       final service = PrayerTimesService();
       final result = await service.getCurrentLocation();
