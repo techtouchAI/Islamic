@@ -1563,6 +1563,7 @@ class TabbedSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return DefaultTabController(
       length: tabs.length,
@@ -2611,6 +2612,7 @@ class SettingsSection extends StatelessWidget {
     String title,
     List<Widget> children,
   ) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
       width: double.infinity,
@@ -3001,9 +3003,6 @@ class DreamsGridSection extends StatelessWidget {
     if (dreamsCats.isEmpty) {
       return const Center(child: Text('لا يوجد محتوى متوفر حالياً'));
     }
-
-
-
     return GridView.builder(
       padding: const EdgeInsets.all(16),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(

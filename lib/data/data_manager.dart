@@ -122,6 +122,17 @@ class DataManager {
       }
       return [];
     }
+    
+    if (section.startsWith('dreams_cat_')) {
+      final idString = section.replaceAll('dreams_cat_', '');
+      final id = int.tryParse(idString);
+      final cats = _db!['dreams_categories'] as List<dynamic>? ?? [];
+      final cat = cats.firstWhere((c) => c['id'] == id, orElse: () => null);
+      if (cat != null) {
+        return cat['items'] as List<dynamic>? ?? [];
+      }
+      return [];
+    }
     if (section == 'fatawa') {
       return _db!['fatawa_categories'] ?? [];
     }
