@@ -199,7 +199,21 @@
                 const res = await fetch('../../assets/data/content.json');
                 db = await res.json();
                 renderNav();
-                                // Populate fatawa subSections dynamically
+                                // Populate imam_ali subSections dynamically
+                if (db.content && db.content.imam_ali) {
+                    subSections['imam_ali'] = db.content.imam_ali.map(c => ({
+                        id: 'imam_ali_cat_' + c.id,
+                        title: c.title
+                    }));
+                    // ensure content keys exist
+                    db.content.imam_ali.forEach(c => {
+                        if (!db.content['imam_ali_cat_' + c.id]) {
+                            db.content['imam_ali_cat_' + c.id] = [];
+                        }
+                    });
+                }
+
+                // Populate fatawa subSections dynamically
                 if (db.fatawa_categories) {
                     subSections['fatawa'] = db.fatawa_categories.map(c => ({
                         id: 'fatawa_cat_' + c.id,

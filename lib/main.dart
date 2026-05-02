@@ -591,6 +591,20 @@ class _MainScaffoldState extends State<MainScaffold> {
           fontSizeFactor: widget.fontSizeFactor,
           uiOpacity: widget.uiOpacity,
         );
+      case 'imam_ali':
+        final imamAliCats = DataManager.getItems('imam_ali');
+        if (imamAliCats.isEmpty) {
+          return const Center(child: Text('لا يوجد محتوى متوفر حالياً'));
+        }
+        return TabbedSection(
+          key: const ValueKey('imam_ali'),
+          tabs: imamAliCats.map((c) => c['title'].toString()).toList(),
+          sectionKeys: imamAliCats
+              .map((c) => 'imam_ali_cat_${c['id']}')
+              .toList(),
+          fontSizeFactor: widget.fontSizeFactor,
+          uiOpacity: widget.uiOpacity,
+        );
       case 'fatawa':
         final fatawaCats = DataManager.getItems('fatawa');
         if (fatawaCats.isEmpty) {

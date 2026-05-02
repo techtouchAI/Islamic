@@ -109,6 +109,19 @@ class DataManager {
       all.addAll(_db!['content']['visits_general'] ?? []);
       return all;
     }
+    if (section == 'imam_ali') {
+      return _db!['content']['imam_ali'] ?? [];
+    }
+    if (section.startsWith('fatawa_cat_')) {
+      final idString = section.replaceAll('fatawa_cat_', '');
+      final id = int.tryParse(idString);
+      final cats = _db!['fatawa_categories'] as List<dynamic>? ?? [];
+      final cat = cats.firstWhere((c) => c['id'] == id, orElse: () => null);
+      if (cat != null) {
+        return cat['items'] as List<dynamic>? ?? [];
+      }
+      return [];
+    }
     if (section == 'fatawa') {
       // fatawa has categories, return the list of categories? Or the items?
       // Since it's structured like fatawa_categories: [{id, title, items: []}]
