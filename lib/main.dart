@@ -739,7 +739,16 @@ class AppDrawer extends StatelessWidget {
     IconData icon,
   ) {
     final bool active = currentSection == id;
-    final int count = DataManager.getItems(id).length;
+    int count = 0;
+    if (id == 'fatawa' || id == 'imam_ali' || id == 'dreams') {
+      final cats = DataManager.getItems(id);
+      for (var cat in cats) {
+        count += DataManager.getItems('${id}_cat_${cat["id"]}').length;
+      }
+    } else {
+      count = DataManager.getItems(id).length;
+    }
+
     return ListTile(
       leading: Icon(
         icon,
@@ -2014,6 +2023,30 @@ class _ReaderPageState extends State<ReaderPage> {
                                 ),
                                 const SizedBox(height: 15),
                               ],
+                              if (widget.title.isNotEmpty &&
+                                  !widget.isImamAli &&
+                                  !widget.isQuran) ...[
+                                Text(
+                                  widget.title,
+                                  textAlign: TextAlign.center,
+                                  style: GoogleFonts.notoNaskhArabic(
+                                    fontSize: 22 * _factor,
+                                    height: 2.2,
+                                    fontWeight: FontWeight.bold,
+                                    color: _customBgColor != null
+                                        ? (_customBgColor!.computeLuminance() >
+                                                0.5
+                                            ? Colors.black
+                                            : Colors.white)
+                                        : null,
+                                  ),
+                                ),
+                                const SizedBox(height: 15),
+                                Divider(
+                                    color: primary.withValues(alpha: 0.3),
+                                    thickness: 1),
+                                const SizedBox(height: 15),
+                              ],
                               Text(
                                 widget.content,
                                 textAlign: TextAlign.center,
@@ -2171,7 +2204,21 @@ class GlobalSearchDelegate extends SearchDelegate {
     final sections = DataManager.getSections();
     List<Map<String, dynamic>> results = [];
     sections.forEach((key, sec) {
-      for (var it in DataManager.getItems(key)) {
+      List<dynamic> itemsToSearch = [];
+      if (key == 'fatawa' ||
+          key == 'imam_ali' ||
+          key == 'fatawa_categories' ||
+          key == 'imam_ali_categories' ||
+          key == 'dreams') {
+        final cats = DataManager.getItems(key);
+        for (var cat in cats) {
+          itemsToSearch.addAll(DataManager.getItems('${key}_cat_${cat["id"]}'));
+        }
+      } else {
+        itemsToSearch = DataManager.getItems(key);
+      }
+
+      for (var it in itemsToSearch) {
         final title = it['_normalized_title'] ??
             it['title']?.toString().normalizeArabic() ??
             '';
