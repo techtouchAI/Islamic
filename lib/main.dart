@@ -1563,7 +1563,7 @@ class TabbedSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return DefaultTabController(
       length: tabs.length,
       child: Column(
@@ -1711,6 +1711,45 @@ class DynamicListSection extends StatelessWidget {
     }
 
     final data = DataManager.getItems(sectionKey);
+    if (sectionKey == 'names_allah') {
+      return data.isEmpty
+          ? const Center(child: Text('لا يوجد محتوى متوفر حالياً'))
+          : GridView.builder(
+              padding: const EdgeInsets.all(16),
+              physics: const BouncingScrollPhysics(),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                childAspectRatio: 2.5,
+                crossAxisSpacing: 10,
+                mainAxisSpacing: 10,
+              ),
+              itemCount: data.length,
+              itemBuilder: (context, index) => Container(
+                decoration: BoxDecoration(
+                  color: Theme.of(context)
+                      .cardColor
+                      .withValues(alpha: uiOpacity * 0.8),
+                  borderRadius: BorderRadius.circular(15),
+                  border: Border.all(
+                      color: Theme.of(context).colorScheme.primary, width: 1.5),
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  data[index]['name']?.toString() ??
+                      data[index]['title']?.toString() ??
+                      '',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 20 * fontSizeFactor,
+                    fontFamily: 'me_quran',
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                ),
+              ),
+            );
+    }
+
     return Column(
       children: [
         Expanded(
@@ -2199,9 +2238,53 @@ class _ReaderPageState extends State<ReaderPage> {
 
 class GlobalSearchDelegate extends SearchDelegate {
   final double fontSizeFactor;
+  String _selectedFilter = 'all';
   GlobalSearchDelegate({required this.fontSizeFactor});
   @override
-  String get searchFieldLabel => 'ابحث في كل الأقسام...';
+  String get searchFieldLabel => 'ابحث...';
+
+  @override
+  PreferredSizeWidget? buildBottom(BuildContext context) {
+    final sections = DataManager.getSections();
+    return PreferredSize(
+      preferredSize: const Size.fromHeight(50),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        child: Row(
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(right: 5),
+              child: ChoiceChip(
+                label: const Text('الكل'),
+                selected: _selectedFilter == 'all',
+                onSelected: (val) {
+                  if (val) {
+                    _selectedFilter = 'all';
+                    showResults(context);
+                  }
+                },
+              ),
+            ),
+            ...sections.entries.map((e) => Padding(
+                  padding: const EdgeInsets.only(right: 5),
+                  child: ChoiceChip(
+                    label: Text(e.value['title'].toString()),
+                    selected: _selectedFilter == e.key,
+                    onSelected: (val) {
+                      if (val) {
+                        _selectedFilter = e.key;
+                        showResults(context);
+                      }
+                    },
+                  ),
+                )),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   List<Widget>? buildActions(BuildContext context) => [
         IconButton(icon: const Icon(Icons.clear), onPressed: () => query = ''),
@@ -2222,6 +2305,7 @@ class GlobalSearchDelegate extends SearchDelegate {
     final sections = DataManager.getSections();
     List<Map<String, dynamic>> results = [];
     sections.forEach((key, sec) {
+      if (_selectedFilter != 'all' && _selectedFilter != key) return;
       List<dynamic> itemsToSearch = [];
       if (key == 'fatawa' ||
           key == 'imam_ali' ||
@@ -2527,7 +2611,7 @@ class SettingsSection extends StatelessWidget {
     String title,
     List<Widget> children,
   ) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.only(bottom: 20),
@@ -2918,7 +3002,7 @@ class DreamsGridSection extends StatelessWidget {
       return const Center(child: Text('لا يوجد محتوى متوفر حالياً'));
     }
 
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+
 
     return GridView.builder(
       padding: const EdgeInsets.all(16),
