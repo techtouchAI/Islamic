@@ -603,6 +603,11 @@ class _MainScaffoldState extends State<MainScaffold> {
           fontSizeFactor: widget.fontSizeFactor,
           uiOpacity: widget.uiOpacity,
         );
+      case 'dreams':
+        return DreamsGridSection(
+          fontSizeFactor: widget.fontSizeFactor,
+          uiOpacity: widget.uiOpacity,
+        );
       case 'fatawa':
         final fatawaCats = DataManager.getItems('fatawa');
         if (fatawaCats.isEmpty) {
@@ -2893,6 +2898,157 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
           }
         },
       ),
+    );
+  }
+}
+
+class DreamsGridSection extends StatelessWidget {
+  final double fontSizeFactor;
+  final double uiOpacity;
+  const DreamsGridSection({
+    super.key,
+    required this.fontSizeFactor,
+    required this.uiOpacity,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final dreamsCats = DataManager.getItems('dreams');
+    if (dreamsCats.isEmpty) {
+      return const Center(child: Text('لا يوجد محتوى متوفر حالياً'));
+    }
+
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return GridView.builder(
+      padding: const EdgeInsets.all(16),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 3,
+        childAspectRatio: 1,
+        crossAxisSpacing: 10,
+        mainAxisSpacing: 10,
+      ),
+      itemCount: dreamsCats.length,
+      itemBuilder: (context, index) {
+        final cat = dreamsCats[index];
+        return InkWell(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (c) => DreamsReaderPage(
+                  title: cat['title'].toString(),
+                  items: DataManager.getItems('dreams_cat_${cat['id']}'),
+                  fontSizeFactor: fontSizeFactor,
+                  uiOpacity: uiOpacity,
+                ),
+              ),
+            );
+          },
+          borderRadius: BorderRadius.circular(15),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Theme.of(context).cardColor.withValues(alpha: uiOpacity),
+              borderRadius: BorderRadius.circular(15),
+              border: Border.all(
+                color: Theme.of(context).colorScheme.primary,
+                width: 1.5,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.05),
+                  blurRadius: 5,
+                  spreadRadius: 1,
+                ),
+              ],
+            ),
+            alignment: Alignment.center,
+            child: Text(
+              cat['title'].toString(),
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 20 * fontSizeFactor,
+                fontWeight: FontWeight.bold,
+                fontFamily: 'me_quran',
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class DreamsReaderPage extends StatelessWidget {
+  final String title;
+  final List<dynamic> items;
+  final double fontSizeFactor;
+  final double uiOpacity;
+  const DreamsReaderPage({
+    super.key,
+    required this.title,
+    required this.items,
+    required this.fontSizeFactor,
+    required this.uiOpacity,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(title),
+        centerTitle: true,
+      ),
+      body: items.isEmpty
+          ? const Center(child: Text('لا يوجد محتوى متوفر حالياً'))
+          : ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: items.length,
+              itemBuilder: (context, index) {
+                final item = items[index];
+                return Card(
+                  margin: const EdgeInsets.only(bottom: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(15),
+                    side: BorderSide(
+                      color: Theme.of(context).colorScheme.primary,
+                      width: 1,
+                    ),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          item['title'].toString(),
+                          style: TextStyle(
+                            fontSize: 20 * fontSizeFactor,
+                            fontWeight: FontWeight.bold,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Divider(
+                            color: Theme.of(context)
+                                .colorScheme
+                                .primary
+                                .withValues(alpha: 0.3)),
+                        const SizedBox(height: 10),
+                        Text(
+                          item['content'].toString(),
+                          style: GoogleFonts.notoNaskhArabic(
+                            fontSize: 18 * fontSizeFactor,
+                            height: 1.8,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
     );
   }
 }
