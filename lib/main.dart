@@ -204,7 +204,8 @@ class _AlDhakereenAppState extends State<AlDhakereenApp> {
           : ThemeMode.dark;
       _fontSizeFactor = prefs.getDouble('fontSize') ?? 1.0;
       _primaryColor = Color(prefs.getInt('primaryColor') ?? defaultPrimary);
-      _uiOpacity = prefs.getDouble('uiOpacity') ??
+      _uiOpacity =
+          prefs.getDouble('uiOpacity') ??
           (dbSettings['ui_opacity']?.toDouble() ?? 1.0);
       _backgroundImagePath = prefs.getString('backgroundImage');
       _selectedBase64Bg = prefs.getString('custom_bg_base64_selected');
@@ -222,7 +223,8 @@ class _AlDhakereenAppState extends State<AlDhakereenApp> {
         _homeVisibility[key] =
             prefs.getBool('vis_$key') ?? (value['visible_home'] ?? true);
       });
-      _homeVisibility['inspiration'] = prefs.getBool('vis_inspiration') ??
+      _homeVisibility['inspiration'] =
+          prefs.getBool('vis_inspiration') ??
           (dbSettings['show_inspiration'] ?? true);
       _homeVisibility['day_dua'] = prefs.getBool('vis_day_dua') ?? true;
     });
@@ -237,8 +239,9 @@ class _AlDhakereenAppState extends State<AlDhakereenApp> {
 
   void _toggleTheme() {
     setState(() {
-      _themeMode =
-          _themeMode == ThemeMode.light ? ThemeMode.dark : ThemeMode.light;
+      _themeMode = _themeMode == ThemeMode.light
+          ? ThemeMode.dark
+          : ThemeMode.light;
       _saveSetting('theme', _themeMode == ThemeMode.light ? 'light' : 'dark');
     });
   }
@@ -598,8 +601,9 @@ class _MainScaffoldState extends State<MainScaffold> {
         return TabbedSection(
           key: const ValueKey('imam_ali'),
           tabs: imamAliCats.map((c) => c['title'].toString()).toList(),
-          sectionKeys:
-              imamAliCats.map((c) => 'imam_ali_cat_${c['id']}').toList(),
+          sectionKeys: imamAliCats
+              .map((c) => 'imam_ali_cat_${c['id']}')
+              .toList(),
           fontSizeFactor: widget.fontSizeFactor,
           uiOpacity: widget.uiOpacity,
         );
@@ -1268,9 +1272,9 @@ class _HomeSectionState extends State<HomeSection> {
                                 isImamAli: sectionKey.contains('imam_ali'),
                                 surahName: isQuran
                                     ? e.value['title'].toString().replaceAll(
-                                          'سورة ',
-                                          '',
-                                        )
+                                        'سورة ',
+                                        '',
+                                      )
                                     : null,
                                 ayahs: ayahs,
                               ),
@@ -1425,8 +1429,9 @@ class _ClockWidgetState extends State<_ClockWidget> {
       'hh:mm:ss a',
       'en_US',
     ).format(DateTime.now());
-    _timeNotifier.value =
-        formattedTime.replaceFirst('AM', 'ص').replaceFirst('PM', 'م');
+    _timeNotifier.value = formattedTime
+        .replaceFirst('AM', 'ص')
+        .replaceFirst('PM', 'م');
   }
 
   @override
@@ -1514,8 +1519,20 @@ class AboutSection extends StatelessWidget {
               const SizedBox(height: 30),
               if (about['developer_page'] != null)
                 ElevatedButton.icon(
-                  onPressed: () =>
-                      launchUrl(Uri.parse(about['developer_page'].toString())),
+                  onPressed: () {
+                    final url = about['developer_page'].toString();
+                    final uri = Uri.tryParse(url);
+                    if (uri != null &&
+                        (uri.scheme == 'http' || uri.scheme == 'https')) {
+                      launchUrl(uri);
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('رابط غير صالح أو غير آمن'),
+                        ),
+                      );
+                    }
+                  },
                   icon: const Icon(Icons.link),
                   label: const Text('زيارة الموقع الشخصي'),
                   style: ElevatedButton.styleFrom(
@@ -1725,8 +1742,8 @@ class DynamicListSection extends StatelessWidget {
                               child: Container(
                                 decoration: BoxDecoration(
                                   color: Theme.of(context).cardColor.withValues(
-                                        alpha: uiOpacity * 0.8,
-                                      ),
+                                    alpha: uiOpacity * 0.8,
+                                  ),
                                   borderRadius: BorderRadius.circular(15),
                                   border: Border.all(
                                     color: Theme.of(
@@ -1970,16 +1987,17 @@ class _ReaderPageState extends State<ReaderPage> {
                                 height: 1.8,
                                 color: _customBgColor != null
                                     ? (_customBgColor!.computeLuminance() > 0.5
-                                        ? Colors.black
-                                        : Colors.white)
+                                          ? Colors.black
+                                          : Colors.white)
                                     : Theme.of(
-                                          context,
-                                        ).textTheme.bodyLarge?.color ??
-                                        Colors.black,
+                                            context,
+                                          ).textTheme.bodyLarge?.color ??
+                                          Colors.black,
                               ),
                               children: widget.ayahs!.map((a) {
                                 String text = a['ar_text'].toString().trim();
-                                final index = a['anum']?.toString() ??
+                                final index =
+                                    a['anum']?.toString() ??
                                     a['ayah_surah_index'].toString();
                                 final arabicIndex = _convertToArabicNumber(
                                   index,
@@ -1987,10 +2005,7 @@ class _ReaderPageState extends State<ReaderPage> {
 
                                 // Remove trailing english or arabic numbers from the text itself
                                 text = text
-                                    .replaceAll(
-                                      _trailingNumbersRegex,
-                                      '',
-                                    )
+                                    .replaceAll(_trailingNumbersRegex, '')
                                     .trim();
 
                                 return TextSpan(
@@ -2035,16 +2050,17 @@ class _ReaderPageState extends State<ReaderPage> {
                                     fontWeight: FontWeight.bold,
                                     color: _customBgColor != null
                                         ? (_customBgColor!.computeLuminance() >
-                                                0.5
-                                            ? Colors.black
-                                            : Colors.white)
+                                                  0.5
+                                              ? Colors.black
+                                              : Colors.white)
                                         : null,
                                   ),
                                 ),
                                 const SizedBox(height: 15),
                                 Divider(
-                                    color: primary.withValues(alpha: 0.3),
-                                    thickness: 1),
+                                  color: primary.withValues(alpha: 0.3),
+                                  thickness: 1,
+                                ),
                                 const SizedBox(height: 15),
                               ],
                               Text(
@@ -2057,10 +2073,10 @@ class _ReaderPageState extends State<ReaderPage> {
                                         height: 1.8,
                                         color: _customBgColor != null
                                             ? (_customBgColor!
-                                                        .computeLuminance() >
-                                                    0.5
-                                                ? Colors.black
-                                                : Colors.white)
+                                                          .computeLuminance() >
+                                                      0.5
+                                                  ? Colors.black
+                                                  : Colors.white)
                                             : null,
                                       )
                                     : GoogleFonts.notoNaskhArabic(
@@ -2068,10 +2084,10 @@ class _ReaderPageState extends State<ReaderPage> {
                                         height: 2.2,
                                         color: _customBgColor != null
                                             ? (_customBgColor!
-                                                        .computeLuminance() >
-                                                    0.5
-                                                ? Colors.black
-                                                : Colors.white)
+                                                          .computeLuminance() >
+                                                      0.5
+                                                  ? Colors.black
+                                                  : Colors.white)
                                             : null,
                                       ),
                               ),
@@ -2186,13 +2202,13 @@ class GlobalSearchDelegate extends SearchDelegate {
   String get searchFieldLabel => 'ابحث في كل الأقسام...';
   @override
   List<Widget>? buildActions(BuildContext context) => [
-        IconButton(icon: const Icon(Icons.clear), onPressed: () => query = ''),
-      ];
+    IconButton(icon: const Icon(Icons.clear), onPressed: () => query = ''),
+  ];
   @override
   Widget? buildLeading(BuildContext context) => IconButton(
-        icon: const Icon(Icons.arrow_back),
-        onPressed: () => close(context, null),
-      );
+    icon: const Icon(Icons.arrow_back),
+    onPressed: () => close(context, null),
+  );
   @override
   Widget buildResults(BuildContext context) => _buildSearchResults();
   @override
@@ -2219,10 +2235,12 @@ class GlobalSearchDelegate extends SearchDelegate {
       }
 
       for (var it in itemsToSearch) {
-        final title = it['_normalized_title'] ??
+        final title =
+            it['_normalized_title'] ??
             it['title']?.toString().normalizeArabic() ??
             '';
-        final contentStr = it['_normalized_content'] ??
+        final contentStr =
+            it['_normalized_content'] ??
             it['content']?.toString().normalizeArabic() ??
             '';
 
@@ -2361,29 +2379,30 @@ class SettingsSection extends StatelessWidget {
             const SizedBox(height: 10),
             Wrap(
               spacing: 12,
-              children: [
-                const Color(0xFFD4AF37),
-                Colors.blueGrey,
-                Colors.teal,
-                Colors.brown,
-              ]
-                  .map(
-                    (c) => GestureDetector(
-                      onTap: () => onColorChanged(c),
-                      child: CircleAvatar(
-                        backgroundColor: c,
-                        radius: 18,
-                        child: primaryColor.toARGB32() == c.toARGB32()
-                            ? const Icon(
-                                Icons.check,
-                                color: Colors.white,
-                                size: 16,
-                              )
-                            : null,
-                      ),
-                    ),
-                  )
-                  .toList(),
+              children:
+                  [
+                        const Color(0xFFD4AF37),
+                        Colors.blueGrey,
+                        Colors.teal,
+                        Colors.brown,
+                      ]
+                      .map(
+                        (c) => GestureDetector(
+                          onTap: () => onColorChanged(c),
+                          child: CircleAvatar(
+                            backgroundColor: c,
+                            radius: 18,
+                            child: primaryColor.toARGB32() == c.toARGB32()
+                                ? const Icon(
+                                    Icons.check,
+                                    color: Colors.white,
+                                    size: 16,
+                                  )
+                                : null,
+                          ),
+                        ),
+                      )
+                      .toList(),
             ),
           ]),
           _buildGroup(context, 'تخصيص البطاقات', [
@@ -2457,8 +2476,8 @@ class SettingsSection extends StatelessWidget {
             _visToggle('inspiration', 'إلهام اليوم'),
             _visToggle('day_dua', 'دعاء اليوم'),
             ...DataManager.getSections().entries.map(
-                  (e) => _visToggle(e.key, e.value['title'].toString()),
-                ),
+              (e) => _visToggle(e.key, e.value['title'].toString()),
+            ),
           ]),
         ],
       ),
@@ -2538,11 +2557,11 @@ class SettingsSection extends StatelessWidget {
   }
 
   Widget _visToggle(String key, String title) => SwitchListTile(
-        title: Text(title, style: const TextStyle(fontSize: 14)),
-        value: visibility[key] ?? true,
-        onChanged: (v) => onVisibilityChanged(key, v),
-        dense: true,
-      );
+    title: Text(title, style: const TextStyle(fontSize: 14)),
+    value: visibility[key] ?? true,
+    onChanged: (v) => onVisibilityChanged(key, v),
+    dense: true,
+  );
 }
 
 class PrayerTimesSection extends StatefulWidget {
@@ -2798,13 +2817,7 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
               margin: const EdgeInsets.only(bottom: 10),
               child: SwitchListTile(
                 title: Text(
-                  'تفعيل أذان ${{
-                    'fajr': 'الفجر',
-                    'dhuhr': 'الظهر',
-                    'asr': 'العصر',
-                    'maghrib': 'المغرب',
-                    'isha': 'العشاء'
-                  }[k]}',
+                  'تفعيل أذان ${{'fajr': 'الفجر', 'dhuhr': 'الظهر', 'asr': 'العصر', 'maghrib': 'المغرب', 'isha': 'العشاء'}[k]}',
                 ),
                 value: _enabledPrayers[k] ?? true,
                 onChanged: (v) async {
