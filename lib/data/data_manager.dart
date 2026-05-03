@@ -122,7 +122,7 @@ class DataManager {
       }
       return [];
     }
-
+    
     if (section.startsWith('dreams_cat_')) {
       final idString = section.replaceAll('dreams_cat_', '');
       final id = int.tryParse(idString);
