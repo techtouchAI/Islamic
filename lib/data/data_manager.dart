@@ -65,12 +65,20 @@ class DataManager {
 
         final newDb = json.decode(content);
         if (newDb is Map && newDb.containsKey('sections')) {
-          await localFile.writeAsString(content);
-          _db = Map<String, dynamic>.from(newDb);
-          _normalizeDB(_db);
-          dbNotifier.value++;
-          debugPrint("DataManager: Cloud sync successful.");
-          return true;
+          final int remoteVersion = int.tryParse(newDb['version']?.toString() ?? '0') ?? 0;
+          final int localVersion = int.tryParse(_db?['version']?.toString() ?? '0') ?? 0;
+
+          if (remoteVersion > localVersion) {
+            await localFile.writeAsString(content);
+            _db = Map<String, dynamic>.from(newDb);
+            _normalizeDB(_db);
+            dbNotifier.value++;
+            debugPrint("DataManager: Cloud sync successful. Updated to version \$remoteVersion.");
+            return true;
+          } else {
+            debugPrint("DataManager: Local version (\$localVersion) is up-to-date or newer than remote (\$remoteVersion).");
+            return false;
+          }
         }
       }
     } catch (e) {
@@ -124,14 +132,7 @@ class DataManager {
     }
     
     if (section.startsWith('dreams_cat_')) {
-      final idString = section.replaceAll('dreams_cat_', '');
-      final id = int.tryParse(idString);
-      final cats = _db!['dreams_categories'] as List<dynamic>? ?? [];
-      final cat = cats.firstWhere((c) => c['id'] == id, orElse: () => null);
-      if (cat != null) {
-        return cat['items'] as List<dynamic>? ?? [];
-      }
-      return [];
+      return _db!['content'][section] as List<dynamic>? ?? [];
     }
     if (section == 'fatawa') {
       return _db!['fatawa_categories'] ?? [];
