@@ -143,7 +143,7 @@ class AlDhakereenApp extends StatefulWidget {
 class _AlDhakereenAppState extends State<AlDhakereenApp> {
   ThemeMode _themeMode = ThemeMode.light;
   double _fontSizeFactor = 1.0;
-  Color _primaryColor = const Color(0xFFD4AF37);
+  Color _primaryColor = Colors.blue;
   double _uiOpacity = 1.0;
   String? _backgroundImagePath;
   String? _selectedBase64Bg;
@@ -195,7 +195,7 @@ class _AlDhakereenAppState extends State<AlDhakereenApp> {
       if (mounted) setState(() {});
     });
     int defaultPrimary =
-        int.tryParse(dbSettings['primary_color'] ?? '0xFFD4AF37') ?? 0xFFD4AF37;
+        int.tryParse(dbSettings['primary_color'] ?? '0xFF2196F3') ?? 0xFF2196F3;
     int defaultCard =
         int.tryParse(dbSettings['card_color'] ?? '0xFFFFFFFF') ?? 0xFFFFFFFF;
     setState(() {
@@ -901,8 +901,12 @@ class _HomeSectionState extends State<HomeSection> {
     items = {};
     sections.forEach((key, value) {
       if (widget.visibility[key] ?? true) {
+        String fetchKey = key;
+        if (key == 'visits') fetchKey = 'visits_general';
+        if (key == 'duas') fetchKey = 'duas_general';
+
         final safeItem = Map<String, dynamic>.from(
-          _safeGet(DataManager.getItems(key), random),
+          _safeGet(DataManager.getItems(fetchKey), random),
         );
         safeItem['sectionKey'] = key;
         items[value['title']] = safeItem;
@@ -2505,6 +2509,10 @@ class SettingsSection extends StatelessWidget {
             Wrap(
               spacing: 12,
               children: [
+                Colors.blue,
+                Colors.red,
+                Colors.black,
+                Colors.cyan,
                 const Color(0xFFD4AF37),
                 Colors.blueGrey,
                 Colors.teal,
