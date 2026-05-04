@@ -905,9 +905,36 @@ class _HomeSectionState extends State<HomeSection> {
         if (key == 'visits') fetchKey = 'visits_general';
         if (key == 'duas') fetchKey = 'duas_general';
 
+        List<dynamic> listToPickFrom = DataManager.getItems(fetchKey);
+
+        if (key == 'dreams' && listToPickFrom.isNotEmpty) {
+          final randomCat = _safeGet(listToPickFrom, random);
+          final catId = randomCat['id'];
+          if (catId != null) {
+            listToPickFrom = DataManager.getItems('dreams_cat_$catId');
+          }
+        } else if (key == 'imam_ali' && listToPickFrom.isNotEmpty) {
+          final randomCat = _safeGet(listToPickFrom, random);
+          final catId = randomCat['id'];
+          if (catId != null) {
+            listToPickFrom = DataManager.getItems('imam_ali_cat_$catId');
+          }
+        } else if (key == 'fatawa' && listToPickFrom.isNotEmpty) {
+          final randomCat = _safeGet(listToPickFrom, random);
+          if (randomCat['items'] != null && randomCat['items'] is List) {
+            listToPickFrom = randomCat['items'];
+          }
+        }
+
         final safeItem = Map<String, dynamic>.from(
-          _safeGet(DataManager.getItems(fetchKey), random),
+          _safeGet(listToPickFrom, random),
         );
+
+        if (key == 'names_allah' && safeItem.containsKey('name')) {
+          safeItem['title'] = safeItem['name'];
+          safeItem['content'] = safeItem['name'];
+        }
+
         safeItem['sectionKey'] = key;
         items[value['title']] = safeItem;
       }
