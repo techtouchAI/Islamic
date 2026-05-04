@@ -129,7 +129,7 @@ class DataManager {
       final cats = _db!['dreams_categories'] as List<dynamic>? ?? [];
       final cat = cats.firstWhere((c) => c['id'] == id, orElse: () => null);
       if (cat != null) {
-        return cat['items'] as List<dynamic>? ?? [];
+        return _db!['content']['dreams_cat_$id'] as List<dynamic>? ?? [];
       }
       return [];
     }
