@@ -226,6 +226,16 @@
                     });
                 }
 
+                if (db.dreams_categories) {
+                    subSections['dreams'] = db.dreams_categories.map(c => ({
+                        id: 'dreams_cat_' + c.id,
+                        title: c.title
+                    }));
+                    db.dreams_categories.forEach(c => {
+                        db.content['dreams_cat_' + c.id] = db.content['dreams_cat_' + c.id] || [];
+                    });
+                }
+
                 loadView('settings');
             } catch (e) { alert("خطأ في تحميل قاعدة البيانات."); }
         }
@@ -744,6 +754,15 @@
                 });
             }
 
+            if (db.dreams_categories) {
+                db.dreams_categories.forEach(c => {
+                    if (db.content['dreams_cat_' + c.id]) {
+                        c.items = db.content['dreams_cat_' + c.id];
+                        delete db.content['dreams_cat_' + c.id];
+                    }
+                });
+            }
+
             if (db.content && db.content.imam_ali) {
                 db.content.imam_ali.forEach(c => {
                     if (db.content['imam_ali_cat_' + c.id]) {
@@ -768,6 +787,12 @@
                 if (db.fatawa_categories) {
                     db.fatawa_categories.forEach(c => {
                         db['fatawa_cat_' + c.id] = c.items || [];
+                    });
+                }
+
+                if (db.dreams_categories) {
+                    db.dreams_categories.forEach(c => {
+                        db.content['dreams_cat_' + c.id] = c.items || [];
                     });
                 }
                 if (db.content && db.content.imam_ali) {
