@@ -56,21 +56,23 @@ class DataManager {
       if (response.statusCode == 200) {
         final content = response.body;
 
-        // التحقق من وجود تغييرات فعلية لتجنب إعادة التحميل غير الضرورية
-        final localFile = await _getLocalFile();
-        if (await localFile.exists()) {
-          final oldContent = await localFile.readAsString();
-          if (oldContent == content) return false;
-        }
-
         final newDb = json.decode(content);
         if (newDb is Map && newDb.containsKey('sections')) {
-          await localFile.writeAsString(content);
-          _db = Map<String, dynamic>.from(newDb);
-          _normalizeDB(_db);
-          dbNotifier.value++;
-          debugPrint("DataManager: Cloud sync successful.");
-          return true;
+          final remoteVersion = newDb['version'] as int? ?? 0;
+          final localVersion = _db?['version'] as int? ?? 0;
+
+          if (remoteVersion > localVersion) {
+            final localFile = await _getLocalFile();
+            await localFile.writeAsString(content);
+            _db = Map<String, dynamic>.from(newDb);
+            _normalizeDB(_db);
+            dbNotifier.value++;
+            debugPrint("DataManager: Cloud sync successful. Version updated to \$remoteVersion");
+            return true;
+          } else {
+            debugPrint("DataManager: Local version (\$localVersion) is up-to-date with remote (\$remoteVersion).");
+            return false;
+          }
         }
       }
     } catch (e) {
@@ -124,14 +126,7 @@ class DataManager {
     }
     
     if (section.startsWith('dreams_cat_')) {
-      final idString = section.replaceAll('dreams_cat_', '');
-      final id = int.tryParse(idString);
-      final cats = _db!['dreams_categories'] as List<dynamic>? ?? [];
-      final cat = cats.firstWhere((c) => c['id'] == id, orElse: () => null);
-      if (cat != null) {
-        return cat['items'] as List<dynamic>? ?? [];
-      }
-      return [];
+      return _db!['content'][section] as List<dynamic>? ?? [];
     }
     if (section == 'fatawa') {
       return _db!['fatawa_categories'] ?? [];

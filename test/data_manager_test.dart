@@ -90,6 +90,7 @@ void main() {
       'returns true and writes file when sync is successful and local file does not exist',
       () async {
         final jsonResponse = jsonEncode({
+          'version': 1,
           'sections': {},
           'content': {'duas': []},
         });
@@ -109,6 +110,7 @@ void main() {
       'returns false when local file exists and content is identical',
       () async {
         final jsonResponse = jsonEncode({
+          'version': 1,
           'sections': {},
           'content': {'duas': []},
         });
@@ -127,10 +129,12 @@ void main() {
       'returns true, updates file, and increments notifier when sync is successful and local file exists with different content',
       () async {
         final oldJsonResponse = jsonEncode({
+          'version': 1,
           'sections': {},
           'content': {'duas': []},
         });
         final newJsonResponse = jsonEncode({
+          'version': 2,
           'sections': {},
           'content': {'duas': [], 'new': 'data'},
         });
