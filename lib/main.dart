@@ -604,7 +604,14 @@ class _MainScaffoldState extends State<MainScaffold> {
           uiOpacity: widget.uiOpacity,
         );
       case 'dreams':
-        return DreamsGridSection(
+        final dreamsCats = DataManager.getItems('dreams');
+        if (dreamsCats.isEmpty) {
+          return const Center(child: Text('لا يوجد محتوى متوفر حالياً'));
+        }
+        return TabbedSection(
+          key: const ValueKey('dreams'),
+          tabs: dreamsCats.map((c) => c['title'].toString()).toList(),
+          sectionKeys: dreamsCats.map((c) => 'dreams_cat_${c['id']}').toList(),
           fontSizeFactor: widget.fontSizeFactor,
           uiOpacity: widget.uiOpacity,
         );
@@ -617,6 +624,14 @@ class _MainScaffoldState extends State<MainScaffold> {
           key: const ValueKey('fatawa'),
           tabs: fatawaCats.map((c) => c['title'].toString()).toList(),
           sectionKeys: fatawaCats.map((c) => 'fatawa_cat_${c['id']}').toList(),
+          fontSizeFactor: widget.fontSizeFactor,
+          uiOpacity: widget.uiOpacity,
+        );
+      case 'prophets_stories':
+        return DynamicListSection(
+          key: const ValueKey('prophets_stories'),
+          title: _getSectionTitle('prophets_stories'),
+          sectionKey: 'prophets_stories',
           fontSizeFactor: widget.fontSizeFactor,
           uiOpacity: widget.uiOpacity,
         );
@@ -726,6 +741,12 @@ class AppDrawer extends StatelessWidget {
                     getMaterialIcon(e.value['icon']),
                   ),
                 ),
+                _buildItem(
+                  context,
+                  'prophets_stories',
+                  'قصص الانبياء',
+                  Icons.auto_stories,
+                ),
                 const Divider(),
                 _buildItem(context, 'about', 'حول المطور', Icons.person),
                 _buildItem(context, 'settings', 'الإعدادات', Icons.settings),
@@ -748,7 +769,9 @@ class AppDrawer extends StatelessWidget {
     if (id == 'fatawa' || id == 'imam_ali' || id == 'dreams') {
       final cats = DataManager.getItems(id);
       for (var cat in cats) {
-        count += DataManager.getItems('${id}_cat_${cat["id"]}').length;
+        count += DataManager.getItems(
+          '${id}_cat_${cat["id"]?.toString()}',
+        ).length;
       }
     } else {
       count = DataManager.getItems(id).length;
@@ -909,7 +932,7 @@ class _HomeSectionState extends State<HomeSection> {
 
         if (key == 'dreams' && listToPickFrom.isNotEmpty) {
           final randomCat = _safeGet(listToPickFrom, random);
-          final catId = randomCat['id'];
+          final catId = randomCat['id']?.toString();
           if (catId != null) {
             listToPickFrom = DataManager.getItems('dreams_cat_$catId');
           }
@@ -1272,9 +1295,9 @@ class _HomeSectionState extends State<HomeSection> {
                     (e) => RepaintBoundary(
                       child: _HomeSmallCard(
                         tag: e.key,
-                        title: e.value['sectionKey']
-                                    ?.toString()
-                                    .contains('imam_ali') ==
+                        title: e.value['sectionKey']?.toString().contains(
+                                      'imam_ali',
+                                    ) ==
                                 true
                             ? 'قال أمير المؤمنين علي (عليه السلام)'
                             : e.value['title'].toString(),
@@ -1770,12 +1793,14 @@ class DynamicListSection extends StatelessWidget {
               itemCount: data.length,
               itemBuilder: (context, index) => Container(
                 decoration: BoxDecoration(
-                  color: Theme.of(context)
-                      .cardColor
-                      .withValues(alpha: uiOpacity * 0.8),
+                  color: Theme.of(
+                    context,
+                  ).cardColor.withValues(alpha: uiOpacity * 0.8),
                   borderRadius: BorderRadius.circular(15),
                   border: Border.all(
-                      color: Theme.of(context).colorScheme.primary, width: 1.5),
+                    color: Theme.of(context).colorScheme.primary,
+                    width: 1.5,
+                  ),
                 ),
                 alignment: Alignment.center,
                 child: Text(
@@ -1853,7 +1878,8 @@ class DynamicListSection extends StatelessWidget {
                                     ? TextStyle(
                                         fontFamily: 'me_quran',
                                         fontSize: 18,
-                                        height: 1.8)
+                                        height: 1.8,
+                                      )
                                     : GoogleFonts.amiri(fontSize: 16),
                               ),
                             ),
@@ -2308,19 +2334,21 @@ class GlobalSearchDelegate extends SearchDelegate {
                 },
               ),
             ),
-            ...sections.entries.map((e) => Padding(
-                  padding: const EdgeInsets.only(right: 5),
-                  child: ChoiceChip(
-                    label: Text(e.value['title'].toString()),
-                    selected: _selectedFilter == e.key,
-                    onSelected: (val) {
-                      if (val) {
-                        _selectedFilter = e.key;
-                        showResults(context);
-                      }
-                    },
-                  ),
-                )),
+            ...sections.entries.map(
+              (e) => Padding(
+                padding: const EdgeInsets.only(right: 5),
+                child: ChoiceChip(
+                  label: Text(e.value['title'].toString()),
+                  selected: _selectedFilter == e.key,
+                  onSelected: (val) {
+                    if (val) {
+                      _selectedFilter = e.key;
+                      showResults(context);
+                    }
+                  },
+                ),
+              ),
+            ),
           ],
         ),
       ),
@@ -2356,8 +2384,10 @@ class GlobalSearchDelegate extends SearchDelegate {
           final catItems = DataManager.getItems('${key}_cat_${cat["id"]}');
           // Add sectionKey to each item so we can reference it later
           for (var item in catItems) {
-            itemsToSearch.add(
-                {...item, '_search_section_key': '${key}_cat_${cat["id"]}'});
+            itemsToSearch.add({
+              ...item,
+              '_search_section_key': '${key}_cat_${cat["id"]}',
+            });
           }
         }
       } else {
@@ -2414,7 +2444,8 @@ class GlobalSearchDelegate extends SearchDelegate {
             final item = results[i]['raw_item'];
             if (item['id'] != null) {
               ayahs = (await QuranService.getAyahs(
-                      int.parse(item['id'].toString())))
+                int.parse(item['id'].toString()),
+              ))
                   .cast<Map<String, dynamic>>();
             }
           }
@@ -3059,154 +3090,6 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
           }
         },
       ),
-    );
-  }
-}
-
-class DreamsGridSection extends StatelessWidget {
-  final double fontSizeFactor;
-  final double uiOpacity;
-  const DreamsGridSection({
-    super.key,
-    required this.fontSizeFactor,
-    required this.uiOpacity,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final dreamsCats = DataManager.getItems('dreams');
-    if (dreamsCats.isEmpty) {
-      return const Center(child: Text('لا يوجد محتوى متوفر حالياً'));
-    }
-    return GridView.builder(
-      padding: const EdgeInsets.all(16),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
-        childAspectRatio: 1,
-        crossAxisSpacing: 10,
-        mainAxisSpacing: 10,
-      ),
-      itemCount: dreamsCats.length,
-      itemBuilder: (context, index) {
-        final cat = dreamsCats[index];
-        return InkWell(
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (c) => DreamsReaderPage(
-                  title: cat['title'].toString(),
-                  items: DataManager.getItems('dreams_cat_${cat['id']}'),
-                  fontSizeFactor: fontSizeFactor,
-                  uiOpacity: uiOpacity,
-                ),
-              ),
-            );
-          },
-          borderRadius: BorderRadius.circular(15),
-          child: Container(
-            decoration: BoxDecoration(
-              color: Theme.of(context).cardColor.withValues(alpha: uiOpacity),
-              borderRadius: BorderRadius.circular(15),
-              border: Border.all(
-                color: Theme.of(context).colorScheme.primary,
-                width: 1.5,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.05),
-                  blurRadius: 5,
-                  spreadRadius: 1,
-                ),
-              ],
-            ),
-            alignment: Alignment.center,
-            child: Text(
-              cat['title'].toString(),
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 20 * fontSizeFactor,
-                fontWeight: FontWeight.bold,
-                fontFamily: 'me_quran',
-                color: Theme.of(context).colorScheme.primary,
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-}
-
-class DreamsReaderPage extends StatelessWidget {
-  final String title;
-  final List<dynamic> items;
-  final double fontSizeFactor;
-  final double uiOpacity;
-  const DreamsReaderPage({
-    super.key,
-    required this.title,
-    required this.items,
-    required this.fontSizeFactor,
-    required this.uiOpacity,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(title),
-        centerTitle: true,
-      ),
-      body: items.isEmpty
-          ? const Center(child: Text('لا يوجد محتوى متوفر حالياً'))
-          : ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: items.length,
-              itemBuilder: (context, index) {
-                final item = items[index];
-                return Card(
-                  margin: const EdgeInsets.only(bottom: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(15),
-                    side: BorderSide(
-                      color: Theme.of(context).colorScheme.primary,
-                      width: 1,
-                    ),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          item['title'].toString(),
-                          style: TextStyle(
-                            fontSize: 20 * fontSizeFactor,
-                            fontWeight: FontWeight.bold,
-                            color: Theme.of(context).colorScheme.primary,
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        Divider(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .primary
-                                .withValues(alpha: 0.3)),
-                        const SizedBox(height: 10),
-                        Text(
-                          item['content'].toString(),
-                          style: GoogleFonts.notoNaskhArabic(
-                            fontSize: 18 * fontSizeFactor,
-                            height: 1.8,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            ),
     );
   }
 }

@@ -122,14 +122,21 @@ class DataManager {
       }
       return [];
     }
-    
+
     if (section.startsWith('dreams_cat_')) {
-      final idString = section.replaceAll('dreams_cat_', '');
-      final id = int.tryParse(idString);
-      final cats = _db!['dreams_categories'] as List<dynamic>? ?? [];
-      final cat = cats.firstWhere((c) => c['id'] == id, orElse: () => null);
-      if (cat != null) {
-        return _db!['content']['dreams_cat_$id'] as List<dynamic>? ?? [];
+      try {
+        final idString = section.replaceAll('dreams_cat_', '');
+        final cats = _db!['dreams_categories'] as List<dynamic>? ?? [];
+        final cat = cats.firstWhere(
+          (c) => c['id'].toString() == idString,
+          orElse: () => null,
+        );
+        if (cat != null) {
+          return _db!['content']['dreams_cat_$idString'] as List<dynamic>? ??
+              [];
+        }
+      } catch (e) {
+        debugPrint('Error getting dreams categories: $e');
       }
       return [];
     }
@@ -138,6 +145,9 @@ class DataManager {
     }
     if (section == 'dreams') {
       return _db!['dreams_categories'] ?? [];
+    }
+    if (section == 'prophets_stories') {
+      return _db!['prophets_stories'] as List<dynamic>? ?? [];
     }
     return _db!['content'][section] as List<dynamic>? ?? [];
   }
