@@ -741,12 +741,7 @@ class AppDrawer extends StatelessWidget {
                     getMaterialIcon(e.value['icon']),
                   ),
                 ),
-                _buildItem(
-                  context,
-                  'prophets_stories',
-                  'قصص الانبياء',
-                  Icons.auto_stories,
-                ),
+
                 const Divider(),
                 _buildItem(context, 'about', 'حول المطور', Icons.person),
                 _buildItem(context, 'settings', 'الإعدادات', Icons.settings),
@@ -1892,6 +1887,7 @@ class DynamicListSection extends StatelessWidget {
                                   fontSizeFactor: fontSizeFactor,
                                   isQuran: false,
                                   isImamAli: sectionKey.contains('imam_ali'),
+                                  titleColor: data[index]['color']?.toString(),
                                 ),
                               ),
                             ),
@@ -1973,10 +1969,12 @@ class ReaderPage extends StatefulWidget {
   final bool isImamAli;
   final List<Map<String, dynamic>>? ayahs;
   final String? surahName;
+  final String? titleColor;
   const ReaderPage({
     super.key,
     required this.title,
     required this.content,
+    this.titleColor,
     required this.fontSizeFactor,
     this.isQuran = false,
     this.isImamAli = false,
@@ -2157,12 +2155,13 @@ class _ReaderPageState extends State<ReaderPage> {
                                     fontSize: 22 * _factor,
                                     height: 2.2,
                                     fontWeight: FontWeight.bold,
-                                    color: _customBgColor != null
-                                        ? (_customBgColor!.computeLuminance() >
-                                                0.5
-                                            ? Colors.black
-                                            : Colors.white)
-                                        : null,
+                                    color: widget.titleColor != null
+                                        ? Color(int.parse(widget.titleColor!))
+                                        : (_customBgColor != null
+                                            ? (_customBgColor!.computeLuminance() > 0.5
+                                                ? Colors.black
+                                                : Colors.white)
+                                            : null),
                                   ),
                                 ),
                                 const SizedBox(height: 15),
