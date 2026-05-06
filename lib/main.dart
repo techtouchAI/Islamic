@@ -1985,6 +1985,19 @@ class ReaderPage extends StatefulWidget {
   State<ReaderPage> createState() => _ReaderPageState();
 }
 
+
+Color? _parseColor(String? colorString) {
+  if (colorString == null || colorString.isEmpty) return null;
+  try {
+    if (colorString.startsWith('#')) {
+      return Color(int.parse(colorString.substring(1), radix: 16) + 0xFF000000);
+    }
+    return Color(int.parse(colorString));
+  } catch (e) {
+    return null;
+  }
+}
+
 class _ReaderPageState extends State<ReaderPage> {
   late double _factor;
   Color? _customBgColor;
@@ -2156,7 +2169,7 @@ class _ReaderPageState extends State<ReaderPage> {
                                     height: 2.2,
                                     fontWeight: FontWeight.bold,
                                     color: widget.titleColor != null
-                                        ? Color(int.parse(widget.titleColor!))
+                                        ? _parseColor(widget.titleColor!) ?? Theme.of(context).colorScheme.primary
                                         : (_customBgColor != null
                                             ? (_customBgColor!.computeLuminance() > 0.5
                                                 ? Colors.black
@@ -2171,33 +2184,91 @@ class _ReaderPageState extends State<ReaderPage> {
                                 ),
                                 const SizedBox(height: 15),
                               ],
-                              Text(
-                                widget.content,
-                                textAlign: TextAlign.center,
-                                style: widget.isImamAli || widget.isQuran
-                                    ? TextStyle(
-                                        fontFamily: 'me_quran',
-                                        fontSize: 26 * _factor,
-                                        height: 1.8,
-                                        color: _customBgColor != null
-                                            ? (_customBgColor!
-                                                        .computeLuminance() >
-                                                    0.5
-                                                ? Colors.black
-                                                : Colors.white)
-                                            : null,
-                                      )
-                                    : GoogleFonts.notoNaskhArabic(
-                                        fontSize: 20 * _factor,
-                                        height: 2.2,
-                                        color: _customBgColor != null
-                                            ? (_customBgColor!
-                                                        .computeLuminance() >
-                                                    0.5
-                                                ? Colors.black
-                                                : Colors.white)
-                                            : null,
-                                      ),
+                              Builder(
+                                builder: (context) {
+                                  final baseStyle = widget.isImamAli || widget.isQuran
+                                      ? TextStyle(
+                                          fontFamily: 'me_quran',
+                                          fontSize: 26 * _factor,
+                                          height: 1.8,
+                                          color: _customBgColor != null
+                                              ? (_customBgColor!.computeLuminance() > 0.5
+                                                  ? Colors.black
+                                                  : Colors.white)
+                                              : null,
+                                        )
+                                      : GoogleFonts.notoNaskhArabic(
+                                          fontSize: 20 * _factor,
+                                          height: 2.2,
+                                          color: _customBgColor != null
+                                              ? (_customBgColor!.computeLuminance() > 0.5
+                                                  ? Colors.black
+                                                  : Colors.white)
+                                              : null,
+                                        );
+
+                                  String cleanContent = widget.content.replaceAll('### ', '');
+
+                                  if (widget.titleColor == null) {
+                                    return Text(
+                                      cleanContent,
+                                      textAlign: TextAlign.center,
+                                      style: baseStyle,
+                                    );
+                                  }
+
+                                  final highlightStyle = baseStyle.copyWith(
+                                    color: _parseColor(widget.titleColor!),
+                                    fontWeight: FontWeight.bold,
+                                  );
+
+                                  final keywords = widget.title.split(' ؟ ').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+
+                                  if (keywords.isEmpty) {
+                                    return Text(cleanContent, textAlign: TextAlign.center, style: baseStyle);
+                                  }
+
+                                  keywords.sort((a, b) => b.length.compareTo(a.length));
+
+                                  final pattern = RegExp(
+                                    keywords.map((k) => RegExp.escape(k)).join('|'),
+                                    caseSensitive: false,
+                                  );
+
+                                  final matches = pattern.allMatches(cleanContent);
+                                  if (matches.isEmpty) {
+                                    return Text(cleanContent, textAlign: TextAlign.center, style: baseStyle);
+                                  }
+
+                                  int lastMatchEnd = 0;
+                                  final List<TextSpan> spans = [];
+
+                                  for (final match in matches) {
+                                    if (match.start > lastMatchEnd) {
+                                      spans.add(TextSpan(
+                                        text: cleanContent.substring(lastMatchEnd, match.start),
+                                        style: baseStyle,
+                                      ));
+                                    }
+                                    spans.add(TextSpan(
+                                      text: cleanContent.substring(match.start, match.end),
+                                      style: highlightStyle,
+                                    ));
+                                    lastMatchEnd = match.end;
+                                  }
+
+                                  if (lastMatchEnd < cleanContent.length) {
+                                    spans.add(TextSpan(
+                                      text: cleanContent.substring(lastMatchEnd),
+                                      style: baseStyle,
+                                    ));
+                                  }
+
+                                  return RichText(
+                                    textAlign: TextAlign.center,
+                                    text: TextSpan(children: spans),
+                                  );
+                                },
                               ),
                             ],
                           ),
