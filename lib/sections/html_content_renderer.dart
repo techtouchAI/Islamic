@@ -17,19 +17,21 @@ class HtmlContentRenderer extends StatefulWidget {
 }
 
 class _HtmlContentRendererState extends State<HtmlContentRenderer> {
-  late List<Widget> _parsedWidgets;
+  late Widget _parsedWidget;
 
   @override
   void initState() {
     super.initState();
-    _parsedWidgets = _parseContent(widget.content, widget.baseStyle, widget.textAlign);
+    _parsedWidget = _parseContentRobust(widget.content, widget.baseStyle, widget.textAlign);
   }
 
   @override
   void didUpdateWidget(HtmlContentRenderer oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.content != widget.content || oldWidget.baseStyle != widget.baseStyle || oldWidget.textAlign != widget.textAlign) {
-      _parsedWidgets = _parseContent(widget.content, widget.baseStyle, widget.textAlign);
+    if (oldWidget.content != widget.content ||
+        oldWidget.baseStyle != widget.baseStyle ||
+        oldWidget.textAlign != widget.textAlign) {
+      _parsedWidget = _parseContentRobust(widget.content, widget.baseStyle, widget.textAlign);
     }
   }
 
@@ -42,97 +44,81 @@ class _HtmlContentRendererState extends State<HtmlContentRenderer> {
     return null;
   }
 
-  List<Widget> _parseContent(String content, TextStyle baseStyle, TextAlign textAlign) {
-    if (!content.contains('<')) {
-      return [
-        Text(
-          content,
-          textAlign: textAlign,
-          style: baseStyle,
-        )
-      ];
-    }
+  Widget _parseContentRobust(String content, TextStyle baseStyle, TextAlign textAlign) {
+    String processed = content.replaceFirst(RegExp(r'^html\s*', caseSensitive: false), '');
 
-    String processed = content.replaceAll('<p>', '\n').replaceAll('</p>', '\n').replaceAll('<br>', '\n');
-    List<String> paragraphs = processed.split('\n');
-
-    List<Widget> paragraphWidgets = [];
-    for (int i = 0; i < paragraphs.length; i++) {
-      String p = paragraphs[i].trim();
-      if (p.isEmpty) {
-        // preserve consecutive empty spaces if intended as separation
-        if (i < paragraphs.length - 1 && paragraphs[i + 1].trim().isNotEmpty) {
-           paragraphWidgets.add(const SizedBox(height: 12));
-        }
-        continue;
-      }
-
-      List<TextSpan> spans = _parseInline(p);
-      paragraphWidgets.add(
-        RichText(
-          textAlign: textAlign,
-          textDirection: TextDirection.rtl,
-          text: TextSpan(
-            style: baseStyle,
-            children: spans,
-          ),
-        )
+    if (!processed.contains('<')) {
+      return Text(
+        processed,
+        textAlign: textAlign,
+        style: baseStyle,
       );
-      if (i < paragraphs.length - 1) {
-        paragraphWidgets.add(const SizedBox(height: 12));
-      }
     }
 
-    return paragraphWidgets;
-  }
-
-  List<TextSpan> _parseInline(String text) {
     final List<TextSpan> spans = [];
-    final RegExp tagRegex = RegExp(r'<c=(#[a-zA-Z0-9]{6})><b>(.*?)</b></c>|<c=(#[a-zA-Z0-9]{6})>(.*?)</c>|<b>(.*?)</b>');
-    int lastMatchEnd = 0;
+    final RegExp tagRegex = RegExp(r'(<p>|</p>|<br>|<b>|</b>|<c=(#[a-zA-Z0-9]{6})>|</c>)', caseSensitive: false);
 
-    for (final match in tagRegex.allMatches(text)) {
+    int lastMatchEnd = 0;
+    bool isBold = false;
+    Color? currentColor;
+
+    for (final match in tagRegex.allMatches(processed)) {
       if (match.start > lastMatchEnd) {
-         spans.add(TextSpan(text: text.substring(lastMatchEnd, match.start)));
+        spans.add(TextSpan(
+          text: processed.substring(lastMatchEnd, match.start),
+          style: TextStyle(
+            fontWeight: isBold ? FontWeight.bold : baseStyle.fontWeight,
+            color: currentColor ?? baseStyle.color,
+            fontFamily: baseStyle.fontFamily,
+            fontSize: baseStyle.fontSize,
+            height: baseStyle.height,
+          ),
+        ));
       }
 
-      if (match.group(1) != null && match.group(2) != null) {
-        spans.add(TextSpan(
-          text: match.group(2),
-          style: TextStyle(
-            color: _parseColor(match.group(1)!),
-            fontWeight: FontWeight.bold,
-          )
-        ));
-      } else if (match.group(3) != null && match.group(4) != null) {
-        spans.add(TextSpan(
-          text: match.group(4),
-          style: TextStyle(
-            color: _parseColor(match.group(3)!),
-          )
-        ));
-      } else if (match.group(5) != null) {
-        spans.add(TextSpan(
-          text: match.group(5),
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ));
+      final String tag = match.group(1)!.toLowerCase();
+      if (tag == '<p>' || tag == '</p>') {
+        spans.add(const TextSpan(text: '\n\n'));
+      } else if (tag == '<br>') {
+        spans.add(const TextSpan(text: '\n'));
+      } else if (tag == '<b>') {
+        isBold = true;
+      } else if (tag == '</b>') {
+        isBold = false;
+      } else if (tag.startsWith('<c=')) {
+        currentColor = _parseColor(match.group(2)!);
+      } else if (tag == '</c>') {
+        currentColor = null;
       }
 
       lastMatchEnd = match.end;
     }
 
-    if (lastMatchEnd < text.length) {
-      spans.add(TextSpan(text: text.substring(lastMatchEnd)));
+    if (lastMatchEnd < processed.length) {
+      spans.add(TextSpan(
+        text: processed.substring(lastMatchEnd),
+        style: TextStyle(
+          fontWeight: isBold ? FontWeight.bold : baseStyle.fontWeight,
+          color: currentColor ?? baseStyle.color,
+          fontFamily: baseStyle.fontFamily,
+          fontSize: baseStyle.fontSize,
+          height: baseStyle.height,
+        ),
+      ));
     }
 
-    return spans;
+    return RichText(
+      textAlign: textAlign,
+      textDirection: TextDirection.rtl,
+      text: TextSpan(
+        style: baseStyle,
+        children: spans,
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: _parsedWidgets,
-    );
+    return _parsedWidget;
   }
 }

@@ -2024,6 +2024,8 @@ class _ReaderPageState extends State<ReaderPage> {
   @override
   Widget build(BuildContext context) {
     final primary = Theme.of(context).colorScheme.primary;
+    final dynamicBgColor = _customBgColor ?? Theme.of(context).cardColor;
+    final dynamicTextColor = dynamicBgColor.computeLuminance() > 0.5 ? Colors.black87 : Colors.white;
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.title, style: const TextStyle(fontSize: 16)),
@@ -2108,14 +2110,7 @@ class _ReaderPageState extends State<ReaderPage> {
                                 fontFamily: 'me_quran',
                                 fontSize: 32 * _factor,
                                 height: 1.8,
-                                color: _customBgColor != null
-                                    ? (_customBgColor!.computeLuminance() > 0.5
-                                        ? Colors.black
-                                        : Colors.white)
-                                    : Theme.of(
-                                          context,
-                                        ).textTheme.bodyLarge?.color ??
-                                        Colors.black,
+                                color: dynamicTextColor,
                               ),
                               children: widget.ayahs!.map((a) {
                                 String text = a['ar_text'].toString().trim();
@@ -2172,11 +2167,7 @@ class _ReaderPageState extends State<ReaderPage> {
                                     fontWeight: FontWeight.bold,
                                     color: widget.titleColor != null
                                         ? _parseColor(widget.titleColor!) ?? Theme.of(context).colorScheme.primary
-                                        : (_customBgColor != null
-                                            ? (_customBgColor!.computeLuminance() > 0.5
-                                                ? Colors.black
-                                                : Colors.white)
-                                            : null),
+                                        : dynamicTextColor,
                                   ),
                                 ),
                                 const SizedBox(height: 15),
@@ -2193,20 +2184,12 @@ class _ReaderPageState extends State<ReaderPage> {
                                           fontFamily: 'me_quran',
                                           fontSize: 26 * _factor,
                                           height: 1.8,
-                                          color: _customBgColor != null
-                                              ? (_customBgColor!.computeLuminance() > 0.5
-                                                  ? Colors.black
-                                                  : Colors.white)
-                                              : null,
+                                          color: dynamicTextColor,
                                         )
                                       : GoogleFonts.notoNaskhArabic(
                                           fontSize: 20 * _factor,
                                           height: 2.2,
-                                          color: _customBgColor != null
-                                              ? (_customBgColor!.computeLuminance() > 0.5
-                                                  ? Colors.black
-                                                  : Colors.white)
-                                              : null,
+                                          color: dynamicTextColor,
                                         );
 
                                   String cleanContent = widget.content.replaceAll('### ', '');
