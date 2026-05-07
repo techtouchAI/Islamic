@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'sections/html_content_renderer.dart';
+import 'utils/html_parser_utils.dart';
 
 import 'package:google_fonts/google_fonts.dart';
 import 'sections/tasbih_section.dart';
@@ -1858,7 +1859,9 @@ class DynamicListSection extends StatelessWidget {
                             title: Text(
                               sectionKey.contains('imam_ali')
                                   ? 'قال أمير المؤمنين علي (عليه السلام)'
-                                  : data[index]['title'].toString(),
+                                  : (data[index]['title']?.toString().isNotEmpty ?? false
+                                      ? data[index]['title'].toString()
+                                      : data[index]['content'].toString().extractColoredWords()),
                               style: const TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 18,
@@ -1867,7 +1870,7 @@ class DynamicListSection extends StatelessWidget {
                             subtitle: Padding(
                               padding: const EdgeInsets.only(top: 10),
                               child: Text(
-                                data[index]['content'].toString(),
+                                data[index]['content'].toString().stripHtmlTags(),
                                 maxLines:
                                     sectionKey.contains('imam_ali') ? 3 : 2,
                                 overflow: TextOverflow.ellipsis,
@@ -1884,7 +1887,9 @@ class DynamicListSection extends StatelessWidget {
                               context,
                               MaterialPageRoute(
                                 builder: (c) => ReaderPage(
-                                  title: data[index]['title'].toString(),
+                                  title: data[index]['title']?.toString().isNotEmpty ?? false
+                                      ? data[index]['title'].toString()
+                                      : data[index]['content'].toString().extractColoredWords(),
                                   content: data[index]['content'].toString(),
                                   fontSizeFactor: fontSizeFactor,
                                   isQuran: false,
@@ -2490,7 +2495,7 @@ class GlobalSearchDelegate extends SearchDelegate {
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         subtitle: Text(
-          '${results[i]['section']} - ${results[i]['content']?.toString().replaceAll(RegExp(r'\n'), ' ') ?? ''}',
+          '${results[i]['section']} - ${results[i]['content']?.toString().stripHtmlTags().replaceAll(RegExp(r'\n'), ' ') ?? ''}',
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),

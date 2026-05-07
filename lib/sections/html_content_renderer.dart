@@ -77,8 +77,11 @@ class _HtmlContentRendererState extends State<HtmlContentRenderer> {
       }
 
       final String tag = match.group(1)!.toLowerCase();
-      if (tag == '<p>' || tag == '</p>') {
-        spans.add(const TextSpan(text: '\n\n'));
+      if (tag == '<p>') {
+        // Only add newline if it's not the very beginning
+        if (spans.isNotEmpty) spans.add(const TextSpan(text: '\n\n'));
+      } else if (tag == '</p>') {
+        // Do nothing for </p> to avoid excessive newlines
       } else if (tag == '<br>') {
         spans.add(const TextSpan(text: '\n'));
       } else if (tag == '<b>') {
