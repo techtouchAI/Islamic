@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'sections/html_content_renderer.dart';
+
 import 'package:google_fonts/google_fonts.dart';
 import 'sections/tasbih_section.dart';
 import 'package:intl/intl.dart' as intl;
@@ -2208,6 +2210,13 @@ class _ReaderPageState extends State<ReaderPage> {
                                         );
 
                                   String cleanContent = widget.content.replaceAll('### ', '');
+
+                                  if (cleanContent.contains('<') && (cleanContent.contains('<b>') || cleanContent.contains('<p>') || cleanContent.contains('<br>') || cleanContent.contains('<c='))) {
+                                    return HtmlContentRenderer(
+                                      content: cleanContent,
+                                      baseStyle: baseStyle,
+                                    );
+                                  }
 
                                   if (widget.titleColor == null) {
                                     return Text(
