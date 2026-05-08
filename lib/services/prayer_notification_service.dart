@@ -25,7 +25,7 @@ class PrayerNotificationService {
     }
 
     const AndroidInitializationSettings initializationSettingsAndroid =
-        AndroidInitializationSettings('@mipmap/ic_launcher');
+        AndroidInitializationSettings('@drawable/app_icon');
 
     const DarwinInitializationSettings initializationSettingsIOS =
         DarwinInitializationSettings(
@@ -68,15 +68,24 @@ class PrayerNotificationService {
       final prayerTimes = PrayerTimes(coordinates, date, params);
 
       if (prayerTimes.fajr.isAfter(baseTime)) {
-        final id = 'الفجر'.hashCode + prayerTimes.fajr.year + prayerTimes.fajr.month + prayerTimes.fajr.day;
+        final id = 'الفجر'.hashCode +
+            prayerTimes.fajr.year +
+            prayerTimes.fajr.month +
+            prayerTimes.fajr.day;
         _schedulePrayerNotification(prayerTimes.fajr, 'الفجر', id);
       }
       if (prayerTimes.dhuhr.isAfter(baseTime)) {
-        final id = 'الظهر'.hashCode + prayerTimes.dhuhr.year + prayerTimes.dhuhr.month + prayerTimes.dhuhr.day;
+        final id = 'الظهر'.hashCode +
+            prayerTimes.dhuhr.year +
+            prayerTimes.dhuhr.month +
+            prayerTimes.dhuhr.day;
         _schedulePrayerNotification(prayerTimes.dhuhr, 'الظهر', id);
       }
       if (prayerTimes.maghrib.isAfter(baseTime)) {
-        final id = 'المغرب'.hashCode + prayerTimes.maghrib.year + prayerTimes.maghrib.month + prayerTimes.maghrib.day;
+        final id = 'المغرب'.hashCode +
+            prayerTimes.maghrib.year +
+            prayerTimes.maghrib.month +
+            prayerTimes.maghrib.day;
         _schedulePrayerNotification(prayerTimes.maghrib, 'المغرب', id);
       }
     }

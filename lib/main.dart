@@ -743,7 +743,6 @@ class AppDrawer extends StatelessWidget {
                     getMaterialIcon(e.value['icon']),
                   ),
                 ),
-
                 const Divider(),
                 _buildItem(context, 'about', 'حول المطور', Icons.person),
                 _buildItem(context, 'settings', 'الإعدادات', Icons.settings),
@@ -1987,7 +1986,6 @@ class ReaderPage extends StatefulWidget {
   State<ReaderPage> createState() => _ReaderPageState();
 }
 
-
 Color? _parseColor(String? colorString) {
   if (colorString == null || colorString.isEmpty) return null;
   try {
@@ -2025,7 +2023,8 @@ class _ReaderPageState extends State<ReaderPage> {
   Widget build(BuildContext context) {
     final primary = Theme.of(context).colorScheme.primary;
     final dynamicBgColor = _customBgColor ?? Theme.of(context).cardColor;
-    final dynamicTextColor = dynamicBgColor.computeLuminance() > 0.5 ? Colors.black87 : Colors.white;
+    final dynamicTextColor =
+        dynamicBgColor.computeLuminance() > 0.5 ? Colors.black87 : Colors.white;
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.title, style: const TextStyle(fontSize: 16)),
@@ -2166,7 +2165,10 @@ class _ReaderPageState extends State<ReaderPage> {
                                     height: 2.2,
                                     fontWeight: FontWeight.bold,
                                     color: widget.titleColor != null
-                                        ? _parseColor(widget.titleColor!) ?? Theme.of(context).colorScheme.primary
+                                        ? _parseColor(widget.titleColor!) ??
+                                            Theme.of(context)
+                                                .colorScheme
+                                                .primary
                                         : dynamicTextColor,
                                   ),
                                 ),
@@ -2179,22 +2181,28 @@ class _ReaderPageState extends State<ReaderPage> {
                               ],
                               Builder(
                                 builder: (context) {
-                                  final baseStyle = widget.isImamAli || widget.isQuran
-                                      ? TextStyle(
-                                          fontFamily: 'me_quran',
-                                          fontSize: 26 * _factor,
-                                          height: 1.8,
-                                          color: dynamicTextColor,
-                                        )
-                                      : GoogleFonts.notoNaskhArabic(
-                                          fontSize: 20 * _factor,
-                                          height: 2.2,
-                                          color: dynamicTextColor,
-                                        );
+                                  final baseStyle =
+                                      widget.isImamAli || widget.isQuran
+                                          ? TextStyle(
+                                              fontFamily: 'me_quran',
+                                              fontSize: 26 * _factor,
+                                              height: 1.8,
+                                              color: dynamicTextColor,
+                                            )
+                                          : GoogleFonts.notoNaskhArabic(
+                                              fontSize: 20 * _factor,
+                                              height: 2.2,
+                                              color: dynamicTextColor,
+                                            );
 
-                                  String cleanContent = widget.content.replaceAll('### ', '');
+                                  String cleanContent =
+                                      widget.content.replaceAll('### ', '');
 
-                                  if (cleanContent.contains('<') && (cleanContent.contains('<b>') || cleanContent.contains('<p>') || cleanContent.contains('<br>') || cleanContent.contains('<c='))) {
+                                  if (cleanContent.contains('<') &&
+                                      (cleanContent.contains('<b>') ||
+                                          cleanContent.contains('<p>') ||
+                                          cleanContent.contains('<br>') ||
+                                          cleanContent.contains('<c='))) {
                                     return HtmlContentRenderer(
                                       content: cleanContent,
                                       baseStyle: baseStyle,
@@ -2214,22 +2222,34 @@ class _ReaderPageState extends State<ReaderPage> {
                                     fontWeight: FontWeight.bold,
                                   );
 
-                                  final keywords = widget.title.split(' ؟ ').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+                                  final keywords = widget.title
+                                      .split(' ؟ ')
+                                      .map((e) => e.trim())
+                                      .where((e) => e.isNotEmpty)
+                                      .toList();
 
                                   if (keywords.isEmpty) {
-                                    return Text(cleanContent, textAlign: TextAlign.center, style: baseStyle);
+                                    return Text(cleanContent,
+                                        textAlign: TextAlign.center,
+                                        style: baseStyle);
                                   }
 
-                                  keywords.sort((a, b) => b.length.compareTo(a.length));
+                                  keywords.sort(
+                                      (a, b) => b.length.compareTo(a.length));
 
                                   final pattern = RegExp(
-                                    keywords.map((k) => RegExp.escape(k)).join('|'),
+                                    keywords
+                                        .map((k) => RegExp.escape(k))
+                                        .join('|'),
                                     caseSensitive: false,
                                   );
 
-                                  final matches = pattern.allMatches(cleanContent);
+                                  final matches =
+                                      pattern.allMatches(cleanContent);
                                   if (matches.isEmpty) {
-                                    return Text(cleanContent, textAlign: TextAlign.center, style: baseStyle);
+                                    return Text(cleanContent,
+                                        textAlign: TextAlign.center,
+                                        style: baseStyle);
                                   }
 
                                   int lastMatchEnd = 0;
@@ -2238,12 +2258,14 @@ class _ReaderPageState extends State<ReaderPage> {
                                   for (final match in matches) {
                                     if (match.start > lastMatchEnd) {
                                       spans.add(TextSpan(
-                                        text: cleanContent.substring(lastMatchEnd, match.start),
+                                        text: cleanContent.substring(
+                                            lastMatchEnd, match.start),
                                         style: baseStyle,
                                       ));
                                     }
                                     spans.add(TextSpan(
-                                      text: cleanContent.substring(match.start, match.end),
+                                      text: cleanContent.substring(
+                                          match.start, match.end),
                                       style: highlightStyle,
                                     ));
                                     lastMatchEnd = match.end;
@@ -2251,7 +2273,8 @@ class _ReaderPageState extends State<ReaderPage> {
 
                                   if (lastMatchEnd < cleanContent.length) {
                                     spans.add(TextSpan(
-                                      text: cleanContent.substring(lastMatchEnd),
+                                      text:
+                                          cleanContent.substring(lastMatchEnd),
                                       style: baseStyle,
                                     ));
                                   }
