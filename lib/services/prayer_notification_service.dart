@@ -52,36 +52,26 @@ class PrayerNotificationService {
     }
   }
 
-  static Future<void> testImmediateAzan() async {
+  static Future<void> testInstantNotification() async {
     try {
-      debugPrint('--- FIRING NUCLEAR TEST IN 10 SECONDS ---');
-      final tz.TZDateTime now = tz.TZDateTime.now(tz.local);
-      final tz.TZDateTime scheduledDate = now.add(const Duration(seconds: 10));
-
-      await _notificationsPlugin.zonedSchedule(
-        9999, // Unique test ID
-        'اختبار نووي',
-        'إذا ظهر هذا، فالنظام يعمل',
-        scheduledDate,
+      debugPrint('--- FIRING INSTANT VANILLA TEST ---');
+      await _notificationsPlugin.show(
+        8888, // Unique test ID
+        'اختبار فوري',
+        'هذا إشعار أساسي فوري للتحقق من العرض',
         const NotificationDetails(
           android: AndroidNotificationDetails(
-            'adhan_channel_v3',
-            'أوقات الصلاة',
-            channelDescription: 'تنبيهات الأذان لأوقات الصلاة',
-            importance: Importance.max,
-            priority: Priority.high,
-            playSound: true,
-            sound: RawResourceAndroidNotificationSound('adhan'),
-            fullScreenIntent: true,
+            'basic_channel_v1',
+            'إشعارات أساسية',
+            channelDescription: 'قناة اختبار',
+            importance: Importance.defaultImportance,
+            priority: Priority.defaultPriority,
           ),
         ),
-        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-        uiLocalNotificationDateInterpretation:
-            UILocalNotificationDateInterpretation.absoluteTime,
       );
-      debugPrint('Nuclear test scheduled successfully.');
+      debugPrint('Instant vanilla test shown successfully.');
     } catch (e) {
-      debugPrint('NUCLEAR TEST FAILED TO SCHEDULE: $e');
+      debugPrint('INSTANT TEST FAILED TO SHOW: $e');
     }
   }
 
