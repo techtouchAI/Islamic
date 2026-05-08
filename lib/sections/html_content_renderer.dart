@@ -45,7 +45,7 @@ class _HtmlContentRendererState extends State<HtmlContentRenderer> {
   }
 
   Widget _parseContentRobust(String content, TextStyle baseStyle, TextAlign textAlign) {
-    String processed = content.replaceAll('<html>', '').replaceAll('//', '').replaceAll('&nbsp;', ' ');
+    String processed = content.replaceAll('<html>', '').replaceAll('//', '');
     processed = processed.replaceAll(RegExp(r'<\/?p>', caseSensitive: false), '\n\n')
                          .replaceAll(RegExp(r'<br>', caseSensitive: false), '\n');
     processed = processed.replaceAll(RegExp(r'\n{3,}'), '\n\n').trim();
