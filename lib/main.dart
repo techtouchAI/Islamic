@@ -166,7 +166,7 @@ class _AlDhakereenAppState extends State<AlDhakereenApp> {
       HijriCalendar.setLocal('ar');
       await DataManager.loadContent();
       await PrayerNotificationService.initNotifications();
-      PrayerNotificationService.scheduleDailyPrayers();
+      await PrayerNotificationService.scheduleDailyPrayers();
       await QuranService.initDB();
       await _loadSettings();
       DataManager.syncCloudData().then((updated) {
