@@ -25,7 +25,7 @@ class PrayerNotificationService {
     }
 
     const AndroidInitializationSettings initializationSettingsAndroid =
-        AndroidInitializationSettings('@mipmap/ic_launcher');
+        AndroidInitializationSettings('@drawable/app_icon');
 
     const DarwinInitializationSettings initializationSettingsIOS =
         DarwinInitializationSettings(
@@ -61,11 +61,11 @@ class PrayerNotificationService {
         'هذا إشعار أساسي فوري للتحقق من العرض',
         const NotificationDetails(
           android: AndroidNotificationDetails(
-            'basic_channel_v1',
+            'test_channel_emergency',
             'إشعارات أساسية',
             channelDescription: 'قناة اختبار',
-            importance: Importance.defaultImportance,
-            priority: Priority.defaultPriority,
+            importance: Importance.max,
+            priority: Priority.high,
           ),
         ),
       );
