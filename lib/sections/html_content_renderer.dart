@@ -45,10 +45,7 @@ class _HtmlContentRendererState extends State<HtmlContentRenderer> {
   }
 
   Widget _parseContentRobust(String content, TextStyle baseStyle, TextAlign textAlign) {
-    String processed = content.replaceAll('<html>', '').replaceAll('//', '');
-    processed = processed.replaceAll(RegExp(r'<\/?p>', caseSensitive: false), '\n\n')
-                         .replaceAll(RegExp(r'<br>', caseSensitive: false), '\n');
-    processed = processed.replaceAll(RegExp(r'\n{3,}'), '\n\n').trim();
+    String processed = content.replaceFirst(RegExp(r'^html\s*', caseSensitive: false), '');
 
     if (!processed.contains('<')) {
       return Text(
@@ -59,7 +56,7 @@ class _HtmlContentRendererState extends State<HtmlContentRenderer> {
     }
 
     final List<TextSpan> spans = [];
-    final RegExp tagRegex = RegExp(r'(<b>|</b>|<c=(#[a-zA-Z0-9]{6})>|</c>)', caseSensitive: false);
+    final RegExp tagRegex = RegExp(r'(<p>|</p>|<br>|<b>|</b>|<c=(#[a-zA-Z0-9]{6})>|</c>)', caseSensitive: false);
 
     int lastMatchEnd = 0;
     bool isBold = false;
@@ -80,7 +77,11 @@ class _HtmlContentRendererState extends State<HtmlContentRenderer> {
       }
 
       final String tag = match.group(1)!.toLowerCase();
-      if (tag == '<b>') {
+      if (tag == '<p>' || tag == '</p>') {
+        spans.add(const TextSpan(text: '\n\n'));
+      } else if (tag == '<br>') {
+        spans.add(const TextSpan(text: '\n'));
+      } else if (tag == '<b>') {
         isBold = true;
       } else if (tag == '</b>') {
         isBold = false;
