@@ -76,7 +76,7 @@ class PrayerNotificationService {
     DateTime prayerTime,
     String prayerName,
   ) async {
-    const String channelId = 'adhan_channel_v2';
+    const String channelId = 'adhan_channel_v3';
 
     const AndroidNotificationDetails androidPlatformChannelSpecifics =
         AndroidNotificationDetails(
@@ -95,11 +95,15 @@ class PrayerNotificationService {
       android: androidPlatformChannelSpecifics,
     );
 
+    final String notificationBody = (prayerName == 'الفجر')
+        ? 'الصلاة خير من النوم'
+        : 'حي على الصلاة، حي على الفلاح';
+
     try {
       await _notificationsPlugin.zonedSchedule(
         prayerName.hashCode,
         'حان الآن موعد أذان $prayerName',
-        'تقبل الله أعمالكم',
+        notificationBody,
         tz.TZDateTime.from(prayerTime, tz.local),
         platformChannelSpecifics,
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
