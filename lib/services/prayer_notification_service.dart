@@ -1,6 +1,7 @@
 import 'package:adhan/adhan.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 
@@ -16,6 +17,12 @@ class PrayerNotificationService {
   // 1. تهيئة الإشعارات
   static Future<void> initNotifications() async {
     tz.initializeTimeZones();
+    try {
+      final String timeZoneName = await FlutterTimezone.getLocalTimezone();
+      tz.setLocalLocation(tz.getLocation(timeZoneName));
+    } catch (e) {
+      debugPrint('Error setting timezone: $e');
+    }
 
     const AndroidInitializationSettings initializationSettingsAndroid =
         AndroidInitializationSettings('@mipmap/ic_launcher');
@@ -45,29 +52,42 @@ class PrayerNotificationService {
     }
   }
 
-  // 2. حساب أوقات الصلاة (المذهب الجعفري - جامعة طهران)
-  static void scheduleDailyPrayers({DateTime? now}) {
-    final DateTime currentTime = now ?? DateTime.now();
+  // 2. حساب أوقات الصلاة (المذهب الجعفري - جامعة طهران) لعدة أيام
+  static Future<void> scheduleDailyPrayers({DateTime? now}) async {
+    await _notificationsPlugin.cancelAll();
 
-    // إحداثيات الموقع (الحلة)
+    final DateTime baseTime = now ?? DateTime.now();
     final coordinates = Coordinates(32.4682, 44.4361);
-
-    // ضبط المعايير
     final params = CalculationMethod.tehran.getParameters();
     params.madhab = Madhab.shafi;
 
-    final date = DateComponents.from(currentTime);
-    final prayerTimes = PrayerTimes(coordinates, date, params);
+    // جدولة لـ 7 أيام قادمة لضمان بقاء الطابور ممتلئاً
+    for (int i = 0; i < 7; i++) {
+      final DateTime currentTime = baseTime.add(Duration(days: i));
+      final date = DateComponents.from(currentTime);
+      final prayerTimes = PrayerTimes(coordinates, date, params);
 
-    // جدولة الصلوات
-    if (prayerTimes.fajr.isAfter(currentTime)) {
-      _schedulePrayerNotification(prayerTimes.fajr, 'الفجر');
-    }
-    if (prayerTimes.dhuhr.isAfter(currentTime)) {
-      _schedulePrayerNotification(prayerTimes.dhuhr, 'الظهر');
-    }
-    if (prayerTimes.maghrib.isAfter(currentTime)) {
-      _schedulePrayerNotification(prayerTimes.maghrib, 'المغرب');
+      if (prayerTimes.fajr.isAfter(baseTime)) {
+        final id = 'الفجر'.hashCode +
+            prayerTimes.fajr.year +
+            prayerTimes.fajr.month +
+            prayerTimes.fajr.day;
+        _schedulePrayerNotification(prayerTimes.fajr, 'الفجر', id);
+      }
+      if (prayerTimes.dhuhr.isAfter(baseTime)) {
+        final id = 'الظهر'.hashCode +
+            prayerTimes.dhuhr.year +
+            prayerTimes.dhuhr.month +
+            prayerTimes.dhuhr.day;
+        _schedulePrayerNotification(prayerTimes.dhuhr, 'الظهر', id);
+      }
+      if (prayerTimes.maghrib.isAfter(baseTime)) {
+        final id = 'المغرب'.hashCode +
+            prayerTimes.maghrib.year +
+            prayerTimes.maghrib.month +
+            prayerTimes.maghrib.day;
+        _schedulePrayerNotification(prayerTimes.maghrib, 'المغرب', id);
+      }
     }
   }
 
@@ -75,6 +95,7 @@ class PrayerNotificationService {
   static Future<void> _schedulePrayerNotification(
     DateTime prayerTime,
     String prayerName,
+    int notificationId,
   ) async {
     const String channelId = 'adhan_channel_v3';
 
@@ -101,7 +122,7 @@ class PrayerNotificationService {
 
     try {
       await _notificationsPlugin.zonedSchedule(
-        prayerName.hashCode,
+        notificationId,
         'حان الآن موعد أذان $prayerName',
         notificationBody,
         tz.TZDateTime.from(prayerTime, tz.local),
