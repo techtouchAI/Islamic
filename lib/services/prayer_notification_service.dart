@@ -52,6 +52,31 @@ class PrayerNotificationService {
     }
   }
 
+  static Future<String> testInstantNotification() async {
+    try {
+      debugPrint('--- FIRING INSTANT VANILLA TEST ---');
+      await _notificationsPlugin.show(
+        8888, // Unique test ID
+        'اختبار فوري',
+        'هذا إشعار أساسي فوري للتحقق من العرض',
+        const NotificationDetails(
+          android: AndroidNotificationDetails(
+            'test_channel_emergency',
+            'إشعارات أساسية',
+            channelDescription: 'قناة اختبار',
+            importance: Importance.max,
+            priority: Priority.high,
+          ),
+        ),
+      );
+      debugPrint('Instant vanilla test shown successfully.');
+      return 'Success';
+    } catch (e) {
+      debugPrint('INSTANT TEST FAILED TO SHOW: $e');
+      return e.toString();
+    }
+  }
+
   // 2. حساب أوقات الصلاة (المذهب الجعفري - جامعة طهران) لعدة أيام
   static Future<void> scheduleDailyPrayers({DateTime? now}) async {
     await _notificationsPlugin.cancelAll();
@@ -68,24 +93,24 @@ class PrayerNotificationService {
       final prayerTimes = PrayerTimes(coordinates, date, params);
 
       if (prayerTimes.fajr.isAfter(baseTime)) {
-        final id = 'الفجر'.hashCode +
-            prayerTimes.fajr.year +
-            prayerTimes.fajr.month +
-            prayerTimes.fajr.day;
+        final id =
+            'الفجر-${prayerTimes.fajr.year}-${prayerTimes.fajr.month}-${prayerTimes.fajr.day}'
+                .hashCode; //
+
         _schedulePrayerNotification(prayerTimes.fajr, 'الفجر', id);
       }
       if (prayerTimes.dhuhr.isAfter(baseTime)) {
-        final id = 'الظهر'.hashCode +
-            prayerTimes.dhuhr.year +
-            prayerTimes.dhuhr.month +
-            prayerTimes.dhuhr.day;
+        final id =
+            'الظهر-${prayerTimes.dhuhr.year}-${prayerTimes.dhuhr.month}-${prayerTimes.dhuhr.day}'
+                .hashCode; //
+
         _schedulePrayerNotification(prayerTimes.dhuhr, 'الظهر', id);
       }
       if (prayerTimes.maghrib.isAfter(baseTime)) {
-        final id = 'المغرب'.hashCode +
-            prayerTimes.maghrib.year +
-            prayerTimes.maghrib.month +
-            prayerTimes.maghrib.day;
+        final id =
+            'المغرب-${prayerTimes.maghrib.year}-${prayerTimes.maghrib.month}-${prayerTimes.maghrib.day}'
+                .hashCode; //
+
         _schedulePrayerNotification(prayerTimes.maghrib, 'المغرب', id);
       }
     }

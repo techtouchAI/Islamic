@@ -166,6 +166,20 @@ class _AlDhakereenAppState extends State<AlDhakereenApp> {
       HijriCalendar.setLocal('ar');
       await DataManager.loadContent();
       await PrayerNotificationService.initNotifications();
+      final testResult = await PrayerNotificationService.testInstantNotification();
+      if (testResult != 'Success') {
+        if (mounted) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Notification Test Failed: $testResult', textDirection: TextDirection.ltr),
+                duration: const Duration(seconds: 10),
+                backgroundColor: Colors.red,
+              ),
+            );
+          });
+        }
+      }
       await PrayerNotificationService.scheduleDailyPrayers();
       await QuranService.initDB();
       await _loadSettings();
@@ -1866,7 +1880,7 @@ class DynamicListSection extends StatelessWidget {
                             subtitle: Padding(
                               padding: const EdgeInsets.only(top: 10),
                               child: Text(
-                                data[index]['content'].toString(),
+                                data[index]['content'].toString().cleanSnippet(),
                                 maxLines:
                                     sectionKey.contains('imam_ali') ? 3 : 2,
                                 overflow: TextOverflow.ellipsis,
@@ -2513,7 +2527,7 @@ class GlobalSearchDelegate extends SearchDelegate {
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         subtitle: Text(
-          '${results[i]['section']} - ${results[i]['content']?.toString().replaceAll(RegExp(r'\n'), ' ') ?? ''}',
+          '${results[i]['section']} - ${results[i]['content']?.toString().cleanSnippet() ?? ''}',
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
