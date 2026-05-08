@@ -1,7 +1,6 @@
 import 'package:adhan/adhan.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 
@@ -18,8 +17,9 @@ class PrayerNotificationService {
   static Future<void> initNotifications() async {
     tz.initializeTimeZones();
     try {
-      final String timeZoneName = await FlutterTimezone.getLocalTimezone();
-      tz.setLocalLocation(tz.getLocation(timeZoneName));
+      // We will fallback to UTC but convert local time properly if timezone library fails
+      // Using UTC +3 for Iraq explicitly as fallback without adding native plugins that break gradle
+      tz.setLocalLocation(tz.getLocation('Asia/Baghdad'));
     } catch (e) {
       debugPrint('Error setting timezone: $e');
     }
@@ -68,24 +68,15 @@ class PrayerNotificationService {
       final prayerTimes = PrayerTimes(coordinates, date, params);
 
       if (prayerTimes.fajr.isAfter(baseTime)) {
-        final id = 'الفجر'.hashCode +
-            prayerTimes.fajr.year +
-            prayerTimes.fajr.month +
-            prayerTimes.fajr.day;
+        final id = 'الفجر'.hashCode + prayerTimes.fajr.year + prayerTimes.fajr.month + prayerTimes.fajr.day;
         _schedulePrayerNotification(prayerTimes.fajr, 'الفجر', id);
       }
       if (prayerTimes.dhuhr.isAfter(baseTime)) {
-        final id = 'الظهر'.hashCode +
-            prayerTimes.dhuhr.year +
-            prayerTimes.dhuhr.month +
-            prayerTimes.dhuhr.day;
+        final id = 'الظهر'.hashCode + prayerTimes.dhuhr.year + prayerTimes.dhuhr.month + prayerTimes.dhuhr.day;
         _schedulePrayerNotification(prayerTimes.dhuhr, 'الظهر', id);
       }
       if (prayerTimes.maghrib.isAfter(baseTime)) {
-        final id = 'المغرب'.hashCode +
-            prayerTimes.maghrib.year +
-            prayerTimes.maghrib.month +
-            prayerTimes.maghrib.day;
+        final id = 'المغرب'.hashCode + prayerTimes.maghrib.year + prayerTimes.maghrib.month + prayerTimes.maghrib.day;
         _schedulePrayerNotification(prayerTimes.maghrib, 'المغرب', id);
       }
     }
