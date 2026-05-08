@@ -10,15 +10,3 @@ extension ArabicStringNormalization on String {
         .replaceAll('ى', 'ي');
   }
 }
-
-extension HtmlStringFormatting on String {
-  String cleanSnippet() {
-    return replaceAll('<html>', '')
-        .replaceAll('//', '')
-        .replaceAll(RegExp(r'<\/?p>', caseSensitive: false), ' ')
-        .replaceAll(RegExp(r'<br>', caseSensitive: false), ' ')
-        .replaceAll(RegExp(r'<[^>]*>'), '')
-        .replaceAll(RegExp(r'\s+'), ' ')
-        .trim();
-  }
-}

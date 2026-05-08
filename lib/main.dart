@@ -1867,7 +1867,7 @@ class DynamicListSection extends StatelessWidget {
                             subtitle: Padding(
                               padding: const EdgeInsets.only(top: 10),
                               child: Text(
-                                data[index]['content'].toString().cleanSnippet(),
+                                data[index]['content'].toString(),
                                 maxLines:
                                     sectionKey.contains('imam_ali') ? 3 : 2,
                                 overflow: TextOverflow.ellipsis,
@@ -2490,7 +2490,7 @@ class GlobalSearchDelegate extends SearchDelegate {
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         subtitle: Text(
-          '${results[i]['section']} - ${results[i]['content']?.toString().cleanSnippet() ?? ''}',
+          '${results[i]['section']} - ${results[i]['content']?.toString().replaceAll(RegExp(r'\n'), ' ') ?? ''}',
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
