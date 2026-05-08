@@ -52,29 +52,6 @@ class PrayerNotificationService {
     }
   }
 
-  static Future<void> testInstantNotification() async {
-    try {
-      debugPrint('--- FIRING INSTANT VANILLA TEST ---');
-      await _notificationsPlugin.show(
-        8888, // Unique test ID
-        'اختبار فوري',
-        'هذا إشعار أساسي فوري للتحقق من العرض',
-        const NotificationDetails(
-          android: AndroidNotificationDetails(
-            'test_channel_emergency',
-            'إشعارات أساسية',
-            channelDescription: 'قناة اختبار',
-            importance: Importance.max,
-            priority: Priority.high,
-          ),
-        ),
-      );
-      debugPrint('Instant vanilla test shown successfully.');
-    } catch (e) {
-      debugPrint('INSTANT TEST FAILED TO SHOW: $e');
-    }
-  }
-
   // 2. حساب أوقات الصلاة (المذهب الجعفري - جامعة طهران) لعدة أيام
   static Future<void> scheduleDailyPrayers({DateTime? now}) async {
     await _notificationsPlugin.cancelAll();
