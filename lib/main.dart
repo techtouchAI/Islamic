@@ -1070,7 +1070,7 @@ class _HomeSectionState extends State<HomeSection> {
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 24),
+                padding: const EdgeInsets.all(24),
                 child: Column(
                   children: [
                     Row(
@@ -1171,7 +1171,7 @@ class _HomeSectionState extends State<HomeSection> {
       height: double.infinity,
       child: SingleChildScrollView(
         physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 10),
+        padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
         child: Column(
           children: [
             InkWell(
@@ -1720,7 +1720,7 @@ class DynamicListSection extends StatelessWidget {
               final surah = data[index];
               return Card(
                 color: Theme.of(context).cardColor.withValues(alpha: uiOpacity),
-                margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(15),
                   side: BorderSide(
@@ -1827,7 +1827,7 @@ class DynamicListSection extends StatelessWidget {
                   padding: const EdgeInsets.only(bottom: 20),
                   itemBuilder: (context, index) => Container(
                     margin: const EdgeInsets.symmetric(
-                      horizontal: 10,
+                      horizontal: 16,
                       vertical: 8,
                     ),
                     child: ClipRRect(
@@ -1875,7 +1875,7 @@ class DynamicListSection extends StatelessWidget {
                                     ? TextStyle(
                                         fontFamily: 'me_quran',
                                         fontSize: 18,
-                                        height: 1.6,
+                                        height: 1.8,
                                       )
                                     : GoogleFonts.amiri(fontSize: 16),
                               ),
@@ -2054,10 +2054,10 @@ class _ReaderPageState extends State<ReaderPage> {
         children: [
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 24),
+              padding: const EdgeInsets.all(24),
               child: Container(
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 24),
+                padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
                   border: Border.all(color: primary, width: 3),
                   borderRadius: BorderRadius.circular(25),
@@ -2109,7 +2109,7 @@ class _ReaderPageState extends State<ReaderPage> {
                               style: TextStyle(
                                 fontFamily: 'me_quran',
                                 fontSize: 32 * _factor,
-                                height: 1.6,
+                                height: 1.8,
                                 color: dynamicTextColor,
                               ),
                               children: widget.ayahs!.map((a) {
@@ -2163,7 +2163,7 @@ class _ReaderPageState extends State<ReaderPage> {
                                   textAlign: TextAlign.center,
                                   style: GoogleFonts.notoNaskhArabic(
                                     fontSize: 22 * _factor,
-                                    height: 1.6,
+                                    height: 2.2,
                                     fontWeight: FontWeight.bold,
                                     color: widget.titleColor != null
                                         ? _parseColor(widget.titleColor!) ?? Theme.of(context).colorScheme.primary
@@ -2183,16 +2183,16 @@ class _ReaderPageState extends State<ReaderPage> {
                                       ? TextStyle(
                                           fontFamily: 'me_quran',
                                           fontSize: 26 * _factor,
-                                          height: 1.6,
+                                          height: 1.8,
                                           color: dynamicTextColor,
                                         )
                                       : GoogleFonts.notoNaskhArabic(
                                           fontSize: 20 * _factor,
-                                          height: 1.6,
+                                          height: 2.2,
                                           color: dynamicTextColor,
                                         );
 
-                                  String cleanContent = widget.content.replaceAll('### ', '').replaceAll(RegExp(r'^html\s*', caseSensitive: false), '').replaceAll('\uFDFA', '(صلى الله عليه وآله)').replaceAll('\uFDFB', '(جَلَّ جَلالُه)').replaceAll('\uFDFD', 'بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ').replaceAll('\uFDF2', 'اللَّهُ جَلَّ جَلالُه').replaceAll(RegExp(r'[\uE000-\uF8FF]|\uFFFD'), ' ');
+                                  String cleanContent = widget.content.replaceAll('### ', '');
 
                                   if (cleanContent.contains('<') && (cleanContent.contains('<b>') || cleanContent.contains('<p>') || cleanContent.contains('<br>') || cleanContent.contains('<c='))) {
                                     return HtmlContentRenderer(
@@ -2210,7 +2210,7 @@ class _ReaderPageState extends State<ReaderPage> {
                                   }
 
                                   final highlightStyle = baseStyle.copyWith(
-                                    color: Theme.of(context).colorScheme.primary,
+                                    color: _parseColor(widget.titleColor!),
                                     fontWeight: FontWeight.bold,
                                   );
 
