@@ -1720,7 +1720,7 @@ class DynamicListSection extends StatelessWidget {
               final surah = data[index];
               return Card(
                 color: Theme.of(context).cardColor.withValues(alpha: uiOpacity),
-                margin: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8),
+                margin: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 8.0),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(15),
                   side: BorderSide(
@@ -1826,10 +1826,7 @@ class DynamicListSection extends StatelessWidget {
                   itemCount: data.length,
                   padding: const EdgeInsets.only(bottom: 20),
                   itemBuilder: (context, index) => Container(
-                    margin: const EdgeInsets.symmetric(
-                      horizontal: 8.0,
-                      vertical: 8,
-                    ),
+                    margin: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 8.0),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(15),
                       child: Stack(
@@ -2054,10 +2051,10 @@ class _ReaderPageState extends State<ReaderPage> {
         children: [
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(10.0),
+              padding: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 8.0),
               child: Container(
                 width: double.infinity,
-                padding: const EdgeInsets.all(10.0),
+                padding: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 8.0),
                 decoration: BoxDecoration(
                   border: Border.all(color: primary, width: 1.0),
                   borderRadius: BorderRadius.circular(25),
