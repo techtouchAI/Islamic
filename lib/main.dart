@@ -2192,13 +2192,16 @@ class _ReaderPageState extends State<ReaderPage> {
                                           color: dynamicTextColor,
                                         );
 
-                                  String cleanContent = widget.content.replaceAll('### ', '');
-                                  if (cleanContent.trim().toLowerCase().startsWith('html')) {
-                                    cleanContent = cleanContent.trim().substring(4).trim();
+                                  String cleanContent = widget.content;
+                                  if (cleanContent.length <= 10000) {
+                                    cleanContent = cleanContent.replaceAll('### ', '');
+                                    if (cleanContent.trim().toLowerCase().startsWith('html')) {
+                                      cleanContent = cleanContent.trim().substring(4).trim();
+                                    }
+                                    cleanContent = cleanContent.replaceAll('\uFDFA', '(صلى الله عليه وآله)')
+                                                               .replaceAll('\uFDFB', '(جل جلاله)')
+                                                               .replaceAll('!', '(عليه السلام)');
                                   }
-                                  cleanContent = cleanContent.replaceAll('\uFDFA', '(صلى الله عليه وآله)')
-                                                             .replaceAll('\uFDFB', '(جل جلاله)')
-                                                             .replaceAll('!', '(عليه السلام)');
 
                                   if (cleanContent.contains('<') && (cleanContent.contains('<b>') || cleanContent.contains('<p>') || cleanContent.contains('<br>') || cleanContent.contains('<c='))) {
                                     return HtmlContentRenderer(
