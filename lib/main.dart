@@ -1720,7 +1720,7 @@ class DynamicListSection extends StatelessWidget {
               final surah = data[index];
               return Card(
                 color: Theme.of(context).cardColor.withValues(alpha: uiOpacity),
-                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                margin: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(15),
                   side: BorderSide(
@@ -1827,7 +1827,7 @@ class DynamicListSection extends StatelessWidget {
                   padding: const EdgeInsets.only(bottom: 20),
                   itemBuilder: (context, index) => Container(
                     margin: const EdgeInsets.symmetric(
-                      horizontal: 16,
+                      horizontal: 8.0,
                       vertical: 8,
                     ),
                     child: ClipRRect(
@@ -2054,10 +2054,10 @@ class _ReaderPageState extends State<ReaderPage> {
         children: [
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
+              padding: const EdgeInsets.all(10.0),
               child: Container(
                 width: double.infinity,
-                padding: const EdgeInsets.all(24),
+                padding: const EdgeInsets.all(10.0),
                 decoration: BoxDecoration(
                   border: Border.all(color: primary, width: 3),
                   borderRadius: BorderRadius.circular(25),
@@ -2163,11 +2163,9 @@ class _ReaderPageState extends State<ReaderPage> {
                                   textAlign: TextAlign.center,
                                   style: GoogleFonts.notoNaskhArabic(
                                     fontSize: 22 * _factor,
-                                    height: 2.2,
+                                    height: 1.6,
                                     fontWeight: FontWeight.bold,
-                                    color: widget.titleColor != null
-                                        ? _parseColor(widget.titleColor!) ?? Theme.of(context).colorScheme.primary
-                                        : dynamicTextColor,
+                                    color: Theme.of(context).colorScheme.primary,
                                   ),
                                 ),
                                 const SizedBox(height: 15),
@@ -2183,12 +2181,12 @@ class _ReaderPageState extends State<ReaderPage> {
                                       ? TextStyle(
                                           fontFamily: 'me_quran',
                                           fontSize: 26 * _factor,
-                                          height: 1.8,
+                                          height: 1.6,
                                           color: dynamicTextColor,
                                         )
                                       : GoogleFonts.notoNaskhArabic(
                                           fontSize: 20 * _factor,
-                                          height: 2.2,
+                                          height: 1.6,
                                           color: dynamicTextColor,
                                         );
 
