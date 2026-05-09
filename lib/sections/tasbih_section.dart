@@ -1,6 +1,8 @@
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/services.dart';
+import 'package:intl/intl.dart' as intl;
 
 class TasbihSection extends StatefulWidget {
   const TasbihSection({super.key});
@@ -11,7 +13,26 @@ class TasbihSection extends StatefulWidget {
 
 class _TasbihSectionState extends State<TasbihSection> {
   int _counter = 0;
+  int _lifetimeCounter = 0;
   String _currentDhikr = 'سبحان الله';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadLifetimeCounter();
+  }
+
+  Future<void> _loadLifetimeCounter() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _lifetimeCounter = prefs.getInt('lifetime_tasbih_$_currentDhikr') ?? 0;
+    });
+  }
+
+  Future<void> _incrementLifetimeCounter() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt('lifetime_tasbih_$_currentDhikr', _lifetimeCounter);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -42,7 +63,9 @@ class _TasbihSectionState extends State<TasbihSection> {
                   onTap: () {
                     setState(() {
                       _counter++;
+                      _lifetimeCounter++;
                     });
+                    _incrementLifetimeCounter();
                   },
                   child: Material(
                     color: Colors.transparent,
@@ -52,7 +75,9 @@ class _TasbihSectionState extends State<TasbihSection> {
                         HapticFeedback.lightImpact();
                         setState(() {
                           _counter++;
+                          _lifetimeCounter++;
                         });
+                        _incrementLifetimeCounter();
                       },
                       child: Container(
                         width: 200,
@@ -88,6 +113,15 @@ class _TasbihSectionState extends State<TasbihSection> {
                         ),
                       ),
                     ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  'المجموع الكلي: ${intl.NumberFormat.decimalPattern().format(_lifetimeCounter)}',
+                  style: GoogleFonts.notoNaskhArabic(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.primary,
                   ),
                 ),
               ],
@@ -131,6 +165,7 @@ class _TasbihSectionState extends State<TasbihSection> {
                         _currentDhikr = newValue;
                         _counter = 0;
                       });
+                      _loadLifetimeCounter();
                     }
                   },
                   items: <String>[

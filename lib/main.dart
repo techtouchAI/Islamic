@@ -743,7 +743,6 @@ class AppDrawer extends StatelessWidget {
                     getMaterialIcon(e.value['icon']),
                   ),
                 ),
-
                 const Divider(),
                 _buildItem(context, 'about', 'حول المطور', Icons.person),
                 _buildItem(context, 'settings', 'الإعدادات', Icons.settings),
@@ -1720,7 +1719,8 @@ class DynamicListSection extends StatelessWidget {
               final surah = data[index];
               return Card(
                 color: Theme.of(context).cardColor.withValues(alpha: uiOpacity),
-                margin: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 8.0),
+                margin:
+                    const EdgeInsets.symmetric(horizontal: 4.0, vertical: 8.0),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(15),
                   side: BorderSide(
@@ -1826,7 +1826,8 @@ class DynamicListSection extends StatelessWidget {
                   itemCount: data.length,
                   padding: const EdgeInsets.only(bottom: 20),
                   itemBuilder: (context, index) => Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 8.0),
+                    margin: const EdgeInsets.symmetric(
+                        horizontal: 4.0, vertical: 8.0),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(15),
                       child: Stack(
@@ -1844,7 +1845,7 @@ class DynamicListSection extends StatelessWidget {
                                     color: Theme.of(
                                       context,
                                     ).colorScheme.primary,
-                                      width: 1.0,
+                                    width: 1.0,
                                   ),
                                 ),
                               ),
@@ -1864,7 +1865,9 @@ class DynamicListSection extends StatelessWidget {
                             subtitle: Padding(
                               padding: const EdgeInsets.only(top: 10),
                               child: Text(
-                                data[index]['content'].toString().cleanSnippet(),
+                                data[index]['content']
+                                    .toString()
+                                    .cleanSnippet(),
                                 maxLines:
                                     sectionKey.contains('imam_ali') ? 3 : 2,
                                 overflow: TextOverflow.ellipsis,
@@ -1984,7 +1987,6 @@ class ReaderPage extends StatefulWidget {
   State<ReaderPage> createState() => _ReaderPageState();
 }
 
-
 Color? _parseColor(String? colorString) {
   if (colorString == null || colorString.isEmpty) return null;
   try {
@@ -1997,9 +1999,11 @@ Color? _parseColor(String? colorString) {
   }
 }
 
-class _ReaderPageState extends State<ReaderPage> {
+class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
   late double _factor;
   Color? _customBgColor;
+  AnimationController? _blinkController;
+  int? _bookmarkedLineIndex;
   static final _trailingNumbersRegex = RegExp(r'[\s\xa0]*[0-9٠-٩]+$');
 
   String _convertToArabicNumber(String number) {
@@ -2016,13 +2020,36 @@ class _ReaderPageState extends State<ReaderPage> {
   void initState() {
     super.initState();
     _factor = widget.fontSizeFactor;
+    _blinkController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 1),
+    )..repeat(reverse: true);
+    SharedPreferences.getInstance().then((prefs) {
+      setState(() {
+        _bookmarkedLineIndex = prefs.getInt('bookmark_line_${widget.title}');
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _blinkController?.dispose();
+    super.dispose();
+  }
+
+  Widget _buildBlinkingStar() {
+    return FadeTransition(
+      opacity: _blinkController!,
+      child: const Icon(Icons.star, color: Colors.green, size: 20),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final primary = Theme.of(context).colorScheme.primary;
     final dynamicBgColor = _customBgColor ?? Theme.of(context).cardColor;
-    final dynamicTextColor = dynamicBgColor.computeLuminance() > 0.5 ? Colors.black87 : Colors.white;
+    final dynamicTextColor =
+        dynamicBgColor.computeLuminance() > 0.5 ? Colors.black87 : Colors.white;
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.title, style: const TextStyle(fontSize: 16)),
@@ -2051,10 +2078,12 @@ class _ReaderPageState extends State<ReaderPage> {
         children: [
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 8.0),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 4.0, vertical: 8.0),
               child: Container(
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 8.0),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 4.0, vertical: 8.0),
                 decoration: BoxDecoration(
                   border: Border.all(color: primary, width: 1.0),
                   borderRadius: BorderRadius.circular(25),
@@ -2163,7 +2192,10 @@ class _ReaderPageState extends State<ReaderPage> {
                                     height: 2.2,
                                     fontWeight: FontWeight.bold,
                                     color: widget.titleColor != null
-                                        ? _parseColor(widget.titleColor!) ?? Theme.of(context).colorScheme.primary
+                                        ? _parseColor(widget.titleColor!) ??
+                                            Theme.of(context)
+                                                .colorScheme
+                                                .primary
                                         : dynamicTextColor,
                                   ),
                                 ),
@@ -2176,42 +2208,110 @@ class _ReaderPageState extends State<ReaderPage> {
                               ],
                               Builder(
                                 builder: (context) {
-                                  final baseStyle = widget.isImamAli || widget.isQuran
-                                      ? TextStyle(
-                                          fontFamily: 'me_quran',
-                                          fontSize: 26 * _factor,
-                                          height: 1.8,
-                                          color: dynamicTextColor,
-                                        )
-                                      : GoogleFonts.notoNaskhArabic(
-                                          fontSize: 20 * _factor,
-                                          height: 2.2,
-                                          color: dynamicTextColor,
-                                        );
+                                  final baseStyle =
+                                      widget.isImamAli || widget.isQuran
+                                          ? TextStyle(
+                                              fontFamily: 'me_quran',
+                                              fontSize: 26 * _factor,
+                                              height: 1.8,
+                                              color: dynamicTextColor,
+                                            )
+                                          : GoogleFonts.notoNaskhArabic(
+                                              fontSize: 20 * _factor,
+                                              height: 2.2,
+                                              color: dynamicTextColor,
+                                            );
 
                                   String cleanContent = widget.content;
                                   if (cleanContent.length <= 10000) {
-                                    cleanContent = cleanContent.replaceAll('### ', '');
-                                    if (cleanContent.trim().toLowerCase().startsWith('html')) {
-                                      cleanContent = cleanContent.trim().substring(4).trim();
+                                    cleanContent =
+                                        cleanContent.replaceAll('### ', '');
+                                    if (cleanContent
+                                        .trim()
+                                        .toLowerCase()
+                                        .startsWith('html')) {
+                                      cleanContent = cleanContent
+                                          .trim()
+                                          .substring(4)
+                                          .trim();
                                     }
-                                    cleanContent = cleanContent.replaceAll('\uFDFA', '(صلى الله عليه وآله)')
-                                                               .replaceAll('\uFDFB', '(جل جلاله)')
-                                                               .replaceAll('!', '(عليه السلام)');
+                                    cleanContent = cleanContent
+                                        .replaceAll(
+                                            '\uFDFA', '(صلى الله عليه وآله)')
+                                        .replaceAll('\uFDFB', '(جل جلاله)')
+                                        .replaceAll('!', '(عليه السلام)');
                                   }
 
-                                  if (cleanContent.contains('<') && (cleanContent.contains('<b>') || cleanContent.contains('<p>') || cleanContent.contains('<br>') || cleanContent.contains('<c='))) {
+                                  if (cleanContent.contains('<') &&
+                                      (cleanContent.contains('<b>') ||
+                                          cleanContent.contains('<p>') ||
+                                          cleanContent.contains('<br>') ||
+                                          cleanContent.contains('<c='))) {
                                     return HtmlContentRenderer(
                                       content: cleanContent,
                                       baseStyle: baseStyle,
+                                      bookmarkedIndex: _bookmarkedLineIndex,
+                                      blinkingStar: _buildBlinkingStar(),
+                                      onParagraphTapped: (index) async {
+                                        final prefs = await SharedPreferences
+                                            .getInstance();
+                                        await prefs.setInt(
+                                            'bookmark_line_${widget.title}',
+                                            index);
+                                        setState(() {
+                                          _bookmarkedLineIndex = index;
+                                        });
+                                      },
                                     );
                                   }
 
                                   if (widget.titleColor == null) {
-                                    return Text(
-                                      cleanContent,
-                                      textAlign: TextAlign.center,
-                                      style: baseStyle,
+                                    final paragraphs =
+                                        cleanContent.split('\n\n');
+                                    return Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.stretch,
+                                      children: List.generate(paragraphs.length,
+                                          (index) {
+                                        final p = paragraphs[index];
+                                        return InkWell(
+                                          highlightColor: Colors.transparent,
+                                          splashColor: Colors.transparent,
+                                          onTap: () async {
+                                            final prefs =
+                                                await SharedPreferences
+                                                    .getInstance();
+                                            await prefs.setInt(
+                                                'bookmark_line_${widget.title}',
+                                                index);
+                                            setState(() {
+                                              _bookmarkedLineIndex = index;
+                                            });
+                                          },
+                                          child: Padding(
+                                            padding: const EdgeInsets.only(
+                                                bottom: 8.0),
+                                            child: RichText(
+                                              textAlign: TextAlign.center,
+                                              text: TextSpan(
+                                                style: baseStyle,
+                                                children: [
+                                                  TextSpan(text: p),
+                                                  if (_bookmarkedLineIndex ==
+                                                      index)
+                                                    WidgetSpan(
+                                                      alignment:
+                                                          PlaceholderAlignment
+                                                              .middle,
+                                                      child:
+                                                          _buildBlinkingStar(),
+                                                    ),
+                                                ],
+                                              ),
+                                            ),
+                                          ),
+                                        );
+                                      }),
                                     );
                                   }
 
@@ -2220,51 +2320,137 @@ class _ReaderPageState extends State<ReaderPage> {
                                     fontWeight: FontWeight.bold,
                                   );
 
-                                  final keywords = widget.title.split(' ؟ ').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+                                  final keywords = widget.title
+                                      .split(' ؟ ')
+                                      .map((e) => e.trim())
+                                      .where((e) => e.isNotEmpty)
+                                      .toList();
 
                                   if (keywords.isEmpty) {
-                                    return Text(cleanContent, textAlign: TextAlign.center, style: baseStyle);
+                                    final paragraphs =
+                                        cleanContent.split('\n\n');
+                                    return Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.stretch,
+                                      children: List.generate(paragraphs.length,
+                                          (index) {
+                                        final p = paragraphs[index];
+                                        return InkWell(
+                                          highlightColor: Colors.transparent,
+                                          splashColor: Colors.transparent,
+                                          onTap: () async {
+                                            final prefs =
+                                                await SharedPreferences
+                                                    .getInstance();
+                                            await prefs.setInt(
+                                                'bookmark_line_${widget.title}',
+                                                index);
+                                            setState(() {
+                                              _bookmarkedLineIndex = index;
+                                            });
+                                          },
+                                          child: Padding(
+                                            padding: const EdgeInsets.only(
+                                                bottom: 8.0),
+                                            child: RichText(
+                                              textAlign: TextAlign.center,
+                                              text: TextSpan(
+                                                style: baseStyle,
+                                                children: [
+                                                  TextSpan(text: p),
+                                                  if (_bookmarkedLineIndex ==
+                                                      index)
+                                                    WidgetSpan(
+                                                      alignment:
+                                                          PlaceholderAlignment
+                                                              .middle,
+                                                      child:
+                                                          _buildBlinkingStar(),
+                                                    ),
+                                                ],
+                                              ),
+                                            ),
+                                          ),
+                                        );
+                                      }),
+                                    );
                                   }
 
-                                  keywords.sort((a, b) => b.length.compareTo(a.length));
+                                  keywords.sort(
+                                      (a, b) => b.length.compareTo(a.length));
 
                                   final pattern = RegExp(
-                                    keywords.map((k) => RegExp.escape(k)).join('|'),
+                                    keywords
+                                        .map((k) => RegExp.escape(k))
+                                        .join('|'),
                                     caseSensitive: false,
                                   );
 
-                                  final matches = pattern.allMatches(cleanContent);
-                                  if (matches.isEmpty) {
-                                    return Text(cleanContent, textAlign: TextAlign.center, style: baseStyle);
-                                  }
+                                  final paragraphs = cleanContent.split('\n\n');
+                                  return Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.stretch,
+                                    children: List.generate(paragraphs.length,
+                                        (index) {
+                                      final p = paragraphs[index];
+                                      final matches = pattern.allMatches(p);
+                                      final List<InlineSpan> spans = [];
 
-                                  int lastMatchEnd = 0;
-                                  final List<TextSpan> spans = [];
+                                      int lastMatchEnd = 0;
+                                      for (final match in matches) {
+                                        if (match.start > lastMatchEnd) {
+                                          spans.add(TextSpan(
+                                            text: p.substring(
+                                                lastMatchEnd, match.start),
+                                            style: baseStyle,
+                                          ));
+                                        }
+                                        spans.add(TextSpan(
+                                          text: p.substring(
+                                              match.start, match.end),
+                                          style: highlightStyle,
+                                        ));
+                                        lastMatchEnd = match.end;
+                                      }
 
-                                  for (final match in matches) {
-                                    if (match.start > lastMatchEnd) {
-                                      spans.add(TextSpan(
-                                        text: cleanContent.substring(lastMatchEnd, match.start),
-                                        style: baseStyle,
-                                      ));
-                                    }
-                                    spans.add(TextSpan(
-                                      text: cleanContent.substring(match.start, match.end),
-                                      style: highlightStyle,
-                                    ));
-                                    lastMatchEnd = match.end;
-                                  }
+                                      if (lastMatchEnd < p.length) {
+                                        spans.add(TextSpan(
+                                          text: p.substring(lastMatchEnd),
+                                          style: baseStyle,
+                                        ));
+                                      }
 
-                                  if (lastMatchEnd < cleanContent.length) {
-                                    spans.add(TextSpan(
-                                      text: cleanContent.substring(lastMatchEnd),
-                                      style: baseStyle,
-                                    ));
-                                  }
+                                      if (_bookmarkedLineIndex == index) {
+                                        spans.add(WidgetSpan(
+                                          alignment:
+                                              PlaceholderAlignment.middle,
+                                          child: _buildBlinkingStar(),
+                                        ));
+                                      }
 
-                                  return RichText(
-                                    textAlign: TextAlign.center,
-                                    text: TextSpan(children: spans),
+                                      return InkWell(
+                                        highlightColor: Colors.transparent,
+                                        splashColor: Colors.transparent,
+                                        onTap: () async {
+                                          final prefs = await SharedPreferences
+                                              .getInstance();
+                                          await prefs.setInt(
+                                              'bookmark_line_${widget.title}',
+                                              index);
+                                          setState(() {
+                                            _bookmarkedLineIndex = index;
+                                          });
+                                        },
+                                        child: Padding(
+                                          padding: const EdgeInsets.only(
+                                              bottom: 8.0),
+                                          child: RichText(
+                                            textAlign: TextAlign.center,
+                                            text: TextSpan(children: spans),
+                                          ),
+                                        ),
+                                      );
+                                    }),
                                   );
                                 },
                               ),
