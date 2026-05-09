@@ -13,22 +13,12 @@ extension ArabicStringNormalization on String {
 
 extension HtmlStringFormatting on String {
   String cleanSnippet() {
-    try {
-      String result = this.trim();
-      if (result.toLowerCase().startsWith('html')) {
-        result = result.substring(4).trim();
-      }
-      result = result.replaceAll('\uFDFA', 'صلى الله عليه وآله');
-      result = result.replaceAll('\uFDFB', 'جل جلاله');
-      result = result.replaceAll('<html>', '');
-      result = result.replaceAll('//', '');
-      result = result.replaceAll(RegExp(r'<\/?p>', caseSensitive: false), ' ');
-      result = result.replaceAll(RegExp(r'<br>', caseSensitive: false), ' ');
-      result = result.replaceAll(RegExp(r'<[^>]*>'), '');
-      result = result.replaceAll(RegExp(r'\s+'), ' ');
-      return result.trim();
-    } catch (e) {
-      return this;
-    }
+    return replaceAll('<html>', '')
+        .replaceAll('//', '')
+        .replaceAll(RegExp(r'<\/?p>', caseSensitive: false), ' ')
+        .replaceAll(RegExp(r'<br>', caseSensitive: false), ' ')
+        .replaceAll(RegExp(r'<[^>]*>'), '')
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
   }
 }
