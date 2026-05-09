@@ -14,6 +14,7 @@ extension ArabicStringNormalization on String {
 extension HtmlStringFormatting on String {
   String cleanSnippet() {
     try {
+      if (this.length > 10000) return this;
       String result = this.trim();
       if (result.toLowerCase().startsWith('html')) {
         result = result.substring(4).trim();
