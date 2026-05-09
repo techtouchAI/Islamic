@@ -132,39 +132,11 @@ class DataManager {
           orElse: () => null,
         );
         if (cat != null) {
-          debugPrint('DEBUG: Looking for dreams_cat_$idString');
-          if (cat.containsKey('items')) {
-            debugPrint('DEBUG: Found items key in dreams_categories for $idString with ${(cat['items'] as List?)?.length} items.');
-            return cat['items'] as List<dynamic>? ?? [];
-          }
           return _db!['content']['dreams_cat_$idString'] as List<dynamic>? ??
               [];
         }
       } catch (e) {
         debugPrint('Error getting dreams categories: $e');
-      }
-      return [];
-    }
-
-    if (section.startsWith('imam_ali_cat_')) {
-      try {
-        final idString = section.replaceAll('imam_ali_cat_', '');
-        final cats = _db!['content']['imam_ali'] as List<dynamic>? ?? [];
-        final cat = cats.firstWhere(
-          (c) => c['id'].toString() == idString,
-          orElse: () => null,
-        );
-        if (cat != null) {
-          debugPrint('DEBUG: Looking for imam_ali_cat_$idString');
-          if (cat.containsKey('items')) {
-            debugPrint('DEBUG: Found items key in imam_ali for $idString with ${(cat['items'] as List?)?.length} items.');
-            return cat['items'] as List<dynamic>? ?? [];
-          }
-          return _db!['content']['imam_ali_cat_$idString'] as List<dynamic>? ??
-              [];
-        }
-      } catch (e) {
-        debugPrint('Error getting imam ali categories: $e');
       }
       return [];
     }

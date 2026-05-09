@@ -1720,12 +1720,12 @@ class DynamicListSection extends StatelessWidget {
               final surah = data[index];
               return Card(
                 color: Theme.of(context).cardColor.withValues(alpha: uiOpacity),
-                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                margin: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(15),
                   side: BorderSide(
                     color: Theme.of(context).colorScheme.primary,
-                    width: 1.5,
+                    width: 1.0,
                   ),
                 ),
                 child: ListTile(
@@ -1827,7 +1827,7 @@ class DynamicListSection extends StatelessWidget {
                   padding: const EdgeInsets.only(bottom: 20),
                   itemBuilder: (context, index) => Container(
                     margin: const EdgeInsets.symmetric(
-                      horizontal: 16,
+                      horizontal: 8.0,
                       vertical: 8,
                     ),
                     child: ClipRRect(
@@ -1847,7 +1847,7 @@ class DynamicListSection extends StatelessWidget {
                                     color: Theme.of(
                                       context,
                                     ).colorScheme.primary,
-                                    width: 1.5,
+                                      width: 1.0,
                                   ),
                                 ),
                               ),
@@ -2054,12 +2054,12 @@ class _ReaderPageState extends State<ReaderPage> {
         children: [
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
+              padding: const EdgeInsets.all(10.0),
               child: Container(
                 width: double.infinity,
-                padding: const EdgeInsets.all(24),
+                padding: const EdgeInsets.all(10.0),
                 decoration: BoxDecoration(
-                  border: Border.all(color: primary, width: 3),
+                  border: Border.all(color: primary, width: 1.0),
                   borderRadius: BorderRadius.circular(25),
                   color: _customBgColor ?? Theme.of(context).cardColor,
                   boxShadow: [
@@ -2193,6 +2193,12 @@ class _ReaderPageState extends State<ReaderPage> {
                                         );
 
                                   String cleanContent = widget.content.replaceAll('### ', '');
+                                  if (cleanContent.trim().toLowerCase().startsWith('html')) {
+                                    cleanContent = cleanContent.trim().substring(4).trim();
+                                  }
+                                  cleanContent = cleanContent.replaceAll('\uFDFA', '(صلى الله عليه وآله)')
+                                                             .replaceAll('\uFDFB', '(جل جلاله)')
+                                                             .replaceAll('!', '(عليه السلام)');
 
                                   if (cleanContent.contains('<') && (cleanContent.contains('<b>') || cleanContent.contains('<p>') || cleanContent.contains('<br>') || cleanContent.contains('<c='))) {
                                     return HtmlContentRenderer(
