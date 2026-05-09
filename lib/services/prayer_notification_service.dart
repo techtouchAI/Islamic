@@ -16,39 +16,103 @@ class PrayerNotificationService {
   // 1. تهيئة الإشعارات
   static Future<void> initNotifications() async {
     tz.initializeTimeZones();
+    try {
+      // We will fallback to UTC but convert local time properly if timezone library fails
+      // Using UTC +3 for Iraq explicitly as fallback without adding native plugins that break gradle
+      tz.setLocalLocation(tz.getLocation('Asia/Baghdad'));
+    } catch (e) {
+      debugPrint('Error setting timezone: $e');
+    }
 
     const AndroidInitializationSettings initializationSettingsAndroid =
-        AndroidInitializationSettings('@mipmap/ic_launcher');
+        AndroidInitializationSettings('@drawable/app_icon');
+
+    const DarwinInitializationSettings initializationSettingsIOS =
+        DarwinInitializationSettings(
+      requestAlertPermission: true,
+      requestBadgePermission: true,
+      requestSoundPermission: true,
+    );
 
     const InitializationSettings initializationSettings =
-        InitializationSettings(android: initializationSettingsAndroid);
+        InitializationSettings(
+      android: initializationSettingsAndroid,
+      iOS: initializationSettingsIOS,
+    );
 
     await _notificationsPlugin.initialize(initializationSettings);
+
+    // Request Android 13+ permissions
+    final androidPlugin =
+        _notificationsPlugin.resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>();
+    if (androidPlugin != null) {
+      await androidPlugin.requestNotificationsPermission();
+      await androidPlugin.requestExactAlarmsPermission();
+    }
   }
 
-  // 2. حساب أوقات الصلاة (المذهب الجعفري - جامعة طهران)
-  static void scheduleDailyPrayers({DateTime? now}) {
-    final DateTime currentTime = now ?? DateTime.now();
+  static Future<String> testInstantNotification() async {
+    try {
+      debugPrint('--- FIRING INSTANT VANILLA TEST ---');
+      await _notificationsPlugin.show(
+        8888, // Unique test ID
+        'اختبار فوري',
+        'هذا إشعار أساسي فوري للتحقق من العرض',
+        const NotificationDetails(
+          android: AndroidNotificationDetails(
+            'test_channel_emergency',
+            'إشعارات أساسية',
+            channelDescription: 'قناة اختبار',
+            importance: Importance.max,
+            priority: Priority.high,
+          ),
+        ),
+      );
+      debugPrint('Instant vanilla test shown successfully.');
+      return 'Success';
+    } catch (e) {
+      debugPrint('INSTANT TEST FAILED TO SHOW: $e');
+      return e.toString();
+    }
+  }
 
-    // إحداثيات الموقع (الحلة)
+  // 2. حساب أوقات الصلاة (المذهب الجعفري - جامعة طهران) لعدة أيام
+  static Future<void> scheduleDailyPrayers({DateTime? now}) async {
+    await _notificationsPlugin.cancelAll();
+
+    final DateTime baseTime = now ?? DateTime.now();
     final coordinates = Coordinates(32.4682, 44.4361);
-
-    // ضبط المعايير
     final params = CalculationMethod.tehran.getParameters();
     params.madhab = Madhab.shafi;
 
-    final date = DateComponents.from(currentTime);
-    final prayerTimes = PrayerTimes(coordinates, date, params);
+    // جدولة لـ 7 أيام قادمة لضمان بقاء الطابور ممتلئاً
+    for (int i = 0; i < 7; i++) {
+      final DateTime currentTime = baseTime.add(Duration(days: i));
+      final date = DateComponents.from(currentTime);
+      final prayerTimes = PrayerTimes(coordinates, date, params);
 
-    // جدولة الصلوات
-    if (prayerTimes.fajr.isAfter(currentTime)) {
-      _schedulePrayerNotification(prayerTimes.fajr, 'الفجر');
-    }
-    if (prayerTimes.dhuhr.isAfter(currentTime)) {
-      _schedulePrayerNotification(prayerTimes.dhuhr, 'الظهر');
-    }
-    if (prayerTimes.maghrib.isAfter(currentTime)) {
-      _schedulePrayerNotification(prayerTimes.maghrib, 'المغرب');
+      if (prayerTimes.fajr.isAfter(baseTime)) {
+        final id =
+            'الفجر-${prayerTimes.fajr.year}-${prayerTimes.fajr.month}-${prayerTimes.fajr.day}'
+                .hashCode; //
+
+        _schedulePrayerNotification(prayerTimes.fajr, 'الفجر', id);
+      }
+      if (prayerTimes.dhuhr.isAfter(baseTime)) {
+        final id =
+            'الظهر-${prayerTimes.dhuhr.year}-${prayerTimes.dhuhr.month}-${prayerTimes.dhuhr.day}'
+                .hashCode; //
+
+        _schedulePrayerNotification(prayerTimes.dhuhr, 'الظهر', id);
+      }
+      if (prayerTimes.maghrib.isAfter(baseTime)) {
+        final id =
+            'المغرب-${prayerTimes.maghrib.year}-${prayerTimes.maghrib.month}-${prayerTimes.maghrib.day}'
+                .hashCode; //
+
+        _schedulePrayerNotification(prayerTimes.maghrib, 'المغرب', id);
+      }
     }
   }
 
@@ -56,8 +120,9 @@ class PrayerNotificationService {
   static Future<void> _schedulePrayerNotification(
     DateTime prayerTime,
     String prayerName,
+    int notificationId,
   ) async {
-    const String channelId = 'adhan_channel_v2';
+    const String channelId = 'adhan_channel_v3';
 
     const AndroidNotificationDetails androidPlatformChannelSpecifics =
         AndroidNotificationDetails(
@@ -67,7 +132,7 @@ class PrayerNotificationService {
       importance: Importance.max,
       priority: Priority.high,
       playSound: true,
-      sound: RawResourceAndroidNotificationSound('adhan_sound'),
+      sound: RawResourceAndroidNotificationSound('adhan'),
       enableVibration: true,
       fullScreenIntent: true,
     );
@@ -76,15 +141,23 @@ class PrayerNotificationService {
       android: androidPlatformChannelSpecifics,
     );
 
-    await _notificationsPlugin.zonedSchedule(
-      prayerName.hashCode,
-      'حان الآن موعد أذان $prayerName',
-      'تقبل الله أعمالكم',
-      tz.TZDateTime.from(prayerTime, tz.local),
-      platformChannelSpecifics,
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-      uiLocalNotificationDateInterpretation:
-          UILocalNotificationDateInterpretation.absoluteTime,
-    );
+    final String notificationBody = (prayerName == 'الفجر')
+        ? 'الصلاة خير من النوم'
+        : 'حي على الصلاة، حي على الفلاح';
+
+    try {
+      await _notificationsPlugin.zonedSchedule(
+        notificationId,
+        'حان الآن موعد أذان $prayerName',
+        notificationBody,
+        tz.TZDateTime.from(prayerTime, tz.local),
+        platformChannelSpecifics,
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
+      );
+    } catch (e) {
+      debugPrint('Failed to schedule notification: $e');
+    }
   }
 }

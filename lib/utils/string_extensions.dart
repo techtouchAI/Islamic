@@ -15,6 +15,7 @@ extension HtmlStringFormatting on String {
   String cleanSnippet() {
     return replaceAll('<html>', '')
         .replaceAll('//', '')
+        .replaceAll('&nbsp;', ' ')
         .replaceAll(RegExp(r'<\/?p>', caseSensitive: false), ' ')
         .replaceAll(RegExp(r'<br>', caseSensitive: false), ' ')
         .replaceAll(RegExp(r'<[^>]*>'), '')
