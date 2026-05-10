@@ -88,20 +88,25 @@ class _HtmlContentRendererState extends State<HtmlContentRenderer> {
             Container(
               width: double.infinity,
               padding: const EdgeInsets.only(bottom: 8.0),
-              child: RichText(
-                textAlign: textAlign,
-                textDirection: TextDirection.rtl,
-                text: TextSpan(
-                  style: baseStyle,
-                  children: List.from(currentSpans),
+              child: GestureDetector(
+                behavior: HitTestBehavior.translucent,
+                child: RichText(
+                  key: ValueKey(
+                      '${widget.bookmarkedIndex}_${paragraphWidgets.length}'),
+                  textAlign: textAlign,
+                  textDirection: TextDirection.rtl,
+                  text: TextSpan(
+                    style: baseStyle,
+                    children: List.from(currentSpans),
+                  ),
                 ),
               ),
             ),
           );
           currentSpans.clear();
         } else {
-            // Empty newline paragraph
-            paragraphWidgets.add(const SizedBox(height: 8.0));
+          // Empty newline paragraph
+          paragraphWidgets.add(const SizedBox(height: 8.0));
         }
         continue;
       }
@@ -109,13 +114,15 @@ class _HtmlContentRendererState extends State<HtmlContentRenderer> {
       final isWhitespace = token.trim().isEmpty;
 
       if (isWhitespace) {
-        currentSpans.add(TextSpan(text: token, style: TextStyle(
-          fontWeight: isBold ? FontWeight.bold : baseStyle.fontWeight,
-          color: currentColor ?? baseStyle.color,
-          fontFamily: baseStyle.fontFamily,
-          fontSize: baseStyle.fontSize,
-          height: baseStyle.height,
-        )));
+        currentSpans.add(TextSpan(
+            text: token,
+            style: TextStyle(
+              fontWeight: isBold ? FontWeight.bold : baseStyle.fontWeight,
+              color: currentColor ?? baseStyle.color,
+              fontFamily: baseStyle.fontFamily,
+              fontSize: baseStyle.fontSize,
+              height: baseStyle.height,
+            )));
         continue;
       }
 
@@ -123,13 +130,15 @@ class _HtmlContentRendererState extends State<HtmlContentRenderer> {
       final List<InlineSpan> tokenSpans = [];
 
       if (!token.contains('<')) {
-        tokenSpans.add(TextSpan(text: token, style: TextStyle(
-            fontWeight: isBold ? FontWeight.bold : baseStyle.fontWeight,
-            color: currentColor ?? baseStyle.color,
-            fontFamily: baseStyle.fontFamily,
-            fontSize: baseStyle.fontSize,
-            height: baseStyle.height,
-        )));
+        tokenSpans.add(TextSpan(
+            text: token,
+            style: TextStyle(
+              fontWeight: isBold ? FontWeight.bold : baseStyle.fontWeight,
+              color: currentColor ?? baseStyle.color,
+              fontFamily: baseStyle.fontFamily,
+              fontSize: baseStyle.fontSize,
+              height: baseStyle.height,
+            )));
       } else {
         int lastMatchEnd = 0;
 
@@ -176,20 +185,12 @@ class _HtmlContentRendererState extends State<HtmlContentRenderer> {
       }
 
       // Add zero-width floating star if this word is bookmarked
-      if (widget.bookmarkedIndex == currentWordIndex) {
-        tokenSpans.add(WidgetSpan(
-          child: SizedBox(
-            width: 0,
-            height: 0,
-            child: OverflowBox(
-              maxWidth: 50,
-              maxHeight: 50,
-              alignment: Alignment.topCenter,
-              child: Transform.translate(
-                offset: const Offset(0, -15),
-                child: const Icon(Icons.star, color: Colors.green, size: 16),
-              ),
-            ),
+      if (widget.bookmarkedIndex?.toString() == currentWordIndex.toString()) {
+        tokenSpans.add(const WidgetSpan(
+          alignment: PlaceholderAlignment.middle,
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 2),
+            child: Icon(Icons.star, color: Colors.green, size: 16),
           ),
         ));
       }
@@ -209,12 +210,17 @@ class _HtmlContentRendererState extends State<HtmlContentRenderer> {
         Container(
           width: double.infinity,
           padding: const EdgeInsets.only(bottom: 8.0),
-          child: RichText(
-            textAlign: textAlign,
-            textDirection: TextDirection.rtl,
-            text: TextSpan(
-              style: baseStyle,
-              children: currentSpans,
+          child: GestureDetector(
+            behavior: HitTestBehavior.translucent,
+            child: RichText(
+              key: ValueKey(
+                  '${widget.bookmarkedIndex}_${paragraphWidgets.length}'),
+              textAlign: textAlign,
+              textDirection: TextDirection.rtl,
+              text: TextSpan(
+                style: baseStyle,
+                children: currentSpans,
+              ),
             ),
           ),
         ),
