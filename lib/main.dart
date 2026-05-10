@@ -2319,12 +2319,8 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
                                   }
 
                                   if (widget.titleColor == null) {
-                                    String processedForSplit = cleanContent.replaceAllMapped(
-                                      RegExp(r'(﴿[0-9٠-٩]+﴾|۝)'),
-                                      (match) => '${match.group(1)}\n',
-                                    );
                                     final paragraphs =
-                                        processedForSplit.split(RegExp(r'\n+')).where((p) => p.trim().isNotEmpty).toList();
+                                        cleanContent.split('\n\n');
                                     return Column(
                                       crossAxisAlignment:
                                           CrossAxisAlignment.stretch,
@@ -2399,12 +2395,8 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
                                       .toList();
 
                                   if (keywords.isEmpty) {
-                                    String processedForSplit = cleanContent.replaceAllMapped(
-                                      RegExp(r'(﴿[0-9٠-٩]+﴾|۝)'),
-                                      (match) => '${match.group(1)}\n',
-                                    );
                                     final paragraphs =
-                                        processedForSplit.split(RegExp(r'\n+')).where((p) => p.trim().isNotEmpty).toList();
+                                        cleanContent.split('\n\n');
                                     return Column(
                                       crossAxisAlignment:
                                           CrossAxisAlignment.stretch,
