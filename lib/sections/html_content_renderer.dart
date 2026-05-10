@@ -4,7 +4,6 @@ class HtmlContentRenderer extends StatefulWidget {
   final String content;
   final TextStyle baseStyle;
   final TextAlign textAlign;
-
   final int? bookmarkedIndex;
   final ValueChanged<int>? onParagraphTapped;
   final Widget? blinkingStar;
@@ -24,27 +23,6 @@ class HtmlContentRenderer extends StatefulWidget {
 }
 
 class _HtmlContentRendererState extends State<HtmlContentRenderer> {
-  late List<Widget> _parsedWidgets;
-
-  @override
-  void initState() {
-    super.initState();
-    _parsedWidgets =
-        _parseContentRobust(widget.content, widget.baseStyle, widget.textAlign);
-  }
-
-  @override
-  void didUpdateWidget(HtmlContentRenderer oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.content != widget.content ||
-        oldWidget.baseStyle != widget.baseStyle ||
-        oldWidget.textAlign != widget.textAlign ||
-        oldWidget.bookmarkedIndex != widget.bookmarkedIndex) {
-      _parsedWidgets = _parseContentRobust(
-          widget.content, widget.baseStyle, widget.textAlign);
-    }
-  }
-
   Color? _parseColor(String colorString) {
     try {
       if (colorString.startsWith('#')) {
@@ -133,11 +111,9 @@ class _HtmlContentRendererState extends State<HtmlContentRenderer> {
         GestureDetector(
           behavior: HitTestBehavior.opaque,
           onTap: () {
-            debugPrint('Child: Paragraph $i tapped');
             widget.onParagraphTapped?.call(i);
           },
           onLongPress: () {
-            debugPrint('Child: Paragraph $i tapped');
             widget.onParagraphTapped?.call(i);
           },
           child: Container(
@@ -163,6 +139,7 @@ class _HtmlContentRendererState extends State<HtmlContentRenderer> {
   Widget build(BuildContext context) {
     return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: _parsedWidgets);
+        children: _parseContentRobust(
+            widget.content, widget.baseStyle, widget.textAlign));
   }
 }
