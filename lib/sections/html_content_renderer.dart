@@ -38,7 +38,8 @@ class _HtmlContentRendererState extends State<HtmlContentRenderer> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.content != widget.content ||
         oldWidget.baseStyle != widget.baseStyle ||
-        oldWidget.textAlign != widget.textAlign) {
+        oldWidget.textAlign != widget.textAlign ||
+        oldWidget.bookmarkedIndex != widget.bookmarkedIndex) {
       _parsedWidgets = _parseContentRobust(
           widget.content, widget.baseStyle, widget.textAlign);
     }
