@@ -129,11 +129,16 @@ class _HtmlContentRendererState extends State<HtmlContentRenderer> {
       }
 
       paragraphWidgets.add(
-        InkWell(
-          highlightColor: Colors.transparent,
-          splashColor: Colors.transparent,
-          onTap: () => widget.onParagraphTapped?.call(i),
-          child: Padding(
+        GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () {
+            widget.onParagraphTapped?.call(i);
+          },
+          onLongPress: () {
+            widget.onParagraphTapped?.call(i);
+          },
+          child: Container(
+            width: double.infinity,
             padding: const EdgeInsets.only(bottom: 8.0),
             child: RichText(
               textAlign: textAlign,
