@@ -1894,9 +1894,23 @@ class DynamicListSection extends StatelessWidget {
                             subtitle: Padding(
                               padding: const EdgeInsets.only(top: 10),
                               child: Text(
-                                data[index]['content']
-                                    .toString()
-                                    .cleanSnippet(),
+                                [
+                                  'موسى (عليه السلام)',
+                                  'قصة ادم عليه السلام',
+                                  'قصة سليمان عليه السلام',
+                                  'عيسى عليه السلام',
+                                  'يوسف عليه السلام'
+                                ].contains(data[index]['title'].toString())
+                                    ? data[index]['content']
+                                        .toString()
+                                        .replaceAll(
+                                            RegExp(r'<\/?html[^>]*>|<html>',
+                                                caseSensitive: false),
+                                            '')
+                                        .cleanSnippet()
+                                    : data[index]['content']
+                                        .toString()
+                                        .cleanSnippet(),
                                 maxLines:
                                     sectionKey.contains('imam_ali') ? 3 : 2,
                                 overflow: TextOverflow.ellipsis,
@@ -2296,6 +2310,20 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
                                             );
 
                                   String cleanContent = widget.content;
+
+                                  if ([
+                                    'موسى (عليه السلام)',
+                                    'قصة ادم عليه السلام',
+                                    'قصة سليمان عليه السلام',
+                                    'عيسى عليه السلام',
+                                    'يوسف عليه السلام'
+                                  ].contains(widget.title)) {
+                                    cleanContent = cleanContent.replaceAll(
+                                        RegExp(r'<\/?html[^>]*>|<html>',
+                                            caseSensitive: false),
+                                        '');
+                                  }
+
                                   if (cleanContent.length <= 10000) {
                                     cleanContent =
                                         cleanContent.replaceAll('### ', '');
@@ -2315,255 +2343,53 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
                                         .replaceAll('!', '(عليه السلام)');
                                   }
 
-                                  if (cleanContent.contains('<') &&
-                                      (cleanContent.contains('<b>') ||
-                                          cleanContent.contains('<p>') ||
-                                          cleanContent.contains('<br>') ||
-                                          cleanContent.contains('<c='))) {
-                                    debugPrint(
-                                        'HtmlContentRenderer built for section: ${widget.title} with bookmark: $_bookmarkedLineIndex');
-                                    return HtmlContentRenderer(
-                                      content: cleanContent,
-                                      baseStyle: baseStyle,
-                                      bookmarkedIndex: _bookmarkedLineIndex,
-                                      onParagraphTapped: (index) async {
-                                        final prefs = await SharedPreferences
-                                            .getInstance();
-                                        await prefs.setInt(
-                                            'bookmark_line_${widget.title}',
-                                            index);
-                                        debugPrint(
-                                            'Parent: State updated to index $index');
-                                        setState(() {
-                                          if (_bookmarkedLineIndex
-                                                  ?.toString() ==
-                                              index.toString()) {
-                                            _bookmarkedLineIndex = null;
-                                            prefs.remove(
-                                                'bookmark_line_${widget.title}');
-                                          } else {
-                                            _bookmarkedLineIndex = index;
-                                            prefs.setInt(
-                                                'bookmark_line_${widget.title}',
-                                                index);
-                                          }
-                                        });
-                                      },
-                                    );
-                                  }
-
-                                  if (widget.titleColor == null) {
-                                    final paragraphs =
-                                        cleanContent.split('\n\n');
-                                    return Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.stretch,
-                                      children: List.generate(paragraphs.length,
-                                          (index) {
-                                        final p = paragraphs[index];
-                                        return GestureDetector(
-                                          behavior: HitTestBehavior.translucent,
-                                          onTap: () async {
-                                            final prefs =
-                                                await SharedPreferences
-                                                    .getInstance();
-                                            await prefs.setInt(
-                                                'bookmark_line_${widget.title}',
-                                                index);
-                                            debugPrint(
-                                                'Parent: State updated to index $index');
-                                            setState(() {
-                                              _bookmarkedLineIndex = index;
-                                            });
-                                          },
-                                          onLongPress: () async {
-                                            final prefs =
-                                                await SharedPreferences
-                                                    .getInstance();
-                                            await prefs.setInt(
-                                                'bookmark_line_${widget.title}',
-                                                index);
-                                            debugPrint(
-                                                'Parent: State updated to index $index');
-                                            setState(() {
-                                              _bookmarkedLineIndex = index;
-                                            });
-                                          },
-                                          child: Container(
-                                            width: double.infinity,
-                                            padding: const EdgeInsets.only(
-                                                bottom: 8.0),
-                                            child: RichText(
-                                              textAlign: TextAlign.center,
-                                              text: TextSpan(
-                                                style: baseStyle,
-                                                children: [
-                                                  TextSpan(text: p),
-                                                ],
-                                              ),
-                                            ),
-                                          ),
-                                        );
-                                      }),
-                                    );
-                                  }
-
-                                  final highlightStyle = baseStyle.copyWith(
-                                    color: _parseColor(widget.titleColor!),
-                                    fontWeight: FontWeight.bold,
-                                  );
-
                                   final keywords = widget.title
                                       .split(' ؟ ')
                                       .map((e) => e.trim())
                                       .where((e) => e.isNotEmpty)
                                       .toList();
 
-                                  if (keywords.isEmpty) {
-                                    final paragraphs =
-                                        cleanContent.split('\n\n');
-                                    return Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.stretch,
-                                      children: List.generate(paragraphs.length,
-                                          (index) {
-                                        final p = paragraphs[index];
-                                        return GestureDetector(
-                                          behavior: HitTestBehavior.translucent,
-                                          onTap: () async {
-                                            final prefs =
-                                                await SharedPreferences
-                                                    .getInstance();
-                                            await prefs.setInt(
-                                                'bookmark_line_${widget.title}',
-                                                index);
-                                            debugPrint(
-                                                'Parent: State updated to index $index');
-                                            setState(() {
-                                              _bookmarkedLineIndex = index;
-                                            });
-                                          },
-                                          onLongPress: () async {
-                                            final prefs =
-                                                await SharedPreferences
-                                                    .getInstance();
-                                            await prefs.setInt(
-                                                'bookmark_line_${widget.title}',
-                                                index);
-                                            debugPrint(
-                                                'Parent: State updated to index $index');
-                                            setState(() {
-                                              _bookmarkedLineIndex = index;
-                                            });
-                                          },
-                                          child: Container(
-                                            width: double.infinity,
-                                            padding: const EdgeInsets.only(
-                                                bottom: 8.0),
-                                            child: RichText(
-                                              textAlign: TextAlign.center,
-                                              text: TextSpan(
-                                                style: baseStyle,
-                                                children: [
-                                                  TextSpan(text: p),
-                                                ],
-                                              ),
-                                            ),
-                                          ),
-                                        );
-                                      }),
-                                    );
-                                  }
-
                                   keywords.sort(
                                       (a, b) => b.length.compareTo(a.length));
 
-                                  final pattern = RegExp(
-                                    keywords
-                                        .map((k) => RegExp.escape(k))
-                                        .join('|'),
-                                    caseSensitive: false,
-                                  );
+                                  if (keywords.isNotEmpty &&
+                                      widget.titleColor != null) {
+                                    final pattern = RegExp(
+                                      keywords
+                                          .map((k) => RegExp.escape(k))
+                                          .join('|'),
+                                      caseSensitive: false,
+                                    );
+                                    cleanContent = cleanContent.replaceAllMapped(
+                                        pattern,
+                                        (match) =>
+                                            '<c=${widget.titleColor}>${match.group(0)}</c>');
+                                  }
 
-                                  final paragraphs = cleanContent.split('\n\n');
-                                  return Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.stretch,
-                                    children: List.generate(paragraphs.length,
-                                        (index) {
-                                      final p = paragraphs[index];
-                                      final matches = pattern.allMatches(p);
-                                      final List<InlineSpan> spans = [];
-
-                                      int lastMatchEnd = 0;
-                                      for (final match in matches) {
-                                        if (match.start > lastMatchEnd) {
-                                          spans.add(TextSpan(
-                                            text: p.substring(
-                                                lastMatchEnd, match.start),
-                                            style: baseStyle,
-                                          ));
+                                  return HtmlContentRenderer(
+                                    content: cleanContent,
+                                    baseStyle: baseStyle,
+                                    bookmarkedIndex: _bookmarkedLineIndex,
+                                    onParagraphTapped: (index) async {
+                                      final prefs =
+                                          await SharedPreferences.getInstance();
+                                      await prefs.setInt(
+                                          'bookmark_line_${widget.title}',
+                                          index);
+                                      setState(() {
+                                        if (_bookmarkedLineIndex?.toString() ==
+                                            index.toString()) {
+                                          _bookmarkedLineIndex = null;
+                                          prefs.remove(
+                                              'bookmark_line_${widget.title}');
+                                        } else {
+                                          _bookmarkedLineIndex = index;
+                                          prefs.setInt(
+                                              'bookmark_line_${widget.title}',
+                                              index);
                                         }
-                                        spans.add(TextSpan(
-                                          text: p.substring(
-                                              match.start, match.end),
-                                          style: highlightStyle,
-                                        ));
-                                        lastMatchEnd = match.end;
-                                      }
-
-                                      if (lastMatchEnd < p.length) {
-                                        spans.add(TextSpan(
-                                          text: p.substring(lastMatchEnd),
-                                          style: baseStyle,
-                                        ));
-                                      }
-
-                                      return GestureDetector(
-                                        behavior: HitTestBehavior.translucent,
-                                        onTap: () async {
-                                          final prefs = await SharedPreferences
-                                              .getInstance();
-                                          await prefs.setInt(
-                                              'bookmark_line_${widget.title}',
-                                              index);
-                                          debugPrint(
-                                              'Parent: State updated to index $index');
-                                          debugPrint(
-                                              'Parent: State updated to index $index');
-                                          debugPrint(
-                                              'Parent: State updated to index $index');
-                                          setState(() {
-                                            _bookmarkedLineIndex = index;
-                                          });
-                                        },
-                                        onLongPress: () async {
-                                          final prefs = await SharedPreferences
-                                              .getInstance();
-                                          await prefs.setInt(
-                                              'bookmark_line_${widget.title}',
-                                              index);
-                                          debugPrint(
-                                              'Parent: State updated to index $index');
-                                          debugPrint(
-                                              'Parent: State updated to index $index');
-                                          debugPrint(
-                                              'Parent: State updated to index $index');
-                                          setState(() {
-                                            _bookmarkedLineIndex = index;
-                                          });
-                                        },
-                                        child: Container(
-                                          width: double.infinity,
-                                          padding: const EdgeInsets.only(
-                                              bottom: 8.0),
-                                          child: RichText(
-                                            textAlign: TextAlign.center,
-                                            text: TextSpan(children: spans),
-                                          ),
-                                        ),
-                                      );
-                                    }),
+                                      });
+                                    },
                                   );
                                 },
                               ),

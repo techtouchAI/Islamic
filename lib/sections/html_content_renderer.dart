@@ -75,8 +75,6 @@ class _HtmlContentRendererState extends State<HtmlContentRenderer> {
       for (final word in words) {
         if (word.isEmpty) continue;
 
-        final currentWordIndex = wordIndex++;
-
         // Parse styles inside the word
         String displayText = word;
         for (final match in tagRegex.allMatches(word)) {
@@ -94,6 +92,8 @@ class _HtmlContentRendererState extends State<HtmlContentRenderer> {
         displayText = displayText.replaceAll(tagRegex, '');
 
         if (displayText.isEmpty) continue;
+
+        final currentWordIndex = wordIndex++;
 
         final currentHtmlStyle = TextStyle(
           fontWeight: isBold ? FontWeight.bold : baseStyle.fontWeight,
