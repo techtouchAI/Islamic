@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
 class HtmlContentRenderer extends StatefulWidget {
@@ -47,31 +48,80 @@ class _HtmlContentRendererState extends State<HtmlContentRenderer> {
       (match) => '${match.group(1)}\n',
     );
 
-    // Split by single newline or double newline to ensure fine granularity
-    final paragraphs = processed
-        .split(RegExp(r'\n+'))
-        .where((p) => p.trim().isNotEmpty)
-        .toList();
+    // Split by words to ensure word-by-word bookmark granularity.
+    // We split by space or newline, preserving the separators to reconstruct formatting.
+    final wordsAndSpaces = processed.split(RegExp(r'(?<=\s)|(?=\s)'));
+
     final List<Widget> paragraphWidgets = [];
+    List<InlineSpan> currentSpans = [];
 
     final RegExp tagRegex =
         RegExp(r'(<b>|</b>|<c=(#[a-zA-Z0-9]{6})>|</c>)', caseSensitive: false);
 
-    for (int i = 0; i < paragraphs.length; i++) {
-      final p = paragraphs[i];
-      final List<InlineSpan> spans = [];
+    bool isBold = false;
+    Color? currentColor;
+    int wordIndex = 0;
 
-      if (!p.contains('<')) {
-        spans.add(TextSpan(text: p, style: baseStyle));
+    for (int i = 0; i < wordsAndSpaces.length; i++) {
+      final token = wordsAndSpaces[i];
+      if (token.isEmpty) continue;
+
+      if (token == '\n') {
+        // End of paragraph, wrap it in a RichText and reset spans
+        if (currentSpans.isNotEmpty) {
+          paragraphWidgets.add(
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.only(bottom: 8.0),
+              child: RichText(
+                textAlign: textAlign,
+                textDirection: TextDirection.rtl,
+                text: TextSpan(
+                  style: baseStyle,
+                  children: List.from(currentSpans),
+                ),
+              ),
+            ),
+          );
+          currentSpans.clear();
+        } else {
+            // Empty newline paragraph
+            paragraphWidgets.add(const SizedBox(height: 8.0));
+        }
+        continue;
+      }
+
+      final isWhitespace = token.trim().isEmpty;
+
+      if (isWhitespace) {
+        currentSpans.add(TextSpan(text: token, style: TextStyle(
+          fontWeight: isBold ? FontWeight.bold : baseStyle.fontWeight,
+          color: currentColor ?? baseStyle.color,
+          fontFamily: baseStyle.fontFamily,
+          fontSize: baseStyle.fontSize,
+          height: baseStyle.height,
+        )));
+        continue;
+      }
+
+      final currentWordIndex = wordIndex++;
+      final List<InlineSpan> tokenSpans = [];
+
+      if (!token.contains('<')) {
+        tokenSpans.add(TextSpan(text: token, style: TextStyle(
+            fontWeight: isBold ? FontWeight.bold : baseStyle.fontWeight,
+            color: currentColor ?? baseStyle.color,
+            fontFamily: baseStyle.fontFamily,
+            fontSize: baseStyle.fontSize,
+            height: baseStyle.height,
+        )));
       } else {
         int lastMatchEnd = 0;
-        bool isBold = false;
-        Color? currentColor;
 
-        for (final match in tagRegex.allMatches(p)) {
+        for (final match in tagRegex.allMatches(token)) {
           if (match.start > lastMatchEnd) {
-            spans.add(TextSpan(
-              text: p.substring(lastMatchEnd, match.start),
+            tokenSpans.add(TextSpan(
+              text: token.substring(lastMatchEnd, match.start),
               style: TextStyle(
                 fontWeight: isBold ? FontWeight.bold : baseStyle.fontWeight,
                 color: currentColor ?? baseStyle.color,
@@ -96,9 +146,9 @@ class _HtmlContentRendererState extends State<HtmlContentRenderer> {
           lastMatchEnd = match.end;
         }
 
-        if (lastMatchEnd < p.length) {
-          spans.add(TextSpan(
-            text: p.substring(lastMatchEnd),
+        if (lastMatchEnd < token.length) {
+          tokenSpans.add(TextSpan(
+            text: token.substring(lastMatchEnd),
             style: TextStyle(
               fontWeight: isBold ? FontWeight.bold : baseStyle.fontWeight,
               color: currentColor ?? baseStyle.color,
@@ -110,32 +160,35 @@ class _HtmlContentRendererState extends State<HtmlContentRenderer> {
         }
       }
 
-      if (widget.bookmarkedIndex == i && widget.blinkingStar != null) {
-        spans.add(WidgetSpan(
+      // Add blinking star if this word is bookmarked
+      if (widget.bookmarkedIndex == currentWordIndex && widget.blinkingStar != null) {
+        tokenSpans.add(WidgetSpan(
           alignment: PlaceholderAlignment.middle,
           child: widget.blinkingStar!,
         ));
       }
 
+      currentSpans.add(TextSpan(
+        children: tokenSpans,
+        recognizer: TapGestureRecognizer()
+          ..onTap = () {
+            widget.onParagraphTapped?.call(currentWordIndex);
+          },
+      ));
+    }
+
+    // Add any remaining spans as the last paragraph
+    if (currentSpans.isNotEmpty) {
       paragraphWidgets.add(
-        GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: () {
-            widget.onParagraphTapped?.call(i);
-          },
-          onLongPress: () {
-            widget.onParagraphTapped?.call(i);
-          },
-          child: Container(
-            width: double.infinity,
-            padding: const EdgeInsets.only(bottom: 8.0),
-            child: RichText(
-              textAlign: textAlign,
-              textDirection: TextDirection.rtl,
-              text: TextSpan(
-                style: baseStyle,
-                children: spans,
-              ),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.only(bottom: 8.0),
+          child: RichText(
+            textAlign: textAlign,
+            textDirection: TextDirection.rtl,
+            text: TextSpan(
+              style: baseStyle,
+              children: currentSpans,
             ),
           ),
         ),
