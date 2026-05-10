@@ -2470,6 +2470,10 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
                                               index);
                                           debugPrint(
                                               'Parent: State updated to index $index');
+                                          debugPrint(
+                                              'Parent: State updated to index $index');
+                                          debugPrint(
+                                              'Parent: State updated to index $index');
                                           setState(() {
                                             _bookmarkedLineIndex = index;
                                           });
@@ -2480,6 +2484,10 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
                                           await prefs.setInt(
                                               'bookmark_line_${widget.title}',
                                               index);
+                                          debugPrint(
+                                              'Parent: State updated to index $index');
+                                          debugPrint(
+                                              'Parent: State updated to index $index');
                                           debugPrint(
                                               'Parent: State updated to index $index');
                                           setState(() {
