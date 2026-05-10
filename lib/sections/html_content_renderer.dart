@@ -175,11 +175,22 @@ class _HtmlContentRendererState extends State<HtmlContentRenderer> {
         }
       }
 
-      // Add blinking star if this word is bookmarked
-      if (widget.bookmarkedIndex == currentWordIndex && widget.blinkingStar != null) {
+      // Add zero-width floating star if this word is bookmarked
+      if (widget.bookmarkedIndex == currentWordIndex) {
         tokenSpans.add(WidgetSpan(
-          alignment: PlaceholderAlignment.middle,
-          child: widget.blinkingStar!,
+          child: SizedBox(
+            width: 0,
+            height: 0,
+            child: OverflowBox(
+              maxWidth: 50,
+              maxHeight: 50,
+              alignment: Alignment.topCenter,
+              child: Transform.translate(
+                offset: const Offset(0, -15),
+                child: const Icon(Icons.star, color: Colors.green, size: 16),
+              ),
+            ),
+          ),
         ));
       }
 

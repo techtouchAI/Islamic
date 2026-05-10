@@ -2024,7 +2024,6 @@ Color? _parseColor(String? colorString) {
 class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
   late double _factor;
   Color? _customBgColor;
-  AnimationController? _blinkController;
   int? _bookmarkedLineIndex;
   static final _trailingNumbersRegex = RegExp(r'[\s\xa0]*[0-9٠-٩]+$');
 
@@ -2042,10 +2041,7 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
   void initState() {
     super.initState();
     _factor = widget.fontSizeFactor;
-    _blinkController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 1),
-    )..repeat(reverse: true);
+
     SharedPreferences.getInstance().then((prefs) {
       setState(() {
         _bookmarkedLineIndex = prefs.getInt('bookmark_line_${widget.title}');
@@ -2055,16 +2051,11 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
 
   @override
   void dispose() {
-    _blinkController?.dispose();
+
     super.dispose();
   }
 
-  Widget _buildBlinkingStar() {
-    return FadeTransition(
-      opacity: _blinkController!,
-      child: const Icon(Icons.star, color: Colors.green, size: 20),
-    );
-  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -2183,20 +2174,13 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
                                       TextSpan(
                                         text: '﴿$arabicIndex﴾',
                                         style: TextStyle(
-                                          color: Colors.amber[700],
+                                          color: _bookmarkedLineIndex == ayahIndex
+                                              ? Colors.green.shade900
+                                              : Colors.amber[700],
+                                          fontWeight: _bookmarkedLineIndex == ayahIndex
+                                              ? FontWeight.bold
+                                              : FontWeight.normal,
                                           fontSize: 24 * _factor,
-                                        ),
-                                      ),
-                                    if (_bookmarkedLineIndex == ayahIndex)
-                                      WidgetSpan(
-                                        alignment: PlaceholderAlignment.middle,
-                                        child: FadeTransition(
-                                          opacity: _blinkController!,
-                                          child: Icon(
-                                            Icons.star,
-                                            color: Colors.amber,
-                                            size: 24 * _factor,
-                                          ),
                                         ),
                                       ),
                                     const TextSpan(text: ' '),
@@ -2211,8 +2195,6 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
                                         } else {
                                           _bookmarkedLineIndex = ayahIndex;
                                           prefs.setInt('bookmark_line_${widget.title}', ayahIndex);
-                                          _blinkController?.reset();
-                                          _blinkController?.repeat(reverse: true);
                                         }
                                       });
                                     },
@@ -2304,7 +2286,6 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
                                       content: cleanContent,
                                       baseStyle: baseStyle,
                                       bookmarkedIndex: _bookmarkedLineIndex,
-                                      blinkingStar: _buildBlinkingStar(),
                                       onParagraphTapped: (index) async {
                                         final prefs = await SharedPreferences
                                             .getInstance();
@@ -2319,8 +2300,7 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
                                             prefs.remove('bookmark_line_${widget.title}');
                                           } else {
                                             _bookmarkedLineIndex = index;
-                                            _blinkController?.reset();
-                                            _blinkController?.repeat(reverse: true);
+                                            prefs.setInt('bookmark_line_${widget.title}', index);
                                           }
                                         });
                                       },
@@ -2374,15 +2354,7 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
                                                 style: baseStyle,
                                                 children: [
                                                   TextSpan(text: p),
-                                                  if (_bookmarkedLineIndex ==
-                                                      index)
-                                                    WidgetSpan(
-                                                      alignment:
-                                                          PlaceholderAlignment
-                                                              .middle,
-                                                      child:
-                                                          _buildBlinkingStar(),
-                                                    ),
+
                                                 ],
                                               ),
                                             ),
@@ -2450,15 +2422,7 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
                                                 style: baseStyle,
                                                 children: [
                                                   TextSpan(text: p),
-                                                  if (_bookmarkedLineIndex ==
-                                                      index)
-                                                    WidgetSpan(
-                                                      alignment:
-                                                          PlaceholderAlignment
-                                                              .middle,
-                                                      child:
-                                                          _buildBlinkingStar(),
-                                                    ),
+
                                                 ],
                                               ),
                                             ),
@@ -2512,13 +2476,7 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
                                         ));
                                       }
 
-                                      if (_bookmarkedLineIndex == index) {
-                                        spans.add(WidgetSpan(
-                                          alignment:
-                                              PlaceholderAlignment.middle,
-                                          child: _buildBlinkingStar(),
-                                        ));
-                                      }
+
 
                                       return GestureDetector(
                                         behavior: HitTestBehavior.translucent,
