@@ -48,6 +48,21 @@ class _HtmlContentRendererState extends State<HtmlContentRenderer> {
       (match) => '${match.group(1)}\n',
     );
 
+    // Pad common Arabic punctuation and structural HTML tags with spaces
+    // so they are not glued to words, ensuring accurate word-level splitting.
+    processed = processed
+        .replaceAll('،', ' ، ')
+        .replaceAll('.', ' . ')
+        .replaceAll('؟', ' ؟ ')
+        .replaceAll('!', ' ! ')
+        .replaceAll(':', ' : ');
+
+    // Pad tags as well to avoid merging
+    processed = processed.replaceAllMapped(
+      RegExp(r'(<[^>]+>)'),
+      (match) => ' ${match.group(1)} ',
+    );
+
     // Split by words to ensure word-by-word bookmark granularity.
     // We split by space or newline, preserving the separators to reconstruct formatting.
     final wordsAndSpaces = processed.split(RegExp(r'(?<=\s)|(?=\s)'));

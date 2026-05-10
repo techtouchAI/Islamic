@@ -2211,6 +2211,8 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
                                         } else {
                                           _bookmarkedLineIndex = ayahIndex;
                                           prefs.setInt('bookmark_line_${widget.title}', ayahIndex);
+                                          _blinkController?.reset();
+                                          _blinkController?.repeat(reverse: true);
                                         }
                                       });
                                     },
@@ -2312,7 +2314,14 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
                                         debugPrint(
                                             'Parent: State updated to index $index');
                                         setState(() {
-                                          _bookmarkedLineIndex = index;
+                                          if (_bookmarkedLineIndex == index) {
+                                            _bookmarkedLineIndex = null;
+                                            prefs.remove('bookmark_line_${widget.title}');
+                                          } else {
+                                            _bookmarkedLineIndex = index;
+                                            _blinkController?.reset();
+                                            _blinkController?.repeat(reverse: true);
+                                          }
                                         });
                                       },
                                     );
@@ -2328,7 +2337,7 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
                                           (index) {
                                         final p = paragraphs[index];
                                         return GestureDetector(
-                                          behavior: HitTestBehavior.opaque,
+                                          behavior: HitTestBehavior.translucent,
                                           onTap: () async {
                                             final prefs =
                                                 await SharedPreferences
@@ -2404,7 +2413,7 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
                                           (index) {
                                         final p = paragraphs[index];
                                         return GestureDetector(
-                                          behavior: HitTestBehavior.opaque,
+                                          behavior: HitTestBehavior.translucent,
                                           onTap: () async {
                                             final prefs =
                                                 await SharedPreferences
@@ -2512,7 +2521,7 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
                                       }
 
                                       return GestureDetector(
-                                        behavior: HitTestBehavior.opaque,
+                                        behavior: HitTestBehavior.translucent,
                                         onTap: () async {
                                           final prefs = await SharedPreferences
                                               .getInstance();
