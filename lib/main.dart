@@ -1888,18 +1888,41 @@ class DynamicListSection extends StatelessWidget {
                                       .replaceAll(RegExp(r'<html>|<html|^html\b', caseSensitive: false), ' ')
                                   .trim();
                                   String cleanSubtitle = rawText.cleanSnippet();
+
+                              String displayTitle;
+                              TextStyle titleStyle;
+
+                              if (sectionKey == 'prophets_stories') {
+                                String rawTitle = data[index]['title'].toString();
+                                String cleanName = rawTitle.replaceAll(RegExp(r'قصة\s*|\s*\(?عليه السلام\)?', caseSensitive: false), '').trim();
+                                displayTitle = '$cleanName ﴿عليه السلام﴾';
+                                titleStyle = TextStyle(
+                                  fontFamily: 'me_quran',
+                                  fontSize: 24 * fontSizeFactor,
+                                  fontWeight: FontWeight.normal,
+                                  color: Theme.of(context).colorScheme.primary,
+                                );
+                              } else if (sectionKey.contains('imam_ali')) {
+                                displayTitle = 'قال أمير المؤمنين علي (عليه السلام)';
+                                titleStyle = const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 18,
+                                );
+                              } else {
+                                displayTitle = data[index]['title'].toString();
+                                titleStyle = const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 18,
+                                );
+                              }
+
                               return ListTile(
                                 contentPadding: const EdgeInsets.all(20),
                                 title: Text(
-                                  sectionKey.contains('imam_ali')
-                                      ? 'قال أمير المؤمنين علي (عليه السلام)'
-                                      : data[index]['title'].toString(),
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 18,
-                                  ),
+                                  displayTitle,
+                                  style: titleStyle,
                                 ),
-                                subtitle: Padding(
+                                subtitle: sectionKey == 'prophets_stories' ? null : Padding(
                                   padding: const EdgeInsets.only(top: 10),
                                   child: Text(
                                     cleanSubtitle.cleanSnippet(),
