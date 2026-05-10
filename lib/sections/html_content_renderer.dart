@@ -41,7 +41,17 @@ class _HtmlContentRendererState extends State<HtmlContentRenderer> {
         .replaceAll(RegExp(r'<br>', caseSensitive: false), '\n');
     processed = processed.replaceAll(RegExp(r'\n{3,}'), '\n\n').trim();
 
-    final paragraphs = processed.split('\n\n');
+    // Insert a newline after Ayah markers so they can be parsed as independent paragraphs
+    processed = processed.replaceAllMapped(
+      RegExp(r'(﴿[0-9٠-٩]+﴾|۝)'),
+      (match) => '${match.group(1)}\n',
+    );
+
+    // Split by single newline or double newline to ensure fine granularity
+    final paragraphs = processed
+        .split(RegExp(r'\n+'))
+        .where((p) => p.trim().isNotEmpty)
+        .toList();
     final List<Widget> paragraphWidgets = [];
 
     final RegExp tagRegex =
