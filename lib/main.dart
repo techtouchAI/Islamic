@@ -1767,12 +1767,19 @@ class DynamicListSection extends StatelessWidget {
                           ),
                         ),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 6),
                           decoration: BoxDecoration(
-                            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                            color: Theme.of(context)
+                                .colorScheme
+                                .primary
+                                .withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(20),
                             border: Border.all(
-                              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .primary
+                                  .withValues(alpha: 0.3),
                               width: 1,
                             ),
                           ),
@@ -2051,11 +2058,8 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
 
   @override
   void dispose() {
-
     super.dispose();
   }
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -2141,65 +2145,81 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
                     widget.isQuran &&
                             widget.ayahs != null &&
                             widget.ayahs!.isNotEmpty
-                        ? RichText(
-                            textAlign: TextAlign.center,
-                            textDirection: TextDirection.rtl,
-                            text: TextSpan(
-                              style: TextStyle(
-                                fontFamily: 'me_quran',
-                                fontSize: 32 * _factor,
-                                height: 1.8,
-                                color: dynamicTextColor,
-                              ),
-                              children: widget.ayahs!.map((a) {
-                                String text = a['ar_text'].toString().trim();
-                                final index = a['anum']?.toString() ??
-                                    a['ayah_surah_index'].toString();
-                                final arabicIndex = _convertToArabicNumber(
-                                  index,
-                                );
+                        ? GestureDetector(
+                            behavior: HitTestBehavior.translucent,
+                            child: RichText(
+                              key: ValueKey(_bookmarkedLineIndex),
+                              textAlign: TextAlign.center,
+                              textDirection: TextDirection.rtl,
+                              text: TextSpan(
+                                style: TextStyle(
+                                  fontFamily: 'me_quran',
+                                  fontSize: 32 * _factor,
+                                  height: 1.8,
+                                  color: dynamicTextColor,
+                                ),
+                                children: widget.ayahs!.map((a) {
+                                  String text = a['ar_text'].toString().trim();
+                                  final index = a['anum']?.toString() ??
+                                      a['ayah_surah_index'].toString();
+                                  final arabicIndex = _convertToArabicNumber(
+                                    index,
+                                  );
 
-                                // Remove trailing english or arabic numbers from the text itself
-                                text = text
-                                    .replaceAll(_trailingNumbersRegex, '')
-                                    .trim();
+                                  // Remove trailing english or arabic numbers from the text itself
+                                  text = text
+                                      .replaceAll(_trailingNumbersRegex, '')
+                                      .trim();
 
-                                final ayahIdxStr = a['anum']?.toString() ?? a['ayah_surah_index'].toString();
-                                final int ayahIndex = int.tryParse(ayahIdxStr) ?? 0;
+                                  final ayahIdxStr = a['anum']?.toString() ??
+                                      a['ayah_surah_index'].toString();
+                                  final int ayahIndex =
+                                      int.tryParse(ayahIdxStr) ?? 0;
 
-                                return TextSpan(
-                                  children: [
-                                    TextSpan(text: '$text '),
-                                    if (arabicIndex.isNotEmpty)
-                                      TextSpan(
-                                        text: '﴿$arabicIndex﴾',
-                                        style: TextStyle(
-                                          color: _bookmarkedLineIndex == ayahIndex
-                                              ? Colors.green.shade900
-                                              : Colors.amber[700],
-                                          fontWeight: _bookmarkedLineIndex == ayahIndex
-                                              ? FontWeight.bold
-                                              : FontWeight.normal,
-                                          fontSize: 24 * _factor,
+                                  return TextSpan(
+                                    children: [
+                                      TextSpan(text: '$text '),
+                                      if (arabicIndex.isNotEmpty)
+                                        TextSpan(
+                                          text: '﴿$arabicIndex﴾',
+                                          style: TextStyle(
+                                            color: _bookmarkedLineIndex
+                                                        ?.toString() ==
+                                                    ayahIndex.toString()
+                                                ? Colors.green.shade900
+                                                : Colors.amber[700],
+                                            fontWeight: _bookmarkedLineIndex
+                                                        ?.toString() ==
+                                                    ayahIndex.toString()
+                                                ? FontWeight.bold
+                                                : FontWeight.normal,
+                                            fontSize: 24 * _factor,
+                                          ),
                                         ),
-                                      ),
-                                    const TextSpan(text: ' '),
-                                  ],
-                                  recognizer: TapGestureRecognizer()
-                                    ..onTap = () async {
-                                      final prefs = await SharedPreferences.getInstance();
-                                      setState(() {
-                                        if (_bookmarkedLineIndex == ayahIndex) {
-                                          _bookmarkedLineIndex = null;
-                                          prefs.remove('bookmark_line_${widget.title}');
-                                        } else {
-                                          _bookmarkedLineIndex = ayahIndex;
-                                          prefs.setInt('bookmark_line_${widget.title}', ayahIndex);
-                                        }
-                                      });
-                                    },
-                                );
-                              }).toList(),
+                                      const TextSpan(text: ' '),
+                                    ],
+                                    recognizer: TapGestureRecognizer()
+                                      ..onTap = () async {
+                                        final prefs = await SharedPreferences
+                                            .getInstance();
+                                        setState(() {
+                                          if (_bookmarkedLineIndex
+                                                  ?.toString() ==
+                                              ayahIndex.toString()) {
+                                            _bookmarkedLineIndex = null;
+                                            prefs.remove(
+                                                'bookmark_line_${widget.title}');
+                                          } else {
+                                            _bookmarkedLineIndex = ayahIndex;
+                                            prefs.setInt(
+                                                'bookmark_line_${widget.title}',
+                                                ayahIndex);
+                                          }
+                                        });
+                                      },
+                                  );
+                                }).toList(),
+                              ),
                             ),
                           )
                         : Column(
@@ -2295,12 +2315,17 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
                                         debugPrint(
                                             'Parent: State updated to index $index');
                                         setState(() {
-                                          if (_bookmarkedLineIndex == index) {
+                                          if (_bookmarkedLineIndex
+                                                  ?.toString() ==
+                                              index.toString()) {
                                             _bookmarkedLineIndex = null;
-                                            prefs.remove('bookmark_line_${widget.title}');
+                                            prefs.remove(
+                                                'bookmark_line_${widget.title}');
                                           } else {
                                             _bookmarkedLineIndex = index;
-                                            prefs.setInt('bookmark_line_${widget.title}', index);
+                                            prefs.setInt(
+                                                'bookmark_line_${widget.title}',
+                                                index);
                                           }
                                         });
                                       },
@@ -2354,7 +2379,6 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
                                                 style: baseStyle,
                                                 children: [
                                                   TextSpan(text: p),
-
                                                 ],
                                               ),
                                             ),
@@ -2422,7 +2446,6 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
                                                 style: baseStyle,
                                                 children: [
                                                   TextSpan(text: p),
-
                                                 ],
                                               ),
                                             ),
@@ -2475,8 +2498,6 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
                                           style: baseStyle,
                                         ));
                                       }
-
-
 
                                       return GestureDetector(
                                         behavior: HitTestBehavior.translucent,
