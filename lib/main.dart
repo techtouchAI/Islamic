@@ -1742,7 +1742,7 @@ class DynamicListSection extends StatelessWidget {
                     padding: const EdgeInsets.only(top: 10),
                     child: Text(
                       "سورة ${surah['name']} - آياتها ${surah['total_ayahs']}",
-                      style: GoogleFonts.scheherazadeNew(fontSize: 18),
+                      style: const TextStyle(fontFamily: 'me_quran', fontSize: 24),
                     ),
                   ),
                   onTap: () async {
@@ -2268,8 +2268,12 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
                                   }
 
                                   if (widget.titleColor == null) {
+                                    String processedForSplit = cleanContent.replaceAllMapped(
+                                      RegExp(r'(﴿[0-9٠-٩]+﴾|۝)'),
+                                      (match) => '${match.group(1)}\n',
+                                    );
                                     final paragraphs =
-                                        cleanContent.split('\n\n');
+                                        processedForSplit.split(RegExp(r'\n+')).where((p) => p.trim().isNotEmpty).toList();
                                     return Column(
                                       crossAxisAlignment:
                                           CrossAxisAlignment.stretch,
@@ -2344,8 +2348,12 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
                                       .toList();
 
                                   if (keywords.isEmpty) {
+                                    String processedForSplit = cleanContent.replaceAllMapped(
+                                      RegExp(r'(﴿[0-9٠-٩]+﴾|۝)'),
+                                      (match) => '${match.group(1)}\n',
+                                    );
                                     final paragraphs =
-                                        cleanContent.split('\n\n');
+                                        processedForSplit.split(RegExp(r'\n+')).where((p) => p.trim().isNotEmpty).toList();
                                     return Column(
                                       crossAxisAlignment:
                                           CrossAxisAlignment.stretch,
