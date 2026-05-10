@@ -2145,82 +2145,100 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
                     widget.isQuran &&
                             widget.ayahs != null &&
                             widget.ayahs!.isNotEmpty
-                        ? GestureDetector(
-                            behavior: HitTestBehavior.translucent,
-                            child: RichText(
-                              key: ValueKey(_bookmarkedLineIndex),
-                              textAlign: TextAlign.center,
-                              textDirection: TextDirection.rtl,
-                              text: TextSpan(
-                                style: TextStyle(
-                                  fontFamily: 'me_quran',
-                                  fontSize: 32 * _factor,
-                                  height: 1.8,
-                                  color: dynamicTextColor,
-                                ),
-                                children: widget.ayahs!.map((a) {
-                                  String text = a['ar_text'].toString().trim();
-                                  final index = a['anum']?.toString() ??
-                                      a['ayah_surah_index'].toString();
-                                  final arabicIndex = _convertToArabicNumber(
-                                    index,
-                                  );
+                        ? Wrap(
+                            textDirection: TextDirection.rtl,
+                            alignment: WrapAlignment.center,
+                            children: widget.ayahs!.map((a) {
+                              String text = a['ar_text'].toString().trim();
+                              final index = a['anum']?.toString() ??
+                                  a['ayah_surah_index'].toString();
+                              final arabicIndex = _convertToArabicNumber(index);
 
-                                  // Remove trailing english or arabic numbers from the text itself
-                                  text = text
-                                      .replaceAll(_trailingNumbersRegex, '')
-                                      .trim();
+                              text = text
+                                  .replaceAll(_trailingNumbersRegex, '')
+                                  .trim();
 
-                                  final ayahIdxStr = a['anum']?.toString() ??
-                                      a['ayah_surah_index'].toString();
-                                  final int ayahIndex =
-                                      int.tryParse(ayahIdxStr) ?? 0;
+                              final ayahIdxStr = a['anum']?.toString() ??
+                                  a['ayah_surah_index'].toString();
+                              final int ayahIndex =
+                                  int.tryParse(ayahIdxStr) ?? 0;
 
-                                  return TextSpan(
+                              return GestureDetector(
+                                behavior: HitTestBehavior.opaque,
+                                onTap: () async {
+                                  final prefs =
+                                      await SharedPreferences.getInstance();
+                                  setState(() {
+                                    if (_bookmarkedLineIndex?.toString() ==
+                                        ayahIndex.toString()) {
+                                      _bookmarkedLineIndex = null;
+                                      prefs.remove(
+                                          'bookmark_line_${widget.title}');
+                                    } else {
+                                      _bookmarkedLineIndex = ayahIndex;
+                                      prefs.setInt(
+                                          'bookmark_line_${widget.title}',
+                                          ayahIndex);
+                                    }
+                                  });
+                                },
+                                child: Text.rich(
+                                  TextSpan(
+                                    style: TextStyle(
+                                      fontFamily: 'me_quran',
+                                      fontSize: 32 * _factor,
+                                      height: 1.8,
+                                      color: dynamicTextColor,
+                                    ),
                                     children: [
                                       TextSpan(text: '$text '),
                                       if (arabicIndex.isNotEmpty)
-                                        TextSpan(
-                                          text: '﴿$arabicIndex﴾',
-                                          style: TextStyle(
-                                            color: _bookmarkedLineIndex
-                                                        ?.toString() ==
-                                                    ayahIndex.toString()
-                                                ? Colors.green.shade900
-                                                : Colors.amber[700],
-                                            fontWeight: _bookmarkedLineIndex
-                                                        ?.toString() ==
-                                                    ayahIndex.toString()
-                                                ? FontWeight.bold
-                                                : FontWeight.normal,
-                                            fontSize: 24 * _factor,
+                                        WidgetSpan(
+                                          alignment:
+                                              PlaceholderAlignment.middle,
+                                          child: Stack(
+                                            clipBehavior: Clip.none,
+                                            alignment: Alignment.center,
+                                            children: [
+                                              Text(
+                                                '﴿$arabicIndex﴾',
+                                                style: TextStyle(
+                                                  fontFamily: 'me_quran',
+                                                  color: _bookmarkedLineIndex
+                                                              ?.toString() ==
+                                                          ayahIndex.toString()
+                                                      ? Colors.green.shade900
+                                                      : Colors.amber[700],
+                                                  fontWeight:
+                                                      _bookmarkedLineIndex
+                                                                  ?.toString() ==
+                                                              ayahIndex
+                                                                  .toString()
+                                                          ? FontWeight.bold
+                                                          : FontWeight.normal,
+                                                  fontSize: 24 * _factor,
+                                                ),
+                                              ),
+                                              if (_bookmarkedLineIndex
+                                                      ?.toString() ==
+                                                  ayahIndex.toString())
+                                                const Positioned(
+                                                  top: -12,
+                                                  child: Icon(Icons.star,
+                                                      color: Colors.green,
+                                                      size: 14),
+                                                ),
+                                            ],
                                           ),
                                         ),
                                       const TextSpan(text: ' '),
                                     ],
-                                    recognizer: TapGestureRecognizer()
-                                      ..onTap = () async {
-                                        final prefs = await SharedPreferences
-                                            .getInstance();
-                                        setState(() {
-                                          if (_bookmarkedLineIndex
-                                                  ?.toString() ==
-                                              ayahIndex.toString()) {
-                                            _bookmarkedLineIndex = null;
-                                            prefs.remove(
-                                                'bookmark_line_${widget.title}');
-                                          } else {
-                                            _bookmarkedLineIndex = ayahIndex;
-                                            prefs.setInt(
-                                                'bookmark_line_${widget.title}',
-                                                ayahIndex);
-                                          }
-                                        });
-                                      },
-                                  );
-                                }).toList(),
-                              ),
-                            ),
+                                  ),
+                                  textAlign: TextAlign.center,
+                                  textDirection: TextDirection.rtl,
+                                ),
+                              );
+                            }).toList(),
                           )
                         : Column(
                             children: [

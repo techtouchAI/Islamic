@@ -1,4 +1,3 @@
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
 class HtmlContentRenderer extends StatefulWidget {
@@ -48,27 +47,14 @@ class _HtmlContentRendererState extends State<HtmlContentRenderer> {
       (match) => '${match.group(1)}\n',
     );
 
-    // Pad common Arabic punctuation and structural HTML tags with spaces
-    // so they are not glued to words, ensuring accurate word-level splitting.
-    processed = processed
-        .replaceAll('،', ' ، ')
-        .replaceAll('.', ' . ')
-        .replaceAll('؟', ' ؟ ')
-        .replaceAll('!', ' ! ')
-        .replaceAll(':', ' : ');
-
     // Pad tags as well to avoid merging
     processed = processed.replaceAllMapped(
       RegExp(r'(<[^>]+>)'),
       (match) => ' ${match.group(1)} ',
     );
 
-    // Split by words to ensure word-by-word bookmark granularity.
-    // We split by space or newline, preserving the separators to reconstruct formatting.
-    final wordsAndSpaces = processed.split(RegExp(r'(?<=\s)|(?=\s)'));
-
     final List<Widget> paragraphWidgets = [];
-    List<InlineSpan> currentSpans = [];
+    final paragraphs = processed.split('\n');
 
     final RegExp tagRegex =
         RegExp(r'(<b>|</b>|<c=(#[a-zA-Z0-9]{6})>|</c>)', caseSensitive: false);
@@ -77,85 +63,23 @@ class _HtmlContentRendererState extends State<HtmlContentRenderer> {
     Color? currentColor;
     int wordIndex = 0;
 
-    for (int i = 0; i < wordsAndSpaces.length; i++) {
-      final token = wordsAndSpaces[i];
-      if (token.isEmpty) continue;
-
-      if (token == '\n') {
-        // End of paragraph, wrap it in a RichText and reset spans
-        if (currentSpans.isNotEmpty) {
-          paragraphWidgets.add(
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.only(bottom: 8.0),
-              child: GestureDetector(
-                behavior: HitTestBehavior.translucent,
-                child: RichText(
-                  key: ValueKey(
-                      '${widget.bookmarkedIndex}_${paragraphWidgets.length}'),
-                  textAlign: textAlign,
-                  textDirection: TextDirection.rtl,
-                  text: TextSpan(
-                    style: baseStyle,
-                    children: List.from(currentSpans),
-                  ),
-                ),
-              ),
-            ),
-          );
-          currentSpans.clear();
-        } else {
-          // Empty newline paragraph
-          paragraphWidgets.add(const SizedBox(height: 8.0));
-        }
+    for (final paragraph in paragraphs) {
+      if (paragraph.trim().isEmpty) {
+        paragraphWidgets.add(const SizedBox(height: 8.0));
         continue;
       }
 
-      final isWhitespace = token.trim().isEmpty;
+      final words = paragraph.split(RegExp(r'\s+'));
+      final List<Widget> wordWidgets = [];
 
-      if (isWhitespace) {
-        currentSpans.add(TextSpan(
-            text: token,
-            style: TextStyle(
-              fontWeight: isBold ? FontWeight.bold : baseStyle.fontWeight,
-              color: currentColor ?? baseStyle.color,
-              fontFamily: baseStyle.fontFamily,
-              fontSize: baseStyle.fontSize,
-              height: baseStyle.height,
-            )));
-        continue;
-      }
+      for (final word in words) {
+        if (word.isEmpty) continue;
 
-      final currentWordIndex = wordIndex++;
-      final List<InlineSpan> tokenSpans = [];
+        final currentWordIndex = wordIndex++;
 
-      if (!token.contains('<')) {
-        tokenSpans.add(TextSpan(
-            text: token,
-            style: TextStyle(
-              fontWeight: isBold ? FontWeight.bold : baseStyle.fontWeight,
-              color: currentColor ?? baseStyle.color,
-              fontFamily: baseStyle.fontFamily,
-              fontSize: baseStyle.fontSize,
-              height: baseStyle.height,
-            )));
-      } else {
-        int lastMatchEnd = 0;
-
-        for (final match in tagRegex.allMatches(token)) {
-          if (match.start > lastMatchEnd) {
-            tokenSpans.add(TextSpan(
-              text: token.substring(lastMatchEnd, match.start),
-              style: TextStyle(
-                fontWeight: isBold ? FontWeight.bold : baseStyle.fontWeight,
-                color: currentColor ?? baseStyle.color,
-                fontFamily: baseStyle.fontFamily,
-                fontSize: baseStyle.fontSize,
-                height: baseStyle.height,
-              ),
-            ));
-          }
-
+        // Parse styles inside the word
+        String displayText = word;
+        for (final match in tagRegex.allMatches(word)) {
           final String tag = match.group(1)!.toLowerCase();
           if (tag == '<b>') {
             isBold = true;
@@ -166,65 +90,58 @@ class _HtmlContentRendererState extends State<HtmlContentRenderer> {
           } else if (tag == '</c>') {
             currentColor = null;
           }
-
-          lastMatchEnd = match.end;
         }
+        displayText = displayText.replaceAll(tagRegex, '');
 
-        if (lastMatchEnd < token.length) {
-          tokenSpans.add(TextSpan(
-            text: token.substring(lastMatchEnd),
-            style: TextStyle(
-              fontWeight: isBold ? FontWeight.bold : baseStyle.fontWeight,
-              color: currentColor ?? baseStyle.color,
-              fontFamily: baseStyle.fontFamily,
-              fontSize: baseStyle.fontSize,
-              height: baseStyle.height,
+        if (displayText.isEmpty) continue;
+
+        final currentHtmlStyle = TextStyle(
+          fontWeight: isBold ? FontWeight.bold : baseStyle.fontWeight,
+          color: currentColor ?? baseStyle.color,
+          fontFamily: baseStyle.fontFamily,
+          fontSize: baseStyle.fontSize,
+          height: baseStyle.height,
+        );
+
+        wordWidgets.add(
+          GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () => widget.onParagraphTapped?.call(currentWordIndex),
+            child: Stack(
+              clipBehavior: Clip.none,
+              alignment: Alignment.center,
+              children: [
+                Text(displayText, style: currentHtmlStyle),
+                if (widget.bookmarkedIndex?.toString() ==
+                    currentWordIndex.toString())
+                  const Positioned(
+                    top: -10,
+                    right: 0,
+                    child: Icon(Icons.star, color: Colors.green, size: 12),
+                  ),
+              ],
             ),
-          ));
-        }
-      }
-
-      // Add zero-width floating star if this word is bookmarked
-      if (widget.bookmarkedIndex?.toString() == currentWordIndex.toString()) {
-        tokenSpans.add(const WidgetSpan(
-          alignment: PlaceholderAlignment.middle,
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 2),
-            child: Icon(Icons.star, color: Colors.green, size: 16),
           ),
-        ));
+        );
       }
 
-      currentSpans.add(TextSpan(
-        children: tokenSpans,
-        recognizer: TapGestureRecognizer()
-          ..onTap = () {
-            widget.onParagraphTapped?.call(currentWordIndex);
-          },
-      ));
-    }
-
-    // Add any remaining spans as the last paragraph
-    if (currentSpans.isNotEmpty) {
-      paragraphWidgets.add(
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.only(bottom: 8.0),
-          child: GestureDetector(
-            behavior: HitTestBehavior.translucent,
-            child: RichText(
-              key: ValueKey(
-                  '${widget.bookmarkedIndex}_${paragraphWidgets.length}'),
-              textAlign: textAlign,
+      if (wordWidgets.isNotEmpty) {
+        paragraphWidgets.add(
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.only(bottom: 8.0),
+            child: Wrap(
               textDirection: TextDirection.rtl,
-              text: TextSpan(
-                style: baseStyle,
-                children: currentSpans,
-              ),
+              spacing: 4.0,
+              runSpacing: 4.0,
+              alignment: textAlign == TextAlign.center
+                  ? WrapAlignment.center
+                  : WrapAlignment.start,
+              children: wordWidgets,
             ),
           ),
-        ),
-      );
+        );
+      }
     }
 
     return paragraphWidgets;
