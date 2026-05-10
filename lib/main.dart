@@ -194,7 +194,7 @@ class _AlDhakereenAppState extends State<AlDhakereenApp> {
     final prefs = await SharedPreferences.getInstance();
     final dbSettings = DataManager.getSettings();
     DataManager.dbNotifier.addListener(() {
-      if (mounted) setState(() {});
+      setState(() {});
     });
     int defaultPrimary =
         int.tryParse(dbSettings['primary_color'] ?? '0xFF2196F3') ?? 0xFF2196F3;
@@ -2258,6 +2258,8 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
                                         await prefs.setInt(
                                             'bookmark_line_${widget.title}',
                                             index);
+                                        debugPrint(
+                                            'Parent: State updated to index $index');
                                         setState(() {
                                           _bookmarkedLineIndex = index;
                                         });
@@ -2274,9 +2276,8 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
                                       children: List.generate(paragraphs.length,
                                           (index) {
                                         final p = paragraphs[index];
-                                        return InkWell(
-                                          highlightColor: Colors.transparent,
-                                          splashColor: Colors.transparent,
+                                        return GestureDetector(
+                                          behavior: HitTestBehavior.opaque,
                                           onTap: () async {
                                             final prefs =
                                                 await SharedPreferences
@@ -2284,11 +2285,27 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
                                             await prefs.setInt(
                                                 'bookmark_line_${widget.title}',
                                                 index);
+                                            debugPrint(
+                                                'Parent: State updated to index $index');
                                             setState(() {
                                               _bookmarkedLineIndex = index;
                                             });
                                           },
-                                          child: Padding(
+                                          onLongPress: () async {
+                                            final prefs =
+                                                await SharedPreferences
+                                                    .getInstance();
+                                            await prefs.setInt(
+                                                'bookmark_line_${widget.title}',
+                                                index);
+                                            debugPrint(
+                                                'Parent: State updated to index $index');
+                                            setState(() {
+                                              _bookmarkedLineIndex = index;
+                                            });
+                                          },
+                                          child: Container(
+                                            width: double.infinity,
                                             padding: const EdgeInsets.only(
                                                 bottom: 8.0),
                                             child: RichText(
@@ -2335,9 +2352,8 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
                                       children: List.generate(paragraphs.length,
                                           (index) {
                                         final p = paragraphs[index];
-                                        return InkWell(
-                                          highlightColor: Colors.transparent,
-                                          splashColor: Colors.transparent,
+                                        return GestureDetector(
+                                          behavior: HitTestBehavior.opaque,
                                           onTap: () async {
                                             final prefs =
                                                 await SharedPreferences
@@ -2345,11 +2361,27 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
                                             await prefs.setInt(
                                                 'bookmark_line_${widget.title}',
                                                 index);
+                                            debugPrint(
+                                                'Parent: State updated to index $index');
                                             setState(() {
                                               _bookmarkedLineIndex = index;
                                             });
                                           },
-                                          child: Padding(
+                                          onLongPress: () async {
+                                            final prefs =
+                                                await SharedPreferences
+                                                    .getInstance();
+                                            await prefs.setInt(
+                                                'bookmark_line_${widget.title}',
+                                                index);
+                                            debugPrint(
+                                                'Parent: State updated to index $index');
+                                            setState(() {
+                                              _bookmarkedLineIndex = index;
+                                            });
+                                          },
+                                          child: Container(
+                                            width: double.infinity,
                                             padding: const EdgeInsets.only(
                                                 bottom: 8.0),
                                             child: RichText(
@@ -2428,20 +2460,34 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
                                         ));
                                       }
 
-                                      return InkWell(
-                                        highlightColor: Colors.transparent,
-                                        splashColor: Colors.transparent,
+                                      return GestureDetector(
+                                        behavior: HitTestBehavior.opaque,
                                         onTap: () async {
                                           final prefs = await SharedPreferences
                                               .getInstance();
                                           await prefs.setInt(
                                               'bookmark_line_${widget.title}',
                                               index);
+                                          debugPrint(
+                                              'Parent: State updated to index $index');
                                           setState(() {
                                             _bookmarkedLineIndex = index;
                                           });
                                         },
-                                        child: Padding(
+                                        onLongPress: () async {
+                                          final prefs = await SharedPreferences
+                                              .getInstance();
+                                          await prefs.setInt(
+                                              'bookmark_line_${widget.title}',
+                                              index);
+                                          debugPrint(
+                                              'Parent: State updated to index $index');
+                                          setState(() {
+                                            _bookmarkedLineIndex = index;
+                                          });
+                                        },
+                                        child: Container(
+                                          width: double.infinity,
                                           padding: const EdgeInsets.only(
                                               bottom: 8.0),
                                           child: RichText(

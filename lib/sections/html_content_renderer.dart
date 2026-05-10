@@ -133,9 +133,11 @@ class _HtmlContentRendererState extends State<HtmlContentRenderer> {
         GestureDetector(
           behavior: HitTestBehavior.opaque,
           onTap: () {
+            debugPrint('Child: Paragraph $i tapped');
             widget.onParagraphTapped?.call(i);
           },
           onLongPress: () {
+            debugPrint('Child: Paragraph $i tapped');
             widget.onParagraphTapped?.call(i);
           },
           child: Container(
