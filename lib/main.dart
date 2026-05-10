@@ -2320,6 +2320,8 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
                                           cleanContent.contains('<p>') ||
                                           cleanContent.contains('<br>') ||
                                           cleanContent.contains('<c='))) {
+                                    debugPrint(
+                                        'HtmlContentRenderer built for section: ${widget.title} with bookmark: $_bookmarkedLineIndex');
                                     return HtmlContentRenderer(
                                       content: cleanContent,
                                       baseStyle: baseStyle,
