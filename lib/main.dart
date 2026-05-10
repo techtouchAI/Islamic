@@ -1880,25 +1880,32 @@ class DynamicListSection extends StatelessWidget {
                               ),
                             ),
                           ),
-                          ListTile(
-                            contentPadding: const EdgeInsets.all(20),
-                            title: Text(
-                              sectionKey.contains('imam_ali')
-                                  ? 'قال أمير المؤمنين علي (عليه السلام)'
-                                  : data[index]['title'].toString(),
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 18,
-                              ),
-                            ),
-                            subtitle: Padding(
-                              padding: const EdgeInsets.only(top: 10),
-                              child: Text(
-                                data[index]['content']
-                                    .toString()
-                                    .cleanSnippet(),
-                                maxLines:
-                                    sectionKey.contains('imam_ali') ? 3 : 2,
+                          Builder(
+                            builder: (context) {
+                              String cleanSubtitle = data[index]['content']
+                                  .toString()
+                                  .replaceAll(
+                                      RegExp(r'<[^>]*>|\bhtml\b',
+                                          caseSensitive: false),
+                                      '')
+                                  .trim();
+                              return ListTile(
+                                contentPadding: const EdgeInsets.all(20),
+                                title: Text(
+                                  sectionKey.contains('imam_ali')
+                                      ? 'قال أمير المؤمنين علي (عليه السلام)'
+                                      : data[index]['title'].toString(),
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 18,
+                                  ),
+                                ),
+                                subtitle: Padding(
+                                  padding: const EdgeInsets.only(top: 10),
+                                  child: Text(
+                                    cleanSubtitle.cleanSnippet(),
+                                    maxLines:
+                                        sectionKey.contains('imam_ali') ? 3 : 2,
                                 overflow: TextOverflow.ellipsis,
                                 style: sectionKey.contains('imam_ali')
                                     ? TextStyle(
@@ -1922,6 +1929,8 @@ class DynamicListSection extends StatelessWidget {
                                 ),
                               ),
                             ),
+                              );
+                            }
                           ),
                         ],
                       ),
@@ -2313,6 +2322,7 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
                                             '\uFDFA', '(صلى الله عليه وآله)')
                                         .replaceAll('\uFDFB', '(جل جلاله)')
                                         .replaceAll('!', '(عليه السلام)');
+                                    cleanContent = cleanContent.replaceAll(RegExp(r'<html>|<html|\bhtml\b', caseSensitive: false), '').trim();
                                   }
 
                                   if (cleanContent.contains('<') &&
