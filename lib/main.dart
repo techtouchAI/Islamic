@@ -12,6 +12,7 @@ import 'dart:math';
 import 'dart:ui';
 import 'package:share_plus/share_plus.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/gestures.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -1728,23 +1729,7 @@ class DynamicListSection extends StatelessWidget {
                     width: 1.0,
                   ),
                 ),
-                child: ListTile(
-                  contentPadding: const EdgeInsets.all(20),
-                  title: Text(
-                    surah['name'].toString(),
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18,
-                      fontFamily: 'Scheherazade New',
-                    ),
-                  ),
-                  subtitle: Padding(
-                    padding: const EdgeInsets.only(top: 10),
-                    child: Text(
-                      "سورة ${surah['name']} - آياتها ${surah['total_ayahs']}",
-                      style: const TextStyle(fontFamily: 'me_quran', fontSize: 24),
-                    ),
-                  ),
+                child: InkWell(
                   onTap: () async {
                     final ayahs = await QuranService.getAyahs(surah['id']);
                     final content = QuranService.getFormattedContent(
@@ -1766,6 +1751,43 @@ class DynamicListSection extends StatelessWidget {
                       ),
                     );
                   },
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            surah['name'].toString(),
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.primary,
+                              fontSize: 32,
+                              fontFamily: 'me_quran',
+                            ),
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
+                              width: 1,
+                            ),
+                          ),
+                          child: Text(
+                            "آياتها ${surah['total_ayahs']}",
+                            style: GoogleFonts.notoNaskhArabic(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               );
             },
@@ -2151,18 +2173,47 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
                                     .replaceAll(_trailingNumbersRegex, '')
                                     .trim();
 
+                                final ayahIdxStr = a['anum']?.toString() ?? a['ayah_surah_index'].toString();
+                                final int ayahIndex = int.tryParse(ayahIdxStr) ?? 0;
+
                                 return TextSpan(
                                   children: [
                                     TextSpan(text: '$text '),
                                     if (arabicIndex.isNotEmpty)
                                       TextSpan(
-                                        text: '﴿$arabicIndex﴾ ',
+                                        text: '﴿$arabicIndex﴾',
                                         style: TextStyle(
                                           color: Colors.amber[700],
                                           fontSize: 24 * _factor,
                                         ),
                                       ),
+                                    if (_bookmarkedLineIndex == ayahIndex)
+                                      WidgetSpan(
+                                        alignment: PlaceholderAlignment.middle,
+                                        child: FadeTransition(
+                                          opacity: _blinkController!,
+                                          child: Icon(
+                                            Icons.star,
+                                            color: Colors.amber,
+                                            size: 24 * _factor,
+                                          ),
+                                        ),
+                                      ),
+                                    const TextSpan(text: ' '),
                                   ],
+                                  recognizer: TapGestureRecognizer()
+                                    ..onTap = () async {
+                                      final prefs = await SharedPreferences.getInstance();
+                                      setState(() {
+                                        if (_bookmarkedLineIndex == ayahIndex) {
+                                          _bookmarkedLineIndex = null;
+                                          prefs.remove('bookmark_line_${widget.title}');
+                                        } else {
+                                          _bookmarkedLineIndex = ayahIndex;
+                                          prefs.setInt('bookmark_line_${widget.title}', ayahIndex);
+                                        }
+                                      });
+                                    },
                                 );
                               }).toList(),
                             ),
