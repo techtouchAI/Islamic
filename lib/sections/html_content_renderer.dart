@@ -48,6 +48,21 @@ class _HtmlContentRendererState extends State<HtmlContentRenderer> {
       (match) => '${match.group(1)}\n',
     );
 
+    // Pad common Arabic punctuation and structural HTML tags with spaces
+    // so they are not glued to words, ensuring accurate word-level splitting.
+    processed = processed
+        .replaceAll('،', ' ، ')
+        .replaceAll('.', ' . ')
+        .replaceAll('؟', ' ؟ ')
+        .replaceAll('!', ' ! ')
+        .replaceAll(':', ' : ');
+
+    // Pad tags as well to avoid merging
+    processed = processed.replaceAllMapped(
+      RegExp(r'(<[^>]+>)'),
+      (match) => ' ${match.group(1)} ',
+    );
+
     // Split by words to ensure word-by-word bookmark granularity.
     // We split by space or newline, preserving the separators to reconstruct formatting.
     final wordsAndSpaces = processed.split(RegExp(r'(?<=\s)|(?=\s)'));
@@ -160,11 +175,22 @@ class _HtmlContentRendererState extends State<HtmlContentRenderer> {
         }
       }
 
-      // Add blinking star if this word is bookmarked
-      if (widget.bookmarkedIndex == currentWordIndex && widget.blinkingStar != null) {
+      // Add zero-width floating star if this word is bookmarked
+      if (widget.bookmarkedIndex == currentWordIndex) {
         tokenSpans.add(WidgetSpan(
-          alignment: PlaceholderAlignment.middle,
-          child: widget.blinkingStar!,
+          child: SizedBox(
+            width: 0,
+            height: 0,
+            child: OverflowBox(
+              maxWidth: 50,
+              maxHeight: 50,
+              alignment: Alignment.topCenter,
+              child: Transform.translate(
+                offset: const Offset(0, -15),
+                child: const Icon(Icons.star, color: Colors.green, size: 16),
+              ),
+            ),
+          ),
         ));
       }
 
