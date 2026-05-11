@@ -88,7 +88,7 @@ class DataManager {
   }
 
   static List<dynamic> getItems(String section) {
-    if (_db == null) return [];
+    if (_db == null || _db!['content'] == null) return [];
     if (section == 'adhkar') {
       List all = [];
       all.addAll(_db!['content']['adhkar_munajat'] ?? []);
@@ -121,9 +121,8 @@ class DataManager {
           orElse: () => null,
         );
         if (cat != null) {
-          if (cat is Map) {
-            if (cat.containsKey('items')) return cat['items'] as List<dynamic>? ?? [];
-            return cat['items'] ?? [];
+          if (cat is Map && cat.containsKey('items')) {
+            return cat['items'] as List<dynamic>? ?? [];
           }
         }
       } catch (e) {
@@ -141,9 +140,8 @@ class DataManager {
           orElse: () => null,
         );
         if (cat != null) {
-          if (cat is Map) {
-            if (cat.containsKey('items')) return cat['items'] as List<dynamic>? ?? [];
-            return cat['items'] ?? [];
+          if (cat is Map && cat.containsKey('items')) {
+            return cat['items'] as List<dynamic>? ?? [];
           }
           return _db!['content']['dreams_cat_$idString'] as List<dynamic>? ??
               [];
@@ -163,9 +161,8 @@ class DataManager {
           orElse: () => null,
         );
         if (cat != null) {
-          if (cat is Map) {
-            if (cat.containsKey('items')) return cat['items'] as List<dynamic>? ?? [];
-            return cat['items'] ?? [];
+          if (cat is Map && cat.containsKey('items')) {
+            return cat['items'] as List<dynamic>? ?? [];
           }
           return _db!['content']['imam_ali_cat_$idString'] as List<dynamic>? ??
               [];
