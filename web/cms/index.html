@@ -1,286 +1,557 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ar" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>الذاكرين - لوحة التحكم الاحترافية الشاملة</title>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Kufi+Arabic:wght@400;700&family=Scheherazade+New:wght@400;700&display=swap" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Kufi+Arabic:wght@400;700&family=Scheherazade+New:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/icon?family=Material+Icons"
+      rel="stylesheet"
+    />
     <style>
-        :root { --gold: #D4AF37; --dark: #1a252f; --light-gold: #fcf8e3; }
-        body { font-family: 'Noto Kufi Arabic', sans-serif; background-color: #f8f9fa; color: #333; overflow-x: hidden; }
-        .sidebar { background: var(--dark); color: white; min-height: 100vh; position: sticky; top: 0; transition: 0.3s; z-index: 2000; }
-        .nav-link { color: #cbd5e0; margin-bottom: 5px; cursor: pointer; border-radius: 12px; padding: 12px 20px; display: flex; align-items: center; gap: 12px; transition: 0.2s; }
-        .nav-link:hover { background: rgba(255,255,255,0.1); color: white; }
-        .nav-link.active { background: var(--gold); color: black; font-weight: bold; box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3); }
-        .main-content { padding: 30px; min-width: 0; }
-        .card-lux { border-radius: 20px; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.05); background: white; transition: 0.3s; }
-        .btn-gold { background: var(--gold); color: black; font-weight: bold; border: none; border-radius: 12px; padding: 10px 25px; transition: 0.3s; }
-        .btn-gold:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(212, 175, 55, 0.4); background: #c5a02c; }
-        .action-bar { background: white; padding: 20px; border-radius: 18px; margin-bottom: 25px; box-shadow: 0 2px 15px rgba(0,0,0,0.03); display: flex; align-items: center; justify-content: space-between; gap: 15px; }
-        .img-preview { width: 80px; height: 80px; border-radius: 15px; object-fit: cover; border: 2px solid var(--gold); background: #eee; }
-        .upload-card { border: 2px dashed #ddd; border-radius: 20px; padding: 30px; text-align: center; cursor: pointer; transition: 0.3s; background: #fafafa; }
-        .upload-card:hover { border-color: var(--gold); background: var(--light-gold); }
-        .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1999; backdrop-filter: blur(2px); }
-        .sidebar-overlay.show { display: block; }
-        @media (max-width: 991.98px) {
-            .sidebar { position: fixed; right: -280px; width: 280px; height: 100%; }
-            .sidebar.show { right: 0; }
-            .mobile-toggle { display: block !important; position: fixed; bottom: 25px; left: 25px; z-index: 2001; }
-            .main-content { padding: 15px; }
-            .action-bar { flex-direction: column; align-items: stretch !important; }
-            .btn-group-sm-responsive { display: flex; flex-direction: column; gap: 8px; }
-            .btn-group-sm-responsive .btn { width: 100%; }
+      :root {
+        --gold: #d4af37;
+        --dark: #1a252f;
+        --light-gold: #fcf8e3;
+      }
+      body {
+        font-family: "Noto Kufi Arabic", sans-serif;
+        background-color: #f8f9fa;
+        color: #333;
+        overflow-x: hidden;
+      }
+      .sidebar {
+        background: var(--dark);
+        color: white;
+        min-height: 100vh;
+        position: sticky;
+        top: 0;
+        transition: 0.3s;
+        z-index: 2000;
+      }
+      .nav-link {
+        color: #cbd5e0;
+        margin-bottom: 5px;
+        cursor: pointer;
+        border-radius: 12px;
+        padding: 12px 20px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        transition: 0.2s;
+      }
+      .nav-link:hover {
+        background: rgba(255, 255, 255, 0.1);
+        color: white;
+      }
+      .nav-link.active {
+        background: var(--gold);
+        color: black;
+        font-weight: bold;
+        box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3);
+      }
+      .main-content {
+        padding: 30px;
+        min-width: 0;
+      }
+      .card-lux {
+        border-radius: 20px;
+        border: none;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+        background: white;
+        transition: 0.3s;
+      }
+      .btn-gold {
+        background: var(--gold);
+        color: black;
+        font-weight: bold;
+        border: none;
+        border-radius: 12px;
+        padding: 10px 25px;
+        transition: 0.3s;
+      }
+      .btn-gold:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(212, 175, 55, 0.4);
+        background: #c5a02c;
+      }
+      .action-bar {
+        background: white;
+        padding: 20px;
+        border-radius: 18px;
+        margin-bottom: 25px;
+        box-shadow: 0 2px 15px rgba(0, 0, 0, 0.03);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 15px;
+      }
+      .img-preview {
+        width: 80px;
+        height: 80px;
+        border-radius: 15px;
+        object-fit: cover;
+        border: 2px solid var(--gold);
+        background: #eee;
+      }
+      .upload-card {
+        border: 2px dashed #ddd;
+        border-radius: 20px;
+        padding: 30px;
+        text-align: center;
+        cursor: pointer;
+        transition: 0.3s;
+        background: #fafafa;
+      }
+      .upload-card:hover {
+        border-color: var(--gold);
+        background: var(--light-gold);
+      }
+      .sidebar-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 1999;
+        backdrop-filter: blur(2px);
+      }
+      .sidebar-overlay.show {
+        display: block;
+      }
+      @media (max-width: 991.98px) {
+        .sidebar {
+          position: fixed;
+          right: -280px;
+          width: 280px;
+          height: 100%;
         }
-        * { word-break: break-word; overflow-wrap: anywhere; }
-        .quran-font { font-family: 'Scheherazade New', serif; line-height: 1.8; font-size: 1.4rem; }
+        .sidebar.show {
+          right: 0;
+        }
+        .mobile-toggle {
+          display: block !important;
+          position: fixed;
+          bottom: 25px;
+          left: 25px;
+          z-index: 2001;
+        }
+        .main-content {
+          padding: 15px;
+        }
+        .action-bar {
+          flex-direction: column;
+          align-items: stretch !important;
+        }
+        .btn-group-sm-responsive {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+        }
+        .btn-group-sm-responsive .btn {
+          width: 100%;
+        }
+      }
+      * {
+        word-break: break-word;
+        overflow-wrap: anywhere;
+      }
+      .quran-font {
+        font-family: "Scheherazade New", serif;
+        line-height: 1.8;
+        font-size: 1.4rem;
+      }
     </style>
-</head>
-<body>
-    <div id="sidebarOverlay" class="sidebar-overlay" onclick="toggleSidebar(false)"></div>
+  </head>
+  <body>
+    <div
+      id="sidebarOverlay"
+      class="sidebar-overlay"
+      onclick="toggleSidebar(false)"
+    ></div>
 
-    <button class="btn btn-dark rounded-circle mobile-toggle d-none" style="width: 60px; height: 60px; box-shadow: 0 4px 15px rgba(0,0,0,0.3);" onclick="toggleSidebar(true)">
-        <i class="material-icons">menu</i>
+    <button
+      class="btn btn-dark rounded-circle mobile-toggle d-none"
+      style="
+        width: 60px;
+        height: 60px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+      "
+      onclick="toggleSidebar(true)"
+    >
+      <i class="material-icons">menu</i>
     </button>
 
     <div class="container-fluid">
-        <div class="row">
-            <!-- Sidebar -->
-            <div id="sidebar" class="col-lg-2 sidebar p-4 shadow">
-                <div class="text-center mb-5">
-                    <i class="material-icons text-gold" style="font-size: 3.5rem;">mosque</i>
-                    <h5 class="fw-bold mt-2">الذاكرين CMS</h5>
-                    <div class="badge bg-gold text-dark px-3 py-2 mt-1">الإصدار الاحترافي</div>
-                </div>
-                <nav class="nav flex-column" id="nav-list"></nav>
+      <div class="row">
+        <!-- Sidebar -->
+        <div id="sidebar" class="col-lg-2 sidebar p-4 shadow">
+          <div class="text-center mb-5">
+            <i class="material-icons text-gold" style="font-size: 3.5rem"
+              >mosque</i
+            >
+            <h5 class="fw-bold mt-2">الذاكرين CMS</h5>
+            <div class="badge bg-gold text-dark px-3 py-2 mt-1">
+              الإصدار الاحترافي
             </div>
-
-            <!-- Main Workspace -->
-            <div class="col-lg-10 main-content">
-                <div class="action-bar mb-4 shadow-sm" id="main-action-bar">
-                    <div class="d-flex align-items-center gap-3">
-                        <div class="p-2 bg-light rounded-circle"><i class="material-icons text-gold" id="view-icon">settings</i></div>
-                        <h4 class="mb-0 fw-bold" id="view-title">إعدادات التطبيق</h4>
-                    </div>
-                    <div id="view-actions" class="d-flex gap-2"></div>
-                </div>
-
-                <div id="workspace"></div>
-
-                <!-- Global Sync -->
-                <div class="card card-lux p-4 mt-5 border-top border-success border-4">
-                    <div class="row align-items-center">
-                        <div class="col-lg-8">
-                            <h5 class="fw-bold"><i class="material-icons align-middle me-2">cloud_sync</i> مزامنة البيانات السحابية</h5>
-                            <p class="text-muted small mb-0">سيتم تحديث التطبيق وبناء نسخة APK جديدة فور الحفظ إلى مستودع GitHub.</p>
-                        </div>
-                        <div class="col-lg-4 text-lg-end mt-3 mt-lg-0">
-                            <button class="btn btn-success btn-lg w-100 shadow" onclick="saveToGitHub()">
-                                <i class="material-icons align-middle">publish</i> حفظ وإرسال للتطبيق
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
+          </div>
+          <nav class="nav flex-column" id="nav-list"></nav>
         </div>
+
+        <!-- Main Workspace -->
+        <div class="col-lg-10 main-content">
+          <div class="action-bar mb-4 shadow-sm" id="main-action-bar">
+            <div class="d-flex align-items-center gap-3">
+              <div class="p-2 bg-light rounded-circle">
+                <i class="material-icons text-gold" id="view-icon">settings</i>
+              </div>
+              <h4 class="mb-0 fw-bold" id="view-title">إعدادات التطبيق</h4>
+            </div>
+            <div id="view-actions" class="d-flex gap-2"></div>
+          </div>
+
+          <div id="workspace"></div>
+
+          <!-- Global Sync -->
+          <div
+            class="card card-lux p-4 mt-5 border-top border-success border-4"
+          >
+            <div class="row align-items-center">
+              <div class="col-lg-8">
+                <h5 class="fw-bold">
+                  <i class="material-icons align-middle me-2">cloud_sync</i>
+                  مزامنة البيانات السحابية
+                </h5>
+                <p class="text-muted small mb-0">
+                  سيتم تحديث التطبيق وبناء نسخة APK جديدة فور الحفظ إلى مستودع
+                  GitHub.
+                </p>
+              </div>
+              <div class="col-lg-4 text-lg-end mt-3 mt-lg-0">
+                <button
+                  class="btn btn-success btn-lg w-100 shadow"
+                  onclick="saveToGitHub()"
+                >
+                  <i class="material-icons align-middle">publish</i> حفظ وإرسال
+                  للتطبيق
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Modals -->
     <div class="modal fade" id="helpModal" tabindex="-1">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content border-0" style="border-radius: 20px;">
-                <div class="modal-body p-4 text-center">
-                    <h5 class="fw-bold mb-3">📄 صياغة ملف JSON للاستيراد</h5>
-                    <p class="text-muted">عند إضافة محتوى بالدفعة، يجب أن يكون الملف بالتنسيق التالي:</p>
-                    <pre class="bg-light p-3 rounded text-start" dir="ltr" style="font-size: 0.8rem; overflow-x: auto;">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0" style="border-radius: 20px">
+          <div class="modal-body p-4 text-center">
+            <h5 class="fw-bold mb-3">📄 صياغة ملف JSON للاستيراد</h5>
+            <p class="text-muted">
+              عند إضافة محتوى بالدفعة، يجب أن يكون الملف بالتنسيق التالي:
+            </p>
+            <pre
+              class="bg-light p-3 rounded text-start"
+              dir="ltr"
+              style="font-size: 0.8rem; overflow-x: auto"
+            >
 [
   {
     "title": "عنوان الموضوع",
     "content": "نص الموضوع هنا..."
   }
-]</pre>
-                    <p class="small text-danger">تأكد من أن كل عنصر يحتوي على المفتاحين title و content فقط لضمان التوافق.</p>
-                    <button class="btn btn-gold w-100 mt-3" data-bs-dismiss="modal">فهمت ذلك</button>
-                </div>
-            </div>
+]</pre
+            >
+            <p class="small text-danger">
+              تأكد من أن كل عنصر يحتوي على المفتاحين title و content فقط لضمان
+              التوافق.
+            </p>
+            <button class="btn btn-gold w-100 mt-3" data-bs-dismiss="modal">
+              فهمت ذلك
+            </button>
+          </div>
         </div>
+      </div>
     </div>
 
     <div class="modal fade" id="batchModal" tabindex="-1">
-        <div class="modal-dialog modal-lg modal-dialog-centered">
-            <div class="modal-content border-0" style="border-radius: 20px;">
-                <div class="modal-header bg-light border-0 px-4 pt-4">
-                    <h5 class="fw-bold">لصق محتوى مجمع (JSON)</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body p-4">
-                    <p class="small text-muted">قم بلصق مصفوفة JSON تحتوي على المواضيع:</p>
-                    <textarea id="batch-text" class="form-control" rows="12" placeholder='[{"title": "...", "content": "..."}]' style="font-family: monospace; font-size: 0.8rem;"></textarea>
-                </div>
-                <div class="modal-footer border-0 p-4">
-                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">إلغاء</button>
-                    <button type="button" class="btn btn-gold px-4" onclick="processBatchText()">إضافة المجموعة</button>
-                </div>
-            </div>
+      <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0" style="border-radius: 20px">
+          <div class="modal-header bg-light border-0 px-4 pt-4">
+            <h5 class="fw-bold">لصق محتوى مجمع (JSON)</h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+            ></button>
+          </div>
+          <div class="modal-body p-4">
+            <p class="small text-muted">
+              قم بلصق مصفوفة JSON تحتوي على المواضيع:
+            </p>
+            <textarea
+              id="batch-text"
+              class="form-control"
+              rows="12"
+              placeholder='[{"title": "...", "content": "..."}]'
+              style="font-family: monospace; font-size: 0.8rem"
+            ></textarea>
+          </div>
+          <div class="modal-footer border-0 p-4">
+            <button type="button" class="btn btn-light" data-bs-dismiss="modal">
+              إلغاء
+            </button>
+            <button
+              type="button"
+              class="btn btn-gold px-4"
+              onclick="processBatchText()"
+            >
+              إضافة المجموعة
+            </button>
+          </div>
         </div>
+      </div>
     </div>
 
     <div class="modal fade" id="importModal" tabindex="-1">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content border-0" style="border-radius: 20px;">
-                <div class="modal-body p-5">
-                    <div class="upload-card" onclick="document.getElementById('file-input').click()">
-                        <i class="material-icons text-gold" style="font-size: 4rem;">cloud_upload</i>
-                        <h5 class="mt-3 fw-bold">اسحب ملف JSON أو انقر للرفع</h5>
-                        <p class="text-muted small">يجب أن يكون الملف متوافقاً مع هيكلية التطبيق</p>
-                        <input type="file" id="file-input" hidden accept=".json" onchange="handleFile(this.files)">
-                    </div>
-                </div>
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0" style="border-radius: 20px">
+          <div class="modal-body p-5">
+            <div
+              class="upload-card"
+              onclick="document.getElementById('file-input').click()"
+            >
+              <i class="material-icons text-gold" style="font-size: 4rem"
+                >cloud_upload</i
+              >
+              <h5 class="mt-3 fw-bold">اسحب ملف JSON أو انقر للرفع</h5>
+              <p class="text-muted small">
+                يجب أن يكون الملف متوافقاً مع هيكلية التطبيق
+              </p>
+              <input
+                type="file"
+                id="file-input"
+                hidden
+                accept=".json"
+                onchange="handleFile(this.files)"
+              />
             </div>
+          </div>
         </div>
+      </div>
     </div>
 
     <div class="modal fade" id="editModal" tabindex="-1">
-        <div class="modal-dialog modal-xl modal-dialog-centered">
-            <div class="modal-content border-0" style="border-radius: 25px;">
-                <div class="modal-body p-5">
-                    <h4 class="fw-bold mb-4">تحرير المحتوى</h4>
+      <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content border-0" style="border-radius: 25px">
+          <div class="modal-body p-5">
+            <h4 class="fw-bold mb-4">تحرير المحتوى</h4>
 
-                    <div class="row g-3 mb-4">
-                        <div class="col-md-12">
-                            <label class="small fw-bold mb-1">القسم / التبويب المستهدف</label>
-                            <select id="m-target-key" class="form-select shadow-sm"></select>
-                        </div>
-                    </div>
-
-                    <input type="text" id="m-title" class="form-control form-control-lg mb-4 shadow-sm" placeholder="العنوان...">
-                    <textarea id="m-content" class="form-control shadow-sm" rows="12" placeholder="المحتوى الكامل هنا..." style="white-space: pre-wrap; border-radius: 15px;"></textarea>
-                    <div class="mt-4 text-end">
-                        <button class="btn btn-light px-4 me-2" data-bs-dismiss="modal">إلغاء</button>
-                        <button class="btn btn-gold px-5 shadow" onclick="saveItem()">حفظ التغييرات</button>
-                    </div>
-                </div>
+            <div class="row g-3 mb-4">
+              <div class="col-md-12">
+                <label class="small fw-bold mb-1"
+                  >القسم / التبويب المستهدف</label
+                >
+                <select
+                  id="m-target-key"
+                  class="form-select shadow-sm"
+                ></select>
+              </div>
             </div>
+
+            <input
+              type="text"
+              id="m-title"
+              class="form-control form-control-lg mb-4 shadow-sm"
+              placeholder="العنوان..."
+            />
+            <textarea
+              id="m-content"
+              class="form-control shadow-sm"
+              rows="12"
+              placeholder="المحتوى الكامل هنا..."
+              style="white-space: pre-wrap; border-radius: 15px"
+            ></textarea>
+            <div class="mt-4 text-end">
+              <button class="btn btn-light px-4 me-2" data-bs-dismiss="modal">
+                إلغاء
+              </button>
+              <button class="btn btn-gold px-5 shadow" onclick="saveItem()">
+                حفظ التغييرات
+              </button>
+            </div>
+          </div>
         </div>
+      </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        let db = null;
-        let activeView = 'settings';
-        let activeSubView = null;
-        let editIdx = -1;
+      let db = null;
+      let activeView = "settings";
+      let activeSubView = null;
+      let editIdx = -1;
 
-        const subSections = {
-            'duas': [
-                { id: 'duas_days', title: 'أدعية الأيام' },
-                { id: 'duas_taqeebat', title: 'تعقيبات الصلاة' },
-                { id: 'duas_general', title: 'الأدعية العامة' },
-                { id: 'duas_salawat', title: 'الصلوات' }
-            ],
-            'visits': [
-                { id: 'visits_days', title: 'زيارات الأيام' },
-                { id: 'visits_general', title: 'الزيارات العامة' }
-            ],
-            'adhkar': [
-                { id: 'adhkar_munajat', title: 'المناجاة' },
-                { id: 'adhkar_tasbihs', title: 'التسبيحات' }
-            ]
-        };
+      const subSections = {
+        duas: [
+          { id: "duas_days", title: "أدعية الأيام" },
+          { id: "duas_taqeebat", title: "تعقيبات الصلاة" },
+          { id: "duas_general", title: "الأدعية العامة" },
+          { id: "duas_salawat", title: "الصلوات" },
+        ],
+        visits: [
+          { id: "visits_days", title: "زيارات الأيام" },
+          { id: "visits_general", title: "الزيارات العامة" },
+        ],
+        adhkar: [
+          { id: "adhkar_munajat", title: "المناجاة" },
+          { id: "adhkar_tasbihs", title: "التسبيحات" },
+        ],
+      };
 
-        const modal = new bootstrap.Modal(document.getElementById('editModal'));
-        const importModal = new bootstrap.Modal(document.getElementById('importModal'));
-        const helpModal = new bootstrap.Modal(document.getElementById('helpModal'));
-        const batchModal = new bootstrap.Modal(document.getElementById('batchModal'));
+      const modal = new bootstrap.Modal(document.getElementById("editModal"));
+      const importModal = new bootstrap.Modal(
+        document.getElementById("importModal"),
+      );
+      const helpModal = new bootstrap.Modal(
+        document.getElementById("helpModal"),
+      );
+      const batchModal = new bootstrap.Modal(
+        document.getElementById("batchModal"),
+      );
 
-        async function init() {
-            try {
-                const res = await fetch('../../assets/data/content.json');
-                db = await res.json();
-                renderNav();
-                                // Populate imam_ali subSections dynamically
-                if (db.content && db.content.imam_ali) {
-                    subSections['imam_ali'] = db.content.imam_ali.map(c => ({
-                        id: 'imam_ali_cat_' + c.id,
-                        title: c.title
-                    }));
-                    // ensure content keys exist
-                    db.content.imam_ali.forEach(c => {
-                        if (!db.content['imam_ali_cat_' + c.id]) {
-                            db.content['imam_ali_cat_' + c.id] = [];
-                        }
-                    });
-                }
-
-                // Populate fatawa subSections dynamically
-                if (db.fatawa_categories) {
-                    subSections['fatawa'] = db.fatawa_categories.map(c => ({
-                        id: 'fatawa_cat_' + c.id,
-                        title: c.title
-                    }));
-                    
-                    // also ensure these keys exist in db for editing
-                    db.fatawa_categories.forEach(c => {
-                        db['fatawa_cat_' + c.id] = c.items || [];
-                    });
-                }
-
-                if (db.dreams_categories) {
-                    subSections['dreams'] = db.dreams_categories.map(c => ({
-                        id: 'dreams_cat_' + c.id,
-                        title: c.title
-                    }));
-                    db.dreams_categories.forEach(c => {
-                        db.content['dreams_cat_' + c.id] = db.content['dreams_cat_' + c.id] || [];
-                    });
-                }
-
-                loadView('settings');
-            } catch (e) { alert("خطأ في تحميل قاعدة البيانات."); }
-        }
-
-        function renderNav() {
-            const list = document.getElementById('nav-list');
-            list.innerHTML = '';
-            const links = [
-                {id: 'settings', title: 'الهوية والوسائط', icon: 'palette'},
-                {id: 'adhan_settings', title: 'إعدادات الأذان والتوقيت', icon: 'notifications_active'},
-                {id: 'about', title: 'ملف المطور', icon: 'person_pin'},
-                {id: 'sections_manager', title: 'إدارة الأقسام', icon: 'category'},
-                {id: 'universal_batch', title: 'استيراد شامل بالدفعة', icon: 'dynamic_feed'},
-                {divider: true}
-            ];
-            Object.keys(db.sections).forEach(k => links.push({id: k, title: db.sections[k].title, icon: db.sections[k].icon}));
-
-            links.forEach(l => {
-                if(l.divider) return list.innerHTML += '<hr class="text-secondary opacity-25 my-3">';
-                list.innerHTML += `<a class="nav-link ${activeView===l.id?'active':''}" onclick="loadView('${l.id}')">
-                    <i class="material-icons">${l.icon}</i> ${l.title}</a>`;
+      async function init() {
+        try {
+          const res = await fetch("../../assets/data/content.json");
+          db = await res.json();
+          renderNav();
+          // Populate imam_ali subSections dynamically
+          if (db.content && db.content.imam_ali) {
+            subSections["imam_ali"] = db.content.imam_ali.map((c) => ({
+              id: "imam_ali_cat_" + c.id,
+              title: c.title,
+            }));
+            // ensure content keys exist
+            db.content.imam_ali.forEach((c) => {
+              if (!db.content["imam_ali_cat_" + c.id]) {
+                db.content["imam_ali_cat_" + c.id] = [];
+              }
             });
+          }
+
+          // Populate fatawa subSections dynamically
+          if (db.fatawa_categories) {
+            subSections["fatawa"] = db.fatawa_categories.map((c) => ({
+              id: "fatawa_cat_" + c.id,
+              title: c.title,
+            }));
+
+            // also ensure these keys exist in db for editing
+            db.fatawa_categories.forEach((c) => {
+              db["fatawa_cat_" + c.id] = c.items || [];
+            });
+          }
+
+          if (db.dreams_categories) {
+            subSections["dreams"] = db.dreams_categories.map((c) => ({
+              id: "dreams_cat_" + c.id,
+              title: c.title,
+            }));
+            db.dreams_categories.forEach((c) => {
+              db.content["dreams_cat_" + c.id] =
+                db.content["dreams_cat_" + c.id] || [];
+            });
+          }
+
+          loadView("settings");
+        } catch (e) {
+          alert("خطأ في تحميل قاعدة البيانات.");
+        }
+      }
+
+      function renderNav() {
+        const list = document.getElementById("nav-list");
+        list.innerHTML = "";
+        const links = [
+          { id: "settings", title: "الهوية والوسائط", icon: "palette" },
+          {
+            id: "adhan_settings",
+            title: "إعدادات الأذان والتوقيت",
+            icon: "notifications_active",
+          },
+          { id: "about", title: "ملف المطور", icon: "person_pin" },
+          { id: "sections_manager", title: "إدارة الأقسام", icon: "category" },
+          {
+            id: "universal_batch",
+            title: "استيراد شامل بالدفعة",
+            icon: "dynamic_feed",
+          },
+          { divider: true },
+        ];
+        Object.keys(db.sections).forEach((k) =>
+          links.push({
+            id: k,
+            title: db.sections[k].title,
+            icon: db.sections[k].icon,
+          }),
+        );
+
+        links.forEach((l) => {
+          if (l.divider)
+            return (list.innerHTML +=
+              '<hr class="text-secondary opacity-25 my-3">');
+          list.innerHTML += `<a class="nav-link ${activeView === l.id ? "active" : ""}" onclick="loadView('${l.id}')">
+                    <i class="material-icons">${l.icon}</i> ${l.title}</a>`;
+        });
+      }
+
+      function loadView(id, subId = null, pushState = true) {
+        activeView = id;
+        activeSubView = subId;
+
+        if (!subId && subSections[id]) {
+          activeSubView = subSections[id][0].id;
         }
 
-        function loadView(id, subId = null) {
-            activeView = id;
-            activeSubView = subId;
+        if (pushState) {
+          currentPage = 1;
+          const url = new URL(window.location);
+          url.searchParams.set("view", activeView);
+          if (activeSubView) url.searchParams.set("sub", activeSubView);
+          else url.searchParams.delete("sub");
+          url.searchParams.set("page", currentPage);
+          window.history.pushState(
+            { view: activeView, subView: activeSubView, page: currentPage },
+            "",
+            url,
+          );
+        }
 
-            // Auto-select first sub-section if not specified
-            if (!subId && subSections[id]) {
-                activeSubView = subSections[id][0].id;
-            }
+        renderNav();
+        const ws = document.getElementById("workspace");
+        const acts = document.getElementById("view-actions");
+        const title = document.getElementById("view-title");
+        const icon = document.getElementById("view-icon");
+        ws.innerHTML = "";
+        acts.innerHTML = "";
 
-            renderNav();
-            const ws = document.getElementById('workspace');
-            const acts = document.getElementById('view-actions');
-            const title = document.getElementById('view-title');
-            const icon = document.getElementById('view-icon');
-            ws.innerHTML = ''; acts.innerHTML = '';
+        if (db.sections[id]) {
+          const s = db.sections[id];
+          title.innerText = s.title;
+          icon.innerText = s.icon;
 
-            if (db.sections[id]) {
-                const s = db.sections[id];
-                title.innerText = s.title; icon.innerText = s.icon;
-
-                acts.innerHTML = `
+          acts.innerHTML = `
                     <div class="btn-group-sm-responsive">
                         <button class="btn btn-outline-dark px-3" onclick="helpModal.show()">تعليمات الاستيراد</button>
                         <button class="btn btn-outline-gold px-3" onclick="batchModal.show()">إضافة مجمعة (نص)</button>
@@ -289,30 +560,33 @@
                     </div>
                 `;
 
-                // Render Sub-section Tabs if available
-                if (subSections[id]) {
-                    let tabsHtml = `<div class="nav nav-pills mb-4 bg-white p-2 rounded shadow-sm">`;
-                    subSections[id].forEach(sub => {
-                        tabsHtml += `
-                            <button class="nav-link py-2 px-4 me-2 ${activeSubView === sub.id ? 'active' : 'text-dark'}"
+          // Render Sub-section Tabs if available
+          if (subSections[id]) {
+            let tabsHtml = `<div class="nav nav-pills mb-4 bg-white p-2 rounded shadow-sm">`;
+            subSections[id].forEach((sub) => {
+              tabsHtml += `
+                            <button class="nav-link py-2 px-4 me-2 ${activeSubView === sub.id ? "active" : "text-dark"}"
                                     onclick="loadView('${id}', '${sub.id}')">${sub.title}</button>`;
-                    });
-                    tabsHtml += `</div>`;
-                    ws.innerHTML += tabsHtml;
-                }
+            });
+            tabsHtml += `</div>`;
+            ws.innerHTML += tabsHtml;
+          }
 
-                ws.innerHTML += `<div id="list-container" class="row g-3"></div>`;
-                renderItems();
-            } else if (id === 'settings') {
-                title.innerText = "الهوية والوسائط"; icon.innerText = "photo_library";
-                setTimeout(renderGallery, 100);
-                ws.innerHTML = `
+          ws.innerHTML += `<div id="pagination-controls" class="d-flex justify-content-between align-items-center mb-3"></div>`;
+          ws.innerHTML += `<div id="list-container" class="row g-3"></div>`;
+          ws.innerHTML += `<div id="pagination-controls-bottom" class="d-flex justify-content-center align-items-center mt-4"></div>`;
+          renderItems();
+        } else if (id === "settings") {
+          title.innerText = "الهوية والوسائط";
+          icon.innerText = "photo_library";
+          setTimeout(renderGallery, 100);
+          ws.innerHTML = `
                     <div class="row g-4">
                         <div class="col-md-6">
                             <div class="card card-lux p-4 h-100">
                                 <h5 class="fw-bold mb-4">شعار التطبيق (Logo)</h5>
                                 <div class="upload-card mb-3" onclick="document.getElementById('logo-file').click()">
-                                    <img id="logo-prev" src="${db.settings.custom_logo_base64 || '../../assets/images/logo.png'}" class="img-preview mb-3" style="width:120px;height:120px">
+                                    <img id="logo-prev" src="${db.settings.custom_logo_base64 || "../../assets/images/logo.png"}" class="img-preview mb-3" style="width:120px;height:120px">
                                     <h6 class="fw-bold">انقر لاختيار صورة من الاستوديو</h6>
                                     <input type="file" id="logo-file" hidden accept="image/*" onchange="processImg(this, 'logo')">
                                 </div>
@@ -323,7 +597,7 @@
                             <div class="card card-lux p-4 h-100">
                                 <h5 class="fw-bold mb-4">الخلفية الافتراضية (Background)</h5>
                                 <div class="upload-card mb-3" onclick="document.getElementById('bg-file').click()">
-                                    <img id="bg-prev" src="${db.settings.custom_bg_base64 || '../../assets/images/default_bg.png'}" class="img-preview mb-3" style="width:120px;height:120px">
+                                    <img id="bg-prev" src="${db.settings.custom_bg_base64 || "../../assets/images/default_bg.png"}" class="img-preview mb-3" style="width:120px;height:120px">
                                     <h6 class="fw-bold">انقر لاختيار خلفية من الاستوديو</h6>
                                     <input type="file" id="bg-file" hidden accept="image/*" onchange="processImg(this, 'bg')">
                                 </div>
@@ -345,9 +619,10 @@
                         </div>
                     </div>
                 `;
-            } else if (id === 'about') {
-                title.innerText = "معلومات المطور"; icon.innerText = "contact_support";
-                ws.innerHTML = `
+        } else if (id === "about") {
+          title.innerText = "معلومات المطور";
+          icon.innerText = "contact_support";
+          ws.innerHTML = `
                     <div class="card card-lux p-4 p-md-5 mx-auto shadow-lg" style="max-width:900px;">
                         <div class="row g-4">
                             <div class="col-md-4 text-center">
@@ -366,15 +641,21 @@
                         </div>
                     </div>
                 `;
-            } else if (id === 'adhan_settings') {
-                title.innerText = "إعدادات الأذان والتوقيت"; icon.innerText = "notifications_active";
-                if(!db.settings.adhan) db.settings.adhan = { ringtone: "adhan.mp3", global_offset: 0, adhan_base64: null };
-                ws.innerHTML = `
+        } else if (id === "adhan_settings") {
+          title.innerText = "إعدادات الأذان والتوقيت";
+          icon.innerText = "notifications_active";
+          if (!db.settings.adhan)
+            db.settings.adhan = {
+              ringtone: "adhan.mp3",
+              global_offset: 0,
+              adhan_base64: null,
+            };
+          ws.innerHTML = `
                     <div class="card card-lux p-4 shadow-sm mb-4">
                         <h6 class="fw-bold mb-4"><i class="material-icons align-middle me-2">volume_up</i> تخصيص نغمة الأذان</h6>
                         <div class="upload-card" onclick="document.getElementById('adhan-file').click()">
                             <i class="material-icons text-gold" style="font-size:3rem">audiotrack</i>
-                            <h6>${db.settings.adhan.adhan_base64 ? 'تم رفع ملف صوتي مخصص' : 'انقر لرفع ملف الأذان (MP3)'}</h6>
+                            <h6>${db.settings.adhan.adhan_base64 ? "تم رفع ملف صوتي مخصص" : "انقر لرفع ملف الأذان (MP3)"}</h6>
                             <input type="file" id="adhan-file" hidden accept="audio/*" onchange="processAdhanAudio(this)">
                         </div>
                         <div class="mt-3 text-center">
@@ -398,10 +679,11 @@
                         <div id="manual-schedules-list"></div>
                     </div>
                 `;
-                renderManualSchedules();
-            } else if (id === 'sections_manager') {
-                title.innerText = "إدارة الأقسام"; icon.innerText = "category";
-                ws.innerHTML = `
+          renderManualSchedules();
+        } else if (id === "sections_manager") {
+          title.innerText = "إدارة الأقسام";
+          icon.innerText = "category";
+          ws.innerHTML = `
                     <div class="card card-lux p-4 shadow-sm mb-4">
                         <h6 class="fw-bold mb-3">إضافة قسم جديد</h6>
                         <div class="row g-3">
@@ -413,10 +695,11 @@
                     </div>
                     <div id="sections-list" class="row g-3"></div>
                 `;
-                renderSectionsList();
-            } else if (id === 'universal_batch') {
-                title.innerText = "استيراد شامل لكل الأقسام"; icon.innerText = "dynamic_feed";
-                ws.innerHTML = `
+          renderSectionsList();
+        } else if (id === "universal_batch") {
+          title.innerText = "استيراد شامل لكل الأقسام";
+          icon.innerText = "dynamic_feed";
+          ws.innerHTML = `
                     <div class="card card-lux p-4 shadow-sm">
                         <h6 class="fw-bold mb-3 text-primary">إضافة محتوى لعدة أقسام في وقت واحد</h6>
                         <p class="small text-muted">استخدم التنسيق التالي للصق البيانات. سيقوم النظام تلقائياً بتوزيع كل موضوع على قسمه الصحيح.</p>
@@ -437,118 +720,185 @@
                         <button class="btn btn-primary btn-lg w-100" onclick="processUniversalBatch()">توزيع الإضافات على الأقسام</button>
                     </div>
                 `;
-            }
-            if (window.innerWidth < 992) toggleSidebar(false);
+        }
+        if (window.innerWidth < 992) toggleSidebar(false);
+      }
+
+      function changePage(delta) {
+        currentPage += delta;
+        const url = new URL(window.location);
+        url.searchParams.set("page", currentPage);
+        window.history.pushState(
+          { view: activeView, subView: activeSubView, page: currentPage },
+          "",
+          url,
+        );
+        renderItems();
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+
+      function renderItems() {
+        const container = document.getElementById("list-container");
+        const topPagination = document.getElementById("pagination-controls");
+        const bottomPagination = document.getElementById(
+          "pagination-controls-bottom",
+        );
+        if (!container) return;
+        container.innerHTML = "";
+        if (topPagination) topPagination.innerHTML = "";
+        if (bottomPagination) bottomPagination.innerHTML = "";
+
+        const contentKey = activeSubView || activeView;
+        let items = db.content[contentKey] || [];
+        const isQuran = contentKey === "quran";
+
+        const totalItems = items.length;
+        const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE) || 1;
+        if (currentPage > totalPages) currentPage = totalPages;
+        if (currentPage < 1) currentPage = 1;
+
+        const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+        const endIndex = Math.min(startIndex + ITEMS_PER_PAGE, totalItems);
+
+        if (totalItems > ITEMS_PER_PAGE) {
+          const paginationHtml = `
+                    <button class="btn btn-outline-dark" ${currentPage === 1 ? "disabled" : ""} onclick="changePage(-1)">السابق</button>
+                    <span class="fw-bold">صفحة ${currentPage} من ${totalPages} (${totalItems} عنصر)</span>
+                    <button class="btn btn-outline-dark" ${currentPage === totalPages ? "disabled" : ""} onclick="changePage(1)">التالي</button>
+                `;
+          if (topPagination) topPagination.innerHTML = paginationHtml;
+          if (bottomPagination) bottomPagination.innerHTML = paginationHtml;
         }
 
-        function renderItems() {
-            const container = document.getElementById('list-container');
-            if (!container) return;
-            container.innerHTML = '';
+        const pagedItems = items.slice(startIndex, endIndex);
 
-            const contentKey = activeSubView || activeView;
-            const items = db.content[contentKey] || [];
-            const isQuran = contentKey === 'quran';
-
-            items.forEach((it, i) => {
-                container.innerHTML += `
+        pagedItems.forEach((it, idx) => {
+          const realIndex = startIndex + idx;
+          container.innerHTML += `
                     <div class="col-md-6">
                         <div class="card card-lux p-3 d-flex flex-row justify-content-between align-items-center">
                             <div class="text-truncate" style="max-width:70%">
-                                <span class="badge bg-gold text-dark me-2">#${i+1}</span>
-                                <span class="fw-bold text-dark ${isQuran ? 'quran-font' : ''}">${isQuran && !it.title.startsWith('سورة') ? 'سورة ' : ''}${it.title}</span>
+                                <span class="badge bg-gold text-dark me-2">#${realIndex + 1}</span>
+                                <span class="fw-bold text-dark ${isQuran ? "quran-font" : ""}">${isQuran && !it.title.startsWith("سورة") ? "سورة " : ""}${it.title}</span>
                             </div>
                             <div class="d-flex gap-2">
-                                <button class="btn btn-sm btn-outline-primary" onclick="openEdit(${i})"><i class="material-icons small">edit</i></button>
-                                <button class="btn btn-sm btn-outline-danger" onclick="deleteItem(${i})"><i class="material-icons small">delete</i></button>
+                                <button class="btn btn-sm btn-outline-primary" onclick="openEdit(${realIndex})"><i class="material-icons small">edit</i></button>
+                                <button class="btn btn-sm btn-outline-danger" onclick="deleteItem(${realIndex})"><i class="material-icons small">delete</i></button>
                             </div>
                         </div>
                     </div>
                 `;
-            });
+        });
+      }
+
+      function toggleSidebar(show) {
+        const s = document.getElementById("sidebar");
+        const o = document.getElementById("sidebarOverlay");
+        if (show) {
+          s.classList.add("show");
+          o.classList.add("show");
+        } else {
+          s.classList.remove("show");
+          o.classList.remove("show");
         }
+      }
 
-        function toggleSidebar(show) {
-            const s = document.getElementById('sidebar');
-            const o = document.getElementById('sidebarOverlay');
-            if(show) { s.classList.add('show'); o.classList.add('show'); }
-            else { s.classList.remove('show'); o.classList.remove('show'); }
+      function handleFile(files) {
+        if (!files.length) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          try {
+            const data = JSON.parse(e.target.result);
+            if (Array.isArray(data)) {
+              db.content[activeView] = [
+                ...(db.content[activeView] || []),
+                ...data,
+              ];
+              renderItems();
+              importModal.hide();
+              alert("تم استيراد " + data.length + " عنصر بنجاح.");
+            } else alert("يجب أن يكون الملف عبارة عن Array [{},{}]");
+          } catch (err) {
+            alert("خطأ في قراءة ملف JSON");
+          }
+        };
+        reader.readAsText(files[0]);
+      }
+
+      function processBatchText() {
+        const txt = document.getElementById("batch-text").value.trim();
+        if (!txt) return;
+        try {
+          const data = JSON.parse(txt);
+          const contentKey = activeSubView || activeView;
+          if (Array.isArray(data)) {
+            db.content[contentKey] = [
+              ...(db.content[contentKey] || []),
+              ...data,
+            ];
+            renderItems();
+            batchModal.hide();
+            alert("تم إضافة " + data.length + " عنصر بنجاح.");
+          } else alert("يجب أن يكون النص عبارة عن مصفوفة Array [{},{}]");
+        } catch (e) {
+          alert("خطأ في تنسيق JSON: " + e.message);
         }
+      }
 
-        function handleFile(files) {
-            if(!files.length) return;
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                try {
-                    const data = JSON.parse(e.target.result);
-                    if(Array.isArray(data)) {
-                        db.content[activeView] = [...(db.content[activeView] || []), ...data];
-                        renderItems();
-                        importModal.hide();
-                        alert("تم استيراد " + data.length + " عنصر بنجاح.");
-                    } else alert("يجب أن يكون الملف عبارة عن Array [{},{}]");
-                } catch(err) { alert("خطأ في قراءة ملف JSON"); }
-            };
-            reader.readAsText(files[0]);
+      function processUniversalBatch() {
+        const txt = document.getElementById("u-batch-text").value.trim();
+        if (!txt) return;
+        try {
+          const data = JSON.parse(txt);
+          if (!Array.isArray(data)) return alert("يجب أن يكون مصفوفة JSON");
+
+          let count = 0;
+          data.forEach((item) => {
+            const sec = item.section;
+            if (db.content[sec]) {
+              db.content[sec].push({
+                id: Date.now() + Math.random(),
+                title: item.title,
+                content: item.content,
+              });
+              count++;
+            }
+          });
+          alert("تم استيراد وتوزيع " + count + " عنصر بنجاح.");
+          document.getElementById("u-batch-text").value = "";
+        } catch (e) {
+          alert("خطأ JSON: " + e.message);
         }
+      }
 
-        function processBatchText() {
-            const txt = document.getElementById('batch-text').value.trim();
-            if(!txt) return;
-            try {
-                const data = JSON.parse(txt);
-                const contentKey = activeSubView || activeView;
-                if(Array.isArray(data)) {
-                    db.content[contentKey] = [...(db.content[contentKey] || []), ...data];
-                    renderItems();
-                    batchModal.hide();
-                    alert("تم إضافة " + data.length + " عنصر بنجاح.");
-                } else alert("يجب أن يكون النص عبارة عن مصفوفة Array [{},{}]");
-            } catch(e) { alert("خطأ في تنسيق JSON: " + e.message); }
-        }
+      function processImg(input, type) {
+        if (!input.files.length) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const base64 = e.target.result;
+          if (type === "logo") {
+            db.settings.custom_logo_base64 = base64;
+            document.getElementById("logo-prev").src = base64;
+          }
+          if (type === "bg") {
+            db.settings.custom_bg_base64 = base64;
+            document.getElementById("bg-prev").src = base64;
+          }
+          if (type === "gallery") {
+            if (!db.settings.bg_gallery) db.settings.bg_gallery = [];
+            db.settings.bg_gallery.push(base64);
+            renderGallery();
+          }
+        };
+        reader.readAsDataURL(input.files[0]);
+      }
 
-        function processUniversalBatch() {
-            const txt = document.getElementById('u-batch-text').value.trim();
-            if(!txt) return;
-            try {
-                const data = JSON.parse(txt);
-                if(!Array.isArray(data)) return alert("يجب أن يكون مصفوفة JSON");
-
-                let count = 0;
-                data.forEach(item => {
-                    const sec = item.section;
-                    if(db.content[sec]) {
-                        db.content[sec].push({ id: Date.now() + Math.random(), title: item.title, content: item.content });
-                        count++;
-                    }
-                });
-                alert("تم استيراد وتوزيع " + count + " عنصر بنجاح.");
-                document.getElementById('u-batch-text').value = '';
-            } catch(e) { alert("خطأ JSON: " + e.message); }
-        }
-
-        function processImg(input, type) {
-            if(!input.files.length) return;
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const base64 = e.target.result;
-                if(type === 'logo') { db.settings.custom_logo_base64 = base64; document.getElementById('logo-prev').src = base64; }
-                if(type === 'bg') { db.settings.custom_bg_base64 = base64; document.getElementById('bg-prev').src = base64; }
-                if(type === 'gallery') {
-                    if(!db.settings.bg_gallery) db.settings.bg_gallery = [];
-                    db.settings.bg_gallery.push(base64);
-                    renderGallery();
-                }
-            };
-            reader.readAsDataURL(input.files[0]);
-        }
-
-        function renderGallery() {
-            const container = document.getElementById('bg-gallery-container');
-            if(!container) return;
-            container.innerHTML = '';
-            (db.settings.bg_gallery || []).forEach((img, i) => {
-                container.innerHTML += `
+      function renderGallery() {
+        const container = document.getElementById("bg-gallery-container");
+        if (!container) return;
+        container.innerHTML = "";
+        (db.settings.bg_gallery || []).forEach((img, i) => {
+          container.innerHTML += `
                     <div class="position-relative" style="min-width:120px">
                         <img src="${img}" class="img-preview" style="width:120px;height:120px">
                         <button class="btn btn-danger btn-sm position-absolute top-0 end-0 rounded-circle m-1" onclick="deleteFromGallery(${i})">
@@ -556,20 +906,20 @@
                         </button>
                     </div>
                 `;
-            });
-        }
+        });
+      }
 
-        function deleteFromGallery(i) {
-            db.settings.bg_gallery.splice(i, 1);
-            renderGallery();
-        }
+      function deleteFromGallery(i) {
+        db.settings.bg_gallery.splice(i, 1);
+        renderGallery();
+      }
 
-        function renderSectionsList() {
-            const list = document.getElementById('sections-list');
-            if(!list) return;
-            list.innerHTML = '';
-            Object.keys(db.sections).forEach(k => {
-                list.innerHTML += `
+      function renderSectionsList() {
+        const list = document.getElementById("sections-list");
+        if (!list) return;
+        list.innerHTML = "";
+        Object.keys(db.sections).forEach((k) => {
+          list.innerHTML += `
                     <div class="col-md-6">
                         <div class="card card-lux p-3">
                             <div class="d-flex justify-content-between align-items-center mb-2">
@@ -582,38 +932,62 @@
                             <div class="small text-muted">ID: ${k} | العناصر: ${db.content[k] ? db.content[k].length : 0}</div>
                         </div>
                     </div>`;
-            });
-        }
+        });
+      }
 
-        function openRenameSection(k) {
-            const newTitle = prompt("أدخل الاسم الجديد للقسم:", db.sections[k].title);
-            if(newTitle && newTitle !== db.sections[k].title) {
-                db.sections[k].title = newTitle;
-                renderNav(); renderSectionsList();
-            }
+      function openRenameSection(k) {
+        const newTitle = prompt(
+          "أدخل الاسم الجديد للقسم:",
+          db.sections[k].title,
+        );
+        if (newTitle && newTitle !== db.sections[k].title) {
+          db.sections[k].title = newTitle;
+          renderNav();
+          renderSectionsList();
         }
+      }
 
-        function addNewSection() {
-            const id = document.getElementById('new-sec-id').value.trim();
-            const title = document.getElementById('new-sec-title').value.trim();
-            const icon = document.getElementById('new-sec-icon').value.trim();
-            if(!id || !title) return alert("املاً البيانات");
-            db.sections[id] = { title, icon, color: "0xFFD4AF37", visible_home: true };
-            if(!db.content[id]) db.content[id] = [];
-            renderNav(); renderSectionsList();
+      function addNewSection() {
+        const id = document.getElementById("new-sec-id").value.trim();
+        const title = document.getElementById("new-sec-title").value.trim();
+        const icon = document.getElementById("new-sec-icon").value.trim();
+        if (!id || !title) return alert("املاً البيانات");
+        db.sections[id] = {
+          title,
+          icon,
+          color: "0xFFD4AF37",
+          visible_home: true,
+        };
+        if (!db.content[id]) db.content[id] = [];
+        renderNav();
+        renderSectionsList();
+      }
+
+      function deleteSection(k) {
+        if (confirm("حذف القسم ومحتوياته نهائياً؟")) {
+          delete db.sections[k];
+          delete db.content[k];
+          renderNav();
+          renderSectionsList();
         }
+      }
 
-        function deleteSection(k) {
-            if(confirm("حذف القسم ومحتوياته نهائياً؟")) { delete db.sections[k]; delete db.content[k]; renderNav(); renderSectionsList(); }
-        }
-
-        function renderDailyDuasList() {
-            const list = document.getElementById('daily-duas-list');
-            if(!list) return;
-            list.innerHTML = '<h6 class="fw-bold col-12 mb-3">الأدعية المضافة حالياً:</h6>';
-            const daysMap = {"Friday":"الجمعة", "Saturday":"السبت", "Sunday":"الأحد", "Monday":"الاثنين", "Tuesday":"الثلاثاء", "Wednesday":"الأربعاء", "Thursday":"الخميس"};
-            Object.keys(db.daily_duas || {}).forEach(day => {
-                list.innerHTML += `
+      function renderDailyDuasList() {
+        const list = document.getElementById("daily-duas-list");
+        if (!list) return;
+        list.innerHTML =
+          '<h6 class="fw-bold col-12 mb-3">الأدعية المضافة حالياً:</h6>';
+        const daysMap = {
+          Friday: "الجمعة",
+          Saturday: "السبت",
+          Sunday: "الأحد",
+          Monday: "الاثنين",
+          Tuesday: "الثلاثاء",
+          Wednesday: "الأربعاء",
+          Thursday: "الخميس",
+        };
+        Object.keys(db.daily_duas || {}).forEach((day) => {
+          list.innerHTML += `
                     <div class="col-md-6">
                         <div class="card card-lux p-3 d-flex flex-row justify-content-between align-items-center">
                             <div class="text-truncate">
@@ -623,190 +997,251 @@
                             <button class="btn btn-sm btn-outline-danger" onclick="deleteDailyDua('${day}')"><i class="material-icons small">delete</i></button>
                         </div>
                     </div>`;
-            });
-        }
+        });
+      }
 
-        function saveDailyDua() {
-            const day = document.getElementById('dua-day').value;
-            const title = document.getElementById('dua-title').value;
-            const content = document.getElementById('dua-content').value;
-            if(!title || !content) return alert("املاً البيانات");
-            db.daily_duas[day] = { title, content };
-            renderDailyDuasList();
-        }
+      function saveDailyDua() {
+        const day = document.getElementById("dua-day").value;
+        const title = document.getElementById("dua-title").value;
+        const content = document.getElementById("dua-content").value;
+        if (!title || !content) return alert("املاً البيانات");
+        db.daily_duas[day] = { title, content };
+        renderDailyDuasList();
+      }
 
-        function deleteDailyDua(day) { delete db.daily_duas[day]; renderDailyDuasList(); }
+      function deleteDailyDua(day) {
+        delete db.daily_duas[day];
+        renderDailyDuasList();
+      }
 
-        function processAdhanAudio(input) {
-            if(!input.files.length) return;
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                db.settings.adhan.adhan_base64 = e.target.result;
-                alert("تم تحميل ملف الأذان. سيتم دمجه في النسخة القادمة.");
-                loadView('adhan_settings');
-            };
-            reader.readAsDataURL(input.files[0]);
-        }
+      function processAdhanAudio(input) {
+        if (!input.files.length) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          db.settings.adhan.adhan_base64 = e.target.result;
+          alert("تم تحميل ملف الأذان. سيتم دمجه في النسخة القادمة.");
+          loadView("adhan_settings");
+        };
+        reader.readAsDataURL(input.files[0]);
+      }
 
-        function renderManualSchedules() {
-            const list = document.getElementById('manual-schedules-list');
-            if(!list) return;
-            if(!db.settings.adhan.manual_schedules) db.settings.adhan.manual_schedules = [];
-            list.innerHTML = '';
-            db.settings.adhan.manual_schedules.forEach((s, i) => {
-                list.innerHTML += `<div class="alert alert-secondary d-flex justify-content-between py-2 small">
+      function renderManualSchedules() {
+        const list = document.getElementById("manual-schedules-list");
+        if (!list) return;
+        if (!db.settings.adhan.manual_schedules)
+          db.settings.adhan.manual_schedules = [];
+        list.innerHTML = "";
+        db.settings.adhan.manual_schedules.forEach((s, i) => {
+          list.innerHTML += `<div class="alert alert-secondary d-flex justify-content-between py-2 small">
                     <span><b>${s.date}:</b> ف ${s.fajr} | ظ ${s.dhuhr} | ع ${s.asr} | م ${s.maghrib} | ع ${s.isha}</span>
                     <button class="btn btn-sm text-danger" onclick="db.settings.adhan.manual_schedules.splice(${i},1);renderManualSchedules();">حذف</button>
                 </div>`;
+        });
+      }
+
+      function addManualSchedule() {
+        const date = document.getElementById("man-date").value;
+        const fajr = document.getElementById("man-fajr").value;
+        const dhuhr = document.getElementById("man-dhuhr").value;
+        const asr = document.getElementById("man-asr").value;
+        const magh = document.getElementById("man-magh").value;
+        const isha = document.getElementById("man-isha").value;
+        if (!date || !fajr) return alert("حدد التاريخ والوقت");
+        db.settings.adhan.manual_schedules.push({
+          date,
+          fajr,
+          dhuhr,
+          asr,
+          maghrib: magh,
+          isha,
+        });
+        renderManualSchedules();
+      }
+
+      function clearImg(type) {
+        if (type === "logo") {
+          db.settings.custom_logo_base64 = null;
+          document.getElementById("logo-prev").src =
+            "../../assets/images/logo.png";
+        }
+        if (type === "bg") {
+          db.settings.custom_bg_base64 = null;
+          document.getElementById("bg-prev").src =
+            "../../assets/images/default_bg.png";
+        }
+      }
+
+      function populateTargetKey() {
+        const select = document.getElementById("m-target-key");
+        if (!select) return;
+        select.innerHTML = "";
+        Object.keys(db.sections).forEach((k) => {
+          if (subSections[k]) {
+            subSections[k].forEach((sub) => {
+              select.innerHTML += `<option value="${sub.id}">${db.sections[k].title} - ${sub.title}</option>`;
             });
-        }
+          } else {
+            select.innerHTML += `<option value="${k}">${db.sections[k].title}</option>`;
+          }
+        });
+      }
 
-        function addManualSchedule() {
-            const date = document.getElementById('man-date').value;
-            const fajr = document.getElementById('man-fajr').value;
-            const dhuhr = document.getElementById('man-dhuhr').value;
-            const asr = document.getElementById('man-asr').value;
-            const magh = document.getElementById('man-magh').value;
-            const isha = document.getElementById('man-isha').value;
-            if(!date || !fajr) return alert("حدد التاريخ والوقت");
-            db.settings.adhan.manual_schedules.push({date, fajr, dhuhr, asr, maghrib: magh, isha});
-            renderManualSchedules();
-        }
+      function openAdd() {
+        openEdit(-1);
+      }
+      function openEdit(i) {
+        editIdx = i;
+        const contentKey = activeSubView || activeView;
+        populateTargetKey();
+        document.getElementById("m-target-key").value = contentKey;
 
-        function clearImg(type) {
-            if(type === 'logo') { db.settings.custom_logo_base64 = null; document.getElementById('logo-prev').src = '../../assets/images/logo.png'; }
-            if(type === 'bg') { db.settings.custom_bg_base64 = null; document.getElementById('bg-prev').src = '../../assets/images/default_bg.png'; }
-        }
+        const it =
+          i === -1
+            ? { title: "", content: "" }
+            : db.content[contentKey]
+              ? db.content[contentKey][i]
+              : { title: "", content: "" };
+        document.getElementById("m-title").value = it.title;
+        document.getElementById("m-content").value = it.content;
 
-        function populateTargetKey() {
-            const select = document.getElementById('m-target-key');
-            if (!select) return;
-            select.innerHTML = '';
-            Object.keys(db.sections).forEach(k => {
-                if (subSections[k]) {
-                    subSections[k].forEach(sub => {
-                        select.innerHTML += `<option value="${sub.id}">${db.sections[k].title} - ${sub.title}</option>`;
-                    });
-                } else {
-                    select.innerHTML += `<option value="${k}">${db.sections[k].title}</option>`;
-                }
+        const contentArea = document.getElementById("m-content");
+        const titleArea = document.getElementById("m-title");
+        if (contentKey === "quran") {
+          contentArea.classList.add("quran-font");
+          titleArea.classList.add("quran-font");
+        } else {
+          contentArea.classList.remove("quran-font");
+          titleArea.classList.remove("quran-font");
+        }
+        modal.show();
+      }
+      function saveItem() {
+        const t = document.getElementById("m-title").value;
+        const c = document.getElementById("m-content").value;
+        const targetKey = document.getElementById("m-target-key").value;
+        const currentKey = activeSubView || activeView;
+
+        if (!t || !c) return alert("املاً الحقول");
+
+        if (editIdx === -1) {
+          if (!db.content[targetKey]) db.content[targetKey] = [];
+          db.content[targetKey].push({ id: Date.now(), title: t, content: c });
+        } else {
+          if (targetKey === currentKey) {
+            db.content[currentKey][editIdx].title = t;
+            db.content[currentKey][editIdx].content = c;
+          } else {
+            db.content[currentKey].splice(editIdx, 1);
+            if (!db.content[targetKey]) db.content[targetKey] = [];
+            db.content[targetKey].push({
+              id: Date.now(),
+              title: t,
+              content: c,
             });
+          }
+        }
+        modal.hide();
+        renderItems();
+      }
+      function deleteItem(i) {
+        const contentKey = activeSubView || activeView;
+        if (confirm("حذف؟")) {
+          db.content[contentKey].splice(i, 1);
+          renderItems();
+        }
+      }
+
+      async function saveToGitHub() {
+        // Repack fatawa and imam_ali before saving
+        if (db.fatawa_categories) {
+          db.fatawa_categories.forEach((c) => {
+            if (db.content["fatawa_cat_" + c.id]) {
+              c.items = db.content["fatawa_cat_" + c.id];
+              delete db.content["fatawa_cat_" + c.id];
+            }
+          });
         }
 
-        function openAdd() { openEdit(-1); }
-        function openEdit(i) {
-            editIdx = i;
-            const contentKey = activeSubView || activeView;
-            populateTargetKey();
-            document.getElementById('m-target-key').value = contentKey;
-
-            const it = i === -1 ? {title:'', content:''} : (db.content[contentKey] ? db.content[contentKey][i] : {title:'', content:''});
-            document.getElementById('m-title').value = it.title;
-            document.getElementById('m-content').value = it.content;
-
-            const contentArea = document.getElementById('m-content');
-            const titleArea = document.getElementById('m-title');
-            if (contentKey === 'quran') {
-                contentArea.classList.add('quran-font');
-                titleArea.classList.add('quran-font');
-            } else {
-                contentArea.classList.remove('quran-font');
-                titleArea.classList.remove('quran-font');
+        if (db.dreams_categories) {
+          db.dreams_categories.forEach((c) => {
+            if (db.content["dreams_cat_" + c.id]) {
+              c.items = db.content["dreams_cat_" + c.id];
+              delete db.content["dreams_cat_" + c.id];
             }
-            modal.show();
-        }
-        function saveItem() {
-            const t = document.getElementById('m-title').value;
-            const c = document.getElementById('m-content').value;
-            const targetKey = document.getElementById('m-target-key').value;
-            const currentKey = activeSubView || activeView;
-
-            if(!t || !c) return alert("املاً الحقول");
-
-            if(editIdx === -1) {
-                if(!db.content[targetKey]) db.content[targetKey] = [];
-                db.content[targetKey].push({id:Date.now(), title:t, content:c});
-            } else {
-                if (targetKey === currentKey) {
-                    db.content[currentKey][editIdx].title = t;
-                    db.content[currentKey][editIdx].content = c;
-                } else {
-                    db.content[currentKey].splice(editIdx, 1);
-                    if(!db.content[targetKey]) db.content[targetKey] = [];
-                    db.content[targetKey].push({id:Date.now(), title:t, content:c});
-                }
-            }
-            modal.hide(); renderItems();
-        }
-        function deleteItem(i) {
-            const contentKey = activeSubView || activeView;
-            if(confirm("حذف؟")) { db.content[contentKey].splice(i, 1); renderItems(); }
+          });
         }
 
-        async function saveToGitHub() {
-            // Repack fatawa and imam_ali before saving
-            if (db.fatawa_categories) {
-                db.fatawa_categories.forEach(c => {
-                    if (db['fatawa_cat_' + c.id]) {
-                        c.items = db['fatawa_cat_' + c.id];
-                        delete db['fatawa_cat_' + c.id];
-                    }
-                });
+        if (db.content && db.content.imam_ali) {
+          db.content.imam_ali.forEach((c) => {
+            if (db.content["imam_ali_cat_" + c.id]) {
+              c.items = db.content["imam_ali_cat_" + c.id];
+              delete db.content["imam_ali_cat_" + c.id];
             }
-
-            if (db.dreams_categories) {
-                db.dreams_categories.forEach(c => {
-                    if (db.content['dreams_cat_' + c.id]) {
-                        c.items = db.content['dreams_cat_' + c.id];
-                        delete db.content['dreams_cat_' + c.id];
-                    }
-                });
-            }
-
-            if (db.content && db.content.imam_ali) {
-                db.content.imam_ali.forEach(c => {
-                    if (db.content['imam_ali_cat_' + c.id]) {
-                        c.items = db.content['imam_ali_cat_' + c.id];
-                        delete db.content['imam_ali_cat_' + c.id];
-                    }
-                });
-            }
-
-            const token = prompt("أدخل GitHub Personal Access Token:"); if(!token) return;
-            const repo = "techtouchAI/Islamic"; const path = "assets/data/content.json";
-            try {
-                const res = await fetch(`https://api.github.com/repos/${repo}/contents/${path}`, { headers: {"Authorization": `token ${token}`} });
-                if(!res.ok) throw new Error("فشل الوصول للمستودع.");
-                const sha = (await res.json()).sha;
-                const update = await fetch(`https://api.github.com/repos/${repo}/contents/${path}`, {
-                    method: "PUT", headers: {"Authorization": `token ${token}`},
-                    body: JSON.stringify({ message: "CMS: Full Content & Media Update", content: btoa(unescape(encodeURIComponent(JSON.stringify(db, null, 2)))), sha: sha })
-                });
-
-                // Unpack again so editing can continue
-                if (db.fatawa_categories) {
-                    db.fatawa_categories.forEach(c => {
-                        db['fatawa_cat_' + c.id] = c.items || [];
-                    });
-                }
-
-                if (db.dreams_categories) {
-                    db.dreams_categories.forEach(c => {
-                        db.content['dreams_cat_' + c.id] = c.items || [];
-                    });
-                }
-                if (db.content && db.content.imam_ali) {
-                    db.content.imam_ali.forEach(c => {
-                        db.content['imam_ali_cat_' + c.id] = c.items || [];
-                    });
-                }
-
-                if(update.ok) alert("تم المزامنة بنجاح! سيتم بناء نسخة APK جديدة.");
-                else alert("فشل المزامنة.");
-            } catch(e) { alert("خطأ: " + e.message); }
+          });
         }
 
-        init();
+        if (db.content && db.content.prophets_stories) {
+          db.prophets_stories = db.content.prophets_stories;
+          delete db.content.prophets_stories;
+        }
+
+        const token = prompt("أدخل GitHub Personal Access Token:");
+        if (!token) return;
+        const repo = "techtouchAI/Islamic";
+        const path = "assets/data/content.json";
+        try {
+          const res = await fetch(
+            `https://api.github.com/repos/${repo}/contents/${path}`,
+            { headers: { Authorization: `token ${token}` } },
+          );
+          if (!res.ok) throw new Error("فشل الوصول للمستودع.");
+          const sha = (await res.json()).sha;
+          const update = await fetch(
+            `https://api.github.com/repos/${repo}/contents/${path}`,
+            {
+              method: "PUT",
+              headers: { Authorization: `token ${token}` },
+              body: JSON.stringify({
+                message: "CMS: Full Content & Media Update",
+                content: btoa(
+                  unescape(encodeURIComponent(JSON.stringify(db, null, 2))),
+                ),
+                sha: sha,
+              }),
+            },
+          );
+
+          // Unpack again so editing can continue
+          if (db.fatawa_categories) {
+            db.fatawa_categories.forEach((c) => {
+              db.content["fatawa_cat_" + c.id] = c.items || [];
+            });
+          }
+
+          if (db.dreams_categories) {
+            db.dreams_categories.forEach((c) => {
+              db.content["dreams_cat_" + c.id] = c.items || [];
+            });
+          }
+
+          if (db.content && db.content.imam_ali) {
+            db.content.imam_ali.forEach((c) => {
+              db.content["imam_ali_cat_" + c.id] = c.items || [];
+            });
+          }
+
+          if (db.prophets_stories) {
+            db.content.prophets_stories = db.prophets_stories;
+          }
+
+          if (update.ok) alert("تم المزامنة بنجاح! سيتم بناء نسخة APK جديدة.");
+          else alert("فشل المزامنة.");
+        } catch (e) {
+          alert("خطأ: " + e.message);
+        }
+      }
+
+      init();
     </script>
-</body>
+  </body>
 </html>
