@@ -88,7 +88,7 @@ class DataManager {
   }
 
   static List<dynamic> getItems(String section) {
-    if (_db == null) return [];
+     if (_db == null) return [];
 
     // --- 1. الأقسام الجديدة (في الجذر الرئيسي لملف الـ JSON) ---
     if (section == 'fatawa') {

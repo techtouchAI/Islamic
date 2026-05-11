@@ -399,6 +399,67 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
       let db = null;
+
+      function getListData(key) {
+        if (db.content && db.content[key]) return db.content[key];
+        if (db[key]) return db[key];
+        for (const rootKey of [
+          "fatawa_categories",
+          "dreams_categories",
+          "content",
+        ]) {
+          let parentArray = db[rootKey];
+          if (rootKey === "content" && db.content)
+            parentArray = db.content.imam_ali;
+          if (Array.isArray(parentArray)) {
+            const category = parentArray.find((c) => {
+              let catPrefix = "";
+              if (rootKey === "fatawa_categories") catPrefix = "fatawa_cat_";
+              if (rootKey === "dreams_categories") catPrefix = "dreams_cat_";
+              if (rootKey === "content") catPrefix = "imam_ali_cat_";
+              return catPrefix + c.id === key;
+            });
+            if (category && category.items) return category.items;
+          }
+        }
+        return [];
+      }
+
+      function setListData(key, data) {
+        if (db.content && db.content[key]) {
+          db.content[key] = data;
+          return;
+        }
+        if (db[key]) {
+          db[key] = data;
+          return;
+        }
+        for (const rootKey of [
+          "fatawa_categories",
+          "dreams_categories",
+          "content",
+        ]) {
+          let parentArray = db[rootKey];
+          if (rootKey === "content" && db.content)
+            parentArray = db.content.imam_ali;
+          if (Array.isArray(parentArray)) {
+            const category = parentArray.find((c) => {
+              let catPrefix = "";
+              if (rootKey === "fatawa_categories") catPrefix = "fatawa_cat_";
+              if (rootKey === "dreams_categories") catPrefix = "dreams_cat_";
+              if (rootKey === "content") catPrefix = "imam_ali_cat_";
+              return catPrefix + c.id === key;
+            });
+            if (category) {
+              category.items = data;
+              return;
+            }
+          }
+        }
+        if (!db.content) db.content = {};
+        db.content[key] = data;
+      }
+
       let activeView = "settings";
       let activeSubView = null;
       let editIdx = -1;
@@ -435,7 +496,13 @@
         try {
           const res = await fetch("../../assets/data/content.json");
           db = await res.json();
+
+          if (db.prophets_stories) {
+            db.content = db.content || {};
+            db.content.prophets_stories = db.prophets_stories;
+          }
           renderNav();
+
           // Populate imam_ali subSections dynamically
           if (db.content && db.content.imam_ali) {
             subSections["imam_ali"] = db.content.imam_ali.map((c) => ({
@@ -458,8 +525,9 @@
             }));
 
             // also ensure these keys exist in db for editing
+            db.content = db.content || {};
             db.fatawa_categories.forEach((c) => {
-              db["fatawa_cat_" + c.id] = c.items || [];
+              db.content["fatawa_cat_" + c.id] = c.items || [];
             });
           }
 
@@ -516,29 +584,21 @@
         });
       }
 
-      function loadView(id, subId = null, pushState = true) {
+      function loadView(id, subId = null) {
         activeView = id;
         activeSubView = subId;
 
+        // Auto-select first sub-section if not specified
         if (!subId && subSections[id]) {
           activeSubView = subSections[id][0].id;
         }
 
-        if (pushState) {
-          currentPage = 1;
-          const url = new URL(window.location);
-          url.searchParams.set("view", activeView);
-          if (activeSubView) url.searchParams.set("sub", activeSubView);
-          else url.searchParams.delete("sub");
-          url.searchParams.set("page", currentPage);
-          window.history.pushState(
-            { view: activeView, subView: activeSubView, page: currentPage },
-            "",
-            url,
-          );
+        if (db.prophets_stories) {
+          db.content = db.content || {};
+          db.content.prophets_stories = db.prophets_stories;
         }
-
         renderNav();
+
         const ws = document.getElementById("workspace");
         const acts = document.getElementById("view-actions");
         const title = document.getElementById("view-title");
@@ -572,9 +632,7 @@
             ws.innerHTML += tabsHtml;
           }
 
-          ws.innerHTML += `<div id="pagination-controls" class="d-flex justify-content-between align-items-center mb-3"></div>`;
           ws.innerHTML += `<div id="list-container" class="row g-3"></div>`;
-          ws.innerHTML += `<div id="pagination-controls-bottom" class="d-flex justify-content-center align-items-center mt-4"></div>`;
           renderItems();
         } else if (id === "settings") {
           title.innerText = "الهوية والوسائط";
@@ -724,66 +782,26 @@
         if (window.innerWidth < 992) toggleSidebar(false);
       }
 
-      function changePage(delta) {
-        currentPage += delta;
-        const url = new URL(window.location);
-        url.searchParams.set("page", currentPage);
-        window.history.pushState(
-          { view: activeView, subView: activeSubView, page: currentPage },
-          "",
-          url,
-        );
-        renderItems();
-        window.scrollTo({ top: 0, behavior: "smooth" });
-      }
-
       function renderItems() {
         const container = document.getElementById("list-container");
-        const topPagination = document.getElementById("pagination-controls");
-        const bottomPagination = document.getElementById(
-          "pagination-controls-bottom",
-        );
         if (!container) return;
         container.innerHTML = "";
-        if (topPagination) topPagination.innerHTML = "";
-        if (bottomPagination) bottomPagination.innerHTML = "";
 
         const contentKey = activeSubView || activeView;
         let items = db.content[contentKey] || [];
         const isQuran = contentKey === "quran";
 
-        const totalItems = items.length;
-        const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE) || 1;
-        if (currentPage > totalPages) currentPage = totalPages;
-        if (currentPage < 1) currentPage = 1;
-
-        const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-        const endIndex = Math.min(startIndex + ITEMS_PER_PAGE, totalItems);
-
-        if (totalItems > ITEMS_PER_PAGE) {
-          const paginationHtml = `
-                    <button class="btn btn-outline-dark" ${currentPage === 1 ? "disabled" : ""} onclick="changePage(-1)">السابق</button>
-                    <span class="fw-bold">صفحة ${currentPage} من ${totalPages} (${totalItems} عنصر)</span>
-                    <button class="btn btn-outline-dark" ${currentPage === totalPages ? "disabled" : ""} onclick="changePage(1)">التالي</button>
-                `;
-          if (topPagination) topPagination.innerHTML = paginationHtml;
-          if (bottomPagination) bottomPagination.innerHTML = paginationHtml;
-        }
-
-        const pagedItems = items.slice(startIndex, endIndex);
-
-        pagedItems.forEach((it, idx) => {
-          const realIndex = startIndex + idx;
+        items.forEach((it, i) => {
           container.innerHTML += `
                     <div class="col-md-6">
                         <div class="card card-lux p-3 d-flex flex-row justify-content-between align-items-center">
                             <div class="text-truncate" style="max-width:70%">
-                                <span class="badge bg-gold text-dark me-2">#${realIndex + 1}</span>
+                                <span class="badge bg-gold text-dark me-2">#${i + 1}</span>
                                 <span class="fw-bold text-dark ${isQuran ? "quran-font" : ""}">${isQuran && !it.title.startsWith("سورة") ? "سورة " : ""}${it.title}</span>
                             </div>
                             <div class="d-flex gap-2">
-                                <button class="btn btn-sm btn-outline-primary" onclick="openEdit(${realIndex})"><i class="material-icons small">edit</i></button>
-                                <button class="btn btn-sm btn-outline-danger" onclick="deleteItem(${realIndex})"><i class="material-icons small">delete</i></button>
+                                <button class="btn btn-sm btn-outline-primary" onclick="openEdit(${i})"><i class="material-icons small">edit</i></button>
+                                <button class="btn btn-sm btn-outline-danger" onclick="deleteItem(${i})"><i class="material-icons small">delete</i></button>
                             </div>
                         </div>
                     </div>
@@ -832,10 +850,9 @@
           const data = JSON.parse(txt);
           const contentKey = activeSubView || activeView;
           if (Array.isArray(data)) {
-            db.content[contentKey] = [
-              ...(db.content[contentKey] || []),
-              ...data,
-            ];
+            let currentList = getListData(contentKey) || [];
+            currentList = [...currentList, ...data];
+            setListData(contentKey, currentList);
             renderItems();
             batchModal.hide();
             alert("تم إضافة " + data.length + " عنصر بنجاح.");
@@ -942,6 +959,11 @@
         );
         if (newTitle && newTitle !== db.sections[k].title) {
           db.sections[k].title = newTitle;
+
+          if (db.prophets_stories) {
+            db.content = db.content || {};
+            db.content.prophets_stories = db.prophets_stories;
+          }
           renderNav();
           renderSectionsList();
         }
@@ -959,6 +981,11 @@
           visible_home: true,
         };
         if (!db.content[id]) db.content[id] = [];
+
+        if (db.prophets_stories) {
+          db.content = db.content || {};
+          db.content.prophets_stories = db.prophets_stories;
+        }
         renderNav();
         renderSectionsList();
       }
@@ -967,6 +994,10 @@
         if (confirm("حذف القسم ومحتوياته نهائياً؟")) {
           delete db.sections[k];
           delete db.content[k];
+          if (db.prophets_stories) {
+            db.content = db.content || {};
+            db.content.prophets_stories = db.prophets_stories;
+          }
           renderNav();
           renderSectionsList();
         }
@@ -1095,11 +1126,12 @@
         populateTargetKey();
         document.getElementById("m-target-key").value = contentKey;
 
+        const listData = getListData(contentKey);
         const it =
           i === -1
             ? { title: "", content: "" }
-            : db.content[contentKey]
-              ? db.content[contentKey][i]
+            : listData
+              ? listData[i]
               : { title: "", content: "" };
         document.getElementById("m-title").value = it.title;
         document.getElementById("m-content").value = it.content;
@@ -1231,7 +1263,7 @@
           }
 
           if (db.prophets_stories) {
-            db.content.prophets_stories = db.prophets_stories;
+٧            db.content.prophets_stories = db.prophets_stories;
           }
 
           if (update.ok) alert("تم المزامنة بنجاح! سيتم بناء نسخة APK جديدة.");
