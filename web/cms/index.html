@@ -788,7 +788,7 @@
         container.innerHTML = "";
 
         const contentKey = activeSubView || activeView;
-        let items = getListData(contentKey);
+        let items = db.content[contentKey] || [];
         const isQuran = contentKey === "quran";
 
         items.forEach((it, i) => {
@@ -1155,22 +1155,21 @@
 
         if (!t || !c) return alert("املاً الحقول");
 
-        let targetList = getListData(targetKey) || [];
-        let currentList = getListData(currentKey) || [];
-
         if (editIdx === -1) {
-          targetList.push({ id: Date.now(), title: t, content: c });
-          setListData(targetKey, targetList);
+          if (!db.content[targetKey]) db.content[targetKey] = [];
+          db.content[targetKey].push({ id: Date.now(), title: t, content: c });
         } else {
           if (targetKey === currentKey) {
-            currentList[editIdx].title = t;
-            currentList[editIdx].content = c;
-            setListData(currentKey, currentList);
+            db.content[currentKey][editIdx].title = t;
+            db.content[currentKey][editIdx].content = c;
           } else {
-            currentList.splice(editIdx, 1);
-            targetList.push({ id: Date.now(), title: t, content: c });
-            setListData(currentKey, currentList);
-            setListData(targetKey, targetList);
+            db.content[currentKey].splice(editIdx, 1);
+            if (!db.content[targetKey]) db.content[targetKey] = [];
+            db.content[targetKey].push({
+              id: Date.now(),
+              title: t,
+              content: c,
+            });
           }
         }
         modal.hide();
@@ -1179,30 +1178,25 @@
       function deleteItem(i) {
         const contentKey = activeSubView || activeView;
         if (confirm("حذف؟")) {
-          let list = getListData(contentKey);
-          list.splice(i, 1);
-          setListData(contentKey, list);
+          db.content[contentKey].splice(i, 1);
           renderItems();
         }
       }
 
       async function saveToGitHub() {
-        // Repack strata
+        // Repack fatawa and imam_ali before saving
         if (db.fatawa_categories) {
           db.fatawa_categories.forEach((c) => {
-            if (db.content && db.content["fatawa_cat_" + c.id]) {
+            if (db.content["fatawa_cat_" + c.id]) {
               c.items = db.content["fatawa_cat_" + c.id];
               delete db.content["fatawa_cat_" + c.id];
-            } else if (db["fatawa_cat_" + c.id]) {
-              c.items = db["fatawa_cat_" + c.id];
-              delete db["fatawa_cat_" + c.id];
             }
           });
         }
 
         if (db.dreams_categories) {
           db.dreams_categories.forEach((c) => {
-            if (db.content && db.content["dreams_cat_" + c.id]) {
+            if (db.content["dreams_cat_" + c.id]) {
               c.items = db.content["dreams_cat_" + c.id];
               delete db.content["dreams_cat_" + c.id];
             }
@@ -1252,31 +1246,12 @@
           // Unpack again so editing can continue
           if (db.fatawa_categories) {
             db.fatawa_categories.forEach((c) => {
-              db["fatawa_cat_" + c.id] = c.items || [];
-            });
-          }
-
-          if (db.dreams_categories) {
-            db.dreams_categories.forEach((c) => {
-              db.content["dreams_cat_" + c.id] = c.items || [];
-            });
-          }
-          if (db.content && db.content.imam_ali) {
-            db.content.imam_ali.forEach((c) => {
-              db.content["imam_ali_cat_" + c.id] = c.items || [];
-            });
-          }
-
-          // Unpack again so editing can continue
-          if (db.fatawa_categories) {
-            db.fatawa_categories.forEach((c) => {
               db.content["fatawa_cat_" + c.id] = c.items || [];
             });
           }
 
           if (db.dreams_categories) {
             db.dreams_categories.forEach((c) => {
-              if (!db.content) db.content = {};
               db.content["dreams_cat_" + c.id] = c.items || [];
             });
           }
@@ -1288,8 +1263,7 @@
           }
 
           if (db.prophets_stories) {
-            if (!db.content) db.content = {};
-            db.content.prophets_stories = db.prophets_stories;
+٧            db.content.prophets_stories = db.prophets_stories;
           }
 
           if (update.ok) alert("تم المزامنة بنجاح! سيتم بناء نسخة APK جديدة.");
