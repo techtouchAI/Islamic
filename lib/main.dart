@@ -950,10 +950,7 @@ class _HomeSectionState extends State<HomeSection> {
           _safeGet(listToPickFrom, random),
         );
 
-        if (key == 'names_allah' && safeItem.containsKey('name')) {
-          safeItem['title'] = safeItem['name'];
-          safeItem['content'] = safeItem['name'];
-        }
+        // removed UI hack
 
         safeItem['sectionKey'] = key;
         items[value['title']] = safeItem;

@@ -113,12 +113,20 @@ class DataManager {
       return _db!['content']['imam_ali'] ?? [];
     }
     if (section.startsWith('fatawa_cat_')) {
-      final idString = section.replaceAll('fatawa_cat_', '');
-      final id = int.tryParse(idString);
-      final cats = _db!['fatawa_categories'] as List<dynamic>? ?? [];
-      final cat = cats.firstWhere((c) => c['id'] == id, orElse: () => null);
-      if (cat != null) {
-        return cat['items'] as List<dynamic>? ?? [];
+      try {
+        final idString = section.replaceAll('fatawa_cat_', '');
+        final cats = _db!['fatawa_categories'] as List<dynamic>? ?? [];
+        final cat = cats.firstWhere(
+          (c) => c['id'].toString() == idString,
+          orElse: () => null,
+        );
+        if (cat != null) {
+          if (cat is Map && cat.containsKey('items')) {
+            return cat['items'] as List<dynamic>? ?? [];
+          }
+        }
+      } catch (e) {
+        debugPrint('Error getting fatawa categories: $e');
       }
       return [];
     }
@@ -189,23 +197,50 @@ class DataManager {
   }
 
   static void _normalizeDB(Map<String, dynamic>? db) {
-    if (db == null || db['content'] == null) return;
+    if (db == null) return;
+
+    void normalizeItem(Map item) {
+      if (item.containsKey('name') && !item.containsKey('title')) {
+        item['title'] = item['name'];
+        item['content'] = item['name'];
+      }
+      if (item['title'] != null) {
+        item['_normalized_title'] = item['title'].toString().normalizeArabic();
+      }
+      if (item['content'] != null) {
+        item['_normalized_content'] = item['content'].toString().normalizeArabic();
+      }
+      if (item.containsKey('items') && item['items'] is List) {
+        for (var nestedItem in item['items']) {
+          if (nestedItem is Map) {
+            normalizeItem(nestedItem);
+          }
+        }
+      }
+    }
+
     final content = db['content'];
     if (content is Map) {
       for (var section in content.values) {
         if (section is List) {
           for (var item in section) {
-            if (item is Map) {
-              if (item['title'] != null) {
-                item['_normalized_title'] =
-                    item['title'].toString().normalizeArabic();
-              }
-              if (item['content'] != null) {
-                item['_normalized_content'] =
-                    item['content'].toString().normalizeArabic();
-              }
-            }
+            if (item is Map) normalizeItem(item);
           }
+        }
+      }
+    }
+
+    final topLevelSections = [
+      'fatawa_categories',
+      'dreams_categories',
+      'prophets_stories',
+      'imam_ali'
+    ];
+    for (var sectionName in topLevelSections) {
+      final sectionList = db[sectionName];
+      if (sectionList is List) {
+        for (var item in sectionList) {
+          if (item is Map) normalizeItem(item);
         }
       }
     }
