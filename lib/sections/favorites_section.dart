@@ -4,7 +4,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
-import 'package:permission_handler/permission_handler.dart';
+// تم مسح مكتبة permission_handler لأن ما نحتاجها بعد
 
 import '../services/favorites_service.dart';
 import '../models/favorite_item.dart';
@@ -25,55 +25,12 @@ class FavoritesSection extends StatefulWidget {
 }
 
 class _FavoritesSectionState extends State<FavoritesSection> {
+  
+  // --------------------------------------------------------
+  // التعديل هنا: التصدير صار سطر واحد بس يستدعي السيرفس!
+  // --------------------------------------------------------
   Future<void> _exportFavorites() async {
-    final jsonString = FavoritesService.instance.exportFavorites();
-    if (jsonString.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('لا توجد محفوظات لتصديرها')),
-      );
-      return;
-    }
-
-    try {
-      if (Platform.isAndroid) {
-        var status = await Permission.storage.status;
-        if (!status.isGranted) {
-          status = await Permission.storage.request();
-        }
-
-        if (status.isGranted) {
-          final directory = Directory('/storage/emulated/0/Download');
-          if (!await directory.exists()) {
-            await directory.create(recursive: true);
-          }
-          final file = File('${directory.path}/aldhakereen_backup.json');
-          await file.writeAsString(jsonString);
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('تم التصدير بنجاح إلى التنزيلات')),
-            );
-          }
-        } else {
-           if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('الرجاء منح صلاحية التخزين')),
-            );
-          }
-        }
-      } else {
-        // Fallback for non-Android platforms
-        final directory = await getTemporaryDirectory();
-        final file = File('${directory.path}/aldhakereen_backup.json');
-        await file.writeAsString(jsonString);
-        await Share.shareXFiles([XFile(file.path)], text: 'نسخة احتياطية للمحفوظات');
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('حدث خطأ أثناء التصدير: $e')),
-        );
-      }
-    }
+    await FavoritesService.instance.exportFavorites();
   }
 
   Future<void> _importFavorites() async {
