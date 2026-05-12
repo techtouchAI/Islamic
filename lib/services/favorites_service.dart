@@ -1,8 +1,11 @@
 import 'dart:convert';
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:hive/hive.dart';
 import 'package:uuid/uuid.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 import '../models/favorite_item.dart';
-import 'package:flutter/foundation.dart';
 
 class FavoritesService {
   FavoritesService._privateConstructor();
@@ -143,20 +146,36 @@ class FavoritesService {
     return _favoritesBox!.containsKey(id);
   }
 
-  /// Exports all favorite items as a formatted JSON string.
-  /// Suitable for backup capabilities.
-  String exportFavorites() {
+  /// Exports all favorite items using the Share API (No storage permissions needed).
+  Future<void> exportFavorites() async {
     try {
-      if (_favoritesBox == null) return '';
+      if (_favoritesBox == null) return;
 
+      // 1. Convert to JSON
       final list = _favoritesBox!.values.map((item) => item.toJson()).toList();
       const encoder = JsonEncoder.withIndent('  ');
-      return encoder.convert(list);
+      final String jsonString = encoder.convert(list);
+
+      // 2. Create a temporary file
+      final directory = await getTemporaryDirectory();
+      final File file = File('${directory.path}/aldhakereen_backup.json');
+
+      // 3. Write data to the file
+      await file.writeAsString(jsonString);
+
+      // 4. Trigger the native Share dialog
+      await Share.shareXFiles(
+        [XFile(file.path)], 
+        text: 'نسخة احتياطية لتطبيق الذاكرين'
+      );
+
+      if (kDebugMode) {
+        print('Export share dialog opened.');
+      }
     } catch (e) {
       if (kDebugMode) {
         print('Error exporting favorites: $e');
       }
-      return '';
     }
   }
 
