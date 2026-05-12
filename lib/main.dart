@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'services/analytics_service.dart';
 import 'sections/html_content_renderer.dart';
 
 import 'package:google_fonts/google_fonts.dart';
@@ -138,6 +140,13 @@ Widget buildImage(String? path, {double? height, BoxFit fit = BoxFit.contain}) {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  try {
+    await Firebase.initializeApp();
+    // Call the analytics service in a non-blocking way
+    AnalyticsService().checkAndRegisterDevice();
+  } catch (e) {
+    debugPrint("Firebase initialization error: $e");
+  }
   await Hive.initFlutter();
   await FavoritesService.instance.init();
   runApp(const AlDhakereenApp());
