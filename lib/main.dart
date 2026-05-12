@@ -209,9 +209,6 @@ class _AlDhakereenAppState extends State<AlDhakereenApp> {
   Future<void> _loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
     final dbSettings = DataManager.getSettings();
-    DataManager.dbNotifier.addListener(() {
-      setState(() {});
-    });
     int defaultPrimary =
         int.tryParse(dbSettings['primary_color'] ?? '0xFF2196F3') ?? 0xFF2196F3;
     int defaultCard =
@@ -442,14 +439,17 @@ class _MainScaffoldState extends State<MainScaffold> {
   @override
   Widget build(BuildContext context) {
     final bool isSubPage = _history.length > 1;
-    final settings = DataManager.getSettings();
-    return PopScope(
-      canPop: !isSubPage,
-      onPopInvokedWithResult: (didPop, result) {
-        if (didPop) return;
-        _onBack();
-      },
-      child: Scaffold(
+    return ValueListenableBuilder<int>(
+      valueListenable: DataManager.dbNotifier,
+      builder: (context, _, __) {
+        final settings = DataManager.getSettings();
+        return PopScope(
+          canPop: !isSubPage,
+          onPopInvokedWithResult: (didPop, result) {
+            if (didPop) return;
+            _onBack();
+          },
+          child: Scaffold(
         drawer: AppDrawer(
           currentSection: _currentSection,
           onNavigate: (section) {
@@ -536,6 +536,7 @@ class _MainScaffoldState extends State<MainScaffold> {
         ),
       ),
     );
+    });
   }
 
   Widget _buildBody(BuildContext context) {
@@ -1708,7 +1709,7 @@ class TabbedSection extends StatelessWidget {
   }
 }
 
-class DynamicListSection extends StatelessWidget {
+class DynamicListSection extends StatefulWidget {
   final String title;
   final String sectionKey;
   final double fontSizeFactor;
@@ -1722,11 +1723,26 @@ class DynamicListSection extends StatelessWidget {
   });
 
   @override
+  State<DynamicListSection> createState() => _DynamicListSectionState();
+}
+
+class _DynamicListSectionState extends State<DynamicListSection> {
+  Future<List<Map<String, dynamic>>>? _quranFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.sectionKey == 'quran') {
+      _quranFuture = QuranService.getSurahs();
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final isQuran = sectionKey == 'quran';
+    final isQuran = widget.sectionKey == 'quran';
     if (isQuran) {
       return FutureBuilder<List<Map<String, dynamic>>>(
-        future: QuranService.getSurahs(),
+        future: _quranFuture,
         builder: (context, snapshot) {
           if (!snapshot.hasData)
             return const Center(child: CircularProgressIndicator());
@@ -1738,7 +1754,7 @@ class DynamicListSection extends StatelessWidget {
             itemBuilder: (context, index) {
               final surah = data[index];
               return Card(
-                color: Theme.of(context).cardColor.withValues(alpha: uiOpacity),
+                color: Theme.of(context).cardColor.withValues(alpha: widget.uiOpacity),
                 margin:
                     const EdgeInsets.symmetric(horizontal: 4.0, vertical: 8.0),
                 shape: RoundedRectangleBorder(
@@ -1762,7 +1778,7 @@ class DynamicListSection extends StatelessWidget {
                         builder: (c) => ReaderPage(
                           title: "سورة ${surah['name']}",
                           content: content,
-                          fontSizeFactor: fontSizeFactor,
+                          fontSizeFactor: widget.fontSizeFactor,
                           isQuran: true,
                           surahName: surah['name'].toString(),
                           ayahs: ayahs,
@@ -1822,8 +1838,8 @@ class DynamicListSection extends StatelessWidget {
       );
     }
 
-    final data = DataManager.getItems(sectionKey);
-    if (sectionKey == 'names_allah') {
+    final data = DataManager.getItems(widget.sectionKey);
+    if (widget.sectionKey == 'names_allah') {
       return data.isEmpty
           ? const Center(child: Text('لا يوجد محتوى متوفر حالياً'))
           : GridView.builder(
@@ -1840,7 +1856,7 @@ class DynamicListSection extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: Theme.of(
                     context,
-                  ).cardColor.withValues(alpha: uiOpacity * 0.8),
+                  ).cardColor.withValues(alpha: widget.uiOpacity * 0.8),
                   borderRadius: BorderRadius.circular(15),
                   border: Border.all(
                     color: Theme.of(context).colorScheme.primary,
@@ -1855,7 +1871,7 @@ class DynamicListSection extends StatelessWidget {
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
-                    fontSize: 20 * fontSizeFactor,
+                    fontSize: 20 * widget.fontSizeFactor,
                     fontFamily: 'me_quran',
                     color: Theme.of(context).colorScheme.primary,
                   ),
@@ -1886,7 +1902,7 @@ class DynamicListSection extends StatelessWidget {
                               child: Container(
                                 decoration: BoxDecoration(
                                   color: Theme.of(context).cardColor.withValues(
-                                        alpha: uiOpacity * 0.8,
+                                        alpha: widget.uiOpacity * 0.8,
                                       ),
                                   borderRadius: BorderRadius.circular(15),
                                   border: Border.all(
@@ -1911,17 +1927,17 @@ class DynamicListSection extends StatelessWidget {
                               String displayTitle;
                               TextStyle titleStyle;
 
-                              if (sectionKey == 'prophets_stories') {
+                              if (widget.sectionKey == 'prophets_stories') {
                                 String rawTitle = data[index]['title'].toString();
                                 String cleanName = rawTitle.replaceAll(RegExp(r'قصة\s*|\s*\(?عليه السلام\)?', caseSensitive: false), '').trim();
                                 displayTitle = '$cleanName ﴿عليه السلام﴾';
                                 titleStyle = TextStyle(
                                   fontFamily: 'me_quran',
-                                  fontSize: 24 * fontSizeFactor,
+                                  fontSize: 24 * widget.fontSizeFactor,
                                   fontWeight: FontWeight.normal,
                                   color: Theme.of(context).colorScheme.primary,
                                 );
-                              } else if (sectionKey.contains('imam_ali')) {
+                              } else if (widget.sectionKey.contains('imam_ali')) {
                                 displayTitle = 'قال أمير المؤمنين علي (عليه السلام)';
                                 titleStyle = const TextStyle(
                                   fontWeight: FontWeight.bold,
@@ -1941,14 +1957,14 @@ class DynamicListSection extends StatelessWidget {
                                   displayTitle,
                                   style: titleStyle,
                                 ),
-                                subtitle: sectionKey == 'prophets_stories' ? null : Padding(
+                                subtitle: widget.sectionKey == 'prophets_stories' ? null : Padding(
                                   padding: const EdgeInsets.only(top: 10),
                                   child: Text(
                                     cleanSubtitle.cleanSnippet(),
                                     maxLines:
-                                        sectionKey.contains('imam_ali') ? 3 : 2,
+                                        widget.sectionKey.contains('imam_ali') ? 3 : 2,
                                 overflow: TextOverflow.ellipsis,
-                                style: sectionKey.contains('imam_ali')
+                                style: widget.sectionKey.contains('imam_ali')
                                     ? TextStyle(
                                         fontFamily: 'me_quran',
                                         fontSize: 18,
@@ -1963,9 +1979,9 @@ class DynamicListSection extends StatelessWidget {
                                 builder: (c) => ReaderPage(
                                   title: data[index]['title'].toString(),
                                   content: data[index]['content'].toString(),
-                                  fontSizeFactor: fontSizeFactor,
+                                  fontSizeFactor: widget.fontSizeFactor,
                                   isQuran: false,
-                                  isImamAli: sectionKey.contains('imam_ali'),
+                                  isImamAli: widget.sectionKey.contains('imam_ali'),
                                   titleColor: data[index]['color']?.toString(),
                                 ),
                               ),
@@ -1993,7 +2009,7 @@ class DynamicListSection extends StatelessWidget {
                                           id: itemId,
                                           title: data[index]['title'].toString(),
                                           content: data[index]['content'].toString(),
-                                          sourceSection: sectionKey,
+                                          sourceSection: widget.sectionKey,
                                           timestamp: DateTime.now(),
                                           isCustom: false,
                                         );

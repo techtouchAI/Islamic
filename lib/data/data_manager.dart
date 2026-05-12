@@ -24,6 +24,8 @@ class DataManager {
     _normalizeDB(_db);
   }
 
+  static Map<String, dynamic> _decodeJson(String source) => json.decode(source) as Map<String, dynamic>;
+
   static Future<void> loadContent() async {
     try {
       final localFile = await _getLocalFile();
@@ -31,7 +33,7 @@ class DataManager {
       // 1. Try to load from local storage first
       if (await localFile.exists()) {
         final content = await localFile.readAsString();
-        _db = json.decode(content);
+        _db = await compute(_decodeJson, content);
         _normalizeDB(_db);
         debugPrint("DataManager: Loaded from local storage.");
       } else {
@@ -39,7 +41,7 @@ class DataManager {
         final String response = await rootBundle.loadString(
           'assets/data/content.json',
         );
-        _db = json.decode(response);
+        _db = await compute(_decodeJson, response);
         _normalizeDB(_db);
         debugPrint("DataManager: Loaded from bundled assets.");
       }
