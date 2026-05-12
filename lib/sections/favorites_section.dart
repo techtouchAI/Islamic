@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:share_plus/share_plus.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'dart:io';
-import 'package:path_provider/path_provider.dart';
-// تم مسح مكتبة permission_handler لأن ما نحتاجها بعد
 
 import '../services/favorites_service.dart';
 import '../models/favorite_item.dart';
@@ -26,9 +23,9 @@ class FavoritesSection extends StatefulWidget {
 
 class _FavoritesSectionState extends State<FavoritesSection> {
   
-  // --------------------------------------------------------
-  // التعديل هنا: التصدير صار سطر واحد بس يستدعي السيرفس!
-  // --------------------------------------------------------
+  // -----------------------------------------------------------------
+  // التصدير صار ذكي وسطر واحد بس يستدعي السيرفس (بدون دوخة الصلاحيات)
+  // -----------------------------------------------------------------
   Future<void> _exportFavorites() async {
     await FavoritesService.instance.exportFavorites();
   }
