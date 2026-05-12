@@ -25,7 +25,9 @@ import 'utils/string_extensions.dart';
 import 'services/prayer_times_service.dart';
 import 'services/prayer_notification_service.dart';
 import 'services/quran_service.dart';
+import 'services/favorites_service.dart';
 import 'data/iraq_provinces.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 
 class IslamicPatternPainter extends CustomPainter {
   final Color color;
@@ -132,8 +134,10 @@ Widget buildImage(String? path, {double? height, BoxFit fit = BoxFit.contain}) {
   );
 }
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await Hive.initFlutter();
+  await FavoritesService.instance.init();
   runApp(const AlDhakereenApp());
 }
 
