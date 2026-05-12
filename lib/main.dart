@@ -26,6 +26,8 @@ import 'services/prayer_times_service.dart';
 import 'services/prayer_notification_service.dart';
 import 'services/quran_service.dart';
 import 'services/favorites_service.dart';
+import 'models/favorite_item.dart';
+import 'sections/favorites_section.dart';
 import 'data/iraq_provinces.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
@@ -557,6 +559,12 @@ class _MainScaffoldState extends State<MainScaffold> {
           hijriAdjustment: widget.hijriAdjustment,
           onHijriAdjustmentChanged: widget.onHijriAdjustmentChanged,
         );
+      case 'favorites':
+        return FavoritesSection(
+          key: const ValueKey('favorites'),
+          fontSizeFactor: widget.fontSizeFactor,
+          uiOpacity: widget.uiOpacity,
+        );
       case 'about':
         return const AboutSection(key: ValueKey('about'));
       case 'tasbih':
@@ -749,6 +757,7 @@ class AppDrawer extends StatelessWidget {
                   ),
                 ),
                 const Divider(),
+                _buildItem(context, 'favorites', 'المحفوظات', Icons.favorite),
                 _buildItem(context, 'about', 'حول المطور', Icons.person),
                 _buildItem(context, 'settings', 'الإعدادات', Icons.settings),
               ],
@@ -1954,6 +1963,38 @@ class DynamicListSection extends StatelessWidget {
                             ),
                               );
                             }
+                          ),
+                          Positioned(
+                            top: 10,
+                            left: 10,
+                            child: Builder(
+                              builder: (context) {
+                                final itemId = data[index]['title'].toString();
+                                return ValueListenableBuilder<List<FavoriteItem>>(
+                                  valueListenable: FavoritesService.instance.favoritesNotifier,
+                                  builder: (context, favorites, _) {
+                                    final isFav = FavoritesService.instance.isFavorite(itemId);
+                                    return IconButton(
+                                      icon: Icon(
+                                        isFav ? Icons.favorite : Icons.favorite_border,
+                                        color: isFav ? Colors.red : Theme.of(context).colorScheme.primary,
+                                      ),
+                                      onPressed: () {
+                                        final item = FavoriteItem(
+                                          id: itemId,
+                                          title: data[index]['title'].toString(),
+                                          content: data[index]['content'].toString(),
+                                          sourceSection: sectionKey,
+                                          timestamp: DateTime.now(),
+                                          isCustom: false,
+                                        );
+                                        FavoritesService.instance.toggleFavorite(item);
+                                      },
+                                    );
+                                  },
+                                );
+                              }
+                            ),
                           ),
                         ],
                       ),
