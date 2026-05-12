@@ -407,6 +407,7 @@
           "fatawa_categories",
           "dreams_categories",
           "content",
+          "imam_ali" // <--- هنا الحل السحري الأول
         ]) {
           let parentArray = db[rootKey];
           if (rootKey === "content" && db.content)
@@ -416,7 +417,7 @@
               let catPrefix = "";
               if (rootKey === "fatawa_categories") catPrefix = "fatawa_cat_";
               if (rootKey === "dreams_categories") catPrefix = "dreams_cat_";
-              if (rootKey === "content") catPrefix = "imam_ali_cat_";
+              if (rootKey === "content" || rootKey === "imam_ali") catPrefix = "imam_ali_cat_";
               return catPrefix + c.id === key;
             });
             if (category && category.items) return category.items;
@@ -438,6 +439,7 @@
           "fatawa_categories",
           "dreams_categories",
           "content",
+          "imam_ali" // <--- هنا الحل السحري الثاني
         ]) {
           let parentArray = db[rootKey];
           if (rootKey === "content" && db.content)
@@ -447,7 +449,7 @@
               let catPrefix = "";
               if (rootKey === "fatawa_categories") catPrefix = "fatawa_cat_";
               if (rootKey === "dreams_categories") catPrefix = "dreams_cat_";
-              if (rootKey === "content") catPrefix = "imam_ali_cat_";
+              if (rootKey === "content" || rootKey === "imam_ali") catPrefix = "imam_ali_cat_";
               return catPrefix + c.id === key;
             });
             if (category) {
