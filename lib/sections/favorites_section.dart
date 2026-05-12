@@ -4,6 +4,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 import '../services/favorites_service.dart';
 import '../models/favorite_item.dart';
@@ -34,11 +35,38 @@ class _FavoritesSectionState extends State<FavoritesSection> {
     }
 
     try {
-      final directory = await getTemporaryDirectory();
-      final file = File('${directory.path}/favorites_backup.json');
-      await file.writeAsString(jsonString);
+      if (Platform.isAndroid) {
+        var status = await Permission.storage.status;
+        if (!status.isGranted) {
+          status = await Permission.storage.request();
+        }
 
-      await Share.shareXFiles([XFile(file.path)], text: 'نسخة احتياطية للمحفوظات');
+        if (status.isGranted) {
+          final directory = Directory('/storage/emulated/0/Download');
+          if (!await directory.exists()) {
+            await directory.create(recursive: true);
+          }
+          final file = File('${directory.path}/aldhakereen_backup.json');
+          await file.writeAsString(jsonString);
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('تم التصدير بنجاح إلى التنزيلات')),
+            );
+          }
+        } else {
+           if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('الرجاء منح صلاحية التخزين')),
+            );
+          }
+        }
+      } else {
+        // Fallback for non-Android platforms
+        final directory = await getTemporaryDirectory();
+        final file = File('${directory.path}/aldhakereen_backup.json');
+        await file.writeAsString(jsonString);
+        await Share.shareXFiles([XFile(file.path)], text: 'نسخة احتياطية للمحفوظات');
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -82,9 +110,9 @@ class _FavoritesSectionState extends State<FavoritesSection> {
     }
   }
 
-  void _showAddNoteSheet() {
-    final titleController = TextEditingController();
-    final contentController = TextEditingController();
+  void _showAddNoteSheet([FavoriteItem? existingNote]) {
+    final titleController = TextEditingController(text: existingNote?.title ?? '');
+    final contentController = TextEditingController(text: existingNote?.content ?? '');
 
     showModalBottomSheet(
       context: context,
@@ -100,9 +128,9 @@ class _FavoritesSectionState extends State<FavoritesSection> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(
-                'إضافة ملاحظة جديدة',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              Text(
+                existingNote == null ? 'إضافة ملاحظة جديدة' : 'تعديل الملاحظة',
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 16),
               TextField(
@@ -127,7 +155,12 @@ class _FavoritesSectionState extends State<FavoritesSection> {
                   final title = titleController.text.trim();
                   final content = contentController.text.trim();
                   if (title.isNotEmpty && content.isNotEmpty) {
-                    FavoritesService.instance.addCustomNote(title, content);
+                    if (existingNote == null) {
+                      FavoritesService.instance.addCustomNote(title, content);
+                    } else {
+                      FavoritesService.instance.updateCustomNote(
+                          existingNote.id, title, content);
+                    }
                     Navigator.pop(context);
                   }
                 },
@@ -141,7 +174,44 @@ class _FavoritesSectionState extends State<FavoritesSection> {
     );
   }
 
-  Widget _buildList(List<FavoriteItem> items) {
+  void _showFabMenu() {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) {
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.note_add),
+              title: const Text('إضافة ملاحظة'),
+              onTap: () {
+                Navigator.pop(context);
+                _showAddNoteSheet();
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.file_download),
+              title: const Text('استيراد'),
+              onTap: () {
+                Navigator.pop(context);
+                _importFavorites();
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.file_upload),
+              title: const Text('تصدير'),
+              onTap: () {
+                Navigator.pop(context);
+                _exportFavorites();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildReferentialList(List<FavoriteItem> items) {
     if (items.isEmpty) {
       return const Center(child: Text('لا يوجد محتوى متوفر حالياً'));
     }
@@ -152,56 +222,109 @@ class _FavoritesSectionState extends State<FavoritesSection> {
       padding: const EdgeInsets.only(bottom: 80),
       itemBuilder: (context, index) {
         final item = items[index];
-        return Dismissible(
-          key: Key(item.id),
-          direction: DismissDirection.endToStart,
-          background: Container(
-            color: Colors.red,
-            alignment: Alignment.centerLeft,
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: const Icon(Icons.delete, color: Colors.white),
-          ),
-          onDismissed: (_) {
-            FavoritesService.instance.removeFavorite(item.id);
-          },
-          child: Container(
-            margin: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
-            decoration: BoxDecoration(
-              color: Theme.of(context).cardColor.withValues(alpha: widget.uiOpacity * 0.8),
-              borderRadius: BorderRadius.circular(15),
-              border: Border.all(
-                color: Theme.of(context).colorScheme.primary,
-                width: 1.0,
-              ),
+        return Container(
+          margin: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
+          decoration: BoxDecoration(
+            color: Theme.of(context).cardColor.withValues(alpha: widget.uiOpacity * 0.8),
+            borderRadius: BorderRadius.circular(15),
+            border: Border.all(
+              color: Theme.of(context).colorScheme.primary,
+              width: 1.0,
             ),
-            child: ListTile(
-              contentPadding: const EdgeInsets.all(16),
-              title: Text(
-                item.title,
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-              ),
-              subtitle: Padding(
-                padding: const EdgeInsets.only(top: 8),
-                child: Text(
-                  item.content,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.amiri(fontSize: 16),
-                ),
-              ),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (c) => ReaderPage(
-                      title: item.title,
-                      content: item.content,
-                      fontSizeFactor: widget.fontSizeFactor,
-                    ),
-                  ),
-                );
+          ),
+          child: ListTile(
+            contentPadding: const EdgeInsets.all(16),
+            title: Text(
+              item.title,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+            ),
+            trailing: IconButton(
+              icon: const Icon(Icons.delete_outline),
+              onPressed: () {
+                FavoritesService.instance.toggleFavorite(item);
               },
             ),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (c) => ReaderPage(
+                    title: item.title,
+                    content: item.content,
+                    fontSizeFactor: widget.fontSizeFactor,
+                  ),
+                ),
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildCustomNotesList(List<FavoriteItem> items) {
+    if (items.isEmpty) {
+      return const Center(child: Text('لا يوجد محتوى متوفر حالياً'));
+    }
+
+    return ListView.builder(
+      physics: const BouncingScrollPhysics(),
+      itemCount: items.length,
+      padding: const EdgeInsets.only(bottom: 80),
+      itemBuilder: (context, index) {
+        final item = items[index];
+        return Container(
+          margin: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
+          decoration: BoxDecoration(
+            color: Theme.of(context).cardColor.withValues(alpha: widget.uiOpacity * 0.8),
+            borderRadius: BorderRadius.circular(15),
+            border: Border.all(
+              color: Theme.of(context).colorScheme.primary,
+              width: 1.0,
+            ),
+          ),
+          child: ListTile(
+            contentPadding: const EdgeInsets.all(16),
+            title: Text(
+              item.title,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+            ),
+            subtitle: Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Text(
+                item.content,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: GoogleFonts.amiri(fontSize: 16),
+              ),
+            ),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.edit),
+                  onPressed: () => _showAddNoteSheet(item),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.delete_outline),
+                  onPressed: () {
+                    FavoritesService.instance.removeFavorite(item.id);
+                  },
+                ),
+              ],
+            ),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (c) => ReaderPage(
+                    title: item.title,
+                    content: item.content,
+                    fontSizeFactor: widget.fontSizeFactor,
+                  ),
+                ),
+              );
+            },
           ),
         );
       },
@@ -214,25 +337,13 @@ class _FavoritesSectionState extends State<FavoritesSection> {
       length: 2,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('المحفوظات'),
+          toolbarHeight: 0,
           bottom: const TabBar(
             tabs: [
               Tab(text: "المحفوظات"),
               Tab(text: "ملاحظاتي"),
             ],
           ),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.file_upload),
-              onPressed: _exportFavorites,
-              tooltip: 'تصدير',
-            ),
-            IconButton(
-              icon: const Icon(Icons.file_download),
-              onPressed: _importFavorites,
-              tooltip: 'استيراد',
-            ),
-          ],
         ),
         body: ValueListenableBuilder<List<FavoriteItem>>(
           valueListenable: FavoritesService.instance.favoritesNotifier,
@@ -242,14 +353,14 @@ class _FavoritesSectionState extends State<FavoritesSection> {
 
             return TabBarView(
               children: [
-                _buildList(referential),
-                _buildList(custom),
+                _buildReferentialList(referential),
+                _buildCustomNotesList(custom),
               ],
             );
           },
         ),
         floatingActionButton: FloatingActionButton(
-          onPressed: _showAddNoteSheet,
+          onPressed: _showFabMenu,
           child: const Icon(Icons.add),
         ),
       ),

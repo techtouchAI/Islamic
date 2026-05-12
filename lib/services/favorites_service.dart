@@ -87,6 +87,34 @@ class FavoritesService {
     }
   }
 
+  /// Updates an existing custom note.
+  Future<void> updateCustomNote(String id, String title, String content) async {
+    try {
+      if (_favoritesBox == null) return;
+
+      final existingNote = _favoritesBox!.get(id);
+      if (existingNote != null && existingNote.isCustom) {
+        final note = FavoriteItem(
+          id: id,
+          title: title,
+          content: content,
+          timestamp: DateTime.now(),
+          isCustom: true,
+        );
+
+        await _favoritesBox!.put(id, note);
+        if (kDebugMode) {
+          print('Updated custom note: $id');
+        }
+        _updateNotifier();
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error updating custom note: $e');
+      }
+    }
+  }
+
   /// Removes an item from the favorites using its [id].
   Future<void> removeFavorite(String id) async {
     try {
