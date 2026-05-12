@@ -194,7 +194,6 @@
 
     <div class="container-fluid">
       <div class="row">
-        <!-- Sidebar -->
         <div id="sidebar" class="col-lg-2 sidebar p-4 shadow">
           <div class="text-center mb-5">
             <i class="material-icons text-gold" style="font-size: 3.5rem"
@@ -208,7 +207,6 @@
           <nav class="nav flex-column" id="nav-list"></nav>
         </div>
 
-        <!-- Main Workspace -->
         <div class="col-lg-10 main-content">
           <div class="action-bar mb-4 shadow-sm" id="main-action-bar">
             <div class="d-flex align-items-center gap-3">
@@ -222,7 +220,6 @@
 
           <div id="workspace"></div>
 
-          <!-- Global Sync -->
           <div
             class="card card-lux p-4 mt-5 border-top border-success border-4"
           >
@@ -252,7 +249,6 @@
       </div>
     </div>
 
-    <!-- Modals -->
     <div class="modal fade" id="helpModal" tabindex="-1">
       <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0" style="border-radius: 20px">
@@ -407,7 +403,7 @@
           "fatawa_categories",
           "dreams_categories",
           "content",
-          "imam_ali" // <--- هنا الحل السحري الأول
+          "imam_ali"
         ]) {
           let parentArray = db[rootKey];
           if (rootKey === "content" && db.content)
@@ -439,7 +435,7 @@
           "fatawa_categories",
           "dreams_categories",
           "content",
-          "imam_ali" // <--- هنا الحل السحري الثاني
+          "imam_ali"
         ]) {
           let parentArray = db[rootKey];
           if (rootKey === "content" && db.content)
@@ -693,8 +689,7 @@
                             <div class="card card-lux p-4">
                                 <h5 class="fw-bold mb-4">معرض الخلفيات (Background Gallery)</h5>
                                 <div class="d-flex overflow-auto pb-3 gap-3" id="bg-gallery-container" style="scrollbar-width: thin;">
-                                    <!-- Gallery items here -->
-                                </div>
+                                    </div>
                                 <div class="upload-card mt-3" onclick="document.getElementById('gallery-file').click()">
                                     <i class="material-icons text-gold">add_photo_alternate</i>
                                     <h6>أضف صورة إلى المعرض</h6>
@@ -1335,7 +1330,7 @@
           }
 
           if (db.prophets_stories) {
-           db.content.prophets_stories = db.prophets_stories;
+            db.content.prophets_stories = db.prophets_stories;
           }
 
           if (update.ok) alert("تم المزامنة بنجاح! سيتم بناء نسخة APK جديدة.");
