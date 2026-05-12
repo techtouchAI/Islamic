@@ -462,6 +462,8 @@
 
       let activeView = "settings";
       let activeSubView = null;
+      let currentPage = 1;
+      const itemsPerPage = 50;
       let editIdx = -1;
 
       const subSections = {
@@ -496,6 +498,12 @@
         try {
           const res = await fetch("../../assets/data/content.json");
           db = await res.json();
+
+          const urlParams = new URLSearchParams(window.location.search);
+          const pView = urlParams.get('view') || 'settings';
+          const pSub = urlParams.get('sub');
+          currentPage = parseInt(urlParams.get('page')) || 1;
+
 
           if (db.prophets_stories) {
             db.content = db.content || {};
@@ -542,7 +550,14 @@
             });
           }
 
-          loadView("settings");
+          loadView(pView, pSub, true);
+
+          window.addEventListener('popstate', (e) => {
+            if (e.state) {
+              currentPage = e.state.page || 1;
+              loadView(e.state.view, e.state.sub, true);
+            }
+          });
         } catch (e) {
           alert("خطأ في تحميل قاعدة البيانات.");
         }
@@ -584,13 +599,23 @@
         });
       }
 
-      function loadView(id, subId = null) {
+      function loadView(id, subId = null, isPopState = false) {
         activeView = id;
         activeSubView = subId;
+        if (!isPopState) currentPage = 1;
 
         // Auto-select first sub-section if not specified
         if (!subId && subSections[id]) {
           activeSubView = subSections[id][0].id;
+        }
+
+        if (!isPopState) {
+          const url = new URL(window.location);
+          url.searchParams.set('view', activeView);
+          if (activeSubView) url.searchParams.set('sub', activeSubView);
+          else url.searchParams.delete('sub');
+          url.searchParams.set('page', currentPage);
+          window.history.pushState({ view: activeView, sub: activeSubView, page: currentPage }, '', url);
         }
 
         if (db.prophets_stories) {
@@ -783,30 +808,66 @@
       }
 
       function renderItems() {
-        const container = document.getElementById("list-container");
+        let container = document.getElementById("list-container");
         if (!container) return;
         container.innerHTML = "";
 
         const contentKey = activeSubView || activeView;
-        let items = db.content[contentKey] || [];
+        let items = getListData(contentKey) || [];
         const isQuran = contentKey === "quran";
 
-        items.forEach((it, i) => {
+        const totalItems = items.length;
+        const totalPages = Math.ceil(totalItems / itemsPerPage);
+        if (currentPage > totalPages && totalPages > 0) currentPage = totalPages;
+
+        const startIdx = (currentPage - 1) * itemsPerPage;
+        const endIdx = Math.min(startIdx + itemsPerPage, totalItems);
+        const paginatedItems = items.slice(startIdx, endIdx);
+
+        paginatedItems.forEach((it, localIndex) => {
+          const globalIndex = startIdx + localIndex;
           container.innerHTML += `
                     <div class="col-md-6">
                         <div class="card card-lux p-3 d-flex flex-row justify-content-between align-items-center">
                             <div class="text-truncate" style="max-width:70%">
-                                <span class="badge bg-gold text-dark me-2">#${i + 1}</span>
-                                <span class="fw-bold text-dark ${isQuran ? "quran-font" : ""}">${isQuran && !it.title.startsWith("سورة") ? "سورة " : ""}${it.title}</span>
+                                <span class="badge bg-gold text-dark me-2">#${globalIndex + 1}</span>
+                                <span class="fw-bold text-dark ${isQuran ? "quran-font" : ""}">${isQuran && !it.title.startsWith("سورة") ? "سورة " : ""}${it.title || 'بدون عنوان'}</span>
                             </div>
                             <div class="d-flex gap-2">
-                                <button class="btn btn-sm btn-outline-primary" onclick="openEdit(${i})"><i class="material-icons small">edit</i></button>
-                                <button class="btn btn-sm btn-outline-danger" onclick="deleteItem(${i})"><i class="material-icons small">delete</i></button>
+                                <button class="btn btn-sm btn-outline-primary" onclick="openEdit(${globalIndex})"><i class="material-icons small">edit</i></button>
+                                <button class="btn btn-sm btn-outline-danger" onclick="deleteItem(${globalIndex})"><i class="material-icons small">delete</i></button>
                             </div>
                         </div>
                     </div>
                 `;
         });
+
+        // Render Pagination UI
+        let paginationContainer = document.getElementById("pagination-container");
+        if (!paginationContainer) {
+            paginationContainer = document.createElement("div");
+            paginationContainer.id = "pagination-container";
+            paginationContainer.className = "col-12 mt-4 d-flex justify-content-center gap-2 align-items-center";
+            container.parentElement.appendChild(paginationContainer);
+        }
+
+        if (totalPages > 1) {
+            paginationContainer.innerHTML = `
+                <button class="btn btn-outline-gold px-3" ${currentPage === 1 ? "disabled" : ""} onclick="changePage(${currentPage - 1})">السابق</button>
+                <span class="fw-bold px-3 py-2 bg-light rounded shadow-sm">صفحة ${currentPage} من ${totalPages}</span>
+                <button class="btn btn-outline-gold px-3" ${currentPage === totalPages ? "disabled" : ""} onclick="changePage(${currentPage + 1})">التالي</button>
+            `;
+        } else {
+            paginationContainer.innerHTML = "";
+        }
+      }
+
+      function changePage(newPage) {
+          currentPage = newPage;
+          const url = new URL(window.location);
+          url.searchParams.set('page', currentPage);
+          window.history.pushState({ view: activeView, sub: activeSubView, page: currentPage }, '', url);
+          renderItems();
       }
 
       function toggleSidebar(show) {
@@ -1155,21 +1216,26 @@
 
         if (!t || !c) return alert("املاً الحقول");
 
+        let targetList = getListData(targetKey) || [];
+
         if (editIdx === -1) {
-          if (!db.content[targetKey]) db.content[targetKey] = [];
-          db.content[targetKey].push({ id: Date.now(), title: t, content: c });
+          targetList.push({ id: Date.now(), title: t, content: c });
+          setListData(targetKey, targetList);
         } else {
+          let currentList = getListData(currentKey) || [];
           if (targetKey === currentKey) {
-            db.content[currentKey][editIdx].title = t;
-            db.content[currentKey][editIdx].content = c;
+            currentList[editIdx].title = t;
+            currentList[editIdx].content = c;
+            setListData(currentKey, currentList);
           } else {
-            db.content[currentKey].splice(editIdx, 1);
-            if (!db.content[targetKey]) db.content[targetKey] = [];
-            db.content[targetKey].push({
+            currentList.splice(editIdx, 1);
+            setListData(currentKey, currentList);
+            targetList.push({
               id: Date.now(),
               title: t,
               content: c,
             });
+            setListData(targetKey, targetList);
           }
         }
         modal.hide();
@@ -1178,7 +1244,11 @@
       function deleteItem(i) {
         const contentKey = activeSubView || activeView;
         if (confirm("حذف؟")) {
-          db.content[contentKey].splice(i, 1);
+          let list = getListData(contentKey);
+          if (list) {
+            list.splice(i, 1);
+            setListData(contentKey, list);
+          }
           renderItems();
         }
       }
