@@ -1270,21 +1270,25 @@
           }
 
           // 3. Extract Data & SHA
-          const data = await getResponse.json();
-          const sha = data.sha;
-          const base64Content = data.content;
+          const resData = await getResponse.json();
+          const sha = resData.sha;
+
+          function decodeGitHubBase64(b64) {
+              // 1. Strip all newlines added by GitHub API
+              const cleanB64 = b64.replace(/\n/g, "");
+              // 2. Decode to binary string
+              const binString = atob(cleanB64);
+              // 3. Convert to byte array
+              const bytes = new Uint8Array(binString.length);
+              for (let i = 0; i < binString.length; i++) {
+                  bytes[i] = binString.charCodeAt(i);
+              }
+              // 4. Decode as UTF-8
+              return new TextDecoder('utf-8').decode(bytes);
+          }
 
           // 4. Decode & Parse
-          const cleanB64 = base64Content.replace(/\n/g, "").replace(/\r/g, "");
-          const binaryString = atob(cleanB64);
-          const bytes = new Uint8Array(binaryString.length);
-          for (let i = 0; i < binaryString.length; i++) {
-            bytes[i] = binaryString.charCodeAt(i);
-          }
-          const decoder = new TextDecoder('utf-8');
-          const decodedString = decoder.decode(bytes);
-
-          const latestDB = JSON.parse(decodedString);
+          const latestDB = JSON.parse(decodeGitHubBase64(resData.content));
 
           // 5. Merge Data
           function deepMergeCategories(latestArr, localArr) {
