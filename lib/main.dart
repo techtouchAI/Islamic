@@ -33,7 +33,7 @@ import 'sections/favorites_section.dart';
 import 'data/iraq_provinces.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'services/search_engine.dart';
-import 'screens/search_screen.dart';
+import 'search/screens/search_screen.dart';
 
 class IslamicPatternPainter extends CustomPainter {
   final Color color;

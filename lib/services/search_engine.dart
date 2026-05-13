@@ -61,6 +61,7 @@ class SearchEngine {
   }
 
   bool get isIndexed => _isIndexed;
+  List<SearchDocument> get allDocuments => _index;
 
   // Arabic Normalization
   static final _diacriticsRegExp = RegExp(r'[\u064B-\u065F\u0670]');
