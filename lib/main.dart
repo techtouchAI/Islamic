@@ -34,8 +34,6 @@ import 'data/iraq_provinces.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'services/search_engine.dart';
 import 'screens/search_screen.dart';
-import 'sections/settings_section.dart';
-import 'sections/prayer_times_section.dart';
 
 class IslamicPatternPainter extends CustomPainter {
   final Color color;
@@ -557,23 +555,8 @@ class _MainScaffoldState extends State<MainScaffold> {
           onPrayerCardTap: () => _navigateTo('prayer_times'),
         );
       case 'settings':
-        return SettingsSection(
-          key: const ValueKey('settings'),
-          onThemeToggled: widget.onThemeToggled,
-          primaryColor: widget.primaryColor,
-          onColorChanged: widget.onColorChanged,
-          uiOpacity: widget.uiOpacity,
-          onOpacityChanged: widget.onOpacityChanged,
-          onBackgroundImageChanged: widget.onBackgroundImageChanged,
-          onBase64BgChanged: widget.onBase64BgChanged,
-          backgroundImagePath: widget.backgroundImagePath,
-          cardColor: widget.cardColor,
-          onCardColorChanged: widget.onCardColorChanged,
-          visibility: widget.homeVisibility,
-          onVisibilityChanged: widget.onVisibilityChanged,
-          hijriAdjustment: widget.hijriAdjustment,
-          onHijriAdjustmentChanged: widget.onHijriAdjustmentChanged,
-        );
+        return const SizedBox.shrink();
+        
       case 'favorites':
         return FavoritesSection(
           key: const ValueKey('favorites'),
