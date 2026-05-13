@@ -568,7 +568,7 @@ class _MainScaffoldState extends State<MainScaffold> {
       case 'tasbih':
         return const TasbihSection(key: ValueKey('tasbih'));
       case 'prayer_times':
-        return const PrayerTimesSection(key: ValueKey('prayer_times'));
+        return const SizedBox.shrink();
       case 'duas':
         return TabbedSection(
           key: const ValueKey('duas'),
