@@ -517,9 +517,7 @@
             }));
             // ensure content keys exist
             db.content.imam_ali.forEach((c) => {
-              if (!db.content["imam_ali_cat_" + c.id]) {
-                db.content["imam_ali_cat_" + c.id] = [];
-              }
+              db.content["imam_ali_cat_" + c.id] = db.content["imam_ali_cat_" + c.id] || c.items || [];
             });
           }
 
@@ -533,7 +531,7 @@
             // also ensure these keys exist in db for editing
             db.content = db.content || {};
             db.fatawa_categories.forEach((c) => {
-              db.content["fatawa_cat_" + c.id] = c.items || [];
+              db.content["fatawa_cat_" + c.id] = db.content["fatawa_cat_" + c.id] || c.items || [];
             });
           }
 
@@ -543,8 +541,7 @@
               title: c.title,
             }));
             db.dreams_categories.forEach((c) => {
-              db.content["dreams_cat_" + c.id] =
-                db.content["dreams_cat_" + c.id] || [];
+              db.content["dreams_cat_" + c.id] = db.content["dreams_cat_" + c.id] || c.items || [];
             });
           }
 
@@ -1251,50 +1248,111 @@
       }
 
       async function saveToGitHub() {
-        // Repack fatawa and imam_ali before saving
-        if (db.fatawa_categories) {
-          db.fatawa_categories.forEach((c) => {
-            if (db.content["fatawa_cat_" + c.id]) {
-              c.items = db.content["fatawa_cat_" + c.id];
-              delete db.content["fatawa_cat_" + c.id];
-            }
-          });
-        }
-
-        if (db.dreams_categories) {
-          db.dreams_categories.forEach((c) => {
-            if (db.content["dreams_cat_" + c.id]) {
-              c.items = db.content["dreams_cat_" + c.id];
-              delete db.content["dreams_cat_" + c.id];
-            }
-          });
-        }
-
-        if (db.content && db.content.imam_ali) {
-          db.content.imam_ali.forEach((c) => {
-            if (db.content["imam_ali_cat_" + c.id]) {
-              c.items = db.content["imam_ali_cat_" + c.id];
-              delete db.content["imam_ali_cat_" + c.id];
-            }
-          });
-        }
-
-        if (db.content && db.content.prophets_stories) {
-          db.prophets_stories = db.content.prophets_stories;
-          delete db.content.prophets_stories;
-        }
-
         const token = prompt("أدخل GitHub Personal Access Token:");
         if (!token) return;
         const repo = "techtouchAI/Islamic";
         const path = "assets/data/content.json";
+
         try {
+          // 1. Fetch latest state
           const res = await fetch(
             `https://api.github.com/repos/${repo}/contents/${path}`,
             { headers: { Authorization: `token ${token}` } },
           );
           if (!res.ok) throw new Error("فشل الوصول للمستودع.");
-          const sha = (await res.json()).sha;
+          const resData = await res.json();
+          const sha = resData.sha;
+
+          let latestDB = {};
+          try {
+              const decodedContent = decodeURIComponent(escape(atob(resData.content)));
+              latestDB = JSON.parse(decodedContent);
+          } catch(e) {
+              console.error("Error decoding github content:", e);
+              throw new Error("فشل قراءة الملف من المستودع");
+          }
+
+          // Repack current local db before merge
+          if (db.fatawa_categories) {
+            db.fatawa_categories.forEach((c) => {
+              if (db.content["fatawa_cat_" + c.id]) {
+                c.items = db.content["fatawa_cat_" + c.id];
+                delete db.content["fatawa_cat_" + c.id];
+              }
+            });
+          }
+          if (db.dreams_categories) {
+            db.dreams_categories.forEach((c) => {
+              if (db.content["dreams_cat_" + c.id]) {
+                c.items = db.content["dreams_cat_" + c.id];
+                delete db.content["dreams_cat_" + c.id];
+              }
+            });
+          }
+          if (db.content && db.content.imam_ali) {
+            db.content.imam_ali.forEach((c) => {
+              if (db.content["imam_ali_cat_" + c.id]) {
+                c.items = db.content["imam_ali_cat_" + c.id];
+                delete db.content["imam_ali_cat_" + c.id];
+              }
+            });
+          }
+          if (db.content && db.content.prophets_stories) {
+            db.prophets_stories = db.content.prophets_stories;
+            delete db.content.prophets_stories;
+          }
+
+          // 2. Safe Merge: latestDB merged with local db
+          function mergeCategories(latestArr, localArr) {
+            if (!latestArr) return localArr;
+            if (!localArr) return latestArr;
+            const merged = [...latestArr];
+            localArr.forEach(localCat => {
+              const existingIdx = merged.findIndex(c => c.id === localCat.id);
+              if (existingIdx !== -1) {
+                // If localCat has items array (even if empty, which means user deleted all items), overwrite it
+                if (localCat.items) {
+                    merged[existingIdx].items = localCat.items;
+                }
+                merged[existingIdx].title = localCat.title || merged[existingIdx].title;
+              } else {
+                merged.push(localCat);
+              }
+            });
+            return merged;
+          }
+
+          latestDB.sections = { ...(latestDB.sections || {}), ...(db.sections || {}) };
+          latestDB.settings = { ...(latestDB.settings || {}), ...(db.settings || {}) };
+          latestDB.about = { ...(latestDB.about || {}), ...(db.about || {}) };
+
+          if (db.content) {
+             latestDB.content = latestDB.content || {};
+             Object.keys(db.content).forEach(k => {
+                 if (Array.isArray(db.content[k])) {
+                     latestDB.content[k] = db.content[k]; // Replace fully, even if empty
+                 }
+             });
+          }
+
+          if (db.fatawa_categories) {
+              latestDB.fatawa_categories = mergeCategories(latestDB.fatawa_categories, db.fatawa_categories);
+          }
+          if (db.dreams_categories) {
+              latestDB.dreams_categories = mergeCategories(latestDB.dreams_categories, db.dreams_categories);
+          }
+          if (db.content && db.content.imam_ali && latestDB.content) {
+              latestDB.content.imam_ali = mergeCategories(latestDB.content.imam_ali, db.content.imam_ali);
+          }
+          if (db.prophets_stories) {
+              latestDB.prophets_stories = db.prophets_stories;
+          }
+          if (db.daily_duas) {
+              latestDB.daily_duas = { ...(latestDB.daily_duas || {}), ...(db.daily_duas || {}) };
+          }
+
+
+          // 3. Push to GitHub
           const update = await fetch(
             `https://api.github.com/repos/${repo}/contents/${path}`,
             {
@@ -1303,7 +1361,7 @@
               body: JSON.stringify({
                 message: "CMS: Full Content & Media Update",
                 content: btoa(
-                  unescape(encodeURIComponent(JSON.stringify(db, null, 2))),
+                  unescape(encodeURIComponent(JSON.stringify(latestDB, null, 2))),
                 ),
                 sha: sha,
               }),
