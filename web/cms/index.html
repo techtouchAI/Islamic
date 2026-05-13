@@ -1259,13 +1259,16 @@
             `https://api.github.com/repos/${repo}/contents/${path}`,
             { headers: { Authorization: `token ${token}` } },
           );
-          if (!res.ok) throw new Error("فشل الوصول للمستودع.");
+          if (!res.ok) {
+              throw new Error(`فشل الوصول للمستودع (الرمز: ${res.status})`);
+          }
           const resData = await res.json();
           const sha = resData.sha;
 
           let latestDB = {};
           try {
-              const decodedContent = decodeURIComponent(escape(atob(resData.content)));
+              const cleanB64 = resData.content.replace(/\n/g, "");
+              const decodedContent = decodeURIComponent(escape(atob(cleanB64)));
               latestDB = JSON.parse(decodedContent);
           } catch(e) {
               console.error("Error decoding github content:", e);
@@ -1329,7 +1332,8 @@
           if (db.content) {
              latestDB.content = latestDB.content || {};
              Object.keys(db.content).forEach(k => {
-                 if (Array.isArray(db.content[k])) {
+                 // Skip imam_ali here so we can deep merge it properly
+                 if (k !== 'imam_ali' && Array.isArray(db.content[k])) {
                      latestDB.content[k] = db.content[k]; // Replace fully, even if empty
                  }
              });
