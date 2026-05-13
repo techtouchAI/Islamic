@@ -1247,46 +1247,71 @@
         }
       }
 
-      async function saveToGitHub() {
-        // 1. Validate Token
+            async function fetchWithRetry(url, options, maxRetries = 3) {
+        let retries = 0;
+        let baseDelay = 1000;
+
+        while (retries <= maxRetries) {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 120000); // 120-second timeout
+
+          try {
+            const res = await fetch(url, { ...options, signal: controller.signal });
+            clearTimeout(timeoutId);
+
+            // Monitor X-RateLimit-Remaining
+            const rateLimitRemaining = res.headers.get('X-RateLimit-Remaining');
+            if (rateLimitRemaining !== null && parseInt(rateLimitRemaining) < 10) {
+              console.warn(`تحذير: طلبات GitHub المتبقية قليلة جداً (${rateLimitRemaining})`);
+              // Could alert here if needed
+            }
+
+            if (!res.ok) {
+              const errData = await res.json().catch(() => ({}));
+              throw new Error(`HTTP Error ${res.status}: ${errData.message || res.statusText}`);
+            }
+            return res;
+          } catch (err) {
+            clearTimeout(timeoutId);
+            if (retries === maxRetries) {
+              throw err;
+            }
+            retries++;
+            console.warn(`Fetch failed (${err.message}), retrying ${retries}/${maxRetries}...`);
+            await new Promise(resolve => setTimeout(resolve, baseDelay * Math.pow(2, retries - 1)));
+          }
+        }
+      }
+
+      async function saveToGitHub(onProgress = console.log) {
+        // Note: 25MB monolithic JSON is an anti-pattern. Consider sharding into smaller logical files in the future.
         const token = prompt("أدخل GitHub Personal Access Token:");
         if (!token) return;
 
-        const url = "https://api.github.com/repos/techtouchAI/Islamic/contents/assets/data/content.json";
+        const branch = "main";
+        const owner = "techtouchAI";
+        const repo = "Islamic";
+        const filePath = "assets/data/content.json";
+
+        const headers = {
+          "Authorization": `token ${token}`,
+          "Accept": "application/vnd.github.v3+json",
+          "Content-Type": "application/json"
+        };
 
         try {
-          // 2. Fetch Existing Data (GET Request)
-          const getResponse = await fetch(url, {
-            method: "GET",
-            headers: {
-              "Authorization": `token ${token}`,
-              "Accept": "application/vnd.github.v3+json"
-            }
-          });
+          // Progress Callback / Alert
+          const reportProgress = onProgress;
 
-          if (!getResponse.ok) {
-            alert(`فشل جلب البيانات الحالية: خطأ ${getResponse.status}`);
-            return;
-          }
+          reportProgress("Step 1/5: Fetching current data...");
 
-          // 3. Extract Data & SHA
-          const data = await getResponse.json();
-          const sha = data.sha;
-          const base64Content = data.content;
+          // 1. The Fetch (Bypass 1MB Limit using raw URL)
+          const rawUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${filePath}?t=${Date.now()}`;
+          const getResponse = await fetchWithRetry(rawUrl, { method: "GET" });
+          const latestDB = await getResponse.json();
 
-          // 4. Decode & Parse
-          const cleanB64 = base64Content.replace(/\n/g, "").replace(/\r/g, "");
-          const binaryString = atob(cleanB64);
-          const bytes = new Uint8Array(binaryString.length);
-          for (let i = 0; i < binaryString.length; i++) {
-            bytes[i] = binaryString.charCodeAt(i);
-          }
-          const decoder = new TextDecoder('utf-8');
-          const decodedString = decoder.decode(bytes);
-
-          const latestDB = JSON.parse(decodedString);
-
-          // 5. Merge Data
+          reportProgress("Step 1.5: Merging local updates...");
+          // Merge Data Logic
           function deepMergeCategories(latestArr, localArr) {
             if (!latestArr) return localArr;
             if (!localArr) return latestArr;
@@ -1356,39 +1381,115 @@
               latestDB.daily_duas = { ...(latestDB.daily_duas || {}), ...(db.daily_duas || {}) };
           }
 
-          // 6. Encode & Push (PUT Request)
-          const mergedJsonString = JSON.stringify(latestDB, null, 2);
+          // 2. The Push (Git Database API)
+          reportProgress("Step 2/5: Creating blob...");
 
-          const encoder = new TextEncoder();
-          const encodedBytes = encoder.encode(mergedJsonString);
-          let binaryStr = "";
-          const chunkSize = 8192;
-          for (let i = 0; i < encodedBytes.length; i += chunkSize) {
-            binaryStr += String.fromCharCode.apply(null, encodedBytes.subarray(i, i + chunkSize));
+          // Step A (Get Reference)
+          const refUrl = `https://api.github.com/repos/${owner}/${repo}/git/refs/heads/${branch}`;
+          const refRes = await fetchWithRetry(refUrl, { headers });
+          const refData = await refRes.json();
+          const initialCommitSha = refData.object.sha;
+
+          // Step B (Create Blob)
+          let mergedJsonString = JSON.stringify(latestDB, null, 2);
+
+          let blobSha;
+          try {
+            const blobUrl = `https://api.github.com/repos/${owner}/${repo}/git/blobs`;
+            const blobRes = await fetchWithRetry(blobUrl, {
+              method: "POST",
+              headers,
+              body: JSON.stringify({ content: mergedJsonString, encoding: "utf-8" })
+            });
+            const blobData = await blobRes.json();
+            blobSha = blobData.sha;
+          } catch (e) {
+             alert("Error in Step B: Failed to create Blob - " + e.message);
+             return;
           }
-          const newBase64Content = btoa(binaryStr);
 
-          const putResponse = await fetch(url, {
-            method: "PUT",
-            headers: {
-              "Authorization": `token ${token}`,
-              "Accept": "application/vnd.github.v3+json"
-            },
-            body: JSON.stringify({
-              message: "تحديث المحتوى من لوحة التحكم",
-              content: newBase64Content,
-              sha: sha
-            })
-          });
+          // Force garbage collection of the 25MB string
+          mergedJsonString = null;
 
-          // 7. Success/Failure Handling
-          if (putResponse.ok) {
-            alert("تم الحفظ في GitHub بنجاح!");
-          } else {
-            alert(`فشل الحفظ: خطأ ${putResponse.status}`);
+          reportProgress("Step 3/5: Creating tree...");
+          // Step C (Create Tree)
+          let treeSha;
+          try {
+            const treeUrl = `https://api.github.com/repos/${owner}/${repo}/git/trees`;
+            const treeRes = await fetchWithRetry(treeUrl, {
+              method: "POST",
+              headers,
+              body: JSON.stringify({
+                base_tree: initialCommitSha,
+                tree: [
+                  {
+                    path: filePath,
+                    mode: "100644",
+                    type: "blob",
+                    sha: blobSha
+                  }
+                ]
+              })
+            });
+            const treeData = await treeRes.json();
+            treeSha = treeData.sha;
+          } catch (e) {
+            alert("Error in Step C: Failed to create Tree - " + e.message);
+            return;
           }
+
+          reportProgress("Step 4/5: Creating commit...");
+          // Step D (Create Commit)
+          let newCommitSha;
+          try {
+             const commitUrl = `https://api.github.com/repos/${owner}/${repo}/git/commits`;
+             const commitRes = await fetchWithRetry(commitUrl, {
+               method: "POST",
+               headers,
+               body: JSON.stringify({
+                 message: "تحديث المحتوى من لوحة التحكم (Git DB API)",
+                 tree: treeSha,
+                 parents: [initialCommitSha]
+               })
+             });
+             const commitData = await commitRes.json();
+             newCommitSha = commitData.sha;
+          } catch (e) {
+             alert("Error in Step D: Failed to create Commit - " + e.message);
+             return;
+          }
+
+          reportProgress("Step 5/5: Updating reference...");
+          // Step E (Update Ref)
+          try {
+             // Pre-check for concurrent modification
+             const verifyRefRes = await fetchWithRetry(refUrl, { headers });
+             const verifyRefData = await verifyRefRes.json();
+             if (verifyRefData.object.sha !== initialCommitSha) {
+                alert("Conflict Detected: Another user saved changes. Please refresh and try again.");
+                return;
+             }
+
+             const updateRefRes = await fetchWithRetry(refUrl, {
+               method: "PATCH",
+               headers,
+               body: JSON.stringify({
+                 sha: newCommitSha,
+                 force: false
+               })
+             });
+             if (updateRefRes.ok) {
+                alert("تم الحفظ في GitHub بنجاح!");
+             } else {
+                throw new Error("Update Ref failed");
+             }
+          } catch (e) {
+             alert("Error in Step E: Failed to update Ref - " + e.message);
+             return;
+          }
+
         } catch (error) {
-          alert("حدث خطأ أثناء الاتصال: " + error.message);
+          alert("Error: Fetching Raw JSON failed or other error - " + error.message);
         }
       }
 
