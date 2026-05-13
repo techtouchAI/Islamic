@@ -1248,72 +1248,52 @@
       }
 
       async function saveToGitHub() {
+        // 1. Validate Token
         const token = prompt("أدخل GitHub Personal Access Token:");
         if (!token) return;
-        const repo = "techtouchAI/Islamic";
-        const path = "assets/data/content.json";
+
+        const url = "https://api.github.com/repos/techtouchAI/Islamic/contents/assets/data/content.json";
 
         try {
-          // 1. Fetch latest state
-          const res = await fetch(
-            `https://api.github.com/repos/${repo}/contents/${path}`,
-            { headers: { Authorization: `token ${token}` } },
-          );
-          if (!res.ok) {
-              throw new Error(`فشل الوصول للمستودع (الرمز: ${res.status})`);
-          }
-          const resData = await res.json();
-          const sha = resData.sha;
+          // 2. Fetch Existing Data (GET Request)
+          const getResponse = await fetch(url, {
+            method: "GET",
+            headers: {
+              "Authorization": `token ${token}`,
+              "Accept": "application/vnd.github.v3+json"
+            }
+          });
 
-          let latestDB = {};
-          try {
-              const cleanB64 = resData.content.replace(/\n/g, "");
-              const decodedContent = decodeURIComponent(escape(atob(cleanB64)));
-              latestDB = JSON.parse(decodedContent);
-          } catch(e) {
-              console.error("Error decoding github content:", e);
-              throw new Error("فشل قراءة الملف من المستودع");
+          if (!getResponse.ok) {
+            alert(`فشل جلب البيانات الحالية: خطأ ${getResponse.status}`);
+            return;
           }
 
-          // Repack current local db before merge
-          if (db.fatawa_categories) {
-            db.fatawa_categories.forEach((c) => {
-              if (db.content["fatawa_cat_" + c.id]) {
-                c.items = db.content["fatawa_cat_" + c.id];
-                delete db.content["fatawa_cat_" + c.id];
-              }
-            });
-          }
-          if (db.dreams_categories) {
-            db.dreams_categories.forEach((c) => {
-              if (db.content["dreams_cat_" + c.id]) {
-                c.items = db.content["dreams_cat_" + c.id];
-                delete db.content["dreams_cat_" + c.id];
-              }
-            });
-          }
-          if (db.content && db.content.imam_ali) {
-            db.content.imam_ali.forEach((c) => {
-              if (db.content["imam_ali_cat_" + c.id]) {
-                c.items = db.content["imam_ali_cat_" + c.id];
-                delete db.content["imam_ali_cat_" + c.id];
-              }
-            });
-          }
-          if (db.content && db.content.prophets_stories) {
-            db.prophets_stories = db.content.prophets_stories;
-            delete db.content.prophets_stories;
-          }
+          // 3. Extract Data & SHA
+          const data = await getResponse.json();
+          const sha = data.sha;
+          const base64Content = data.content;
 
-          // 2. Safe Merge: latestDB merged with local db
-          function mergeCategories(latestArr, localArr) {
+          // 4. Decode & Parse
+          const cleanB64 = base64Content.replace(/\n/g, "").replace(/\r/g, "");
+          const binaryString = atob(cleanB64);
+          const bytes = new Uint8Array(binaryString.length);
+          for (let i = 0; i < binaryString.length; i++) {
+            bytes[i] = binaryString.charCodeAt(i);
+          }
+          const decoder = new TextDecoder('utf-8');
+          const decodedString = decoder.decode(bytes);
+
+          const latestDB = JSON.parse(decodedString);
+
+          // 5. Merge Data
+          function deepMergeCategories(latestArr, localArr) {
             if (!latestArr) return localArr;
             if (!localArr) return latestArr;
             const merged = [...latestArr];
             localArr.forEach(localCat => {
               const existingIdx = merged.findIndex(c => c.id === localCat.id);
               if (existingIdx !== -1) {
-                // If localCat has items array (even if empty, which means user deleted all items), overwrite it
                 if (localCat.items) {
                     merged[existingIdx].items = localCat.items;
                 }
@@ -1325,6 +1305,28 @@
             return merged;
           }
 
+          if (db.fatawa_categories) {
+            db.fatawa_categories.forEach(c => {
+              if (db.content && db.content["fatawa_cat_" + c.id]) {
+                c.items = db.content["fatawa_cat_" + c.id];
+              }
+            });
+          }
+          if (db.dreams_categories) {
+            db.dreams_categories.forEach(c => {
+              if (db.content && db.content["dreams_cat_" + c.id]) {
+                c.items = db.content["dreams_cat_" + c.id];
+              }
+            });
+          }
+          if (db.content && db.content.imam_ali) {
+            db.content.imam_ali.forEach(c => {
+              if (db.content["imam_ali_cat_" + c.id]) {
+                c.items = db.content["imam_ali_cat_" + c.id];
+              }
+            });
+          }
+
           latestDB.sections = { ...(latestDB.sections || {}), ...(db.sections || {}) };
           latestDB.settings = { ...(latestDB.settings || {}), ...(db.settings || {}) };
           latestDB.about = { ...(latestDB.about || {}), ...(db.about || {}) };
@@ -1332,73 +1334,61 @@
           if (db.content) {
              latestDB.content = latestDB.content || {};
              Object.keys(db.content).forEach(k => {
-                 // Skip imam_ali here so we can deep merge it properly
-                 if (k !== 'imam_ali' && Array.isArray(db.content[k])) {
-                     latestDB.content[k] = db.content[k]; // Replace fully, even if empty
+                 if (k !== 'imam_ali' && k !== 'prophets_stories' && !k.startsWith('fatawa_cat_') && !k.startsWith('dreams_cat_') && !k.startsWith('imam_ali_cat_')) {
+                     latestDB.content[k] = db.content[k];
                  }
              });
           }
 
           if (db.fatawa_categories) {
-              latestDB.fatawa_categories = mergeCategories(latestDB.fatawa_categories, db.fatawa_categories);
+              latestDB.fatawa_categories = deepMergeCategories(latestDB.fatawa_categories, db.fatawa_categories);
           }
           if (db.dreams_categories) {
-              latestDB.dreams_categories = mergeCategories(latestDB.dreams_categories, db.dreams_categories);
+              latestDB.dreams_categories = deepMergeCategories(latestDB.dreams_categories, db.dreams_categories);
           }
           if (db.content && db.content.imam_ali && latestDB.content) {
-              latestDB.content.imam_ali = mergeCategories(latestDB.content.imam_ali, db.content.imam_ali);
+              latestDB.content.imam_ali = deepMergeCategories(latestDB.content.imam_ali, db.content.imam_ali);
           }
-          if (db.prophets_stories) {
-              latestDB.prophets_stories = db.prophets_stories;
+          if (db.prophets_stories || (db.content && db.content.prophets_stories)) {
+              latestDB.prophets_stories = db.prophets_stories || db.content.prophets_stories;
           }
           if (db.daily_duas) {
               latestDB.daily_duas = { ...(latestDB.daily_duas || {}), ...(db.daily_duas || {}) };
           }
 
+          // 6. Encode & Push (PUT Request)
+          const mergedJsonString = JSON.stringify(latestDB, null, 2);
 
-          // 3. Push to GitHub
-          const update = await fetch(
-            `https://api.github.com/repos/${repo}/contents/${path}`,
-            {
-              method: "PUT",
-              headers: { Authorization: `token ${token}` },
-              body: JSON.stringify({
-                message: "CMS: Full Content & Media Update",
-                content: btoa(
-                  unescape(encodeURIComponent(JSON.stringify(latestDB, null, 2))),
-                ),
-                sha: sha,
-              }),
+          const encoder = new TextEncoder();
+          const encodedBytes = encoder.encode(mergedJsonString);
+          let binaryStr = "";
+          const chunkSize = 8192;
+          for (let i = 0; i < encodedBytes.length; i += chunkSize) {
+            binaryStr += String.fromCharCode.apply(null, encodedBytes.subarray(i, i + chunkSize));
+          }
+          const newBase64Content = btoa(binaryStr);
+
+          const putResponse = await fetch(url, {
+            method: "PUT",
+            headers: {
+              "Authorization": `token ${token}`,
+              "Accept": "application/vnd.github.v3+json"
             },
-          );
+            body: JSON.stringify({
+              message: "تحديث المحتوى من لوحة التحكم",
+              content: newBase64Content,
+              sha: sha
+            })
+          });
 
-          // Unpack again so editing can continue
-          if (db.fatawa_categories) {
-            db.fatawa_categories.forEach((c) => {
-              db.content["fatawa_cat_" + c.id] = c.items || [];
-            });
+          // 7. Success/Failure Handling
+          if (putResponse.ok) {
+            alert("تم الحفظ في GitHub بنجاح!");
+          } else {
+            alert(`فشل الحفظ: خطأ ${putResponse.status}`);
           }
-
-          if (db.dreams_categories) {
-            db.dreams_categories.forEach((c) => {
-              db.content["dreams_cat_" + c.id] = c.items || [];
-            });
-          }
-
-          if (db.content && db.content.imam_ali) {
-            db.content.imam_ali.forEach((c) => {
-              db.content["imam_ali_cat_" + c.id] = c.items || [];
-            });
-          }
-
-          if (db.prophets_stories) {
-            db.content.prophets_stories = db.prophets_stories;
-          }
-
-          if (update.ok) alert("تم المزامنة بنجاح! سيتم بناء نسخة APK جديدة.");
-          else alert("فشل المزامنة.");
-        } catch (e) {
-          alert("خطأ: " + e.message);
+        } catch (error) {
+          alert("حدث خطأ أثناء الاتصال: " + error.message);
         }
       }
 
