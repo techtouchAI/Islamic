@@ -12,6 +12,7 @@ class SearchNotifier extends ValueNotifier<SearchSnapshot> {
   static SearchSnapshot _snapshot(SearchController c) => SearchSnapshot(
         query: c.query,
         category: c.selectedCategory,
+        isLoading: c.isLoading,
         items: c.paginatedFilteredItems,
         groups: c.groupedItems,
         pagination: c.pagination,
@@ -30,6 +31,7 @@ class SearchNotifier extends ValueNotifier<SearchSnapshot> {
 class SearchSnapshot {
   final String query;
   final String category;
+  final bool isLoading;
   final List<ContentItem> items;
   final List<SectionGroup> groups;
   final PaginationMetadata pagination;
@@ -37,6 +39,7 @@ class SearchSnapshot {
   const SearchSnapshot({
     required this.query,
     required this.category,
+    required this.isLoading,
     required this.items,
     required this.groups,
     required this.pagination,
