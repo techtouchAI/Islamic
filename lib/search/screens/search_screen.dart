@@ -56,23 +56,52 @@ class _SearchScreenState extends State<SearchScreen> {
     }
 
     final docs = SearchEngine.instance.allDocuments;
-    return docs.map((doc) => ContentItem(
-      id: doc.id,
-      title: doc.title,
-      subtitle: doc.type == 'quran' ? 'القرآن الكريم' : doc.category,
-      content: doc.content,
-      sectionId: _mapCategoryToSectionId(doc.category, doc.type),
-      sectionName: doc.type == 'quran' ? 'القرآن الكريم' : doc.category,
-      category: doc.category,
-      surahNumber: doc.surahNumber,
-      ayahNumber: doc.ayahNumber,
-      type: doc.type,
-    )).toList();
+    return docs.map((doc) {
+      final String mappedSectionId = _mapCategoryToSectionId(doc.category, doc.type);
+      return ContentItem(
+        id: doc.id,
+        title: doc.title,
+        subtitle: doc.type == 'quran' ? 'القرآن الكريم' : doc.category,
+        content: doc.content,
+        sectionId: mappedSectionId,
+        sectionName: _getSectionName(mappedSectionId),
+        category: doc.category,
+        surahNumber: doc.surahNumber,
+        ayahNumber: doc.ayahNumber,
+        type: doc.type,
+      );
+    }).toList();
+  }
+
+  String _getSectionName(String sectionId) {
+    const displayNames = {
+      'all': 'الكل',
+      'quran': 'القرآن الكريم',
+      'dua': 'الأدعية',
+      'ziyarat': 'الزيارات',
+      'amal': 'الأعمال',
+      'fatawa': 'الاستفتاءات',
+      'imam_ali': 'الإمام علي (ع)',
+      'dreams': 'تفسير الأحلام',
+      'prophets_stories': 'قصص الأنبياء',
+      'quran_stories': 'قصص القرآن',
+    };
+    return displayNames[sectionId] ?? sectionId;
   }
 
   String _mapCategoryToSectionId(String category, String type) {
     if (type == 'quran') return 'quran';
-    // Simplified mapping based on category content
+    // Strict mapping based on actual internal IDs from the Content JSON structure
+    if (category.startsWith('dua')) return 'dua';
+    if (category.startsWith('ziyarat')) return 'ziyarat';
+    if (category.startsWith('amal')) return 'amal';
+    if (category.startsWith('fatawa')) return 'fatawa';
+    if (category.startsWith('imam_ali')) return 'imam_ali';
+    if (category.startsWith('dreams')) return 'dreams';
+    if (category.startsWith('prophets_stories')) return 'prophets_stories';
+    if (category.startsWith('quran_stories')) return 'quran_stories';
+
+    // Fallback to Arabic string matching if category comes as raw Arabic
     if (category.contains('دعاء') || category.contains('أدعية') || category.contains('مناجاة')) return 'dua';
     if (category.contains('زيارة') || category.contains('زيارات')) return 'ziyarat';
     if (category.contains('أعمال') || category.contains('عمل')) return 'amal';
@@ -81,7 +110,7 @@ class _SearchScreenState extends State<SearchScreen> {
     if (category.contains('حلم') || category.contains('أحلام') || category.contains('تفسير')) return 'dreams';
     if (category.contains('أنبياء') || category.contains('نبي')) return 'prophets_stories';
     if (category.contains('قرآن') && category.contains('قصص')) return 'quran_stories';
-    // Default fallback
+
     return 'amal';
   }
 
@@ -195,16 +224,20 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   Widget _buildResultsList(SearchSnapshot snapshot) {
+    if (snapshot.isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
     final items = snapshot.items;
     final groups = snapshot.groups;
     final isAll = snapshot.category == 'all';
 
-    if (items.isEmpty && groups.isEmpty) {
-      return const _EmptyState();
+    if (snapshot.query.isEmpty && isAll && items.isEmpty && groups.isEmpty) {
+       return const Center(child: Text('ابدأ الكتابة للبحث...'));
     }
 
-    if (snapshot.query.isEmpty && isAll) {
-       return const Center(child: Text('ابدأ الكتابة للبحث...'));
+    if (items.isEmpty && groups.isEmpty) {
+      return const _EmptyState();
     }
 
     // Grouped View (الكل)

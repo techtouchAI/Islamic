@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import '../models/search_models.dart';
 import '../../services/search_engine.dart'; // To use fuzzyMatch if needed
@@ -12,6 +13,9 @@ class SearchController extends ChangeNotifier {
   String _selectedCategory = 'all'; // 'all' = الكل
   int _currentPage = 1;
   static const int _itemsPerPage = 10;
+  bool _isLoading = false;
+
+  Timer? _debounceTimer;
 
   // ─── Cached Results ───
   List<ContentItem> _filteredItems = [];
@@ -27,6 +31,7 @@ class SearchController extends ChangeNotifier {
   String get query => _query;
   String get selectedCategory => _selectedCategory;
   int get currentPage => _currentPage;
+  bool get isLoading => _isLoading;
   List<ContentItem> get filteredItems => List.unmodifiable(_filteredItems);
   List<SectionGroup> get groupedItems => List.unmodifiable(_groupedItems);
   PaginationMetadata get pagination => _pagination;
@@ -42,6 +47,12 @@ class SearchController extends ChangeNotifier {
     _computeResults();
   }
 
+  @override
+  void dispose() {
+    _debounceTimer?.cancel();
+    super.dispose();
+  }
+
   // ─── Actions ───
 
   void updateQuery(String value) {
@@ -49,16 +60,25 @@ class SearchController extends ChangeNotifier {
     if (_query == normalized) return;
     _query = normalized;
     _currentPage = 1; // Reset pagination on query change
-    _computeResults();
+
+    _isLoading = true;
     notifyListeners();
+
+    _debounceTimer?.cancel();
+    _debounceTimer = Timer(const Duration(milliseconds: 400), () {
+      _computeResults();
+    });
   }
 
   void selectCategory(String category) {
     if (_selectedCategory == category) return;
     _selectedCategory = category;
     _currentPage = 1; // Reset pagination on category change
-    _computeResults();
+
+    _isLoading = true;
     notifyListeners();
+
+    _computeResults();
   }
 
   void goToPage(int page) {
@@ -73,7 +93,10 @@ class SearchController extends ChangeNotifier {
 
   // ─── Core Logic ───
 
-  void _computeResults() {
+  Future<void> _computeResults() async {
+    _isLoading = true;
+    notifyListeners();
+
     // 1. Filter by category
     List<ContentItem> categoryFiltered;
     if (_selectedCategory == 'all') {
@@ -82,72 +105,19 @@ class SearchController extends ChangeNotifier {
       categoryFiltered = _allItems.where((i) => i.sectionId == _selectedCategory).toList();
     }
 
-    // 2. Filter by search query
+    // 2. Filter by search query in background
     if (_query.isEmpty) {
       _filteredItems = categoryFiltered;
     } else {
-      final normalizedQuery = SearchEngine.normalizeArabic(_query);
-      final queryWords = normalizedQuery.split(' ').where((w) => w.isNotEmpty).toList();
-
-      if (queryWords.isEmpty) {
-        _filteredItems = categoryFiltered;
-      } else {
-        // We do a scoring based approach similar to SearchEngine to keep the quality of results
-        List<Map<String, dynamic>> scoredItems = [];
-        for (var item in categoryFiltered) {
-          bool allWordsMatched = true;
-          int docScore = 0;
-
-          final normalizedTitle = SearchEngine.normalizeArabic(item.title);
-          final normalizedContent = SearchEngine.normalizeArabic(item.content);
-          final normalizedCategory = SearchEngine.normalizeArabic(item.category ?? '');
-
-          for (var word in queryWords) {
-            bool isWordFuzzy = word.length >= 4;
-            bool wordMatched = false;
-            int wordScore = 0;
-
-            if (normalizedTitle == word || normalizedTitle.contains(word)) {
-              wordMatched = true;
-              wordScore += 10;
-            } else if (SearchEngine.fuzzyMatch(word, normalizedTitle, isFuzzy: isWordFuzzy)) {
-              wordMatched = true;
-              wordScore += 6;
-            }
-
-            if (normalizedCategory == word || normalizedCategory.contains(word)) {
-              wordMatched = true;
-              wordScore += 4;
-            }
-
-            if (normalizedContent == word || normalizedContent.contains(word)) {
-              wordMatched = true;
-              wordScore += 2;
-            } else if (SearchEngine.fuzzyMatch(word, normalizedContent, isFuzzy: isWordFuzzy)) {
-              wordMatched = true;
-              wordScore += 1;
-            }
-
-            if (!wordMatched) {
-              allWordsMatched = false;
-              break;
-            }
-
-            docScore += wordScore;
-          }
-
-          if (allWordsMatched && docScore > 0) {
-            scoredItems.add({'item': item, 'score': docScore});
-          }
-        }
-
-        scoredItems.sort((a, b) {
-          int scoreCompare = (b['score'] as int).compareTo(a['score'] as int);
-          if (scoreCompare != 0) return scoreCompare;
-          return (a['item'] as ContentItem).title.compareTo((b['item'] as ContentItem).title);
+      // Offload search logic to background isolate
+      try {
+        _filteredItems = await compute(_performSearch, {
+          'items': categoryFiltered,
+          'query': _query,
         });
-
-        _filteredItems = scoredItems.map((e) => e['item'] as ContentItem).toList();
+      } catch (e) {
+        debugPrint("Compute search error: $e");
+        _filteredItems = [];
       }
     }
 
@@ -160,6 +130,98 @@ class SearchController extends ChangeNotifier {
 
     // 4. Compute pagination
     _computePagination();
+
+    _isLoading = false;
+    notifyListeners();
+  }
+
+  static List<ContentItem> _performSearch(Map<String, dynamic> params) {
+    final List<ContentItem> categoryFiltered = params['items'];
+    final String query = params['query'];
+
+    final normalizedQuery = SearchEngine.normalizeArabic(query);
+    final queryWords = normalizedQuery.split(' ').where((w) => w.isNotEmpty).toList();
+
+    if (queryWords.isEmpty) {
+      return categoryFiltered;
+    }
+
+    List<Map<String, dynamic>> scoredItems = [];
+
+    // Using a simple split ' ' since normalizeArabic collapses whitespace.
+    // This avoids heavy Regex parsing for millions of words.
+    for (var item in categoryFiltered) {
+      bool allWordsMatched = true;
+      int docScore = 0;
+
+      final normalizedTitle = SearchEngine.normalizeArabic(item.title);
+      final normalizedContent = SearchEngine.normalizeArabic(item.content);
+      final normalizedCategory = SearchEngine.normalizeArabic(item.category ?? '');
+
+      // Tokenize strings once per document
+      final titleWords = normalizedTitle.split(' ').toSet();
+      final contentWords = normalizedContent.split(' ').toSet();
+      final categoryWords = normalizedCategory.split(' ').toSet();
+
+      for (var word in queryWords) {
+        bool wordMatched = false;
+        int wordScore = 0;
+
+        // Title Matching
+        if (normalizedTitle == word) {
+            wordMatched = true;
+            wordScore += 20; // Exact match bonus
+        } else if (titleWords.contains(word)) {
+            wordMatched = true;
+            wordScore += 10;
+        }
+
+        // Category Matching
+        if (normalizedCategory == word || categoryWords.contains(word)) {
+          wordMatched = true;
+          wordScore += 4;
+        }
+
+        // Content Matching
+        if (normalizedContent == word) {
+             wordMatched = true;
+             wordScore += 5;
+        } else if (contentWords.contains(word)) {
+          wordMatched = true;
+          wordScore += 2;
+        }
+
+        if (!wordMatched) {
+          allWordsMatched = false;
+          break;
+        }
+
+        docScore += wordScore;
+      }
+
+      // Allow full exact phrase matches even if individual words failed (e.g. phrases with stop words)
+      if (!allWordsMatched) {
+          if (normalizedTitle.contains(normalizedQuery)) {
+              allWordsMatched = true;
+              docScore += 30;
+          } else if (normalizedContent.contains(normalizedQuery)) {
+              allWordsMatched = true;
+              docScore += 5;
+          }
+      }
+
+      if (allWordsMatched && docScore > 0) {
+        scoredItems.add({'item': item, 'score': docScore});
+      }
+    }
+
+    scoredItems.sort((a, b) {
+      int scoreCompare = (b['score'] as int).compareTo(a['score'] as int);
+      if (scoreCompare != 0) return scoreCompare;
+      return (a['item'] as ContentItem).title.compareTo((b['item'] as ContentItem).title);
+    });
+
+    return scoredItems.map((e) => e['item'] as ContentItem).toList();
   }
 
   List<SectionGroup> _buildSectionGroups(List<ContentItem> items) {
@@ -198,15 +260,6 @@ class SearchController extends ChangeNotifier {
     // Rebuild groups from paginated items if in "All" mode
     if (isAllCategory) {
       _groupedItems = _buildSectionGroups(paginatedItems);
-    } else {
-      // Actually, if not 'all', filteredItems for view should be the paginated ones?
-      // Wait, the prompt says "if (isAllCategory) { _groupedItems = ... } else { _filteredItems = paginatedItems; }"
-      // But _filteredItems is used for slicing... if we re-assign it, next time we paginate we lose the full list!
-      // The prompt actually re-assigns `_filteredItems` in the original prompt logic, which is a bug in the prompt.
-      // Let's keep `_filteredItems` intact, and just use `_paginatedItems` or re-assign a temporary list for view.
-      // Wait, the prompt provided:
-      // if (isAllCategory) { _groupedItems = _buildSectionGroups(paginatedItems); } else { _filteredItems = paginatedItems; }
-      // This breaks pagination on next page because _filteredItems size drops. Let's fix this by keeping a separate list or only returning paginatedItems.
     }
 
     // Let's safely handle this by updating the pagination logic
