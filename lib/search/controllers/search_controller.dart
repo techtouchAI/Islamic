@@ -44,11 +44,19 @@ class SearchController extends ChangeNotifier {
     required List<String> availableSections,
   })  : _allItems = allItems,
         _availableSections = availableSections {
+    SearchEngine.instance.isIndexingNotifier.addListener(_onIndexingStateChanged);
+    _isLoading = SearchEngine.instance.isIndexingNotifier.value;
     _computeResults();
+  }
+
+  void _onIndexingStateChanged() {
+    _isLoading = SearchEngine.instance.isIndexingNotifier.value;
+    notifyListeners();
   }
 
   @override
   void dispose() {
+    SearchEngine.instance.isIndexingNotifier.removeListener(_onIndexingStateChanged);
     _debounceTimer?.cancel();
     super.dispose();
   }
