@@ -107,14 +107,22 @@ class SearchController extends ChangeNotifier {
 
     // 2. Filter by search query in background
     if (_query.isEmpty) {
-      _filteredItems = categoryFiltered;
+      _filteredItems = [];
     } else {
       // Offload search logic to background isolate
       try {
-        _filteredItems = await compute(_performSearch, {
+        final currentQuery = _query;
+        final results = await compute(_performSearch, {
           'items': categoryFiltered,
-          'query': _query,
+          'query': currentQuery,
         });
+
+        // Prevent race condition: only apply if query hasn't changed
+        if (_query == currentQuery) {
+          _filteredItems = results;
+        } else {
+          return;
+        }
       } catch (e) {
         debugPrint("Compute search error: $e");
         _filteredItems = [];
