@@ -1,12 +1,9 @@
 import 'package:adhan_dart/adhan_dart.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:timezone/timezone.dart' as tz;
-import 'package:timezone/data/latest.dart' as tz;
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
+import 'prayer_alarm_service.dart';
 
 /// خدمة أوقات الصلاة - تتبع معايير هندسة الكود النظيف (Clean Architecture)
 /// تقوم بحساب الأوقات ديناميكياً بناءً على الموقع الجغرافي للمستخدم.
@@ -14,21 +11,6 @@ class PrayerTimesService {
   static final PrayerTimesService _instance = PrayerTimesService._internal();
   factory PrayerTimesService() => _instance;
   PrayerTimesService._internal();
-
-  final FlutterLocalNotificationsPlugin _notificationsPlugin =
-      FlutterLocalNotificationsPlugin();
-
-  Future<void> initNotifications() async {
-    tz.initializeTimeZones();
-
-    const AndroidInitializationSettings initializationSettingsAndroid =
-        AndroidInitializationSettings('@mipmap/ic_launcher');
-
-    const InitializationSettings initializationSettings =
-        InitializationSettings(android: initializationSettingsAndroid);
-
-    await _notificationsPlugin.initialize(initializationSettings);
-  }
 
   /// إعدادات الحساب وفق المنهج الجعفري (مؤسسة لوا - قم)
   /// يتم ضبط الزوايا بدقة: الفجر 16 درجة، العشاء 14 درجة، والمغرب 4 درجات.
@@ -145,7 +127,6 @@ class PrayerTimesService {
   /// Background task scheduler
   Future<void> scheduleAdhanNotificationsBackground() async {
     try {
-      await initNotifications();
       final pos = await getCurrentLocation();
       if (pos == null) return;
 
@@ -189,8 +170,6 @@ class PrayerTimesService {
     if (await Permission.notification.isDenied) {
       await Permission.notification.request();
     }
-
-    await _notificationsPlugin.cancelAll();
 
     final now = DateTime.now();
     for (int i = 0; i < 7; i++) {
@@ -251,32 +230,6 @@ class PrayerTimesService {
     bool isEnabled,
   ) async {
     if (!isEnabled || time.isBefore(DateTime.now())) return;
-
-    // adhan.mp3 is used natively from android/app/src/main/res/raw/adhan.mp3.
-    // It is NOT relying on the adhan_base64 inside content.json.
-    const androidDetails = AndroidNotificationDetails(
-      'azan_channel_v3',
-      'Azan Prayer Calls',
-      channelDescription: 'قناة مخصصة لبث صوت الأذان في مواقيته الدقيقة',
-      importance: Importance.max,
-      priority: Priority.high,
-      ticker: 'Azan',
-      sound: RawResourceAndroidNotificationSound('adhan'),
-      playSound: true,
-      enableVibration: true,
-      fullScreenIntent: true,
-      audioAttributesUsage: AudioAttributesUsage.alarm,
-    );
-
-    await _notificationsPlugin.zonedSchedule(
-      id,
-      'حان وقت صلاة $name',
-      'حي على الصلاة، حي على الفلاح',
-      tz.TZDateTime.from(time, tz.local),
-      const NotificationDetails(android: androidDetails),
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-      uiLocalNotificationDateInterpretation:
-          UILocalNotificationDateInterpretation.absoluteTime,
-    );
+    await PrayerAlarmService.schedulePrayer(id, time, name);
   }
 }
