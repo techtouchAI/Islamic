@@ -69,41 +69,18 @@ class SearchResultTile extends StatelessWidget {
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
         onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildHighlightedText(
-                item.title,
-                context,
-                baseStyle: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              if (item.subtitle.isNotEmpty) ...[
-                const SizedBox(height: 4),
-                _buildHighlightedText(
-                  item.subtitle,
-                  context,
-                  baseStyle: TextStyle(
-                    fontSize: 13,
-                    color: Colors.grey[600],
-                  ),
-                ),
-              ],
-              const SizedBox(height: 8),
-              _buildHighlightedText(
-                item.content,
-                context,
-                baseStyle: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey[800],
-                  height: 1.5,
-                ),
-              ),
-            ],
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+          alignment: Alignment.centerRight,
+          child: _buildHighlightedText(
+            item.title,
+            context,
+            baseStyle: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              height: 1.4,
+            ),
           ),
         ),
       ),
