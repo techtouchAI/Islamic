@@ -34,6 +34,8 @@ import 'data/iraq_provinces.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'services/search_engine.dart';
 import 'search/screens/search_screen.dart';
+import 'ui/calendar/hijri_calendar_screen.dart';
+import 'ui/qibla/qibla_screen.dart';
 
 class IslamicPatternPainter extends CustomPainter {
   final Color color;
@@ -769,6 +771,23 @@ class AppDrawer extends StatelessWidget {
                     e.value['title'],
                     getMaterialIcon(e.value['icon']),
                   ),
+                ),
+                const Divider(),
+                ListTile(
+                  leading: const Icon(Icons.calendar_today),
+                  title: const Text('التقويم الهجري', style: TextStyle(fontSize: 15)),
+                  onTap: () {
+                    Navigator.pop(context); // close drawer
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => HijriCalendarScreen()));
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.explore),
+                  title: const Text('اتجاه القبلة', style: TextStyle(fontSize: 15)),
+                  onTap: () {
+                    Navigator.pop(context); // close drawer
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => QiblaScreen()));
+                  },
                 ),
                 const Divider(),
                 _buildItem(context, 'favorites', 'المحفوظات', Icons.favorite),
