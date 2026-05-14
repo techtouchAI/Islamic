@@ -85,6 +85,28 @@ class QuranService {
     return result;
   }
 
+  static Future<List<Map<String, dynamic>>> getAllVerses() async {
+    if (_db == null) return [];
+
+    try {
+      final List<Map<String, dynamic>> result = await _db!.rawQuery('''
+        SELECT a.anum, a.text, a.sid, s.name as surah_name
+        FROM ayah a
+        JOIN surah s ON a.sid = s.id
+      ''');
+
+      return result.map((row) => {
+        'ayah_text': row['text']?.toString() ?? '',
+        'surah_name': row['surah_name']?.toString() ?? '',
+        'ayah_number': row['anum'],
+        'surah_number': row['sid'],
+      }).toList();
+    } catch (e) {
+      debugPrint("QuranService getAllVerses Error: \$e");
+      return [];
+    }
+  }
+
   static String getFormattedContent(
     int surahId,
     List<Map<String, dynamic>> ayahs,

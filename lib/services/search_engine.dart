@@ -1,3 +1,4 @@
+import "../services/quran_service.dart";
 import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:sqflite/sqflite.dart';
@@ -53,6 +54,7 @@ class SearchEngine {
 
   List<SearchDocument> _index = [];
   bool _isIndexed = false;
+  final ValueNotifier<bool> isIndexingNotifier = ValueNotifier<bool>(false);
 
   @visibleForTesting
   void setMockIndex(List<SearchDocument> mockIndex) {
@@ -126,7 +128,12 @@ class SearchEngine {
 
   Future<void> init() async {
     if (_isIndexed) return;
+
+    isIndexingNotifier.value = true;
     try {
+      // Ensure DBs are open before querying
+      await QuranService.initDB();
+
       // 1. Prepare data for isolate
       final db = DataManager.getDB();
       final contentItems = <Map<String, dynamic>>[];
@@ -176,32 +183,7 @@ class SearchEngine {
       }
 
       // 2. Prepare Quran data
-      final quranAyahs = <Map<String, dynamic>>[];
-      if (!kIsWeb) {
-        try {
-          final dbPath = await getDatabasesPath();
-          final path = join(dbPath, "quran_db.db");
-          if (await File(path).exists()) {
-             final quranDb = await openDatabase(path);
-             final List<Map<String, dynamic>> ayahs = await quranDb.rawQuery('''
-               SELECT a.anum, a.text, a.sid, s.name as surah_name
-               FROM ayah a
-               JOIN surah s ON a.sid = s.id
-             ''');
-             for (var ayah in ayahs) {
-                quranAyahs.add({
-                   'ayah_text': ayah['text']?.toString() ?? '',
-                   'surah_name': ayah['surah_name']?.toString() ?? '',
-                   'ayah_number': ayah['anum'],
-                   'surah_number': ayah['sid'],
-                });
-             }
-             await quranDb.close();
-          }
-        } catch (e) {
-          debugPrint("SearchEngine Quran Error: $e");
-        }
-      }
+      final quranAyahs = await QuranService.getAllVerses();
 
       // 3. Build index via isolate
       try {
@@ -225,6 +207,8 @@ class SearchEngine {
       // Fallback in case Data prep failed
       _index = [];
       _isIndexed = true;
+    } finally {
+      isIndexingNotifier.value = false;
     }
   }
 
@@ -260,19 +244,20 @@ class SearchEngine {
     for (var ayah in quranAyahs) {
       final surahName = ayah['surah_name'] as String;
       final ayahText = ayah['ayah_text'] as String;
-      final ayahNum = ayah['ayah_number'] as int;
+      final ayahNum = ayah['ayah_number']; // Could be int or string
       final surahNum = ayah['surah_number'] as int;
+      final String title = 'سورة $surahName - آية $ayahNum';
 
       index.add(SearchDocument(
         id: '${surahNum}_$ayahNum',
-        title: surahName, // Surah name acts as title
-        content: ayahText, // Ayah text acts as content
+        title: title,
+        content: ayahText,
         category: 'quran',
         tags: [],
         type: 'quran',
         surahNumber: surahNum,
-        ayahNumber: ayahNum,
-        normalizedTitle: normalizeArabic(surahName),
+        ayahNumber: int.tryParse(ayahNum.toString()),
+        normalizedTitle: normalizeArabic(title),
         normalizedContent: normalizeArabic(ayahText),
         normalizedCategory: normalizeArabic('quran'),
         normalizedTags: [],
