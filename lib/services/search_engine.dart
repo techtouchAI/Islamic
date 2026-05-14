@@ -157,6 +157,22 @@ class SearchEngine {
             }
           }
         });
+
+        // Explicitly load additional implicit sections that do not exist directly as 'sections' keys
+        final duas = DataManager.getItems('duas');
+        for (var item in duas) {
+          contentItems.add({...item, '_search_section_key': 'dua', '_category_title': 'الأدعية'});
+        }
+
+        final visits = DataManager.getItems('visits');
+        for (var item in visits) {
+          contentItems.add({...item, '_search_section_key': 'ziyarat', '_category_title': 'الزيارات'});
+        }
+
+        final adhkar = DataManager.getItems('adhkar');
+        for (var item in adhkar) {
+          contentItems.add({...item, '_search_section_key': 'amal', '_category_title': 'الأعمال'});
+        }
       }
 
       // 2. Prepare Quran data

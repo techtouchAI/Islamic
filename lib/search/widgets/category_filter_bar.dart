@@ -16,7 +16,6 @@ class CategoryFilterBar extends StatelessWidget {
     'imam_ali': 'الإمام علي (ع)',
     'dreams': 'تفسير الأحلام',
     'prophets_stories': 'قصص الأنبياء',
-    'quran_stories': 'قصص القرآن',
   };
 
   const CategoryFilterBar({

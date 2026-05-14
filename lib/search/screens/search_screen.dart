@@ -41,7 +41,6 @@ class _SearchScreenState extends State<SearchScreen> {
         'imam_ali',
         'dreams',
         'prophets_stories',
-        'quran_stories',
       ],
     );
 
@@ -84,7 +83,6 @@ class _SearchScreenState extends State<SearchScreen> {
       'imam_ali': 'الإمام علي (ع)',
       'dreams': 'تفسير الأحلام',
       'prophets_stories': 'قصص الأنبياء',
-      'quran_stories': 'قصص القرآن',
     };
     return displayNames[sectionId] ?? sectionId;
   }
@@ -98,8 +96,7 @@ class _SearchScreenState extends State<SearchScreen> {
     if (category.startsWith('fatawa')) return 'fatawa';
     if (category.startsWith('imam_ali')) return 'imam_ali';
     if (category.startsWith('dreams')) return 'dreams';
-    if (category.startsWith('prophets_stories')) return 'prophets_stories';
-    if (category.startsWith('quran_stories')) return 'quran_stories';
+    if (category.startsWith('prophets')) return 'prophets_stories';
 
     // Fallback to Arabic string matching if category comes as raw Arabic
     if (category.contains('دعاء') || category.contains('أدعية') || category.contains('مناجاة')) return 'dua';
@@ -109,7 +106,6 @@ class _SearchScreenState extends State<SearchScreen> {
     if (category.contains('علي') || category.contains('امام')) return 'imam_ali';
     if (category.contains('حلم') || category.contains('أحلام') || category.contains('تفسير')) return 'dreams';
     if (category.contains('أنبياء') || category.contains('نبي')) return 'prophets_stories';
-    if (category.contains('قرآن') && category.contains('قصص')) return 'quran_stories';
 
     return 'amal';
   }
@@ -232,8 +228,8 @@ class _SearchScreenState extends State<SearchScreen> {
     final groups = snapshot.groups;
     final isAll = snapshot.category == 'all';
 
-    if (snapshot.query.isEmpty && isAll && items.isEmpty && groups.isEmpty) {
-       return const Center(child: Text('ابدأ الكتابة للبحث...'));
+    if (snapshot.query.isEmpty && items.isEmpty && groups.isEmpty) {
+       return const Center(child: Text('ابدأ البحث الآن...'));
     }
 
     if (items.isEmpty && groups.isEmpty) {
