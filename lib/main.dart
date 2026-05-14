@@ -26,8 +26,8 @@ import 'data/daily_duas.dart';
 import 'utils/string_extensions.dart';
 import 'services/prayer_times_service.dart';
 import 'services/quran_service.dart';
-import 'package:workmanager/workmanager.dart';
 import 'services/favorites_service.dart';
+import 'services/prayer_alarm_service.dart';
 import 'models/favorite_item.dart';
 import 'sections/favorites_section.dart';
 import 'data/iraq_provinces.dart';
@@ -140,41 +140,9 @@ Widget buildImage(String? path, {double? height, BoxFit fit = BoxFit.contain}) {
   );
 }
 
-@pragma('vm:entry-point')
-void callbackDispatcher() {
-  Workmanager().executeTask((task, inputData) async {
-    try {
-      await PrayerTimesService().scheduleAdhanNotificationsBackground();
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('azan_scheduling_failed', false);
-      return Future.value(true);
-    } catch (e) {
-      debugPrint("Workmanager task failed: $e");
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('azan_scheduling_failed', true);
-      // Return false to trigger retry policy
-      return Future.value(false);
-    }
-  });
-}
-
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  Workmanager().initialize(
-    callbackDispatcher,
-    isInDebugMode: false,
-  );
-  Workmanager().registerPeriodicTask(
-    "com.aldhakereen.azan",
-    "rescheduleAzan",
-    frequency: const Duration(hours: 24),
-    constraints: Constraints(
-      networkType: NetworkType.notRequired,
-    ),
-    backoffPolicy: BackoffPolicy.exponential,
-    backoffPolicyDelay: const Duration(hours: 1),
-  );
+  await PrayerAlarmService.init();
 
   try {
     await Firebase.initializeApp();
@@ -217,7 +185,6 @@ class _AlDhakereenAppState extends State<AlDhakereenApp> {
       await initializeDateFormatting('ar_SA', null);
       HijriCalendar.setLocal('ar');
       await DataManager.loadContent();
-      await PrayerTimesService().initNotifications();
       await SearchEngine.instance.init();
       await QuranService.initDB();
       await _loadSettings();
