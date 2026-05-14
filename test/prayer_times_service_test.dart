@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:aldhakereen/services/prayer_times_service.dart';
 import 'package:flutter/services.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -13,6 +14,7 @@ void main() {
     };
 
     setUp(() {
+      SharedPreferences.setMockInitialValues({});
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockMethodCallHandler(
         const MethodChannel('flutter.baseflow.com/permissions/methods'),
@@ -47,7 +49,8 @@ void main() {
         final service = PrayerTimesService();
         final result = await service.getCurrentLocation();
 
-        expect(result, isNull);
+        expect(result, isNotNull);
+        expect(result!.latitude, 32.4682);
       },
     );
 
@@ -62,7 +65,8 @@ void main() {
         final service = PrayerTimesService();
         final result = await service.getCurrentLocation();
 
-        expect(result, isNull);
+        expect(result, isNotNull);
+        expect(result!.latitude, 32.4682);
       },
     );
 
@@ -77,7 +81,8 @@ void main() {
         final service = PrayerTimesService();
         final result = await service.getCurrentLocation();
 
-        expect(result, isNull);
+        expect(result, isNotNull);
+        expect(result!.latitude, 32.4682);
       },
     );
 
@@ -93,7 +98,8 @@ void main() {
       final service = PrayerTimesService();
       final result = await service.getCurrentLocation();
 
-      expect(result, isNull);
+      expect(result, isNotNull);
+      expect(result!.latitude, 32.4682);
     });
   });
 }
