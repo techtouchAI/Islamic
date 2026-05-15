@@ -33,14 +33,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "10.0.1"
-  android_alarm_manager_plus:
-    dependency: "direct main"
-    description:
-      name: android_alarm_manager_plus
-      sha256: d243b5abd9e656fafd1d46f39e43196dd60df33aace1b11e04ecf01d6c6046f9
-      url: "https://pub.dev"
-    source: hosted
-    version: "4.0.8"
   args:
     dependency: transitive
     description:
@@ -257,14 +249,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.7.12"
-  disable_battery_optimization:
-    dependency: "direct main"
-    description:
-      name: disable_battery_optimization
-      sha256: "7fbda76cdd30d01d75e091db8869b8cf2fd4c7b7edef3abce0d7206569603051"
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.1.2"
   fake_async:
     dependency: transitive
     description:
@@ -390,14 +374,6 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
-  flutter_compass:
-    dependency: "direct main"
-    description:
-      name: flutter_compass
-      sha256: "1b4d7e6c95a675ec8482b5c9c9ccf1ebf0ced3dbec59dce28ad609da953de850"
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.8.1"
   flutter_lints:
     dependency: "direct dev"
     description:
@@ -406,30 +382,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.0.0"
-  flutter_local_notifications:
-    dependency: "direct main"
-    description:
-      name: flutter_local_notifications
-      sha256: "674173fd3c9eda9d4c8528da2ce0ea69f161577495a9cc835a2a4ecd7eadeb35"
-      url: "https://pub.dev"
-    source: hosted
-    version: "17.2.4"
-  flutter_local_notifications_linux:
-    dependency: transitive
-    description:
-      name: flutter_local_notifications_linux
-      sha256: c49bd06165cad9beeb79090b18cd1eb0296f4bf4b23b84426e37dd7c027fc3af
-      url: "https://pub.dev"
-    source: hosted
-    version: "4.0.1"
-  flutter_local_notifications_platform_interface:
-    dependency: transitive
-    description:
-      name: flutter_local_notifications_platform_interface
-      sha256: "85f8d07fe708c1bdcf45037f2c0109753b26ae077e9d9e899d55971711a4ea66"
-      url: "https://pub.dev"
-    source: hosted
-    version: "7.2.0"
   flutter_localizations:
     dependency: "direct main"
     description: flutter

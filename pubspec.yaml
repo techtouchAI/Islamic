@@ -23,7 +23,6 @@ dependencies:
   adhan_dart: ^1.2.0
   audioplayers: ^6.6.0
   geolocator: ^14.0.2
-  flutter_local_notifications: ^17.0.0
   permission_handler: ^11.3.0
   http: ^1.6.0
   path_provider: ^2.1.5
@@ -36,9 +35,6 @@ dependencies:
   file_picker: ^8.1.4
   fuzzy: ^0.5.1
   workmanager: ^0.9.0+3
-  disable_battery_optimization: ^1.1.2
-  android_alarm_manager_plus: ^4.0.8
-  flutter_compass: ^0.8.0
 
 dev_dependencies:
   flutter_test:
@@ -54,6 +50,8 @@ flutter:
     - assets/images/default_home.png
     - assets/images/default_bg.png
     - assets/images/logo.png
+    - assets/images/qibla_compass.png
+    - assets/images/qibla_needle.png
     - assets/audio/adhan.mp3
     - assets/audio/azan5.mp3
     - assets/data/quran_db.db
