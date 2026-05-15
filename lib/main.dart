@@ -9,6 +9,7 @@ import 'package:intl/intl.dart' as intl;
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'dart:async';
 import 'dart:math';
 import 'dart:ui';
@@ -587,6 +588,10 @@ class _MainScaffoldState extends State<MainScaffold> {
         return const TasbihSection(key: ValueKey('tasbih'));
       case 'prayer_times':
         return const PrayerTimesSection(key: ValueKey('prayer_times'));
+      case 'qibla':
+        return QiblaScreen();
+      case 'calendar':
+        return HijriCalendarScreen();
       case 'duas':
         return TabbedSection(
           key: const ValueKey('duas'),
@@ -2880,6 +2885,17 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
     'maghrib': true,
     'isha': true,
   };
+  final Map<String, bool> _fullScreenPrayers = {
+    'fajr': false,
+    'dhuhr': false,
+    'asr': false,
+    'maghrib': false,
+    'isha': false,
+  };
+  bool _ignoreBatteryOptimizations = false;
+  double _adhanVolume = 1.0;
+  int _adhanPreAlert = 0;
+
   final Map<String, int> _manualAdjustments = {
     'fajr': 0,
     'dhuhr': 0,
@@ -3112,24 +3128,149 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
           ),
           ..._enabledPrayers.keys.map(
             (k) => Card(
-              margin: const EdgeInsets.only(bottom: 10),
-              child: SwitchListTile(
-                title: Text(
-                  'تفعيل أذان ${{
-                    'fajr': 'الفجر',
-                    'dhuhr': 'الظهر',
-                    'asr': 'العصر',
-                    'maghrib': 'المغرب',
-                    'isha': 'العشاء'
-                  }[k]}',
-                ),
-                value: _enabledPrayers[k] ?? true,
-                onChanged: (v) async {
-                  setState(() => _enabledPrayers[k] = v);
-                  final prefs = await SharedPreferences.getInstance();
-                  await prefs.setBool('adhan_$k', v);
-                  _getLocationAndPrayers();
-                },
+              margin: const EdgeInsets.only(bottom: 15),
+              child: Column(
+                children: [
+                  SwitchListTile(
+                    title: Text(
+                      'تفعيل أذان ${{
+                        'fajr': 'الفجر',
+                        'dhuhr': 'الظهر',
+                        'asr': 'العصر',
+                        'maghrib': 'المغرب',
+                        'isha': 'العشاء'
+                      }[k]}',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    value: _enabledPrayers[k] ?? true,
+                    onChanged: (v) async {
+                      setState(() => _enabledPrayers[k] = v);
+                      final prefs = await SharedPreferences.getInstance();
+                      await prefs.setBool('adhan_$k', v);
+                      _getLocationAndPrayers();
+                    },
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: InkWell(
+                            onTap: () async {
+                              setState(() => _fullScreenPrayers[k] = false);
+                              final prefs = await SharedPreferences.getInstance();
+                              await prefs.setBool('fullscreen_$k', false);
+                            },
+                            child: Card(
+                              color: (_fullScreenPrayers[k] ?? false) ? Theme.of(context).colorScheme.surfaceContainerHighest : Theme.of(context).colorScheme.primaryContainer,
+                              elevation: (_fullScreenPrayers[k] ?? false) ? 0 : 2,
+                              child: Padding(
+                                padding: const EdgeInsets.all(10.0),
+                                child: Column(
+                                  children: [
+                                    Icon(Icons.notifications, color: (_fullScreenPrayers[k] ?? false) ? Colors.grey : Theme.of(context).colorScheme.primary),
+                                    const SizedBox(height: 5),
+                                    Text('إشعار', style: TextStyle(fontSize: 14, color: (_fullScreenPrayers[k] ?? false) ? Colors.grey : Theme.of(context).colorScheme.primary)),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          child: InkWell(
+                            onTap: () async {
+                              setState(() => _fullScreenPrayers[k] = true);
+                              final prefs = await SharedPreferences.getInstance();
+                              await prefs.setBool('fullscreen_$k', true);
+                            },
+                            child: Card(
+                              color: (_fullScreenPrayers[k] ?? false) ? Theme.of(context).colorScheme.primaryContainer : Theme.of(context).colorScheme.surfaceContainerHighest,
+                              elevation: (_fullScreenPrayers[k] ?? false) ? 2 : 0,
+                              child: Padding(
+                                padding: const EdgeInsets.all(10.0),
+                                child: Column(
+                                  children: [
+                                    Icon(Icons.fullscreen, color: (_fullScreenPrayers[k] ?? false) ? Theme.of(context).colorScheme.primary : Colors.grey),
+                                    const SizedBox(height: 5),
+                                    Text('شاشة كاملة', style: TextStyle(fontSize: 14, color: (_fullScreenPrayers[k] ?? false) ? Theme.of(context).colorScheme.primary : Colors.grey)),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Divider(),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('مستوى الصوت', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                        Slider(
+                          value: _adhanVolume,
+                          onChanged: (v) async {
+                            setState(() => _adhanVolume = v);
+                            final prefs = await SharedPreferences.getInstance();
+                            await prefs.setDouble('adhan_volume', v);
+                          },
+                          activeColor: Theme.of(context).colorScheme.primary,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Divider(),
+                  ListTile(
+                    title: const Text('تنبيه قبل الأذان', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                    subtitle: const Text('دقائق', style: TextStyle(fontSize: 12)),
+                    trailing: DropdownButton<int>(
+                      value: _adhanPreAlert,
+                      items: [0, 5, 10, 15, 20, 30].map((int value) {
+                        return DropdownMenuItem<int>(
+                          value: value,
+                          child: Text(value == 0 ? 'معطل' : '$value'),
+                        );
+                      }).toList(),
+                      onChanged: (v) async {
+                        if (v != null) {
+                          setState(() => _adhanPreAlert = v);
+                          final prefs = await SharedPreferences.getInstance();
+                          await prefs.setInt('adhan_pre_alert', v);
+                          _getLocationAndPrayers(); // Reschedule with pre alerts
+                        }
+                      },
+                    ),
+                  ),
+                  const Divider(),
+                  ListTile(
+                    title: const Text('قناة الإشعارات', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                    subtitle: const Text('إعدادات النظام للإشعارات', style: TextStyle(fontSize: 12)),
+                    trailing: const Icon(Icons.settings),
+                    onTap: () async {
+                      // Launch native Android notification settings for the app channel
+                      await const MethodChannel('com.techtouchai.islamic/adhan').invokeMethod('openNotificationSettings');
+                    },
+                  ),
+                  const Divider(),
+                  SwitchListTile(
+                    title: const Text('تخطي وضع توفير الطاقة (Doze Mode)', style: TextStyle(fontSize: 14)),
+                    subtitle: const Text('مطلوب لضمان عمل الأذان في وقته بدقة', style: TextStyle(fontSize: 12)),
+                    value: _ignoreBatteryOptimizations,
+                    onChanged: (v) async {
+                       setState(() => _ignoreBatteryOptimizations = v);
+                       final prefs = await SharedPreferences.getInstance();
+                       await prefs.setBool('ignore_battery_optimizations', v);
+                       if (v) {
+                         if (await Permission.ignoreBatteryOptimizations.isDenied) {
+                           await Permission.ignoreBatteryOptimizations.request();
+                         }
+                       }
+                    },
+                  )
+                ],
               ),
             ),
           ),

@@ -184,6 +184,7 @@ class PrayerTimesService {
           name,
           adjustedTime,
           enabledPrayers[key] ?? true,
+          key,
         );
       });
     }
@@ -228,8 +229,13 @@ class PrayerTimesService {
     String name,
     DateTime time,
     bool isEnabled,
+    String key,
   ) async {
     if (!isEnabled || time.isBefore(DateTime.now())) return;
-    await PrayerAlarmService.schedulePrayer(id, time, name);
+    final prefs = await SharedPreferences.getInstance();
+    final bool isFullScreen = prefs.getBool('fullscreen_$key') ?? false;
+    final double volume = prefs.getDouble('adhan_volume') ?? 1.0;
+    final int preAlert = prefs.getInt('adhan_pre_alert') ?? 0;
+    await PrayerAlarmService.schedulePrayer(id, time, name, fullScreen: isFullScreen, volume: volume, preAlertMinutes: preAlert);
   }
 }
