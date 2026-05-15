@@ -16,6 +16,8 @@ class AdhanReceiver : BroadcastReceiver() {
         val serviceIntent = Intent(context, AdhanForegroundService::class.java).apply {
             putExtra("id", intent.getIntExtra("id", 0))
             putExtra("prayerName", intent.getStringExtra("prayerName"))
+            putExtra("fullScreen", intent.getBooleanExtra("fullScreen", false))
+            putExtra("volume", intent.getDoubleExtra("volume", 1.0))
         }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
