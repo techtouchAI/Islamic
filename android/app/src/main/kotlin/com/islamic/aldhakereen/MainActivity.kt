@@ -15,9 +15,9 @@ class MainActivity : FlutterActivity() {
     private val HIJRI_CHANNEL = "com.techtouchai.islamic/hijri"
     private val QIBLA_CHANNEL = "com.techtouchai.islamic/qibla"
 
-    private lateinit val qiblaSensorManager: QiblaSensorManager
-    private lateinit val hijriNativeManager: HijriNativeManager
-    private lateinit val adhanNativeManager: AdhanNativeManager
+    private lateinit var qiblaSensorManager: QiblaSensorManager
+    private lateinit var hijriNativeManager: HijriNativeManager
+    private lateinit var adhanNativeManager: AdhanNativeManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
