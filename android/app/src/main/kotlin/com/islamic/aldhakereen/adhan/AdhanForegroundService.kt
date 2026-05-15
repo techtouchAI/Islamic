@@ -3,6 +3,7 @@ package com.islamic.aldhakereen.adhan
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
@@ -25,16 +26,18 @@ class AdhanForegroundService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val prayerName = intent?.getStringExtra("prayerName") ?: "الصلاة"
+        val fullScreen = intent?.getBooleanExtra("fullScreen", false) ?: false
+        val volume = intent?.getDoubleExtra("volume", 1.0) ?: 1.0
 
-        val notification = createNotification(prayerName)
+        val notification = createNotification(prayerName, fullScreen)
         startForeground(startId, notification)
 
-        playAdhan()
+        playAdhan(volume.toFloat())
 
         return START_NOT_STICKY
     }
 
-    private fun playAdhan() {
+    private fun playAdhan(volume: Float) {
         try {
             val afd = resources.openRawResourceFd(R.raw.azan5) ?: return
             mediaPlayer = MediaPlayer().apply {
@@ -46,6 +49,7 @@ class AdhanForegroundService : Service() {
                 )
                 setDataSource(afd.fileDescriptor, afd.startOffset, afd.length)
                 prepare()
+                setVolume(volume, volume)
                 start()
                 setOnCompletionListener {
                     stopSelf()
@@ -57,15 +61,24 @@ class AdhanForegroundService : Service() {
         }
     }
 
-    private fun createNotification(prayerName: String): Notification {
-        return NotificationCompat.Builder(this, channelId)
+    private fun createNotification(prayerName: String, fullScreen: Boolean): Notification {
+        val builder = NotificationCompat.Builder(this, channelId)
             .setContentTitle("حان موعد $prayerName")
             .setContentText("الصلاة خير من النوم")
             .setSmallIcon(android.R.drawable.ic_lock_idle_alarm)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setCategory(NotificationCompat.CATEGORY_ALARM)
             .setOngoing(true)
-            .build()
+        if (fullScreen) {
+            val fullScreenIntent = Intent(this, com.islamic.aldhakereen.MainActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            }
+            val fullScreenPendingIntent = PendingIntent.getActivity(
+                this, 0, fullScreenIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+            builder.setFullScreenIntent(fullScreenPendingIntent, true)
+        }
+        return builder.build()
     }
 
     private fun createNotificationChannel() {

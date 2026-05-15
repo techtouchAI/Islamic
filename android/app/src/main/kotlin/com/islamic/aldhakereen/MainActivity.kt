@@ -2,6 +2,8 @@ package com.islamic.aldhakereen
 
 import android.os.Bundle
 import io.flutter.embedding.android.FlutterActivity
+import android.content.Intent
+import android.provider.Settings
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.EventChannel
@@ -36,12 +38,29 @@ class MainActivity : FlutterActivity() {
                     val id = call.argument<Int>("id") ?: 0
                     val timeInMillis = call.argument<Long>("timeInMillis") ?: 0L
                     val prayerName = call.argument<String>("prayerName") ?: ""
-                    adhanNativeManager.scheduleAdhan(id, timeInMillis, prayerName)
+                    val fullScreen = call.argument<Boolean>("fullScreen") ?: false
+                    val volume = call.argument<Double>("volume") ?: 1.0
+                    val preAlertMinutes = call.argument<Int>("preAlertMinutes") ?: 0
+                    adhanNativeManager.scheduleAdhan(id, timeInMillis, prayerName, fullScreen, volume, preAlertMinutes)
                     result.success(null)
                 }
                 "cancelAdhan" -> {
                     val id = call.argument<Int>("id") ?: 0
                     adhanNativeManager.cancelAdhan(id)
+                    result.success(null)
+                }
+                                "openNotificationSettings" -> {
+                    val intent = Intent().apply {
+                        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                            action = Settings.ACTION_APP_NOTIFICATION_SETTINGS
+                            putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+                        } else {
+                            action = "android.settings.APP_NOTIFICATION_SETTINGS"
+                            putExtra("app_package", context.packageName)
+                            putExtra("app_uid", context.applicationInfo.uid)
+                        }
+                    }
+                    startActivity(intent)
                     result.success(null)
                 }
                 else -> result.notImplemented()

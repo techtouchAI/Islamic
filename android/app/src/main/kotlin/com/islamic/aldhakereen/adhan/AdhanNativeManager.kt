@@ -8,12 +8,16 @@ import android.os.Build
 
 class AdhanNativeManager(private val context: Context) {
 
-    fun scheduleAdhan(id: Int, timeInMillis: Long, prayerName: String) {
+    fun scheduleAdhan(id: Int, timeInMillis: Long, prayerName: String, fullScreen: Boolean = false, volume: Double = 1.0, preAlertMinutes: Int = 0) {
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
         val intent = Intent(context, AdhanReceiver::class.java).apply {
             putExtra("id", id)
             putExtra("prayerName", prayerName)
+            putExtra("fullScreen", fullScreen)
+            putExtra("volume", volume)
         }
+
+        val triggerTime = timeInMillis - (preAlertMinutes * 60 * 1000L)
 
         val pendingIntent = PendingIntent.getBroadcast(
             context,
@@ -23,7 +27,7 @@ class AdhanNativeManager(private val context: Context) {
         )
 
         // Exact native logic bypasses Doze using AlarmClockInfo
-        val alarmClockInfo = AlarmManager.AlarmClockInfo(timeInMillis, pendingIntent)
+        val alarmClockInfo = AlarmManager.AlarmClockInfo(triggerTime, pendingIntent)
         alarmManager.setAlarmClock(alarmClockInfo, pendingIntent)
     }
 
