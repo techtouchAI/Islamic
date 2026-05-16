@@ -12,6 +12,7 @@ import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Build
 import android.os.IBinder
+import android.app.ForegroundServiceStartNotAllowedException
 import androidx.core.app.NotificationCompat
 import com.islamic.aldhakereen.R
 
@@ -30,7 +31,15 @@ class AdhanForegroundService : Service() {
         val volume = intent?.getDoubleExtra("volume", 1.0) ?: 1.0
 
         val notification = createNotification(prayerName, fullScreen)
-        startForeground(startId, notification)
+        try {
+            startForeground(startId, notification)
+        } catch (e: Exception) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && e is ForegroundServiceStartNotAllowedException) {
+                e.printStackTrace()
+            } else {
+                e.printStackTrace()
+            }
+        }
 
         playAdhan(volume.toFloat())
 
@@ -65,7 +74,7 @@ class AdhanForegroundService : Service() {
         val builder = NotificationCompat.Builder(this, channelId)
             .setContentTitle("حان موعد $prayerName")
             .setContentText("الصلاة خير من النوم")
-            .setSmallIcon(android.R.drawable.ic_lock_idle_alarm)
+            .setSmallIcon(R.mipmap.ic_launcher)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setCategory(NotificationCompat.CATEGORY_ALARM)
             .setOngoing(true)
