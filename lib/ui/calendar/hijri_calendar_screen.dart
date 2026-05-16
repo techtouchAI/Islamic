@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:hijri/hijri_calendar.dart';
 import 'package:lottie/lottie.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -13,7 +12,7 @@ class HijriCalendarScreen extends StatefulWidget {
 class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
   late PageController _pageController;
   HijriCalendar? _todayHijri;
-    int _manualOffset = 0;
+  int _manualOffset = 0;
   List<dynamic> _events = [
     {"title": "رأس السنة الهجرية", "day": 1, "month": 1},
     {"title": "عاشوراء", "day": 10, "month": 1},
@@ -26,37 +25,52 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
     {"title": "عيد الأضحى المبارك", "day": 10, "month": 12},
   ];
 
+  static const MethodChannel _hijriChannel = MethodChannel('com.techtouchai.islamic/hijri');
+
   @override
   void initState() {
     super.initState();
-    _pageController = PageController(initialPage: 1200); // arbitrarily large for infinite scroll
+    // استخدام رقم كبير لتفعيل التمرير اللانهائي (Infinite Scroll)
+    _pageController = PageController(initialPage: 1200);
     _fetchHijriData();
   }
-
-  static const MethodChannel _hijriChannel = MethodChannel('com.techtouchai.islamic/hijri');
 
   Future<void> _fetchHijriData() async {
     HijriCalendar.setLocal('ar');
     final prefs = await SharedPreferences.getInstance();
     _manualOffset = prefs.getInt('hijri.date.correction.value') ?? 0;
+    
     try {
       final date = await _hijriChannel.invokeMethod('getHijriDate', {'manualOffset': _manualOffset});
       final events = await _hijriChannel.invokeMethod('getEvents');
+      
       setState(() {
         if (date != null && date is Map) {
+           // معالجة التحويل الآمن لتفادي انهيار TypeError
+           int hYear = int.tryParse(date['year']?.toString() ?? '') ?? HijriCalendar.now().hYear;
+           int hMonth = int.tryParse(date['month']?.toString() ?? '') ?? HijriCalendar.now().hMonth;
+           int hDay = int.tryParse(date['day']?.toString() ?? '') ?? HijriCalendar.now().hDay;
+           
            _todayHijri = HijriCalendar()
-             ..hYear = date['year']
-             ..hMonth = date['month']
-             ..hDay = date['day'];
+             ..hYear = hYear
+             ..hMonth = hMonth
+             ..hDay = hDay;
         } else {
            _todayHijri = HijriCalendar.now();
         }
-        if (events != null) {
-           _events = events as List<dynamic>;
+        
+        if (events != null && events is List) {
+           _events = events;
         }
       });
     } on PlatformException catch (e) {
       debugPrint("Failed to get Hijri Date: '${e.message}'.");
+      setState(() {
+         _todayHijri = HijriCalendar.now();
+      });
+    } catch (e) {
+      // التقاط أي استثناءات أخرى (مثل أخطاء التحويل) لضمان عدم ظهور الشاشة الرمادية
+      debugPrint("Unknown error fetching Hijri Date: $e");
       setState(() {
          _todayHijri = HijriCalendar.now();
       });
@@ -65,36 +79,46 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // شاشة التحميل الآمنة
     if (_todayHijri == null) {
       return Scaffold(
-        backgroundColor: Color(0xFF1E1E1E),
-        body: Center(child: CircularProgressIndicator()),
+        backgroundColor: const Color(0xFF1E1E1E),
+        body: const Center(child: CircularProgressIndicator(color: Colors.blueAccent)),
       );
     }
 
     return Scaffold(
-      backgroundColor: Color(0xFF1E1E1E),
+      backgroundColor: const Color(0xFF1E1E1E),
       appBar: AppBar(
-        title: Text('التقويم الهجري', style: TextStyle(color: Colors.white)),
+        title: const Text('التقويم الهجري', style: TextStyle(color: Colors.white)),
         backgroundColor: Colors.transparent,
         elevation: 0,
-        iconTheme: IconThemeData(color: Colors.white),
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: PageView.builder(
         controller: _pageController,
-        reverse: true, // RTL
+        reverse: true, // الاتجاه من اليمين لليسار RTL
         itemBuilder: (context, index) {
           int monthOffset = index - 1200;
           int targetMonth = _todayHijri!.hMonth + monthOffset;
           int targetYear = _todayHijri!.hYear;
+          
           while (targetMonth > 12) { targetMonth -= 12; targetYear++; }
           while (targetMonth < 1) { targetMonth += 12; targetYear--; }
+          
           var pageHijri = HijriCalendar();
           pageHijri.hYear = targetYear;
           pageHijri.hMonth = targetMonth;
           pageHijri.hDay = 1;
 
-          DateTime gFirstDay = pageHijri.hijriToGregorian(pageHijri.hYear, pageHijri.hMonth, 1);
+          // حماية دالة التحويل لضمان عدم انهيار الـ Builder
+          DateTime gFirstDay;
+          try {
+            gFirstDay = pageHijri.hijriToGregorian(pageHijri.hYear, pageHijri.hMonth, 1);
+          } catch (e) {
+            debugPrint("Hijri to Gregorian conversion error: $e");
+            gFirstDay = DateTime.now(); // تاريخ افتراضي بديل
+          }
 
           return Container(
             width: double.infinity,
@@ -102,7 +126,7 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
             child: Column(
               children: [
                 Card(
-                  color: Color(0xFF2A2A2A),
+                  color: const Color(0xFF2A2A2A),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
                   child: Padding(
                     padding: const EdgeInsets.all(15.0),
@@ -114,33 +138,41 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
                           children: [
                             Text(
                               '${pageHijri.longMonthName} ${pageHijri.hYear}',
-                              style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                              style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
                             ),
-                            SizedBox(height: 5),
+                            const SizedBox(height: 5),
                             Text(
                               '${gFirstDay.year} ${_getGregorianMonthName(gFirstDay.month)}',
-                              style: TextStyle(color: Colors.grey, fontSize: 14),
+                              style: const TextStyle(color: Colors.grey, fontSize: 14),
                             ),
                           ],
                         ),
-                        Container(
+                        SizedBox(
                           width: 50,
                           height: 50,
-                          child: Lottie.asset('assets/lottie/calendar.json'),
+                          // حماية Lottie بـ errorBuilder لمنع انهيار الشاشة في حال غياب الملف
+                          child: Lottie.asset(
+                            'assets/lottie/calendar.json',
+                            errorBuilder: (context, error, stackTrace) => const Icon(
+                              Icons.calendar_today, 
+                              color: Colors.blueAccent, 
+                              size: 35,
+                            ),
+                          ),
                         ),
                       ],
                     ),
                   ),
                 ),
-                SizedBox(height: 20),
+                const SizedBox(height: 20),
 
                 Expanded(
                   child: _buildCalendarGridForPage(pageHijri, gFirstDay),
                 ),
 
-                SizedBox(height: 20),
+                const SizedBox(height: 20),
 
-                Align(
+                const Align(
                   alignment: Alignment.centerRight,
                   child: Row(
                     children: [
@@ -153,19 +185,25 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
                     ],
                   ),
                 ),
-                SizedBox(height: 10),
+                const SizedBox(height: 10),
                 Expanded(
                   child: ListView.builder(
+                    physics: const BouncingScrollPhysics(),
                     itemCount: _events.length,
                     itemBuilder: (context, index) {
                       final event = _events[index];
+                      // التعامل الآمن مع القيم الفارغة (Null handling)
+                      final title = event['title']?.toString() ?? 'حدث غير محدد';
+                      final day = event['day']?.toString() ?? '';
+                      final month = event['month']?.toString() ?? '';
+                      
                       return Card(
-                        color: Color(0xFF2A2A2A),
+                        color: const Color(0xFF2A2A2A),
                         elevation: 2,
-                        margin: EdgeInsets.symmetric(vertical: 5),
+                        margin: const EdgeInsets.symmetric(vertical: 5),
                         child: ListTile(
-                          title: Text(event['title'], style: TextStyle(color: Colors.white, fontSize: 16)),
-                          trailing: Text("${event['day']} ${event['month']}", style: TextStyle(color: Colors.blueAccent, fontSize: 14)),
+                          title: Text(title, style: const TextStyle(color: Colors.white, fontSize: 16)),
+                          trailing: Text("$day $month", style: const TextStyle(color: Colors.blueAccent, fontSize: 14)),
                         )
                       );
                     },
@@ -180,21 +218,26 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
   }
 
   Widget _buildCalendarGridForPage(HijriCalendar pageHijri, DateTime gFirstDay) {
-    int daysInMonth = pageHijri.lengthOfMonth;
+    int daysInMonth = 30; // قيمة افتراضية للسلامة
+    try {
+      daysInMonth = pageHijri.lengthOfMonth;
+    } catch (e) {
+      debugPrint("Error getting length of month: $e");
+    }
 
     int startingWeekday = gFirstDay.weekday;
-    if (startingWeekday == 7) startingWeekday = 0;
+    if (startingWeekday == 7) startingWeekday = 0; // الأحد = 0 في بعض التقويمات
 
     return GridView.builder(
-      shrinkWrap: true,
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+      physics: const NeverScrollableScrollPhysics(), // تعطيل التمرير الداخلي للشبكة لانسجامها مع Expanded
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 7,
         childAspectRatio: 1.0,
       ),
       itemCount: daysInMonth + startingWeekday,
       itemBuilder: (context, index) {
         if (index < startingWeekday) {
-          return Container();
+          return const SizedBox.shrink(); // استخدام SizedBox.shrink للأداء الأفضل بدلاً من Container فارغ
         }
 
         int hDay = index - startingWeekday + 1;
@@ -202,10 +245,15 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
 
         DateTime gDate = gFirstDay.add(Duration(days: hDay - 1));
 
-        bool hasEvent = _events.any((e) => e['day'] == hDay && e['month'] == pageHijri.hMonth);
+        // معالجة التوافق بين أنواع البيانات بأمان
+        bool hasEvent = _events.any((e) {
+           final eDay = int.tryParse(e['day']?.toString() ?? '-1');
+           final eMonth = int.tryParse(e['month']?.toString() ?? '-1');
+           return eDay == hDay && eMonth == pageHijri.hMonth;
+        });
 
         return Container(
-          margin: EdgeInsets.all(2),
+          margin: const EdgeInsets.all(2),
           decoration: BoxDecoration(
             color: isToday ? Colors.red : (hasEvent ? Colors.blue.withAlpha(51) : Colors.transparent),
             shape: isToday ? BoxShape.circle : BoxShape.rectangle,
@@ -238,6 +286,7 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
   }
 
   String _getGregorianMonthName(int month) {
+    if (month < 1 || month > 12) return ''; // حماية من خطأ RangeError
     const months = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
     return months[month - 1];
   }
