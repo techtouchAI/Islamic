@@ -85,57 +85,50 @@ class _QiblaScreenState extends State<QiblaScreen> {
             ],
           ),
         ),
-        child: Stack(
-          alignment: Alignment.center,
+        child: Column(
           children: [
-            Align(
-              alignment: Alignment.topCenter,
-              child: Padding(
-                padding: const EdgeInsets.only(top: 100.0),
-                child: Image.asset('assets/images/kaaba.png', width: 80),
+            SizedBox(height: 100.0),
+            Image.asset('assets/images/kaaba.png', width: 80),
+            Expanded(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      Transform.rotate(
+                        angle: (_currentHeading * (math.pi / 180) * -1),
+                        child: Image.asset('assets/images/qibla_compass.png', width: 340),
+                      ),
+                      Transform.rotate(
+                        angle: ((_qiblaDirection - _currentHeading) * (math.pi / 180)),
+                        child: Image.asset('assets/images/qibla_needle.png', width: 340),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 30),
+                  Text(
+                    "${_currentHeading.toStringAsFixed(1)}°",
+                    style: TextStyle(fontSize: 40, fontWeight: FontWeight.bold, color: Colors.white),
+                  ),
+                  Text(
+                    _getDirectionText(_currentHeading),
+                    style: TextStyle(fontSize: 22, color: Colors.white),
+                  ),
+                ],
               ),
             ),
-            Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    Transform.rotate(
-                      angle: (_currentHeading * (math.pi / 180) * -1),
-                      child: Image.asset('assets/images/qibla_compass.png', width: 340),
-                    ),
-                    Transform.rotate(
-                      angle: ((_qiblaDirection - _currentHeading) * (math.pi / 180)),
-                      child: Image.asset('assets/images/qibla_needle.png', width: 340),
-                    ),
-                  ],
+            Padding(
+              padding: const EdgeInsets.only(bottom: 24.0),
+              child: Container(
+                padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(15),
                 ),
-                SizedBox(height: 30),
-                Text(
-                  "${_currentHeading.toStringAsFixed(1)}°",
-                  style: TextStyle(fontSize: 40, fontWeight: FontWeight.bold, color: Colors.white),
-                ),
-                Text(
-                  _getDirectionText(_currentHeading),
-                  style: TextStyle(fontSize: 22, color: Colors.white),
-                ),
-              ],
-            ),
-            Align(
-              alignment: Alignment.bottomCenter,
-              child: Padding(
-                padding: const EdgeInsets.only(bottom: 24.0),
-                child: Container(
-                  padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(15),
-                  ),
-                  child: Text(
-                    "إتجاه القبله التقريبي هو (201°)",
-                    style: TextStyle(color: Colors.white, fontSize: 16),
-                  ),
+                child: Text(
+                  "إتجاه القبله التقريبي هو (201°)",
+                  style: TextStyle(color: Colors.white, fontSize: 16),
                 ),
               ),
             ),
