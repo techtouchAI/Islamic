@@ -30,6 +30,8 @@ class AdhanForegroundService : Service() {
         val fullScreen = intent?.getBooleanExtra("fullScreen", false) ?: false
         val volume = intent?.getDoubleExtra("volume", 1.0) ?: 1.0
 
+        // Ensure notification channel is explicitly created before startForeground
+        createNotificationChannel()
         val notification = createNotification(prayerName, fullScreen)
         try {
             startForeground(startId, notification)

@@ -88,6 +88,13 @@ class _QiblaScreenState extends State<QiblaScreen> {
         child: Stack(
           alignment: Alignment.center,
           children: [
+            Align(
+              alignment: Alignment.topCenter,
+              child: Padding(
+                padding: const EdgeInsets.only(top: 100.0),
+                child: Image.asset('assets/images/kaaba.png', width: 80),
+              ),
+            ),
             Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -110,7 +117,7 @@ class _QiblaScreenState extends State<QiblaScreen> {
                   style: TextStyle(fontSize: 40, fontWeight: FontWeight.bold, color: Colors.white),
                 ),
                 Text(
-                  _getDirectionText(_qiblaDirection),
+                  _getDirectionText(_currentHeading),
                   style: TextStyle(fontSize: 22, color: Colors.white),
                 ),
               ],
@@ -125,16 +132,9 @@ class _QiblaScreenState extends State<QiblaScreen> {
                     color: Colors.black.withOpacity(0.2),
                     borderRadius: BorderRadius.circular(15),
                   ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Image.asset('assets/images/kaaba.png', width: 40),
-                      SizedBox(height: 8),
-                      Text(
-                        "مكة المكرمة",
-                        style: TextStyle(color: Colors.white, fontSize: 16),
-                      )
-                    ],
+                  child: Text(
+                    "إتجاه القبله التقريبي هو (201°)",
+                    style: TextStyle(color: Colors.white, fontSize: 16),
                   ),
                 ),
               ),
