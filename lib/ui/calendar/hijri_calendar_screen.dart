@@ -44,12 +44,11 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
       final events = await _hijriChannel.invokeMethod('getEvents');
       setState(() {
         if (date != null && date is Map) {
-           _todayHijri = HijriCalendar()
-             ..hYear = date['year']
-             ..hMonth = date['month']
-             ..hDay = date['day'];
+           // We ignore the map from Native because manually setting properties breaks HijriCalendar internals.
+           // Instead we initialize properly by letting the library process the date via `fromDate` using the manual offset.
+           _todayHijri = HijriCalendar.fromDate(DateTime.now().add(Duration(days: _manualOffset)));
         } else {
-           _todayHijri = HijriCalendar.now();
+           _todayHijri = HijriCalendar.fromDate(DateTime.now().add(Duration(days: _manualOffset)));
         }
         if (events != null) {
            _events = events as List<dynamic>;
@@ -84,19 +83,21 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
         controller: _pageController,
         reverse: true, // RTL
         itemBuilder: (context, index) {
-          int monthOffset = index - 1200;
-          int targetMonth = _todayHijri!.hMonth + monthOffset;
-          int targetYear = _todayHijri!.hYear;
-          while (targetMonth > 12) { targetMonth -= 12; targetYear++; }
-          while (targetMonth < 1) { targetMonth += 12; targetYear--; }
-          var pageHijri = HijriCalendar();
-          pageHijri.hYear = targetYear;
-          pageHijri.hMonth = targetMonth;
-          pageHijri.hDay = 1;
+          try {
+            int monthOffset = index - 1200;
+            int targetMonth = _todayHijri!.hMonth + monthOffset;
+            int targetYear = _todayHijri!.hYear;
+            while (targetMonth > 12) { targetMonth -= 12; targetYear++; }
+            while (targetMonth < 1) { targetMonth += 12; targetYear--; }
 
-          DateTime gFirstDay = pageHijri.hijriToGregorian(pageHijri.hYear, pageHijri.hMonth, 1);
+            // Let HijriCalendar handle the math safely.
+            // The method `hijriToGregorian` works as long as we use an initialized object.
+            DateTime gFirstDay = _todayHijri!.hijriToGregorian(targetYear, targetMonth, 1);
+            var pageHijri = HijriCalendar.fromDate(gFirstDay);
+            // Force hDay=1 to align grid since fromDate uses the exact day it resolved to.
+            pageHijri.hDay = 1;
 
-          return Container(
+            return Container(
             width: double.infinity,
             padding: const EdgeInsets.all(20.0),
             child: Column(
@@ -126,7 +127,7 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
                         Container(
                           width: 50,
                           height: 50,
-                          child: Lottie.asset('assets/lottie/calendar.json'),
+                          child: Lottie.asset('assets/lottie/calendar.json', errorBuilder: (context, error, stackTrace) => Icon(Icons.calendar_today, color: Colors.white, size: 40)),
                         ),
                       ],
                     ),
@@ -174,6 +175,9 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
               ],
             ),
           );
+          } catch (e) {
+            return Center(child: Text("Error: ${e.toString()}", style: TextStyle(color: Colors.white)));
+          }
         },
       ),
     );
@@ -187,6 +191,7 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
 
     return GridView.builder(
       shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(), // Safe constraint inside Expanded Column
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 7,
         childAspectRatio: 1.0,
