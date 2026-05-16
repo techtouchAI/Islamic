@@ -40,7 +40,7 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
       final events = await _hijriChannel.invokeMethod('getEvents');
       setState(() {
         if (date != null && date is Map) {
-           _todayHijri = HijriCalendar()
+           _todayHijri = HijriCalendar.now()
              ..hYear = date['year']
              ..hMonth = date['month']
              ..hDay = date['day'];
