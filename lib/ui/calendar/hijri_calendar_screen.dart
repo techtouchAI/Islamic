@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hijri/hijri_calendar.dart';
 import 'package:lottie/lottie.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class HijriCalendarScreen extends StatefulWidget {
   @override
@@ -10,9 +11,9 @@ class HijriCalendarScreen extends StatefulWidget {
 }
 
 class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
+  late PageController _pageController;
   HijriCalendar? _todayHijri;
-  DateTime _todayGregorian = DateTime.now();
-  int _manualOffset = 0;
+    int _manualOffset = 0;
   List<dynamic> _events = [
     {"title": "رأس السنة الهجرية", "day": 1, "month": 1},
     {"title": "عاشوراء", "day": 10, "month": 1},
@@ -28,6 +29,7 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
   @override
   void initState() {
     super.initState();
+    _pageController = PageController(initialPage: 1200); // arbitrarily large for infinite scroll
     _fetchHijriData();
   }
 
@@ -35,12 +37,14 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
 
   Future<void> _fetchHijriData() async {
     HijriCalendar.setLocal('ar');
+    final prefs = await SharedPreferences.getInstance();
+    _manualOffset = prefs.getInt('hijri.date.correction.value') ?? 0;
     try {
       final date = await _hijriChannel.invokeMethod('getHijriDate', {'manualOffset': _manualOffset});
       final events = await _hijriChannel.invokeMethod('getEvents');
       setState(() {
         if (date != null && date is Map) {
-           _todayHijri = HijriCalendar.now()
+           _todayHijri = HijriCalendar()
              ..hYear = date['year']
              ..hMonth = date['month']
              ..hDay = date['day'];
@@ -76,95 +80,108 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
         elevation: 0,
         iconTheme: IconThemeData(color: Colors.white),
       ),
-      body: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          children: [
-            Card(
-              color: Color(0xFF2A2A2A),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-              child: Padding(
-                padding: const EdgeInsets.all(15.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+      body: PageView.builder(
+        controller: _pageController,
+        reverse: true, // RTL
+        itemBuilder: (context, index) {
+          int monthOffset = index - 1200;
+          int targetMonth = _todayHijri!.hMonth + monthOffset;
+          int targetYear = _todayHijri!.hYear;
+          while (targetMonth > 12) { targetMonth -= 12; targetYear++; }
+          while (targetMonth < 1) { targetMonth += 12; targetYear--; }
+          var pageHijri = HijriCalendar();
+          pageHijri.hYear = targetYear;
+          pageHijri.hMonth = targetMonth;
+          pageHijri.hDay = 1;
+
+          DateTime gFirstDay = pageHijri.hijriToGregorian(pageHijri.hYear, pageHijri.hMonth, 1);
+
+          return Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(20.0),
+            child: Column(
+              children: [
+                Card(
+                  color: Color(0xFF2A2A2A),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                  child: Padding(
+                    padding: const EdgeInsets.all(15.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          '${_todayHijri!.hDay} ${_todayHijri!.longMonthName} ${_todayHijri!.hYear}',
-                          style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '${pageHijri.longMonthName} ${pageHijri.hYear}',
+                              style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                            ),
+                            SizedBox(height: 5),
+                            Text(
+                              '${gFirstDay.year} ${_getGregorianMonthName(gFirstDay.month)}',
+                              style: TextStyle(color: Colors.grey, fontSize: 14),
+                            ),
+                          ],
                         ),
-                        SizedBox(height: 5),
-                        Text(
-                          '${_todayGregorian.day} ${_getGregorianMonthName(_todayGregorian.month)} ${_todayGregorian.year}',
-                          style: TextStyle(color: Colors.grey, fontSize: 14),
+                        Container(
+                          width: 50,
+                          height: 50,
+                          child: Lottie.asset('assets/lottie/calendar.json'),
                         ),
                       ],
                     ),
-                    Container(
-                      width: 50,
-                      height: 50,
-                      child: Lottie.asset('assets/lottie/calendar.json'),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            SizedBox(height: 20),
-
-            Expanded(
-              child: _buildCalendarGrid(),
-            ),
-
-            SizedBox(height: 20),
-
-            Align(
-              alignment: Alignment.centerRight,
-              child: Row(
-                children: [
-                  Icon(Icons.event, color: Colors.blueAccent),
-                  SizedBox(width: 8),
-                  Text(
-                    "الحدث القادم",
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.blueAccent),
                   ),
-                ],
-              ),
+                ),
+                SizedBox(height: 20),
+
+                Expanded(
+                  child: _buildCalendarGridForPage(pageHijri, gFirstDay),
+                ),
+
+                SizedBox(height: 20),
+
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: Row(
+                    children: [
+                      Icon(Icons.event, color: Colors.blueAccent),
+                      SizedBox(width: 8),
+                      Text(
+                        "الحدث القادم",
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.blueAccent),
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(height: 10),
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: _events.length,
+                    itemBuilder: (context, index) {
+                      final event = _events[index];
+                      return Card(
+                        color: Color(0xFF2A2A2A),
+                        elevation: 2,
+                        margin: EdgeInsets.symmetric(vertical: 5),
+                        child: ListTile(
+                          title: Text(event['title'], style: TextStyle(color: Colors.white, fontSize: 16)),
+                          trailing: Text("${event['day']} ${event['month']}", style: TextStyle(color: Colors.blueAccent, fontSize: 14)),
+                        )
+                      );
+                    },
+                  ),
+                )
+              ],
             ),
-            SizedBox(height: 10),
-            Container(
-              height: 100,
-              child: ListView.builder(
-                itemCount: _events.length,
-                itemBuilder: (context, index) {
-                  final event = _events[index];
-                  return Card(
-                    color: Color(0xFF2A2A2A),
-                    elevation: 2,
-                    margin: EdgeInsets.symmetric(vertical: 5),
-                    child: ListTile(
-                      title: Text(event['title'], style: TextStyle(color: Colors.white, fontSize: 16)),
-                      trailing: Text("${event['day']} ${event['month']}", style: TextStyle(color: Colors.blueAccent, fontSize: 14)),
-                    )
-                  );
-                },
-              ),
-            )
-          ],
-        ),
+          );
+        },
       ),
     );
   }
 
-  Widget _buildCalendarGrid() {
-    if (_todayHijri == null) {
-      return Center(child: CircularProgressIndicator());
-    }
-    int daysInMonth = _todayHijri!.lengthOfMonth;
+  Widget _buildCalendarGridForPage(HijriCalendar pageHijri, DateTime gFirstDay) {
+    int daysInMonth = pageHijri.lengthOfMonth;
 
-    DateTime gFirstDay = _todayGregorian.subtract(Duration(days: _todayHijri!.hDay - 1));
     int startingWeekday = gFirstDay.weekday;
     if (startingWeekday == 7) startingWeekday = 0;
 
@@ -181,17 +198,19 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
         }
 
         int hDay = index - startingWeekday + 1;
-        bool isToday = hDay == _todayHijri!.hDay;
+        bool isToday = (hDay == _todayHijri!.hDay) && (pageHijri.hMonth == _todayHijri!.hMonth) && (pageHijri.hYear == _todayHijri!.hYear);
 
-        DateTime gDate = _todayGregorian.add(Duration(days: hDay - _todayHijri!.hDay));
+        DateTime gDate = gFirstDay.add(Duration(days: hDay - 1));
+
+        bool hasEvent = _events.any((e) => e['day'] == hDay && e['month'] == pageHijri.hMonth);
 
         return Container(
           margin: EdgeInsets.all(2),
           decoration: BoxDecoration(
-            color: isToday ? Colors.red : Colors.transparent,
+            color: isToday ? Colors.red : (hasEvent ? Colors.blue.withAlpha(51) : Colors.transparent),
             shape: isToday ? BoxShape.circle : BoxShape.rectangle,
             borderRadius: isToday ? null : BorderRadius.circular(8),
-            border: Border.all(color: Colors.grey.withOpacity(0.2)),
+            border: Border.all(color: Colors.grey.withAlpha(51)),
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -199,7 +218,7 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
               Text(
                 '$hDay',
                 style: TextStyle(
-                  color: isToday ? Colors.white : Colors.white70,
+                  color: isToday ? Colors.white : (hasEvent ? Colors.blueAccent : Colors.white70),
                   fontWeight: isToday ? FontWeight.bold : FontWeight.normal,
                   fontSize: 16,
                 ),

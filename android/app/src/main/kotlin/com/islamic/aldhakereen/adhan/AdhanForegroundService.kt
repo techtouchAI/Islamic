@@ -100,7 +100,7 @@ class AdhanForegroundService : Service() {
                 NotificationManager.IMPORTANCE_HIGH
             ).apply {
                 description = "Notifications for Adhan"
-                vibrationPattern = longArrayOf(0, 500, 1000)
+                vibrationPattern = longArrayOf(0, 500, 1000, 500, 1000)
                 enableVibration(true)
             }
             val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager

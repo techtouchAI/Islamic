@@ -230,7 +230,7 @@ class _AlDhakereenAppState extends State<AlDhakereenApp> {
       _backgroundImagePath = prefs.getString('backgroundImage');
       _selectedBase64Bg = prefs.getString('custom_bg_base64_selected');
       _cardColor = Color(prefs.getInt('cardColor') ?? defaultCard);
-      _hijriAdjustment = prefs.getInt('hijriAdj') ?? 0;
+      _hijriAdjustment = prefs.getInt('hijri.date.correction.value') ?? 0;
       final sections = DataManager.getSections();
       final allSections = {
         ...sections,
