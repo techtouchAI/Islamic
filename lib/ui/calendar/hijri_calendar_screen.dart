@@ -159,6 +159,9 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
   }
 
   Widget _buildCalendarGrid() {
+    if (_todayHijri == null) {
+      return Center(child: CircularProgressIndicator());
+    }
     int daysInMonth = _todayHijri!.lengthOfMonth;
 
     DateTime gFirstDay = _todayGregorian.subtract(Duration(days: _todayHijri!.hDay - 1));
@@ -166,6 +169,7 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
     if (startingWeekday == 7) startingWeekday = 0;
 
     return GridView.builder(
+      shrinkWrap: true,
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 7,
         childAspectRatio: 1.0,

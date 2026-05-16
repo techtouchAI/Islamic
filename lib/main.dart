@@ -2920,6 +2920,14 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
       _enabledPrayers['asr'] = prefs.getBool('adhan_asr') ?? true;
       _enabledPrayers['maghrib'] = prefs.getBool('adhan_maghrib') ?? true;
       _enabledPrayers['isha'] = prefs.getBool('adhan_isha') ?? true;
+      _fullScreenPrayers['fajr'] = prefs.getBool('fullscreen_fajr') ?? false;
+      _fullScreenPrayers['dhuhr'] = prefs.getBool('fullscreen_dhuhr') ?? false;
+      _fullScreenPrayers['asr'] = prefs.getBool('fullscreen_asr') ?? false;
+      _fullScreenPrayers['maghrib'] = prefs.getBool('fullscreen_maghrib') ?? false;
+      _fullScreenPrayers['isha'] = prefs.getBool('fullscreen_isha') ?? false;
+      _ignoreBatteryOptimizations = prefs.getBool('ignore_battery_optimizations') ?? false;
+      _adhanVolume = prefs.getDouble('adhan_volume') ?? 1.0;
+      _adhanPreAlert = prefs.getInt('adhan_pre_alert') ?? 0;
       _manualAdjustments['fajr'] = prefs.getInt('adj_fajr') ?? 0;
       _manualAdjustments['dhuhr'] = prefs.getInt('adj_dhuhr') ?? 0;
       _manualAdjustments['asr'] = prefs.getInt('adj_asr') ?? 0;
@@ -3322,13 +3330,21 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
             initialTime: TimeOfDay.fromDateTime(adjTime),
           );
           if (picked != null) {
-            final diff = DateTime(
+            final pickedDateTime = DateTime(
               originalTime.year,
               originalTime.month,
               originalTime.day,
               picked.hour,
               picked.minute,
-            ).difference(originalTime).inMinutes;
+            );
+            final originalDateBase = DateTime(
+              originalTime.year,
+              originalTime.month,
+              originalTime.day,
+              originalTime.hour,
+              originalTime.minute,
+            );
+            final diff = pickedDateTime.difference(originalDateBase).inMinutes;
             setState(() {
               _manualAdjustments[key] = diff;
             });
