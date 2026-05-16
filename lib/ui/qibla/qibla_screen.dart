@@ -106,7 +106,7 @@ class _QiblaScreenState extends State<QiblaScreen> {
                 ),
                 SizedBox(height: 30),
                 Text(
-                  "${_qiblaDirection.toStringAsFixed(1)}°",
+                  "${_currentHeading.toStringAsFixed(1)}°",
                   style: TextStyle(fontSize: 40, fontWeight: FontWeight.bold, color: Colors.white),
                 ),
                 Text(
@@ -119,16 +119,23 @@ class _QiblaScreenState extends State<QiblaScreen> {
               alignment: Alignment.bottomCenter,
               child: Padding(
                 padding: const EdgeInsets.only(bottom: 24.0),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.mosque, size: 40, color: Colors.white),
-                    SizedBox(height: 8),
-                    Text(
-                      "مكة المكرمة",
-                      style: TextStyle(color: Colors.white, fontSize: 16),
-                    )
-                  ],
+                child: Container(
+                  padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(15),
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Image.asset('assets/images/kaaba.png', width: 40),
+                      SizedBox(height: 8),
+                      Text(
+                        "مكة المكرمة",
+                        style: TextStyle(color: Colors.white, fontSize: 16),
+                      )
+                    ],
+                  ),
                 ),
               ),
             ),

@@ -187,7 +187,7 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
             color: isToday ? Colors.red : Colors.transparent,
             shape: isToday ? BoxShape.circle : BoxShape.rectangle,
             borderRadius: isToday ? null : BorderRadius.circular(8),
-            border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
+            border: Border.all(color: Colors.grey.withOpacity(0.2)),
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
