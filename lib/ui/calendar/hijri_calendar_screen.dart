@@ -60,7 +60,8 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
 
   Future<void> _fetchHijriData() async {
     final prefs = await SharedPreferences.getInstance();
-    _manualOffset = prefs.getInt('hijri.date.correction.value') ?? 0;
+    // MUST match main.dart: _hijriAdjustment = prefs.getInt('hijriAdj') ?? 0;
+    _manualOffset = prefs.getInt('hijriAdj') ?? 0;
 
     final DateTime trueNow = DateTime.now().add(Duration(days: _manualOffset));
     _todayHijri = HijriCalendar.fromDate(trueNow);
@@ -225,7 +226,7 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
   }
 
   /// Returns a FULLY INITIALIZED HijriCalendar for the target month.
-  /// Round-trip through Gregorian to ensure valid internal package state.
+  /// Uses round-trip through Gregorian to ensure valid internal state.
   HijriCalendar _getHijriMonthForPage(int pageIndex) {
     int offset = pageIndex - _initialPage;
     int targetYear = _todayHijri!.hYear;
@@ -254,21 +255,33 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
     return _events.any((e) => e.hDay == day && e.hMonth == month);
   }
 
+  /// Returns the next upcoming event from TODAY (with year wrap-around).
+  /// Events are treated as annual (hYear is ignored, only hMonth+hDay matter).
   _EventModel? _getNextEvent() {
     if (_todayHijri == null) return null;
 
     final int currentMonth = _todayHijri!.hMonth;
     final int currentDay = _todayHijri!.hDay;
 
+    // Sort by month then day (annual cycle)
     final sorted = List<_EventModel>.from(_events)
       ..sort((a, b) {
         if (a.hMonth != b.hMonth) return a.hMonth.compareTo(b.hMonth);
         return a.hDay.compareTo(b.hDay);
       });
 
+    // First pass: look for events in remaining months of current year
     for (final event in sorted) {
       if (event.hMonth > currentMonth ||
           (event.hMonth == currentMonth && event.hDay >= currentDay)) {
+        return event;
+      }
+    }
+
+    // Second pass: wrap around to next year (events before current month)
+    for (final event in sorted) {
+      if (event.hMonth < currentMonth ||
+          (event.hMonth == currentMonth && event.hDay < currentDay)) {
         return event;
       }
     }
@@ -305,7 +318,6 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
     return SingleChildScrollView(
       child: Column(
         children: [
-          // ── Month Header Card with Lottie ──
           Card(
             color: const Color(0xFF2A2A2A),
             margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
@@ -354,7 +366,6 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
               ),
             ),
           ),
-          // ── Weekday Headers ──
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8),
             child: Row(
@@ -374,7 +385,6 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
             ),
           ),
           const SizedBox(height: 8),
-          // ── Calendar Grid ──
           SizedBox(
             height: gridHeight,
             child: GridView.count(
@@ -438,7 +448,6 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
             ),
           ),
           const SizedBox(height: 16),
-          // ── Selected Day Events ──
           if (_selectedDay != null &&
               _displayedHijri.hMonth == monthHijri.hMonth &&
               _displayedHijri.hYear == monthHijri.hYear &&
