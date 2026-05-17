@@ -187,7 +187,7 @@ class _IstikharaScreenState extends State<IstikharaScreen>
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Image.asset(
-            'assets/images/quran_icon_dummy.png',
+            'assets/images/quran_icon.png',
             width: 80,
             height: 80,
           ),
