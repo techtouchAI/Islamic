@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:hijri/hijri_calendar.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+final RouteObserver<PageRoute> routeObserver = RouteObserver<PageRoute>();
+
 class HijriCalendarScreen extends StatefulWidget {
   const HijriCalendarScreen({Key? key}) : super(key: key);
 
