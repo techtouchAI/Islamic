@@ -1203,18 +1203,7 @@ class _HomeSectionState extends State<HomeSection> {
   Widget build(BuildContext context) {
     _loadDailyDua();
     final now = DateTime.now();
-    final hijri = HijriCalendar.now();
-    if (widget.hijriAdjustment != 0) {
-      hijri.hDay += widget.hijriAdjustment;
-      if (hijri.hDay > 30) {
-        hijri.hDay -= 30;
-        hijri.hMonth += 1;
-      }
-      if (hijri.hDay < 1) {
-        hijri.hDay += 30;
-        hijri.hMonth -= 1;
-      }
-    }
+    final hijri = HijriCalendar.fromDate(DateTime.now().add(Duration(days: widget.hijriAdjustment)));
     final bool isDarkCard = widget.cardColor.computeLuminance() < 0.5;
     final Color textColor = isDarkCard ? Colors.white : Colors.black87;
     return SizedBox(
