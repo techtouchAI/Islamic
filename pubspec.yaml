@@ -49,12 +49,7 @@ flutter:
   uses-material-design: true
   assets:
     - assets/data/content.json
-    - assets/images/default_home.png
-    - assets/images/default_bg.png
-    - assets/images/logo.png
-    - assets/images/qibla_compass.png
-    - assets/images/qibla_needle.png
-    - assets/images/kaaba.png
+    - assets/images/
     - assets/lottie/calendar.json
     - assets/audio/adhan.mp3
     - assets/audio/azan5.mp3
