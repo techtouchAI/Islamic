@@ -38,6 +38,7 @@ import 'search/screens/search_screen.dart';
 import 'ui/calendar/hijri_calendar_screen.dart';
 import 'ui/qibla/qibla_screen.dart';
 import 'presentation/screens/istikhara_screen.dart';
+import 'ui/calendar/hijri_calendar_screen.dart' show routeObserver;
 
 class IslamicPatternPainter extends CustomPainter {
   final Color color;
@@ -287,6 +288,7 @@ class _AlDhakereenAppState extends State<AlDhakereenApp> {
     return MaterialApp(
       title: 'الذاكرين',
       debugShowCheckedModeBanner: false,
+      navigatorObservers: [routeObserver],
       locale: const Locale('ar', 'SA'),
       supportedLocales: const [Locale('ar', 'SA')],
       localizationsDelegates: const [
