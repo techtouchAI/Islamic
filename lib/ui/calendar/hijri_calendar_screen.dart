@@ -210,8 +210,7 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
     _EventModel(hDay: 24, hMonth: 12, hYear: 1, title: 'خروج النبي الأكرم محمد(صلى الله عليه واله وسلم) مع أهل بيته (عليهم السلام) للمباهلة مع نصارى نجران سنة ١٠هـ'),
     _EventModel(hDay: 25, hMonth: 12, hYear: 1, title: 'نزول سورة (هل أتى) في المدينة المنورة بشأن اهل البيت (عليهم السلام)'),
     _EventModel(hDay: 27, hMonth: 12, hYear: 1, title: 'وفاة علي بن الامام جعفر الصادق (عليهما السلام) سنة ٢١٠هـ الملقب (العريضي)'),
-    _EventModel(hDay: 28, hMonth: 12, hYear: 1, title: 'وقعة الحرة التي استباح فيها جيش يزيد بن معاوية المدينة المنورة سنة ٦٣هـ'),
-    ];
+    _EventModel(hDay: 28, hMonth: 12, hYear: 1, title: 'وقعة الحرة التي استباح فيها جيش يزيد بن معاوية المدينة المنورة سنة ٦٣هـ'),    ];
 
     if (mounted) {
       setState(() => _isLoading = false);
@@ -224,6 +223,12 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
     super.dispose();
   }
 
+  /// Returns a FULLY INITIALIZED HijriCalendar for the target month.
+  /// We compute the Gregorian date of the 1st day of the target Hijri month,
+  /// then convert back via fromDate() to ensure all internal package state
+  /// (including lengthOfMonth) is valid. The manual offset is NOT subtracted
+  /// here because month boundaries are absolute; the offset only affects
+  /// which day is considered "today".
   HijriCalendar _getHijriMonthForPage(int pageIndex) {
     int offset = pageIndex - _initialPage;
     int targetYear = _todayHijri!.hYear;
@@ -238,9 +243,9 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
       targetYear--;
     }
 
-    final hijri = HijriCalendar();
-    hijri.hYear = targetYear;
-    hijri.hMonth = targetMonth;
+    // Round-trip through Gregorian to get a properly initialized instance
+    final DateTime gregDate = _todayHijri!.hijriToGregorian(targetYear, targetMonth, 1);
+    final hijri = HijriCalendar.fromDate(gregDate);
     hijri.hDay = 1;
     return hijri;
   }
@@ -290,11 +295,14 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
 
   Widget _buildCalendarGridForPage(BuildContext context, int pageIndex) {
     final HijriCalendar monthHijri = _getHijriMonthForPage(pageIndex);
-    final DateTime gregFirstDay = HijriCalendar().hijriToGregorian(
+
+    // Use the valid instance (_todayHijri) to convert 1st of month to Gregorian
+    final DateTime gregFirstDay = _todayHijri!.hijriToGregorian(
       monthHijri.hYear,
       monthHijri.hMonth,
       1,
     );
+
     final int leadingEmptyCells = (gregFirstDay.weekday + 1) % 7;
     final int daysInMonth = monthHijri.lengthOfMonth;
     final double gridHeight = ((leadingEmptyCells + daysInMonth) / 7).ceil() * 48.0;
@@ -368,8 +376,8 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
                     margin: const EdgeInsets.all(2),
                     decoration: BoxDecoration(
                       color: isToday ? Colors.teal : null,
-                      shape: (isToday || hasEvent) ? BoxShape.circle : BoxShape.rectangle,
-                      borderRadius: (isToday || hasEvent) ? null : BorderRadius.circular(8),
+                      shape: isToday ? BoxShape.circle : BoxShape.rectangle,
+                      borderRadius: isToday ? null : BorderRadius.circular(8),
                       border: Border.all(
                         color: isSelected
                             ? Colors.green
