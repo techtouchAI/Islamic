@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'dart:math';
 import 'package:share_plus/share_plus.dart';
 import 'package:flutter/services.dart';
+import 'package:sqflite/sqflite.dart';
+import 'package:path/path.dart' as p;
 import '../../data/data_manager.dart';
-import '../../services/quran_service.dart';
 
 enum IstikharaStep { dua, action, result }
 
@@ -14,13 +15,114 @@ class IstikharaScreen extends StatefulWidget {
   State<IstikharaScreen> createState() => _IstikharaScreenState();
 }
 
-class _IstikharaScreenState extends State<IstikharaScreen> {
+class _IstikharaScreenState extends State<IstikharaScreen> with SingleTickerProviderStateMixin {
   final ValueNotifier<IstikharaStep> _stepNotifier = ValueNotifier(IstikharaStep.dua);
+  late AnimationController _animationController;
+  late Animation<double> _flipAnimation;
+
+  Map<String, dynamic>? _selectedIstikharaItem;
+  int? _extractedPageNumber;
+  String _resultText = '';
+  String _descriptionText = '';
+  List<Map<String, dynamic>> _verses = [];
+  bool _isLoadingVerses = false;
+
+  Color _cardBgColor = const Color(0xFFFFFDF6);
+  double _fontSizeOffset = 0.0;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    );
+    // Animate from pi to 0 so the result is visible at the end of the animation.
+    _flipAnimation = Tween<double>(begin: pi, end: 0).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: Curves.easeInOut,
+      ),
+    );
+  }
 
   @override
   void dispose() {
     _stepNotifier.dispose();
+    _animationController.dispose();
     super.dispose();
+  }
+
+  Future<List<Map<String, dynamic>>> _fetchVersesFromDb(int pageNumber) async {
+    try {
+      final dbPath = await getDatabasesPath();
+      final path = p.join(dbPath, "quran_db.db");
+      final db = await openDatabase(path);
+
+      final result = await db.rawQuery('''
+        SELECT a.ar_text, a.anum, s.name AS surah_name
+        FROM ayah a
+        INNER JOIN surah s ON a.sid = s.id
+        WHERE a.ayah_page_number = ?
+        ORDER BY a.id
+      ''', [pageNumber]);
+      return result;
+    } catch (e) {
+      debugPrint("Error fetching verses: \$e");
+      return [];
+    }
+  }
+
+  Future<void> _fetchIstikharaData() async {
+    final items = DataManager.getItems('istikhara');
+    if (items.isEmpty) return;
+
+    final random = Random();
+    final randomIndex = random.nextInt(items.length);
+    _selectedIstikharaItem = items[randomIndex] as Map<String, dynamic>?;
+
+    if (_selectedIstikharaItem == null) return;
+
+    final title = _selectedIstikharaItem!['title'].toString();
+    final RegExp regExp = RegExp(r'\d+');
+    final match = regExp.firstMatch(title);
+    if (match != null) {
+      _extractedPageNumber = int.tryParse(match.group(0)!);
+    }
+
+    final content = _selectedIstikharaItem!['content'].toString();
+    final parts = content.split('\n');
+    for (var part in parts) {
+      if (part.startsWith('النتيجة:')) {
+        _resultText = part.replaceFirst('النتيجة:', '').trim();
+      } else if (part.startsWith('التفصيل:')) {
+        _descriptionText = part.replaceFirst('التفصيل:', '').trim();
+      }
+    }
+
+    if (_extractedPageNumber != null) {
+      setState(() {
+        _isLoadingVerses = true;
+      });
+
+      _verses = await _fetchVersesFromDb(_extractedPageNumber!);
+
+      if (mounted) {
+        setState(() {
+          _isLoadingVerses = false;
+        });
+      }
+    } else {
+      if (mounted) {
+        setState(() {});
+      }
+    }
+  }
+
+  void _triggerIstikhara() async {
+    await _fetchIstikharaData();
+    _stepNotifier.value = IstikharaStep.result;
+    _animationController.forward(from: 0);
   }
 
   @override
@@ -163,65 +265,6 @@ class _IstikharaScreenState extends State<IstikharaScreen> {
     );
   }
 
-  Map<String, dynamic>? _selectedIstikharaItem;
-  int? _extractedPageNumber;
-  String _resultText = '';
-  String _descriptionText = '';
-  List<Map<String, dynamic>> _verses = [];
-  bool _isLoadingVerses = false;
-
-  Future<void> _fetchIstikharaData() async {
-    final items = DataManager.getItems('istikhara');
-    if (items.isEmpty) return;
-
-    final random = Random();
-    final randomIndex = random.nextInt(items.length);
-    _selectedIstikharaItem = items[randomIndex] as Map<String, dynamic>?;
-
-    if (_selectedIstikharaItem == null) return;
-
-    final title = _selectedIstikharaItem!['title'].toString();
-    final RegExp regExp = RegExp(r'\d+');
-    final match = regExp.firstMatch(title);
-    if (match != null) {
-      _extractedPageNumber = int.tryParse(match.group(0)!);
-    }
-
-    final content = _selectedIstikharaItem!['content'].toString();
-    final parts = content.split('\n');
-    for (var part in parts) {
-      if (part.startsWith('النتيجة:')) {
-        _resultText = part.replaceFirst('النتيجة:', '').trim();
-      } else if (part.startsWith('التفصيل:')) {
-        _descriptionText = part.replaceFirst('التفصيل:', '').trim();
-      }
-    }
-
-    if (_extractedPageNumber != null) {
-      setState(() {
-        _isLoadingVerses = true;
-      });
-      _verses = await QuranService.getVersesByPage(_extractedPageNumber!);
-      if (mounted) {
-        setState(() {
-          _isLoadingVerses = false;
-        });
-      }
-    } else {
-      if (mounted) {
-        setState(() {});
-      }
-    }
-  }
-
-  void _triggerIstikhara() {
-    _fetchIstikharaData();
-    _stepNotifier.value = IstikharaStep.result;
-  }
-
-  Color _cardBgColor = const Color(0xFFFFFDF6);
-  double _fontSizeOffset = 0.0;
-
   Widget _buildResultStep() {
     if (_isLoadingVerses) {
       return const Center(child: CircularProgressIndicator());
@@ -247,95 +290,156 @@ class _IstikharaScreenState extends State<IstikharaScreen> {
     return Column(
       children: [
         Expanded(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              children: [
-                Container(
-            padding: const EdgeInsets.all(24.0),
-            decoration: BoxDecoration(
-              color: _cardBgColor,
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(
-                color: const Color(0xFFE0C9A6),
-                width: 1.5,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, 5),
+          child: AnimatedBuilder(
+            animation: _animationController,
+            builder: (context, child) {
+              final angle = _flipAnimation.value;
+
+              final matrix = Matrix4.identity()
+                ..setEntry(3, 2, 0.001) // perspective
+                ..rotateY(-angle); // rotate negatively for RTL flip
+
+              return Center(
+                child: Transform(
+                  transform: matrix,
+                  alignment: Alignment.centerRight,
+                  child: angle > pi / 2
+                      ? _buildPageBack()
+                      : SingleChildScrollView(
+                          padding: const EdgeInsets.all(24.0),
+                          child: Container(
+                            padding: const EdgeInsets.all(24.0),
+                            decoration: BoxDecoration(
+                              color: _cardBgColor,
+                              borderRadius: BorderRadius.circular(24),
+                              border: Border.all(
+                                color: const Color(0xFFE0C9A6),
+                                width: 1.5,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.05),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 5),
+                                ),
+                              ],
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                if (_extractedPageNumber != null)
+                                  Center(
+                                    child: Container(
+                                      padding: const EdgeInsets.all(12),
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        border: Border.all(color: primaryColor, width: 2),
+                                      ),
+                                      child: Text(
+                                        '$_extractedPageNumber',
+                                        style: TextStyle(
+                                          fontSize: 18 + _fontSizeOffset,
+                                          fontWeight: FontWeight.bold,
+                                          color: primaryColor,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  _resultText,
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: 28 + _fontSizeOffset,
+                                    fontWeight: FontWeight.bold,
+                                    color: primaryColor,
+                                  ),
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  _descriptionText,
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: 18 + _fontSizeOffset,
+                                    color: textColor,
+                                    height: 1.6,
+                                  ),
+                                ),
+                                const Padding(
+                                  padding: EdgeInsets.symmetric(vertical: 24.0),
+                                  child: Divider(color: Color(0xFFE0C9A6)),
+                                ),
+                                if (_verses.isNotEmpty) ...[
+                                  Text(
+                                    'سورة ${_verses.first['surah_name']} - الآيات',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      fontSize: 16 + _fontSizeOffset,
+                                      fontWeight: FontWeight.bold,
+                                      color: primaryColor,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 16),
+                                  Text(
+                                    formattedVerses,
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      fontSize: 20 + _fontSizeOffset,
+                                      height: 1.9,
+                                      color: textColor,
+                                      fontFamily: 'me_quran',
+                                      inherit: false,
+                                      decoration: TextDecoration.none,
+                                    ),
+                                  ),
+                                ],
+                                const SizedBox(height: 32),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: List.generate(
+                                    5,
+                                    (index) => const Padding(
+                                      padding: EdgeInsets.symmetric(horizontal: 4.0),
+                                      child: Icon(Icons.star, color: Color(0xFFEED09D), size: 16),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
                 ),
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  _resultText,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 28 + _fontSizeOffset,
-                    fontWeight: FontWeight.bold,
-                    color: primaryColor,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  _descriptionText,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 18 + _fontSizeOffset,
-                    color: textColor,
-                    height: 1.6,
-                  ),
-                ),
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 24.0),
-                  child: Divider(color: Color(0xFFE0C9A6)),
-                ),
-                if (_verses.isNotEmpty) ...[
-                  Text(
-                    'سورة ${_verses.first['surah_name']} - الآيات',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 16 + _fontSizeOffset,
-                      fontWeight: FontWeight.bold,
-                      color: primaryColor,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    formattedVerses,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 20 + _fontSizeOffset,
-                      height: 2.0,
-                      color: textColor,
-                      fontFamily: 'Amiri', // Or your custom Quran font
-                    ),
-                  ),
-                ],
-                const SizedBox(height: 32),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: List.generate(
-                    5,
-                    (index) => const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 4.0),
-                      child: Icon(Icons.star, color: Color(0xFFEED09D), size: 16),
-                    ),
-                  ),
-                ),
-              ],
-                  ),
-                ),
-              ],
-            ),
+              );
+            },
           ),
         ),
         _buildBottomControlPanel(),
       ],
+    );
+  }
+
+  Widget _buildPageBack() {
+    return Transform(
+      transform: Matrix4.rotationY(pi),
+      alignment: Alignment.center,
+      child: Container(
+        margin: const EdgeInsets.all(24.0),
+        decoration: BoxDecoration(
+          color: _cardBgColor,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(
+            color: const Color(0xFFE0C9A6),
+            width: 1.5,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 5),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
