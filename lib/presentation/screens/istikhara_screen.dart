@@ -188,8 +188,8 @@ class _IstikharaScreenState extends State<IstikharaScreen>
         children: [
           Image.asset(
             'assets/images/quran_icon_dummy.png',
-            width: 80,
-            height: 80,
+            width: 250,
+            height: 250,
           ),
           const SizedBox(height: 32),
           const Text(
@@ -263,8 +263,8 @@ class _IstikharaScreenState extends State<IstikharaScreen>
               ),
               child: Image.asset(
                 'assets/images/quran_icon.png',
-                width: 100,
-                height: 100,
+                width: 250,
+                height: 250,
               ),
             ),
           ),
