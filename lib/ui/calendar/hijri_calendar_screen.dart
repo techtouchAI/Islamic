@@ -9,7 +9,10 @@ class HijriCalendarScreen extends StatefulWidget {
   _HijriCalendarScreenState createState() => _HijriCalendarScreenState();
 }
 
-class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
+// Route observer for state lifecycle syncing
+final RouteObserver<PageRoute> routeObserver = RouteObserver<PageRoute>();
+
+class _HijriCalendarScreenState extends State<HijriCalendarScreen> with RouteAware {
   late PageController _pageController;
   HijriCalendar? _todayHijri;
   int _manualOffset = 0;
@@ -724,6 +727,25 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
     _fetchHijriData();
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    routeObserver.subscribe(this, ModalRoute.of(context) as PageRoute);
+  }
+
+  @override
+  void dispose() {
+    routeObserver.unsubscribe(this);
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  @override
+  void didPopNext() {
+    // Re-fetch data when returning to this screen from settings or elsewhere
+    _fetchHijriData();
+  }
+
   Future<void> _fetchHijriData() async {
     HijriCalendar.setLocal('ar');
     final prefs = await SharedPreferences.getInstance();
@@ -737,11 +759,10 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
 
       setState(() {
         if (date != null && date is Map) {
-          // We ignore the map from Native because manually setting properties breaks HijriCalendar internals.
-          // Instead we initialize properly by letting the library process the date via `fromDate` using the manual offset.
-          _todayHijri = HijriCalendar.fromDate(
-            DateTime.now().add(Duration(days: _manualOffset)),
-          );
+          _todayHijri = HijriCalendar()
+            ..hYear = date['year'] as int
+            ..hMonth = date['month'] as int
+            ..hDay = date['day'] as int;
         } else {
           _todayHijri = HijriCalendar.fromDate(
             DateTime.now().add(Duration(days: _manualOffset)),
@@ -876,87 +897,116 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
                   ),
                   const SizedBox(height: 20),
 
+                  // Wrap the calendar grid and the rest of the content in an Expanded
+                  // so the overall view can scroll/flex without causing overflow
                   Expanded(
-                    child: _buildCalendarGridForPage(pageHijri, gFirstDay),
-                  ),
+                    child: SingleChildScrollView(
+                      child: Column(
+                        children: [
+                          _buildCalendarGridForPage(pageHijri, gFirstDay),
+                          const SizedBox(height: 20),
 
-                  const SizedBox(height: 20),
+                          if (_selectedDay != null && _selectedDayEvents.isNotEmpty)
+                    _buildEventsBox("مناسبات اليوم", _selectedDayEvents),
 
-                  Align(
-                    alignment: Alignment.centerRight,
+                  const SizedBox(height: 10),
+
+                  // Date Converters Matrix (Horizontal Scroll)
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
                     child: Row(
                       children: [
-                        Icon(Icons.event, color: Colors.blueAccent),
-                        SizedBox(width: 8),
-                        Text(
-                          _selectedDay != null
-                              ? "أحداث هذا اليوم"
-                              : "الحدث القادم",
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.blueAccent,
+                        InkWell(
+                          onTap: () {},
+                          child: Card(
+                            color: const Color(0xFF2A2A2A),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(15),
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 15.0),
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.calendar_month, color: Colors.blueAccent, size: 30),
+                                  const SizedBox(width: 15),
+                                  Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: const [
+                                      Text(
+                                        "تحويل التاريخ الهجري",
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      SizedBox(height: 4),
+                                      Text(
+                                        "التاريخ الهجري الى الميلادي",
+                                        style: TextStyle(
+                                          color: Colors.grey,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        InkWell(
+                          onTap: () {},
+                          child: Card(
+                            color: const Color(0xFF2A2A2A),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(15),
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 15.0),
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.calendar_month, color: Colors.blueAccent, size: 30),
+                                  const SizedBox(width: 15),
+                                  Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: const [
+                                      Text(
+                                        "تحويل التاريخ الميلادي",
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      SizedBox(height: 4),
+                                      Text(
+                                        "التاريخ الميلادي الى الهجري",
+                                        style: TextStyle(
+                                          color: Colors.grey,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
                           ),
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 10),
-                  Expanded(
-                    child: ListView.builder(
-                      physics: const BouncingScrollPhysics(),
-                      itemCount: _selectedDay != null
-                          ? _selectedDayEvents.length
-                          : _events
-                                .where(
-                                  (e) =>
-                                      int.tryParse(
-                                        e['month']?.toString() ?? '-1',
-                                      ) ==
-                                      pageHijri.hMonth,
-                                )
-                                .length,
-                      itemBuilder: (context, index) {
-                        final monthEvents = _events
-                            .where(
-                              (e) =>
-                                  int.tryParse(
-                                    e['month']?.toString() ?? '-1',
-                                  ) ==
-                                  pageHijri.hMonth,
-                            )
-                            .toList();
-                        final event = _selectedDay != null
-                            ? _selectedDayEvents[index]
-                            : monthEvents[index];
-                        // التعامل الآمن مع القيم الفارغة (Null handling)
-                        final title =
-                            event['title']?.toString() ?? 'حدث غير محدد';
-                        final day = event['day']?.toString() ?? '';
-                        final month = event['month']?.toString() ?? '';
 
-                        return Card(
-                          color: const Color(0xFF2A2A2A),
-                          elevation: 2,
-                          margin: const EdgeInsets.symmetric(vertical: 5),
-                          child: ListTile(
-                            title: Text(
-                              title,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 16,
-                              ),
-                            ),
-                            trailing: Text(
-                              "$day $month",
-                              style: const TextStyle(
-                                color: Colors.blueAccent,
-                                fontSize: 14,
-                              ),
-                            ),
-                          ),
-                        );
-                      },
+                  const SizedBox(height: 10),
+
+                  // Upcoming Event
+                  if (_getNextEvent(pageHijri) != null)
+                    _buildEventsBox("الحدث القادم", [_getNextEvent(pageHijri)]),
+
+                        ],
+                      ),
                     ),
                   ),
                 ],
@@ -1038,13 +1088,11 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
                   ? Colors.red
                   : (isSelected
                         ? Colors.green.withAlpha(51)
-                        : (hasEvent
-                              ? Colors.blue.withAlpha(51)
-                              : Colors.transparent)),
+                        : Colors.transparent),
               shape: isToday ? BoxShape.circle : BoxShape.rectangle,
               borderRadius: isToday ? null : BorderRadius.circular(8),
               border: Border.all(
-                color: isSelected ? Colors.green : Colors.grey.withAlpha(51),
+                color: isSelected ? Colors.green : Colors.transparent,
               ),
             ),
             child: Column(
@@ -1072,6 +1120,104 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
           ),
         );
       },
+    );
+  }
+
+  dynamic _getNextEvent(HijriCalendar pageHijri) {
+    if (_todayHijri == null) return null;
+
+    final eventsThisMonth = _events.where((e) {
+      final eMonth = int.tryParse(e['month']?.toString() ?? '-1');
+      return eMonth == pageHijri.hMonth;
+    }).toList();
+
+    eventsThisMonth.sort((a, b) {
+      final aDay = int.tryParse(a['day']?.toString() ?? '0') ?? 0;
+      final bDay = int.tryParse(b['day']?.toString() ?? '0') ?? 0;
+      return aDay.compareTo(bDay);
+    });
+
+    try {
+      if (pageHijri.hYear == _todayHijri!.hYear && pageHijri.hMonth == _todayHijri!.hMonth) {
+        return eventsThisMonth.firstWhere(
+          (e) => (int.tryParse(e['day']?.toString() ?? '0') ?? 0) >= _todayHijri!.hDay,
+        );
+      } else if (pageHijri.hYear > _todayHijri!.hYear || (pageHijri.hYear == _todayHijri!.hYear && pageHijri.hMonth > _todayHijri!.hMonth)) {
+         return eventsThisMonth.isNotEmpty ? eventsThisMonth.first : null;
+      }
+    } catch (e) {
+      return null;
+    }
+    return null;
+  }
+
+  Widget _buildEventsBox(String boxTitle, List<dynamic> eventsToDisplay) {
+    return Card(
+      color: const Color(0xFF2A2A2A),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(15),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(15.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              boxTitle,
+              style: const TextStyle(
+                color: Colors.blueAccent,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 10),
+            ...eventsToDisplay.map((event) {
+              final title = event['title']?.toString() ?? 'حدث غير محدد';
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 10.0),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(Icons.circle, color: Colors.blueAccent, size: 10),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        title,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }).toList(),
+            const Divider(color: Colors.grey),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                TextButton.icon(
+                  onPressed: () {},
+                  icon: const Icon(Icons.notifications_active, color: Colors.redAccent),
+                  label: const Text(
+                    "اضافة تذكير",
+                    style: TextStyle(color: Colors.redAccent),
+                  ),
+                ),
+                TextButton.icon(
+                  onPressed: () {},
+                  icon: const Icon(Icons.share, color: Colors.blueAccent),
+                  label: const Text(
+                    "مشاركة",
+                    style: TextStyle(color: Colors.blueAccent),
+                  ),
+                ),
+              ],
+            )
+          ],
+        ),
+      ),
     );
   }
 
