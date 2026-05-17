@@ -15,8 +15,11 @@ class IstikharaScreen extends StatefulWidget {
   State<IstikharaScreen> createState() => _IstikharaScreenState();
 }
 
-class _IstikharaScreenState extends State<IstikharaScreen> with SingleTickerProviderStateMixin {
-  final ValueNotifier<IstikharaStep> _stepNotifier = ValueNotifier(IstikharaStep.dua);
+class _IstikharaScreenState extends State<IstikharaScreen>
+    with SingleTickerProviderStateMixin {
+  final ValueNotifier<IstikharaStep> _stepNotifier = ValueNotifier(
+    IstikharaStep.dua,
+  );
   late AnimationController _animationController;
   late Animation<double> _flipAnimation;
 
@@ -39,10 +42,7 @@ class _IstikharaScreenState extends State<IstikharaScreen> with SingleTickerProv
     );
     // Animate from pi to 0 so the result is visible at the end of the animation.
     _flipAnimation = Tween<double>(begin: pi, end: 0).animate(
-      CurvedAnimation(
-        parent: _animationController,
-        curve: Curves.easeInOut,
-      ),
+      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
     );
   }
 
@@ -59,13 +59,16 @@ class _IstikharaScreenState extends State<IstikharaScreen> with SingleTickerProv
       final path = p.join(dbPath, "quran_db.db");
       final db = await openDatabase(path);
 
-      final result = await db.rawQuery('''
+      final result = await db.rawQuery(
+        '''
         SELECT a.ar_text, a.anum, s.name AS surah_name
         FROM ayah a
         INNER JOIN surah s ON a.sid = s.id
         WHERE a.ayah_page_number = ?
         ORDER BY a.id
-      ''', [pageNumber]);
+      ''',
+        [pageNumber],
+      );
       return result;
     } catch (e) {
       debugPrint("Error fetching verses: \$e");
@@ -136,8 +139,11 @@ class _IstikharaScreenState extends State<IstikharaScreen> with SingleTickerProv
                 IconButton(
                   icon: const Icon(Icons.copy),
                   onPressed: () {
-                    final textToCopy = 'نتيجة الخيرة:\n$_resultText\n\n$_descriptionText';
-                    Clipboard.setData(ClipboardData(text: textToCopy)).then((_) {
+                    final textToCopy =
+                        'نتيجة الخيرة:\n$_resultText\n\n$_descriptionText';
+                    Clipboard.setData(ClipboardData(text: textToCopy)).then((
+                      _,
+                    ) {
                       if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(content: Text('تم النسخ إلى الحافظة')),
@@ -149,7 +155,8 @@ class _IstikharaScreenState extends State<IstikharaScreen> with SingleTickerProv
                 IconButton(
                   icon: const Icon(Icons.share),
                   onPressed: () {
-                    final textToShare = 'نتيجة الخيرة:\n$_resultText\n\n$_descriptionText\n\nتطبيق الذاكرين';
+                    final textToShare =
+                        'نتيجة الخيرة:\n$_resultText\n\n$_descriptionText\n\nتطبيق الذاكرين';
                     Share.share(textToShare);
                   },
                 ),
@@ -179,7 +186,11 @@ class _IstikharaScreenState extends State<IstikharaScreen> with SingleTickerProv
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Image.asset('assets/images/quran_icon.png', width: 80, height: 80),
+          Image.asset(
+            'assets/images/quran_icon_dummy.png',
+            width: 80,
+            height: 80,
+          ),
           const SizedBox(height: 32),
           const Text(
             'دعاء الاستخارة',
@@ -248,13 +259,12 @@ class _IstikharaScreenState extends State<IstikharaScreen> with SingleTickerProv
                     spreadRadius: 5,
                   ),
                 ],
-                border: Border.all(
-                  color: const Color(0xFFE0C9A6),
-                  width: 2,
-                ),
+                border: Border.all(color: const Color(0xFFE0C9A6), width: 2),
               ),
               child: Image.asset(
-                'assets/images/quran_icon.png', width: 100, height: 100
+                'assets/images/quran_icon.png',
+                width: 100,
+                height: 100,
               ),
             ),
           ),
@@ -269,7 +279,9 @@ class _IstikharaScreenState extends State<IstikharaScreen> with SingleTickerProv
     }
 
     if (_selectedIstikharaItem == null) {
-      return const Center(child: Text('عذراً، لم نتمكن من تحميل بيانات الخيرة.'));
+      return const Center(
+        child: Text('عذراً، لم نتمكن من تحميل بيانات الخيرة.'),
+      );
     }
 
     final isDarkCard = _cardBgColor == const Color(0xFF2C2C2C);
@@ -278,11 +290,13 @@ class _IstikharaScreenState extends State<IstikharaScreen> with SingleTickerProv
 
     String formattedVerses = '';
     if (_verses.isNotEmpty) {
-      formattedVerses = _verses.map((v) {
-        final text = v['ar_text'].toString().trim();
-        final num = v['anum'];
-        return '$text ﴿$num﴾';
-      }).join(' ');
+      formattedVerses = _verses
+          .map((v) {
+            final text = v['ar_text'].toString().trim();
+            final num = v['anum'];
+            return '$text ﴿$num﴾';
+          })
+          .join(' ');
     }
 
     return Column(
@@ -331,7 +345,10 @@ class _IstikharaScreenState extends State<IstikharaScreen> with SingleTickerProv
                                       padding: const EdgeInsets.all(12),
                                       decoration: BoxDecoration(
                                         shape: BoxShape.circle,
-                                        border: Border.all(color: primaryColor, width: 2),
+                                        border: Border.all(
+                                          color: primaryColor,
+                                          width: 2,
+                                        ),
                                       ),
                                       child: Text(
                                         '$_extractedPageNumber',
@@ -397,8 +414,14 @@ class _IstikharaScreenState extends State<IstikharaScreen> with SingleTickerProv
                                   children: List.generate(
                                     5,
                                     (index) => const Padding(
-                                      padding: EdgeInsets.symmetric(horizontal: 4.0),
-                                      child: Icon(Icons.star, color: Color(0xFFEED09D), size: 16),
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: 4.0,
+                                      ),
+                                      child: Icon(
+                                        Icons.star,
+                                        color: Color(0xFFEED09D),
+                                        size: 16,
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -425,10 +448,7 @@ class _IstikharaScreenState extends State<IstikharaScreen> with SingleTickerProv
         decoration: BoxDecoration(
           color: _cardBgColor,
           borderRadius: BorderRadius.circular(24),
-          border: Border.all(
-            color: const Color(0xFFE0C9A6),
-            width: 1.5,
-          ),
+          border: Border.all(color: const Color(0xFFE0C9A6), width: 1.5),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.05),
@@ -477,7 +497,10 @@ class _IstikharaScreenState extends State<IstikharaScreen> with SingleTickerProv
                     });
                   },
                 ),
-                const Text('Aa', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                const Text(
+                  'Aa',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
                 IconButton(
                   icon: const Icon(Icons.add),
                   onPressed: () {
@@ -510,7 +533,9 @@ class _IstikharaScreenState extends State<IstikharaScreen> with SingleTickerProv
           color: color,
           shape: BoxShape.circle,
           border: Border.all(
-            color: isSelected ? Theme.of(context).colorScheme.primary : Colors.grey.withValues(alpha: 0.5),
+            color: isSelected
+                ? Theme.of(context).colorScheme.primary
+                : Colors.grey.withValues(alpha: 0.5),
             width: isSelected ? 2.0 : 1.0,
           ),
         ),
@@ -518,7 +543,9 @@ class _IstikharaScreenState extends State<IstikharaScreen> with SingleTickerProv
             ? Icon(
                 Icons.check,
                 size: 16,
-                color: color == const Color(0xFF2C2C2C) ? Colors.white : Colors.black,
+                color: color == const Color(0xFF2C2C2C)
+                    ? Colors.white
+                    : Colors.black,
               )
             : null,
       ),

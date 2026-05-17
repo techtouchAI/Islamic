@@ -12,7 +12,8 @@ class HijriCalendarScreen extends StatefulWidget {
 // Route observer for state lifecycle syncing
 final RouteObserver<PageRoute> routeObserver = RouteObserver<PageRoute>();
 
-class _HijriCalendarScreenState extends State<HijriCalendarScreen> with RouteAware {
+class _HijriCalendarScreenState extends State<HijriCalendarScreen>
+    with RouteAware {
   late PageController _pageController;
   HijriCalendar? _todayHijri;
   int _manualOffset = 0;
@@ -808,7 +809,7 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> with RouteAwa
       appBar: AppBar(
         title: const Text(
           'التقويم الهجري',
-          style: TextStyle(color: Colors.white),
+          style: TextStyle(fontFamily: 'me_quran', color: Colors.white),
         ),
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -833,11 +834,9 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> with RouteAwa
 
             // Let HijriCalendar handle the math safely.
             // The method `hijriToGregorian` works as long as we use an initialized object.
-            DateTime gFirstDay = _todayHijri!.hijriToGregorian(
-              targetYear,
-              targetMonth,
-              1,
-            );
+            DateTime gFirstDay = _todayHijri!
+                .hijriToGregorian(targetYear, targetMonth, 1)
+                .subtract(Duration(days: _manualOffset));
             var pageHijri = HijriCalendar.fromDate(gFirstDay);
             // Force hDay=1 to align grid since fromDate uses the exact day it resolved to.
             pageHijri.hDay = 1;
@@ -863,6 +862,7 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> with RouteAwa
                               Text(
                                 '${pageHijri.longMonthName} ${pageHijri.hYear}',
                                 style: const TextStyle(
+                                  fontFamily: 'me_quran',
                                   color: Colors.white,
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
@@ -872,6 +872,7 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> with RouteAwa
                               Text(
                                 '${gFirstDay.year} ${_getGregorianMonthName(gFirstDay.month)}',
                                 style: const TextStyle(
+                                  fontFamily: 'me_quran',
                                   color: Colors.grey,
                                   fontSize: 14,
                                 ),
@@ -906,105 +907,20 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> with RouteAwa
                           _buildCalendarGridForPage(pageHijri, gFirstDay),
                           const SizedBox(height: 20),
 
-                          if (_selectedDay != null && _selectedDayEvents.isNotEmpty)
-                    _buildEventsBox("مناسبات اليوم", _selectedDayEvents),
-
-                  const SizedBox(height: 10),
-
-                  // Date Converters Matrix (Horizontal Scroll)
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: [
-                        InkWell(
-                          onTap: () {},
-                          child: Card(
-                            color: const Color(0xFF2A2A2A),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(15),
+                          if (_selectedDay != null &&
+                              _selectedDayEvents.isNotEmpty)
+                            _buildEventsBox(
+                              "مناسبات اليوم",
+                              _selectedDayEvents,
                             ),
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 15.0),
-                              child: Row(
-                                children: [
-                                  const Icon(Icons.calendar_month, color: Colors.blueAccent, size: 30),
-                                  const SizedBox(width: 15),
-                                  Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: const [
-                                      Text(
-                                        "تحويل التاريخ الهجري",
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                      SizedBox(height: 4),
-                                      Text(
-                                        "التاريخ الهجري الى الميلادي",
-                                        style: TextStyle(
-                                          color: Colors.grey,
-                                          fontSize: 12,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        InkWell(
-                          onTap: () {},
-                          child: Card(
-                            color: const Color(0xFF2A2A2A),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(15),
-                            ),
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 15.0),
-                              child: Row(
-                                children: [
-                                  const Icon(Icons.calendar_month, color: Colors.blueAccent, size: 30),
-                                  const SizedBox(width: 15),
-                                  Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: const [
-                                      Text(
-                                        "تحويل التاريخ الميلادي",
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                      SizedBox(height: 4),
-                                      Text(
-                                        "التاريخ الميلادي الى الهجري",
-                                        style: TextStyle(
-                                          color: Colors.grey,
-                                          fontSize: 12,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
 
-                  const SizedBox(height: 10),
+                          const SizedBox(height: 10),
 
-                  // Upcoming Event
-                  if (_getNextEvent(pageHijri) != null)
-                    _buildEventsBox("الحدث القادم", [_getNextEvent(pageHijri)]),
-
+                          // Upcoming Event
+                          if (_getNextEvent(pageHijri) != null)
+                            _buildEventsBox("الحدث القادم", [
+                              _getNextEvent(pageHijri),
+                            ]),
                         ],
                       ),
                     ),
@@ -1016,7 +932,7 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> with RouteAwa
             return Center(
               child: Text(
                 "Error: ${e.toString()}",
-                style: TextStyle(color: Colors.white),
+                style: TextStyle(fontFamily: 'me_quran', color: Colors.white),
               ),
             );
           }
@@ -1054,10 +970,16 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> with RouteAwa
         }
 
         int hDay = index - startingWeekday + 1;
+        // حساب اليوم الحالي مع الإزاحة
+        DateTime actualToday = DateTime.now().add(
+          Duration(days: _manualOffset),
+        );
+        HijriCalendar calculatedToday = HijriCalendar.fromDate(actualToday);
+
         bool isToday =
-            (hDay == _todayHijri!.hDay) &&
-            (pageHijri.hMonth == _todayHijri!.hMonth) &&
-            (pageHijri.hYear == _todayHijri!.hYear);
+            (hDay == calculatedToday.hDay) &&
+            (pageHijri.hMonth == calculatedToday.hMonth) &&
+            (pageHijri.hYear == calculatedToday.hYear);
 
         DateTime gDate = gFirstDay.add(Duration(days: hDay - 1));
 
@@ -1101,9 +1023,14 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> with RouteAwa
                 Text(
                   '$hDay',
                   style: TextStyle(
+                    fontFamily: 'me_quran',
                     color: isToday
                         ? Colors.white
-                        : (hasEvent ? Colors.blueAccent : Colors.white70),
+                        : (isSelected
+                              ? Colors.white
+                              : (hasEvent
+                                    ? Colors.blueAccent
+                                    : Colors.white70)),
                     fontWeight: isToday ? FontWeight.bold : FontWeight.normal,
                     fontSize: 16,
                   ),
@@ -1111,6 +1038,7 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> with RouteAwa
                 Text(
                   '${gDate.day}',
                   style: TextStyle(
+                    fontFamily: 'me_quran',
                     color: isToday ? Colors.white70 : Colors.grey,
                     fontSize: 10,
                   ),
@@ -1137,13 +1065,21 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> with RouteAwa
       return aDay.compareTo(bDay);
     });
 
+    DateTime actualToday = DateTime.now().add(Duration(days: _manualOffset));
+    HijriCalendar calculatedToday = HijriCalendar.fromDate(actualToday);
+
     try {
-      if (pageHijri.hYear == _todayHijri!.hYear && pageHijri.hMonth == _todayHijri!.hMonth) {
+      if (pageHijri.hYear == calculatedToday.hYear &&
+          pageHijri.hMonth == calculatedToday.hMonth) {
         return eventsThisMonth.firstWhere(
-          (e) => (int.tryParse(e['day']?.toString() ?? '0') ?? 0) >= _todayHijri!.hDay,
+          (e) =>
+              (int.tryParse(e['day']?.toString() ?? '0') ?? 0) >=
+              calculatedToday.hDay,
         );
-      } else if (pageHijri.hYear > _todayHijri!.hYear || (pageHijri.hYear == _todayHijri!.hYear && pageHijri.hMonth > _todayHijri!.hMonth)) {
-         return eventsThisMonth.isNotEmpty ? eventsThisMonth.first : null;
+      } else if (pageHijri.hYear > calculatedToday.hYear ||
+          (pageHijri.hYear == calculatedToday.hYear &&
+              pageHijri.hMonth > calculatedToday.hMonth)) {
+        return eventsThisMonth.isNotEmpty ? eventsThisMonth.first : null;
       }
     } catch (e) {
       return null;
@@ -1154,9 +1090,7 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> with RouteAwa
   Widget _buildEventsBox(String boxTitle, List<dynamic> eventsToDisplay) {
     return Card(
       color: const Color(0xFF2A2A2A),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(15),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
       child: Padding(
         padding: const EdgeInsets.all(15.0),
         child: Column(
@@ -1165,6 +1099,7 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> with RouteAwa
             Text(
               boxTitle,
               style: const TextStyle(
+                fontFamily: 'me_quran',
                 color: Colors.blueAccent,
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
@@ -1178,12 +1113,17 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> with RouteAwa
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(Icons.circle, color: Colors.blueAccent, size: 10),
+                    const Icon(
+                      Icons.circle,
+                      color: Colors.blueAccent,
+                      size: 10,
+                    ),
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
                         title,
                         style: const TextStyle(
+                          fontFamily: 'me_quran',
                           color: Colors.white,
                           fontSize: 16,
                         ),
@@ -1193,28 +1133,6 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> with RouteAwa
                 ),
               );
             }).toList(),
-            const Divider(color: Colors.grey),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                TextButton.icon(
-                  onPressed: () {},
-                  icon: const Icon(Icons.notifications_active, color: Colors.redAccent),
-                  label: const Text(
-                    "اضافة تذكير",
-                    style: TextStyle(color: Colors.redAccent),
-                  ),
-                ),
-                TextButton.icon(
-                  onPressed: () {},
-                  icon: const Icon(Icons.share, color: Colors.blueAccent),
-                  label: const Text(
-                    "مشاركة",
-                    style: TextStyle(color: Colors.blueAccent),
-                  ),
-                ),
-              ],
-            )
           ],
         ),
       ),
