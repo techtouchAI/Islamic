@@ -85,6 +85,23 @@ class QuranService {
     return result;
   }
 
+  static Future<List<Map<String, dynamic>>> getVersesByPage(int pageNumber) async {
+    if (_db == null) return [];
+    try {
+      final result = await _db!.rawQuery('''
+        SELECT a.ar_text, a.anum, s.name AS surah_name
+        FROM ayah a
+        INNER JOIN surah s ON a.sid = s.id
+        WHERE a.ayah_page_number = ?
+        ORDER BY a.id ASC
+      ''', [pageNumber]);
+      return result;
+    } catch (e) {
+      debugPrint("QuranService getVersesByPage Error: $e");
+      return [];
+    }
+  }
+
   static Future<List<Map<String, dynamic>>> getAllVerses() async {
     if (_db == null) return [];
 
