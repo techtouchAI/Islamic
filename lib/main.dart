@@ -37,6 +37,7 @@ import 'services/search_engine.dart';
 import 'search/screens/search_screen.dart';
 import 'ui/calendar/hijri_calendar_screen.dart';
 import 'ui/qibla/qibla_screen.dart';
+import 'presentation/screens/istikhara_screen.dart';
 
 class IslamicPatternPainter extends CustomPainter {
   final Color color;
@@ -671,6 +672,8 @@ class _MainScaffoldState extends State<MainScaffold> {
           fontSizeFactor: widget.fontSizeFactor,
           uiOpacity: widget.uiOpacity,
         );
+      case 'istikhara':
+        return const IstikharaScreen(key: ValueKey('istikhara'));
       default:
         return DynamicListSection(
           key: ValueKey(_currentSection),
@@ -1350,6 +1353,16 @@ class _HomeSectionState extends State<HomeSection> {
                         cardColor: widget.cardColor,
                         onTap: () async {
                           final sectionKey = e.value['sectionKey'];
+                          if (sectionKey == 'istikhara') {
+                            if (!context.mounted) return;
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (c) => const IstikharaScreen(),
+                              ),
+                            );
+                            return;
+                          }
                           final isQuran = sectionKey == 'quran';
                           List<Map<String, dynamic>>? ayahs;
                           String contentStr = e.value['content'].toString();
