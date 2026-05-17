@@ -911,46 +911,91 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> with RouteAwa
 
                   const SizedBox(height: 10),
 
-                  // Date Converter Banner
-                  InkWell(
-                    onTap: () {
-                      // Placeholder for Date Converter Action
-                    },
-                    child: Card(
-                      color: const Color(0xFF2A2A2A),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(15),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 15.0),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.calendar_month, color: Colors.blueAccent, size: 30),
-                            const SizedBox(width: 15),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: const [
-                                Text(
-                                  "تحويل التاريخ الهجري",
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                SizedBox(height: 4),
-                                Text(
-                                  "التاريخ الهجري الى الميلادي",
-                                  style: TextStyle(
-                                    color: Colors.grey,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ],
+                  // Date Converters Matrix (Horizontal Scroll)
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        InkWell(
+                          onTap: () {},
+                          child: Card(
+                            color: const Color(0xFF2A2A2A),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(15),
                             ),
-                          ],
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 15.0),
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.calendar_month, color: Colors.blueAccent, size: 30),
+                                  const SizedBox(width: 15),
+                                  Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: const [
+                                      Text(
+                                        "تحويل التاريخ الهجري",
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      SizedBox(height: 4),
+                                      Text(
+                                        "التاريخ الهجري الى الميلادي",
+                                        style: TextStyle(
+                                          color: Colors.grey,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
                         ),
-                      ),
+                        const SizedBox(width: 10),
+                        InkWell(
+                          onTap: () {},
+                          child: Card(
+                            color: const Color(0xFF2A2A2A),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(15),
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 15.0),
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.calendar_month, color: Colors.blueAccent, size: 30),
+                                  const SizedBox(width: 15),
+                                  Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: const [
+                                      Text(
+                                        "تحويل التاريخ الميلادي",
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      SizedBox(height: 4),
+                                      Text(
+                                        "التاريخ الميلادي الى الهجري",
+                                        style: TextStyle(
+                                          color: Colors.grey,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
 
