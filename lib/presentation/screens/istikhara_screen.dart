@@ -179,7 +179,7 @@ class _IstikharaScreenState extends State<IstikharaScreen> with SingleTickerProv
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Icon(Icons.menu_book, size: 80, color: Color(0xFFD4AF37)),
+          Image.asset('assets/images/quran_icon.png', width: 80, height: 80),
           const SizedBox(height: 32),
           const Text(
             'دعاء الاستخارة',
@@ -253,10 +253,8 @@ class _IstikharaScreenState extends State<IstikharaScreen> with SingleTickerProv
                   width: 2,
                 ),
               ),
-              child: const Icon(
-                Icons.menu_book_outlined,
-                size: 100,
-                color: Color(0xFFD4AF37),
+              child: Image.asset(
+                'assets/images/quran_icon.png', width: 100, height: 100
               ),
             ),
           ),
