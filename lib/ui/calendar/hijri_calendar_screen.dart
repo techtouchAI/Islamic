@@ -971,16 +971,10 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen>
 
         int hDay = index - startingWeekday + 1;
         // حساب اليوم الحالي مع الإزاحة
-        DateTime actualToday = DateTime.now().add(
-          Duration(days: _manualOffset),
-        );
-        HijriCalendar calculatedToday = HijriCalendar.fromDate(actualToday);
-
-        bool isToday =
-            (hDay == calculatedToday.hDay) &&
-            (pageHijri.hMonth == calculatedToday.hMonth) &&
-            (pageHijri.hYear == calculatedToday.hYear);
-
+        bool isToday = _todayHijri != null &&
+            (hDay == _todayHijri!.hDay) &&
+            (pageHijri.hMonth == _todayHijri!.hMonth) &&
+            (pageHijri.hYear == _todayHijri!.hYear);
         DateTime gDate = gFirstDay.add(Duration(days: hDay - 1));
 
         // معالجة التوافق بين أنواع البيانات بأمان
@@ -1065,20 +1059,17 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen>
       return aDay.compareTo(bDay);
     });
 
-    DateTime actualToday = DateTime.now().add(Duration(days: _manualOffset));
-    HijriCalendar calculatedToday = HijriCalendar.fromDate(actualToday);
-
     try {
-      if (pageHijri.hYear == calculatedToday.hYear &&
-          pageHijri.hMonth == calculatedToday.hMonth) {
+      if (pageHijri.hYear == _todayHijri!.hYear &&
+          pageHijri.hMonth == _todayHijri!.hMonth) {
         return eventsThisMonth.firstWhere(
           (e) =>
               (int.tryParse(e['day']?.toString() ?? '0') ?? 0) >=
-              calculatedToday.hDay,
+              _todayHijri!.hDay,
         );
-      } else if (pageHijri.hYear > calculatedToday.hYear ||
-          (pageHijri.hYear == calculatedToday.hYear &&
-              pageHijri.hMonth > calculatedToday.hMonth)) {
+      } else if (pageHijri.hYear > _todayHijri!.hYear ||
+          (pageHijri.hYear == _todayHijri!.hYear &&
+              pageHijri.hMonth > _todayHijri!.hMonth)) {
         return eventsThisMonth.isNotEmpty ? eventsThisMonth.first : null;
       }
     } catch (e) {
