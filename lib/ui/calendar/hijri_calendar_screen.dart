@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hijri/hijri_calendar.dart';
+import 'package:lottie/lottie.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 final RouteObserver<PageRoute> routeObserver = RouteObserver<PageRoute>();
@@ -224,11 +225,7 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
   }
 
   /// Returns a FULLY INITIALIZED HijriCalendar for the target month.
-  /// We compute the Gregorian date of the 1st day of the target Hijri month,
-  /// then convert back via fromDate() to ensure all internal package state
-  /// (including lengthOfMonth) is valid. The manual offset is NOT subtracted
-  /// here because month boundaries are absolute; the offset only affects
-  /// which day is considered "today".
+  /// Round-trip through Gregorian to ensure valid internal package state.
   HijriCalendar _getHijriMonthForPage(int pageIndex) {
     int offset = pageIndex - _initialPage;
     int targetYear = _todayHijri!.hYear;
@@ -243,7 +240,6 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
       targetYear--;
     }
 
-    // Round-trip through Gregorian to get a properly initialized instance
     final DateTime gregDate = _todayHijri!.hijriToGregorian(targetYear, targetMonth, 1);
     final hijri = HijriCalendar.fromDate(gregDate);
     hijri.hDay = 1;
@@ -296,7 +292,6 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
   Widget _buildCalendarGridForPage(BuildContext context, int pageIndex) {
     final HijriCalendar monthHijri = _getHijriMonthForPage(pageIndex);
 
-    // Use the valid instance (_todayHijri) to convert 1st of month to Gregorian
     final DateTime gregFirstDay = _todayHijri!.hijriToGregorian(
       monthHijri.hYear,
       monthHijri.hMonth,
@@ -310,19 +305,56 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
     return SingleChildScrollView(
       child: Column(
         children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            child: Text(
-              '${monthHijri.longMonthName} ${monthHijri.hYear}',
-              style: const TextStyle(
-                fontFamily: 'me_quran',
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
+          // ── Month Header Card with Lottie ──
+          Card(
+            color: const Color(0xFF2A2A2A),
+            margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+            child: Padding(
+              padding: const EdgeInsets.all(15.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '${monthHijri.longMonthName} ${monthHijri.hYear}',
+                        style: const TextStyle(
+                          fontFamily: 'me_quran',
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 5),
+                      Text(
+                        '${gregFirstDay.year} ${_getGregorianMonthName(gregFirstDay.month)}',
+                        style: const TextStyle(
+                          fontFamily: 'me_quran',
+                          color: Colors.grey,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(
+                    width: 50,
+                    height: 50,
+                    child: Lottie.asset(
+                      'assets/lottie/calendar.json',
+                      errorBuilder: (context, error, stackTrace) => const Icon(
+                        Icons.calendar_today,
+                        color: Colors.white,
+                        size: 40,
+                      ),
+                    ),
+                  ),
+                ],
               ),
-              textAlign: TextAlign.center,
             ),
           ),
+          // ── Weekday Headers ──
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8),
             child: Row(
@@ -342,6 +374,7 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
             ),
           ),
           const SizedBox(height: 8),
+          // ── Calendar Grid ──
           SizedBox(
             height: gridHeight,
             child: GridView.count(
@@ -405,6 +438,7 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
             ),
           ),
           const SizedBox(height: 16),
+          // ── Selected Day Events ──
           if (_selectedDay != null &&
               _displayedHijri.hMonth == monthHijri.hMonth &&
               _displayedHijri.hYear == monthHijri.hYear &&
@@ -462,6 +496,15 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
         ),
       ),
     );
+  }
+
+  String _getGregorianMonthName(int month) {
+    if (month < 1 || month > 12) return '';
+    const months = [
+      'يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو',
+      'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر',
+    ];
+    return months[month - 1];
   }
 
   @override
