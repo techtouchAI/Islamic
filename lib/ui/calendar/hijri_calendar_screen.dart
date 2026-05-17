@@ -46,17 +46,11 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
       
       setState(() {
         if (date != null && date is Map) {
-           // معالجة التحويل الآمن لتفادي انهيار TypeError
-           int hYear = int.tryParse(date['year']?.toString() ?? '') ?? HijriCalendar.now().hYear;
-           int hMonth = int.tryParse(date['month']?.toString() ?? '') ?? HijriCalendar.now().hMonth;
-           int hDay = int.tryParse(date['day']?.toString() ?? '') ?? HijriCalendar.now().hDay;
-           
-           _todayHijri = HijriCalendar()
-             ..hYear = hYear
-             ..hMonth = hMonth
-             ..hDay = hDay;
+           // We ignore the map from Native because manually setting properties breaks HijriCalendar internals.
+           // Instead we initialize properly by letting the library process the date via `fromDate` using the manual offset.
+           _todayHijri = HijriCalendar.fromDate(DateTime.now().add(Duration(days: _manualOffset)));
         } else {
-           _todayHijri = HijriCalendar.now();
+           _todayHijri = HijriCalendar.fromDate(DateTime.now().add(Duration(days: _manualOffset)));
         }
         
         if (events != null && events is List) {
@@ -99,28 +93,21 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
         controller: _pageController,
         reverse: true, // الاتجاه من اليمين لليسار RTL
         itemBuilder: (context, index) {
-          int monthOffset = index - 1200;
-          int targetMonth = _todayHijri!.hMonth + monthOffset;
-          int targetYear = _todayHijri!.hYear;
-          
-          while (targetMonth > 12) { targetMonth -= 12; targetYear++; }
-          while (targetMonth < 1) { targetMonth += 12; targetYear--; }
-          
-          var pageHijri = HijriCalendar();
-          pageHijri.hYear = targetYear;
-          pageHijri.hMonth = targetMonth;
-          pageHijri.hDay = 1;
-
-          // حماية دالة التحويل لضمان عدم انهيار الـ Builder
-          DateTime gFirstDay;
           try {
-            gFirstDay = pageHijri.hijriToGregorian(pageHijri.hYear, pageHijri.hMonth, 1);
-          } catch (e) {
-            debugPrint("Hijri to Gregorian conversion error: $e");
-            gFirstDay = DateTime.now(); // تاريخ افتراضي بديل
-          }
+            int monthOffset = index - 1200;
+            int targetMonth = _todayHijri!.hMonth + monthOffset;
+            int targetYear = _todayHijri!.hYear;
+            while (targetMonth > 12) { targetMonth -= 12; targetYear++; }
+            while (targetMonth < 1) { targetMonth += 12; targetYear--; }
 
-          return Container(
+            // Let HijriCalendar handle the math safely.
+            // The method `hijriToGregorian` works as long as we use an initialized object.
+            DateTime gFirstDay = _todayHijri!.hijriToGregorian(targetYear, targetMonth, 1);
+            var pageHijri = HijriCalendar.fromDate(gFirstDay);
+            // Force hDay=1 to align grid since fromDate uses the exact day it resolved to.
+            pageHijri.hDay = 1;
+
+            return Container(
             width: double.infinity,
             padding: const EdgeInsets.all(20.0),
             child: Column(
@@ -150,15 +137,7 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
                         SizedBox(
                           width: 50,
                           height: 50,
-                          // حماية Lottie بـ errorBuilder لمنع انهيار الشاشة في حال غياب الملف
-                          child: Lottie.asset(
-                            'assets/lottie/calendar.json',
-                            errorBuilder: (context, error, stackTrace) => const Icon(
-                              Icons.calendar_today, 
-                              color: Colors.blueAccent, 
-                              size: 35,
-                            ),
-                          ),
+                          child: Lottie.asset('assets/lottie/calendar.json', errorBuilder: (context, error, stackTrace) => Icon(Icons.calendar_today, color: Colors.white, size: 40)),
                         ),
                       ],
                     ),
@@ -212,6 +191,9 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
               ],
             ),
           );
+          } catch (e) {
+            return Center(child: Text("Error: ${e.toString()}", style: TextStyle(color: Colors.white)));
+          }
         },
       ),
     );
@@ -229,8 +211,9 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
     if (startingWeekday == 7) startingWeekday = 0; // الأحد = 0 في بعض التقويمات
 
     return GridView.builder(
-      physics: const NeverScrollableScrollPhysics(), // تعطيل التمرير الداخلي للشبكة لانسجامها مع Expanded
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(), // Safe constraint inside Expanded Column
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 7,
         childAspectRatio: 1.0,
       ),
