@@ -371,7 +371,7 @@ class _AlDhakereenAppState extends State<AlDhakereenApp> {
         onHijriAdjustmentChanged: (val) async {
           setState(() => _hijriAdjustment = val);
           final prefs = await SharedPreferences.getInstance();
-          prefs.setInt('hijriAdj', val);
+          prefs.setInt('hijri.date.correction.value', val);
         },
       ),
     );
