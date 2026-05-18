@@ -29,6 +29,7 @@ class _IstikharaScreenState extends State<IstikharaScreen>
   String _descriptionText = '';
   List<Map<String, dynamic>> _verses = [];
   bool _isLoadingVerses = false;
+  String? _errorMessage;
 
   Color _cardBgColor = const Color(0xFFFFFDF6);
   double _fontSizeOffset = 0.0;
@@ -54,10 +55,11 @@ class _IstikharaScreenState extends State<IstikharaScreen>
   }
 
   Future<List<Map<String, dynamic>>> _fetchVersesFromDb(int pageNumber) async {
+    Database? db;
     try {
       final dbPath = await getDatabasesPath();
       final path = p.join(dbPath, "quran_db.db");
-      final db = await openDatabase(path);
+      db = await openDatabase(path);
 
       final result = await db.rawQuery(
         '''
@@ -71,61 +73,135 @@ class _IstikharaScreenState extends State<IstikharaScreen>
       );
       return result;
     } catch (e) {
-      debugPrint("Error fetching verses: \$e");
+      debugPrint("Error fetching verses: $e");
       return [];
+    } finally {
+      // ✅ إغلاق قاعدة البيانات لتجنب تسريب الموارد
+      if (db != null && db.isOpen) {
+        await db.close();
+      }
     }
   }
 
   Future<void> _fetchIstikharaData() async {
-    final items = DataManager.getItems('istikhara');
-    if (items.isEmpty) return;
+    setState(() {
+      _errorMessage = null;
+      _isLoadingVerses = true;
+    });
 
-    final random = Random();
-    final randomIndex = random.nextInt(items.length);
-    _selectedIstikharaItem = items[randomIndex] as Map<String, dynamic>?;
-
-    if (_selectedIstikharaItem == null) return;
-
-    final title = _selectedIstikharaItem!['title'].toString();
-    final RegExp regExp = RegExp(r'\d+');
-    final match = regExp.firstMatch(title);
-    if (match != null) {
-      _extractedPageNumber = int.tryParse(match.group(0)!);
-    }
-
-    final content = _selectedIstikharaItem!['content'].toString();
-    final parts = content.split('\n');
-    for (var part in parts) {
-      if (part.startsWith('النتيجة:')) {
-        _resultText = part.replaceFirst('النتيجة:', '').trim();
-      } else if (part.startsWith('التفصيل:')) {
-        _descriptionText = part.replaceFirst('التفصيل:', '').trim();
+    try {
+      final items = DataManager.getItems('istikhara');
+      if (items.isEmpty) {
+        if (mounted) {
+          setState(() {
+            _errorMessage = 'لا توجد بيانات متاحة للخيرة.';
+            _isLoadingVerses = false;
+          });
+        }
+        return;
       }
-    }
 
-    if (_extractedPageNumber != null) {
-      setState(() {
-        _isLoadingVerses = true;
-      });
+      final random = Random();
+      final randomIndex = random.nextInt(items.length);
+      _selectedIstikharaItem = items[randomIndex] as Map<String, dynamic>?;
 
-      _verses = await _fetchVersesFromDb(_extractedPageNumber!);
+      if (_selectedIstikharaItem == null) {
+        if (mounted) {
+          setState(() {
+            _errorMessage = 'حدث خطأ في تحميل البيانات.';
+            _isLoadingVerses = false;
+          });
+        }
+        return;
+      }
+
+      final title = _selectedIstikharaItem!['title'].toString();
+      final RegExp regExp = RegExp(r'\d+');
+      final match = regExp.firstMatch(title);
+      if (match != null) {
+        _extractedPageNumber = int.tryParse(match.group(0)!);
+      }
+
+      final content = _selectedIstikharaItem!['content'].toString();
+      final parts = content.split('\n');
+      for (var part in parts) {
+        if (part.startsWith('النتيجة:')) {
+          _resultText = part.replaceFirst('النتيجة:', '').trim();
+        } else if (part.startsWith('التفصيل:')) {
+          _descriptionText = part.replaceFirst('التفصيل:', '').trim();
+        }
+      }
+
+      if (_extractedPageNumber != null) {
+        _verses = await _fetchVersesFromDb(_extractedPageNumber!);
+      }
 
       if (mounted) {
         setState(() {
           _isLoadingVerses = false;
         });
       }
-    } else {
+    } catch (e) {
+      debugPrint("Error in _fetchIstikharaData: $e");
       if (mounted) {
-        setState(() {});
+        setState(() {
+          _errorMessage = 'حدث خطأ أثناء تحميل البيانات. يرجى المحاولة مرة أخرى.';
+          _isLoadingVerses = false;
+        });
       }
     }
   }
 
   void _triggerIstikhara() async {
     await _fetchIstikharaData();
-    _stepNotifier.value = IstikharaStep.result;
-    _animationController.forward(from: 0);
+    if (_errorMessage == null) {
+      _stepNotifier.value = IstikharaStep.result;
+      _animationController.forward(from: 0);
+    }
+  }
+
+  void _resetIstikhara() {
+    _animationController.reset();
+    _stepNotifier.value = IstikharaStep.dua;
+    _selectedIstikharaItem = null;
+    _extractedPageNumber = null;
+    _resultText = '';
+    _descriptionText = '';
+    _verses = [];
+    _errorMessage = null;
+  }
+
+  void _copyResult() {
+    final textToCopy = 'نتيجة الخيرة:\n$_resultText\n\n$_descriptionText';
+    Clipboard.setData(ClipboardData(text: textToCopy)).then((_) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('تم النسخ إلى الحافظة')),
+        );
+      }
+    }).catchError((error) {
+      debugPrint("Error copying: $error");
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('حدث خطأ أثناء النسخ')),
+        );
+      }
+    });
+  }
+
+  void _shareResult() async {
+    try {
+      final textToShare =
+          'نتيجة الخيرة:\n$_resultText\n\n$_descriptionText\n\nتطبيق الذاكرين';
+      await Share.share(textToShare);
+    } catch (e) {
+      debugPrint("Error sharing: $e");
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('حدث خطأ أثناء المشاركة')),
+        );
+      }
+    }
   }
 
   @override
@@ -134,34 +210,35 @@ class _IstikharaScreenState extends State<IstikharaScreen>
       appBar: AppBar(
         title: const Text('خيرة القرآن الكريم'),
         centerTitle: true,
-        actions: _stepNotifier.value == IstikharaStep.result
-            ? [
-                IconButton(
-                  icon: const Icon(Icons.copy),
-                  onPressed: () {
-                    final textToCopy =
-                        'نتيجة الخيرة:\n$_resultText\n\n$_descriptionText';
-                    Clipboard.setData(ClipboardData(text: textToCopy)).then((
-                      _,
-                    ) {
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('تم النسخ إلى الحافظة')),
-                        );
-                      }
-                    });
-                  },
-                ),
-                IconButton(
-                  icon: const Icon(Icons.share),
-                  onPressed: () {
-                    final textToShare =
-                        'نتيجة الخيرة:\n$_resultText\n\n$_descriptionText\n\nتطبيق الذاكرين';
-                    Share.share(textToShare);
-                  },
-                ),
-              ]
-            : null,
+        // ✅ استخدام ValueListenableBuilder لتحديث الـ actions ديناميكياً
+        actions: [
+          ValueListenableBuilder<IstikharaStep>(
+            valueListenable: _stepNotifier,
+            builder: (context, step, child) {
+              if (step != IstikharaStep.result) return const SizedBox.shrink();
+              return Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.copy),
+                    tooltip: 'نسخ النتيجة',
+                    onPressed: _copyResult,
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.share),
+                    tooltip: 'مشاركة النتيجة',
+                    onPressed: _shareResult,
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.refresh),
+                    tooltip: 'ابدأ من جديد',
+                    onPressed: _resetIstikhara,
+                  ),
+                ],
+              );
+            },
+          ),
+        ],
       ),
       body: ValueListenableBuilder<IstikharaStep>(
         valueListenable: _stepNotifier,
@@ -206,7 +283,7 @@ class _IstikharaScreenState extends State<IstikharaScreen>
               ),
               const SizedBox(height: 24),
               const Text(
-                '«اللَّهُمَّ إِنِّي تَفَأَّلْتُ بِكِتَابِكَ، وَتَوَكَّلْتُ عَلَيْكَ، فَأَرِنِي مِنْ كِتَابِكَ مَا هُوَ مَكْتُومٌ مِنْ سِرِّكَ الْمَكْنُونِ فِي غَيْبِكَ»',
+                '«اللَّهُمَّ إِنِّي تَفَأَّلْتُ بِكِتَابِكَ، وَتَوَكَّلْتُ عَلَيْكَ، فَأَرِنِي مِنْ كِتَابِكَ مَا هُوَ مَكْتُومٌ مِنْ سِرِّكَ الْمَكْنُونِ فِي غَيْبِكَ»',
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 20, height: 1.8),
               ),
@@ -268,7 +345,10 @@ class _IstikharaScreenState extends State<IstikharaScreen>
                         spreadRadius: 5,
                       ),
                     ],
-                    border: Border.all(color: const Color(0xFFE0C9A6), width: 2),
+                    border: Border.all(
+                      color: const Color(0xFFE0C9A6),
+                      width: 2,
+                    ),
                   ),
                   child: Image.asset(
                     'assets/images/quran_icon.png',
@@ -286,12 +366,78 @@ class _IstikharaScreenState extends State<IstikharaScreen>
 
   Widget _buildResultStep() {
     if (_isLoadingVerses) {
-      return const Center(child: CircularProgressIndicator());
+      return const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(height: 16),
+            Text('جاري تحميل البيانات...'),
+          ],
+        ),
+      );
+    }
+
+    // ✅ عرض رسالة الخطأ إذا وجدت
+    if (_errorMessage != null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(
+                Icons.error_outline,
+                color: Colors.red,
+                size: 64,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                _errorMessage!,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 18,
+                  color: Colors.red,
+                ),
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton.icon(
+                onPressed: _resetIstikhara,
+                icon: const Icon(Icons.refresh),
+                label: const Text('إعادة المحاولة'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFD4AF37),
+                  foregroundColor: Colors.white,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
     }
 
     if (_selectedIstikharaItem == null) {
-      return const Center(
-        child: Text('عذراً، لم نتمكن من تحميل بيانات الخيرة.'),
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Text(
+              'عذراً، لم نتمكن من تحميل بيانات الخيرة.',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 18),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton.icon(
+              onPressed: _resetIstikhara,
+              icon: const Icon(Icons.refresh),
+              label: const Text('إعادة المحاولة'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFD4AF37),
+                foregroundColor: Colors.white,
+              ),
+            ),
+          ],
+        ),
       );
     }
 
@@ -299,6 +445,7 @@ class _IstikharaScreenState extends State<IstikharaScreen>
     final textColor = isDarkCard ? Colors.white : Colors.black87;
     const primaryColor = Color(0xFFD4AF37);
 
+    // ✅ حساب الآيات مرة واحدة فقط عند تغير البيانات
     String formattedVerses = '';
     if (_verses.isNotEmpty) {
       formattedVerses = _verses
@@ -502,6 +649,7 @@ class _IstikharaScreenState extends State<IstikharaScreen>
               children: [
                 IconButton(
                   icon: const Icon(Icons.remove),
+                  tooltip: 'تصغير الخط',
                   onPressed: () {
                     setState(() {
                       _fontSizeOffset = max(-10.0, _fontSizeOffset - 2.0);
@@ -514,6 +662,7 @@ class _IstikharaScreenState extends State<IstikharaScreen>
                 ),
                 IconButton(
                   icon: const Icon(Icons.add),
+                  tooltip: 'تكبير الخط',
                   onPressed: () {
                     setState(() {
                       _fontSizeOffset = min(20.0, _fontSizeOffset + 2.0);
