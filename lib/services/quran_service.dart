@@ -16,6 +16,9 @@ class QuranService {
       final dbPath = await getDatabasesPath();
       final path = join(dbPath, "quran_db.db");
 
+      // Ensure directory exists
+      await Directory(dirname(path)).create(recursive: true);
+
       if (!await File(path).exists()) {
         await Directory(dirname(path)).create(recursive: true);
         ByteData data = await rootBundle.load("assets/data/quran_db.db");
