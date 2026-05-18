@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'dart:io';
 
 import '../services/favorites_service.dart';
@@ -249,7 +248,7 @@ class _FavoritesSectionState extends State<FavoritesSection> {
                 item.content,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
-                style: GoogleFonts.amiri(fontSize: 16),
+                style: TextStyle(fontFamily: 'OmarNaskh', fontSize: 16),
               ),
             ),
             trailing: Row(

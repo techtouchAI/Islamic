@@ -4,7 +4,6 @@ import 'package:firebase_core/firebase_core.dart';
 import 'services/analytics_service.dart';
 import 'sections/html_content_renderer.dart';
 
-import 'package:google_fonts/google_fonts.dart';
 import 'sections/tasbih_section.dart';
 import 'package:intl/intl.dart' as intl;
 import 'package:intl/date_symbol_data_local.dart';
@@ -299,7 +298,7 @@ class _AlDhakereenAppState extends State<AlDhakereenApp> {
       ],
       theme: ThemeData(
         useMaterial3: true,
-        textTheme: GoogleFonts.notoKufiArabicTextTheme(),
+        textTheme: ThemeData.light().textTheme.apply(fontFamily: 'BNazanin'),
         colorScheme: ColorScheme.fromSeed(
           seedColor: _primaryColor,
           brightness: Brightness.light,
@@ -309,9 +308,7 @@ class _AlDhakereenAppState extends State<AlDhakereenApp> {
       ),
       darkTheme: ThemeData(
         useMaterial3: true,
-        textTheme: GoogleFonts.notoKufiArabicTextTheme(
-          ThemeData.dark().textTheme,
-        ),
+        textTheme: ThemeData.dark().textTheme.apply(fontFamily: 'BNazanin'),
         colorScheme: ColorScheme.fromSeed(
           seedColor: _primaryColor,
           brightness: Brightness.dark,
@@ -1162,7 +1159,7 @@ class _HomeSectionState extends State<HomeSection> {
                       textAlign: TextAlign.center,
                       maxLines: 4,
                       overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.notoNaskhArabic(
+                      style: TextStyle(fontFamily: 'OmarNaskh',
                         fontSize: 17,
                         height: 1.9,
                         color: textColor,
@@ -1853,7 +1850,7 @@ class _DynamicListSectionState extends State<DynamicListSection> {
                           ),
                           child: Text(
                             "آياتها ${surah['total_ayahs']}",
-                            style: GoogleFonts.notoNaskhArabic(
+                            style: TextStyle(fontFamily: 'OmarNaskh',
                               fontSize: 12,
                               fontWeight: FontWeight.bold,
                               color: Theme.of(context).colorScheme.primary,
@@ -2003,7 +2000,7 @@ class _DynamicListSectionState extends State<DynamicListSection> {
                                         fontSize: 18,
                                         height: 1.8,
                                       )
-                                    : GoogleFonts.amiri(fontSize: 16),
+                                    : TextStyle(fontFamily: 'OmarNaskh', fontSize: 16),
                               ),
                             ),
                             onTap: () => Navigator.push(
@@ -2095,7 +2092,7 @@ class SurahHeader extends StatelessWidget {
             ),
             child: Text(
               title,
-              style: GoogleFonts.scheherazadeNew(
+              style: TextStyle(fontFamily: 'OmarNaskh',
                 fontSize: 28,
                 fontWeight: FontWeight.bold,
                 color: color,
@@ -2253,7 +2250,7 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
                         widget.surahName != 'التوبة') ...[
                       Text(
                         "بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ",
-                        style: GoogleFonts.scheherazadeNew(
+                        style: TextStyle(fontFamily: 'OmarNaskh',
                           fontSize: 30,
                           fontWeight: FontWeight.bold,
                           color: primary,
@@ -2391,7 +2388,7 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
                                 Text(
                                   widget.title,
                                   textAlign: TextAlign.center,
-                                  style: GoogleFonts.notoNaskhArabic(
+                                  style: TextStyle(fontFamily: 'OmarNaskh',
                                     fontSize: 22 * _factor,
                                     height: 2.2,
                                     fontWeight: FontWeight.bold,
@@ -2420,7 +2417,7 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
                                               height: 1.8,
                                               color: dynamicTextColor,
                                             )
-                                          : GoogleFonts.notoNaskhArabic(
+                                          : TextStyle(fontFamily: 'OmarNaskh',
                                               fontSize: 20 * _factor,
                                               height: 2.2,
                                               color: dynamicTextColor,
