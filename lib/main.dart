@@ -304,7 +304,7 @@ class _AlDhakereenAppState extends State<AlDhakereenApp> {
       ],
       theme: ThemeData(
         useMaterial3: true,
-        textTheme: ThemeData.light().textTheme.apply(fontFamily: 'BNazanin'),
+        textTheme: ThemeData.light().textTheme.apply(fontFamily: 'Cairo'),
         colorScheme: ColorScheme.fromSeed(
           seedColor: _primaryColor,
           brightness: Brightness.light,
@@ -314,7 +314,7 @@ class _AlDhakereenAppState extends State<AlDhakereenApp> {
       ),
       darkTheme: ThemeData(
         useMaterial3: true,
-        textTheme: ThemeData.dark().textTheme.apply(fontFamily: 'BNazanin'),
+        textTheme: ThemeData.dark().textTheme.apply(fontFamily: 'Cairo'),
         colorScheme: ColorScheme.fromSeed(
           seedColor: _primaryColor,
           brightness: Brightness.dark,

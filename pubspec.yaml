@@ -64,6 +64,9 @@ flutter:
     - family: BNazanin
       fonts:
         - asset: assets/font/B-NAZANIN.TTF
+    - family: Cairo
+      fonts:
+        - asset: assets/font/Cairo-VariableFont.ttf
     - family: HafsSmart
       fonts:
         - asset: assets/font/HafsSmart.ttf
