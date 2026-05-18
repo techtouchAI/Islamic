@@ -374,7 +374,8 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          '$displayHDay ${monthHijri.longMonthName} ${monthHijri.hYear} هـ' // يقرأ اليوم الهجري المتفاعل
+                          '$displayHDay ${monthHijri.longMonthName} ${monthHijri.hYear} هـ', // 
+                         يقرأ اليوم الهجري المتفاعل
                           style: const TextStyle(
                             fontFamily: 'me_quran',
                             color: Colors.white,
@@ -384,7 +385,8 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
                         ),
                         const SizedBox(height: 5),
                         Text(
-                          '$weekdayName ${exactGregDate.day} ${_getGregorianMonthName(exactGregDate.month)} ${exactGregDate.year} م' // يقرأ اليوم الميلادي واسم الأسبوع المتفاعل
+                          '$weekdayName ${exactGregDate.day} ${_getGregorianMonthName(exactGregDate.month)} ${exactGregDate.year} م', 
+                          // يقرأ اليوم الميلادي واسم الأسبوع المتفاعل
                           style: const TextStyle(
                             fontFamily: 'me_quran',
                             color: Colors.tealAccent,
@@ -483,7 +485,7 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
                       alignment: Alignment.center,
                       children: [
                         Text(
-                          '$hDay'
+                          '$hDay',
                           style: TextStyle(
                             fontFamily: 'Cairo',
                             fontSize: 18,
@@ -619,7 +621,7 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '${_todayHijri!.hDay} ${_todayHijri!.longMonthName} ${_todayHijri!.hYear} هـ'
+                      '${_todayHijri!.hDay} ${_todayHijri!.longMonthName} ${_todayHijri!.hYear} هـ',
                       style: const TextStyle(
                         fontFamily: 'me_quran',
                         color: Colors.amber,
