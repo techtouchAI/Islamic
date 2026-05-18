@@ -2,6 +2,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart' as intl;
+import '../utils/string_extensions.dart';
 
 class TasbihSection extends StatefulWidget {
   const TasbihSection({super.key});
@@ -102,7 +103,7 @@ class _TasbihSectionState extends State<TasbihSection> {
                         ),
                         child: Center(
                           child: Text(
-                            '$_counter',
+                            '$_counter'.toEasternArabic(),
                             style: TextStyle(
                               fontSize: 70,
                               fontWeight: FontWeight.bold,
@@ -116,7 +117,7 @@ class _TasbihSectionState extends State<TasbihSection> {
                 ),
                 const SizedBox(height: 20),
                 Text(
-                  'المجموع الكلي: ${intl.NumberFormat.decimalPattern().format(_lifetimeCounter)}',
+                  'المجموع الكلي: ${intl.NumberFormat.decimalPattern().format(_lifetimeCounter).toEasternArabic()}',
                   style: TextStyle(fontFamily: 'OmarNaskh',
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
