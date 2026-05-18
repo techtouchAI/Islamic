@@ -274,7 +274,7 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
     // First pass: look for events in remaining months of current year
     for (final event in sorted) {
       if (event.hMonth > currentMonth ||
-          (event.hMonth == currentMonth && event.hDay >= currentDay)) {
+          (event.hMonth == currentMonth && event.hDay > currentDay)) {
         return event;
       }
     }
@@ -513,14 +513,6 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
             ),
           ),
           const SizedBox(height: 16),
-          if (_selectedDay != null &&
-              _displayedHijri.hMonth == monthHijri.hMonth &&
-              _displayedHijri.hYear == monthHijri.hYear &&
-              _selectedDayEvents.isNotEmpty)
-            _buildEventsCard(
-              'مناسبات اليوم',
-              _selectedDayEvents,
-            ),
         ],
       ),
     );
@@ -697,8 +689,10 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
               itemBuilder: (context, index) => _buildCalendarGridForPage(context, index),
             ),
           ),
-          if (nextEvent != null)
-            _buildEventsCard('الحدث القادم', [nextEvent]),
+          if (nextEvent != null && !(todayEvents.isNotEmpty && nextEvent.title == todayEvents.first.title))
+            _buildEventsCard('الأحداث القادمة', [nextEvent])
+          else if (nextEvent == null)
+             _buildEventsCard('الأحداث القادمة', [_EventModel(hDay: 0, hMonth: 0, hYear: 0, title: 'لا توجد مناسبات قادمة')]),
           const SizedBox(height: 8),
         ],
       ),
