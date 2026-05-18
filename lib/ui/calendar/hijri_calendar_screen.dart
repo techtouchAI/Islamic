@@ -4,7 +4,7 @@ import 'package:lottie/lottie.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../utils/string_extensions.dart';
 
-final RouteObserver<<PageRoute> routeObserver = RouteObserver<<PageRoute>();
+final RouteObserver<PageRoute> routeObserver = RouteObserver<PageRoute>();
 
 class HijriCalendarScreen extends StatefulWidget {
   const HijriCalendarScreen({Key? key}) : super(key: key);
