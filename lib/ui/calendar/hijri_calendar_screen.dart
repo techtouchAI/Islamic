@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:hijri/hijri_calendar.dart';
 import 'package:lottie/lottie.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../utils/string_extensions.dart';
 
 final RouteObserver<PageRoute> routeObserver = RouteObserver<PageRoute>();
 
@@ -373,7 +374,7 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          '$displayHDay ${monthHijri.longMonthName} ${monthHijri.hYear} هـ', // يقرأ اليوم الهجري المتفاعل
+                          '$displayHDay ${monthHijri.longMonthName} ${monthHijri.hYear} هـ'.toEasternArabic(), // يقرأ اليوم الهجري المتفاعل
                           style: const TextStyle(
                             fontFamily: 'me_quran',
                             color: Colors.white,
@@ -383,7 +384,7 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
                         ),
                         const SizedBox(height: 5),
                         Text(
-                          '$weekdayName ${exactGregDate.day} ${_getGregorianMonthName(exactGregDate.month)} ${exactGregDate.year} م', // يقرأ اليوم الميلادي واسم الأسبوع المتفاعل
+                          '$weekdayName ${exactGregDate.day} ${_getGregorianMonthName(exactGregDate.month)} ${exactGregDate.year} م'.toEasternArabic(), // يقرأ اليوم الميلادي واسم الأسبوع المتفاعل
                           style: const TextStyle(
                             fontFamily: 'me_quran',
                             color: Colors.tealAccent,
@@ -461,29 +462,50 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
                   child: Container(
                     margin: const EdgeInsets.all(2),
                     decoration: BoxDecoration(
-                      color: isToday ? Colors.teal : null,
+                      color: isToday
+                          ? (hasEvent ? Colors.teal.shade700 : Colors.teal)
+                          : null,
                       shape: isToday ? BoxShape.circle : BoxShape.rectangle,
                       borderRadius: isToday ? null : BorderRadius.circular(8),
                       border: Border.all(
-                        color: isSelected
-                            ? Colors.green
-                            : (hasEvent ? Colors.amber : Colors.transparent),
-                        width: isSelected ? 2.0 : (hasEvent ? 1.5 : 0.0),
+                        color: isToday && hasEvent
+                            ? Colors.amber
+                            : (isSelected
+                                ? Colors.green
+                                : (hasEvent ? Colors.amber : Colors.transparent)),
+                        width: isToday && hasEvent
+                            ? 2.0
+                            : (isSelected ? 2.0 : (hasEvent ? 1.5 : 0.0)),
                       ),
                     ),
                     alignment: Alignment.center,
-                    child: Center(
-                      child: Text(
-                        '$hDay',
-                        style: TextStyle(
-                          fontFamily: 'me_quran',
-                          fontSize: 18,
-                          fontWeight: isToday ? FontWeight.bold : FontWeight.normal,
-                          color: isToday
-                              ? Colors.white
-                              : (hasEvent ? Colors.amber.shade300 : Colors.white70),
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        Text(
+                          '$hDay'.toEasternArabic(),
+                          style: TextStyle(
+                            fontFamily: 'me_quran',
+                            fontSize: 18,
+                            fontWeight: isToday ? FontWeight.bold : FontWeight.normal,
+                            color: isToday
+                                ? (hasEvent ? Colors.amber.shade200 : Colors.white)
+                                : (hasEvent ? Colors.amber.shade300 : Colors.white70),
+                          ),
                         ),
-                      ),
+                        if (isToday && hasEvent)
+                          Positioned(
+                            bottom: 2,
+                            child: Container(
+                              width: 4,
+                              height: 4,
+                              decoration: const BoxDecoration(
+                                color: Colors.amber,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
                   ),
                 );
@@ -560,6 +582,71 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
   }
 
   @override
+  Widget _buildTodayEventCard(List<_EventModel> events) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF2A2A2A),
+        borderRadius: BorderRadius.circular(15),
+        border: Border.all(
+          color: Colors.amber,
+          width: 1.5,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'مناسبة اليوم',
+            style: TextStyle(
+              fontFamily: 'me_quran',
+              color: Colors.amber,
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const Divider(color: Colors.white24, height: 16),
+          ...events.map((event) => Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('🕌', style: TextStyle(fontSize: 20)),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      event.title,
+                      style: const TextStyle(
+                        fontFamily: 'me_quran',
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${_todayHijri!.hDay} ${_todayHijri!.longMonthName} ${_todayHijri!.hYear} هـ'.toEasternArabic(),
+                      style: const TextStyle(
+                        fontFamily: 'me_quran',
+                        color: Colors.amber,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        )).toList(),
+        ],
+      ),
+    );
+  }
+
   Widget build(BuildContext context) {
     if (_isLoading || _todayHijri == null) {
       return const Scaffold(
@@ -569,6 +656,7 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
     }
 
     final _EventModel? nextEvent = _getNextEvent();
+    final List<_EventModel> todayEvents = _getEventsForDay(_todayHijri!.hDay, _todayHijri!.hMonth);
 
     return Scaffold(
       backgroundColor: const Color(0xFF1E1E1E),
@@ -594,9 +682,8 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
       ),
       body: Column(
         children: [
-          if (nextEvent != null)
-            _buildEventsCard('الحدث القادم', [nextEvent]),
-          const SizedBox(height: 8),
+          if (todayEvents.isNotEmpty)
+            _buildTodayEventCard(todayEvents),
           Expanded(
             child: PageView.builder(
               controller: _pageController,
@@ -610,6 +697,9 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
               itemBuilder: (context, index) => _buildCalendarGridForPage(context, index),
             ),
           ),
+          if (nextEvent != null)
+            _buildEventsCard('الحدث القادم', [nextEvent]),
+          const SizedBox(height: 8),
         ],
       ),
     );
