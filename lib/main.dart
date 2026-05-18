@@ -1774,8 +1774,23 @@ class _DynamicListSectionState extends State<DynamicListSection> {
       return FutureBuilder<List<Map<String, dynamic>>>(
         future: _quranFuture,
         builder: (context, snapshot) {
-          if (!snapshot.hasData)
+          if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            return Center(
+              child: Text(
+                'حدث خطأ أثناء تحميل القرآن:\n${snapshot.error}',
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Colors.red, fontSize: 16),
+              ),
+            );
+          }
+          if (!snapshot.hasData || snapshot.data!.isEmpty) {
+            return const Center(
+              child: Text('لا توجد بيانات، يرجى التأكد من مساحة التخزين.'),
+            );
+          }
           final data = snapshot.data!;
           return ListView.builder(
             physics: const BouncingScrollPhysics(),

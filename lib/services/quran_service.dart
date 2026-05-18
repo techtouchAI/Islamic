@@ -16,6 +16,9 @@ class QuranService {
       final dbPath = await getDatabasesPath();
       final path = join(dbPath, "quran_db.db");
 
+      // Ensure directory exists
+      await Directory(dirname(path)).create(recursive: true);
+
       if (!await File(path).exists()) {
         ByteData data = await rootBundle.load("assets/data/quran_db.db");
         List<int> bytes = data.buffer.asUint8List(
@@ -50,7 +53,12 @@ class QuranService {
         {'id': 3, 'name': 'البقرة', 'total_ayahs': 286},
       ];
     }
-    return await _db!.query('surah', orderBy: 'id ASC');
+    try {
+      return await _db!.query('surah', orderBy: 'id ASC');
+    } catch (e) {
+      debugPrint("QuranService getSurahs Error: $e");
+      return [];
+    }
   }
 
   static Future<List<Map<String, dynamic>>> getAyahs(int surahId) async {
@@ -73,16 +81,21 @@ class QuranService {
       }
       return [];
     }
-    // Using 'text' column for full Tashkeel
-    final result = await _db!.query(
-      'ayah',
-      where: 'sid = ?',
-      columns: ['text as ar_text', 'anum', 'ayah_surah_index'],
-      whereArgs: [surahId],
-      orderBy: 'anum ASC',
-    );
-    _ayahsCache[surahId] = result;
-    return result;
+    try {
+      // Using 'text' column for full Tashkeel
+      final result = await _db!.query(
+        'ayah',
+        where: 'sid = ?',
+        columns: ['text as ar_text', 'anum', 'ayah_surah_index'],
+        whereArgs: [surahId],
+        orderBy: 'anum ASC',
+      );
+      _ayahsCache[surahId] = result;
+      return result;
+    } catch (e) {
+      debugPrint("QuranService getAyahs Error: $e");
+      return [];
+    }
   }
 
   static Future<List<Map<String, dynamic>>> getVersesByPage(int pageNumber) async {
