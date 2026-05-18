@@ -288,6 +288,12 @@ class _AlDhakereenAppState extends State<AlDhakereenApp> {
     return MaterialApp(
       title: 'الذاكرين',
       debugShowCheckedModeBanner: false,
+      builder: (context, child) => MediaQuery(
+        data: MediaQuery.of(context).copyWith(
+          textScaler: MediaQuery.of(context).textScaler, // Respects system font scaling
+        ),
+        child: child!,
+      ),
       navigatorObservers: [routeObserver],
       locale: const Locale('ar', 'SA'),
       supportedLocales: const [Locale('ar', 'SA')],
@@ -743,13 +749,13 @@ class AppDrawer extends StatelessWidget {
                     'تطبيق الذاكرين',
                     style: TextStyle(
                       color: Colors.white,
-                      fontSize: 22,
+                      fontSize: 24,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                   Text(
                     about['developer_name']?.toString() ?? '',
-                    style: const TextStyle(color: Colors.white70, fontSize: 12),
+                    style: const TextStyle(color: Colors.white70, fontSize: 14),
                   ),
                 ],
               ),
@@ -783,7 +789,7 @@ class AppDrawer extends StatelessWidget {
                 const Divider(),
                 ListTile(
                   leading: const Icon(Icons.calendar_today),
-                  title: const Text('التقويم الهجري', style: TextStyle(fontSize: 15)),
+                  title: const Text('التقويم الهجري', style: TextStyle(fontSize: 16)),
                   onTap: () {
                     Navigator.pop(context); // close drawer
                     Navigator.push(context, MaterialPageRoute(builder: (_) => HijriCalendarScreen()));
@@ -791,7 +797,7 @@ class AppDrawer extends StatelessWidget {
                 ),
                 ListTile(
                   leading: const Icon(Icons.explore),
-                  title: const Text('اتجاه القبلة', style: TextStyle(fontSize: 15)),
+                  title: const Text('اتجاه القبلة', style: TextStyle(fontSize: 16)),
                   onTap: () {
                     Navigator.pop(context); // close drawer
                     Navigator.push(context, MaterialPageRoute(builder: (_) => QiblaScreen()));
@@ -837,7 +843,7 @@ class AppDrawer extends StatelessWidget {
         title,
         style: TextStyle(
           fontWeight: active ? FontWeight.bold : FontWeight.normal,
-          fontSize: 15,
+          fontSize: 16,
         ),
       ),
       trailing: count > 0 ? _CountBadge(count: count) : null,
@@ -1147,7 +1153,7 @@ class _HomeSectionState extends State<HomeSection> {
                           style: TextStyle(
                             color: Theme.of(context).colorScheme.primary,
                             fontWeight: FontWeight.bold,
-                            fontSize: 18,
+                            fontSize: 22,
                             letterSpacing: 0.5,
                           ),
                         ),
@@ -1264,7 +1270,7 @@ class _HomeSectionState extends State<HomeSection> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        '${hijri.hDay} ${hijri.longMonthName} ${hijri.hYear} هـ',
+                        '${hijri.hDay} ${hijri.longMonthName} ${hijri.hYear} هـ'.toEasternArabic(),
                         style: TextStyle(
                           color: Theme.of(context).colorScheme.primary,
                           fontSize: 20,
@@ -1275,7 +1281,7 @@ class _HomeSectionState extends State<HomeSection> {
                         intl.DateFormat(
                           'EEEE, d MMMM yyyy',
                           'ar_SA',
-                        ).format(now),
+                        ).format(now).toEasternArabic(),
                         style: TextStyle(
                           color: Theme.of(
                             context,
@@ -1537,7 +1543,7 @@ class _ClockWidgetState extends State<_ClockWidget> {
       'en_US',
     ).format(DateTime.now());
     _timeNotifier.value =
-        formattedTime.replaceFirst('AM', 'ص').replaceFirst('PM', 'م');
+        formattedTime.replaceFirst('AM', 'ص').replaceFirst('PM', 'م').toEasternArabic();
   }
 
   @override
