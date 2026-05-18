@@ -302,6 +302,22 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
     });
   }
 
+  /// ═══════════════════════════════════════════════════════════════
+  /// دالة جديدة: تحويل أيام الأسبوع للعربي
+  /// ═══════════════════════════════════════════════════════════════
+  String _getArabicWeekday(int weekday) {
+    const days = {
+      1: 'الإثنين',
+      2: 'الثلاثاء',
+      3: 'الأربعاء',
+      4: 'الخميس',
+      5: 'الجمعة',
+      6: 'السبت',
+      7: 'الأحد'
+    };
+    return days[weekday] ?? '';
+  }
+
   Widget _buildCalendarGridForPage(BuildContext context, int pageIndex) {
     final HijriCalendar monthHijri = _getHijriMonthForPage(pageIndex);
 
@@ -310,6 +326,28 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
       monthHijri.hMonth,
       1,
     );
+
+    // ═══════════════════════════════════════════════════════════════
+    // منطق حساب اليوم المحدد (Selected Day) وتاريخه الميلادي
+    // ═══════════════════════════════════════════════════════════════
+    // 1. تحديد اليوم الذي سيُعرض في الهيدر
+    int displayHDay = 1;
+    bool isCurrentMonth = monthHijri.hMonth == _todayHijri!.hMonth && monthHijri.hYear == _todayHijri!.hYear;
+
+    if (_selectedDay != null && _displayedHijri.hMonth == monthHijri.hMonth && _displayedHijri.hYear == monthHijri.hYear) {
+      displayHDay = _selectedDay!; // اليوم الذي ضغط عليه المستخدم
+    } else if (isCurrentMonth) {
+      displayHDay = _todayHijri!.hDay; // إذا لم يضغط شيء، أظهر اليوم الحالي
+    }
+
+    // 2. حساب التاريخ الميلادي المضبوط لهذا اليوم المحدد
+    final DateTime exactGregDate = _todayHijri!.hijriToGregorian(
+      monthHijri.hYear,
+      monthHijri.hMonth,
+      displayHDay,
+    );
+
+    String weekdayName = _getArabicWeekday(exactGregDate.weekday);
 
     final int leadingEmptyCells = (gregFirstDay.weekday + 1) % 7;
     final int daysInMonth = monthHijri.lengthOfMonth;
@@ -327,28 +365,33 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '${monthHijri.longMonthName} ${monthHijri.hYear}',
-                        style: const TextStyle(
-                          fontFamily: 'me_quran',
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
+                  // ═══════════════════════════════════════════════════════════════
+                  // الهيدر المتفاعل: يعرض اليوم الهجري والميلادي المحدد
+                  // ═══════════════════════════════════════════════════════════════
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '$displayHDay ${monthHijri.longMonthName} ${monthHijri.hYear} هـ', // يقرأ اليوم الهجري المتفاعل
+                          style: const TextStyle(
+                            fontFamily: 'me_quran',
+                            color: Colors.white,
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 5),
-                      Text(
-                        '${gregFirstDay.year} ${_getGregorianMonthName(gregFirstDay.month)}',
-                        style: const TextStyle(
-                          fontFamily: 'me_quran',
-                          color: Colors.grey,
-                          fontSize: 14,
+                        const SizedBox(height: 5),
+                        Text(
+                          '$weekdayName ${exactGregDate.day} ${_getGregorianMonthName(exactGregDate.month)} ${exactGregDate.year} م', // يقرأ اليوم الميلادي واسم الأسبوع المتفاعل
+                          style: const TextStyle(
+                            fontFamily: 'me_quran',
+                            color: Colors.tealAccent,
+                            fontSize: 15,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                   SizedBox(
                     width: 50,
