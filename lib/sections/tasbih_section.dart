@@ -1,6 +1,5 @@
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart' as intl;
 
@@ -52,7 +51,7 @@ class _TasbihSectionState extends State<TasbihSection> {
               children: [
                 Text(
                   _currentDhikr,
-                  style: GoogleFonts.scheherazadeNew(
+                  style: TextStyle(fontFamily: 'OmarNaskh',
                     fontSize: 35,
                     fontWeight: FontWeight.bold,
                     color: Theme.of(context).colorScheme.primary,
@@ -104,7 +103,7 @@ class _TasbihSectionState extends State<TasbihSection> {
                         child: Center(
                           child: Text(
                             '$_counter',
-                            style: GoogleFonts.notoSans(
+                            style: TextStyle(
                               fontSize: 70,
                               fontWeight: FontWeight.bold,
                               color: Theme.of(context).colorScheme.primary,
@@ -118,7 +117,7 @@ class _TasbihSectionState extends State<TasbihSection> {
                 const SizedBox(height: 20),
                 Text(
                   'المجموع الكلي: ${intl.NumberFormat.decimalPattern().format(_lifetimeCounter)}',
-                  style: GoogleFonts.notoNaskhArabic(
+                  style: TextStyle(fontFamily: 'OmarNaskh',
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                     color: Theme.of(context).colorScheme.primary,
