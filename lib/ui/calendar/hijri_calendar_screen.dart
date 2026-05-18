@@ -4,7 +4,7 @@ import 'package:lottie/lottie.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../utils/string_extensions.dart';
 
-final RouteObserver<PageRoute> routeObserver = RouteObserver<PageRoute>();
+final RouteObserver<<PageRoute> routeObserver = RouteObserver<<PageRoute>();
 
 class HijriCalendarScreen extends StatefulWidget {
   const HijriCalendarScreen({Key? key}) : super(key: key);
@@ -537,7 +537,6 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
                 fontWeight: FontWeight.bold,
               ),
             ),
-            const Divider(color: Colors.white24, height: 16),
             ...events.map((event) => Padding(
               padding: const EdgeInsets.only(bottom: 8),
               child: Row(
@@ -598,7 +597,6 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
               fontWeight: FontWeight.bold,
             ),
           ),
-          const Divider(color: Colors.white24, height: 16),
           ...events.map((event) => Padding(
           padding: const EdgeInsets.only(bottom: 8),
           child: Row(
@@ -689,7 +687,9 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
               itemBuilder: (context, index) => _buildCalendarGridForPage(context, index),
             ),
           ),
-          if (nextEvent != null && !(todayEvents.isNotEmpty && nextEvent.title == todayEvents.first.title))
+          if (_selectedDay != null && _selectedDayEvents.isNotEmpty)
+            _buildEventsCard('أحداث هذا اليوم', _selectedDayEvents)
+          else if (nextEvent != null && !(todayEvents.isNotEmpty && nextEvent.title == todayEvents.first.title))
             _buildEventsCard('الأحداث القادمة', [nextEvent])
           else if (nextEvent == null)
              _buildEventsCard('الأحداث القادمة', [_EventModel(hDay: 0, hMonth: 0, hYear: 0, title: 'لا توجد مناسبات قادمة')]),
