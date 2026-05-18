@@ -20,6 +20,7 @@ class QuranService {
       await Directory(dirname(path)).create(recursive: true);
 
       if (!await File(path).exists()) {
+        await Directory(dirname(path)).create(recursive: true);
         ByteData data = await rootBundle.load("assets/data/quran_db.db");
         List<int> bytes = data.buffer.asUint8List(
           data.offsetInBytes,
@@ -34,26 +35,26 @@ class QuranService {
   }
 
   static Future<List<Map<String, dynamic>>> getSurahs() async {
-    if (kIsWeb || _db == null) {
-      // Use DataManager as fallback (CMS support)
-      final items = DataManager.getItems('quran');
-      if (items.isNotEmpty) {
-        return items
-            .map(
-              (e) => {
-                'id': e['id'],
-                'name': e['title'].toString().replaceFirst('سورة ', ''),
-                'total_ayahs': 'غير محدد',
-              },
-            )
-            .toList();
-      }
-      return [
-        {'id': 2, 'name': 'الفاتحة', 'total_ayahs': 7},
-        {'id': 3, 'name': 'البقرة', 'total_ayahs': 286},
-      ];
-    }
     try {
+      if (kIsWeb || _db == null) {
+        // Use DataManager as fallback (CMS support)
+        final items = DataManager.getItems('quran');
+        if (items.isNotEmpty) {
+          return items
+              .map(
+                (e) => {
+                  'id': e['id'],
+                  'name': e['title'].toString().replaceFirst('سورة ', ''),
+                  'total_ayahs': 'غير محدد',
+                },
+              )
+              .toList();
+        }
+        return [
+          {'id': 2, 'name': 'الفاتحة', 'total_ayahs': 7},
+          {'id': 3, 'name': 'البقرة', 'total_ayahs': 286},
+        ];
+      }
       return await _db!.query('surah', orderBy: 'id ASC');
     } catch (e) {
       debugPrint("QuranService getSurahs Error: $e");
@@ -62,26 +63,26 @@ class QuranService {
   }
 
   static Future<List<Map<String, dynamic>>> getAyahs(int surahId) async {
-    if (_ayahsCache.containsKey(surahId)) {
-      return _ayahsCache[surahId]!;
-    }
-
-    if (kIsWeb || _db == null) {
-      final items = DataManager.getItems('quran');
-      final found = items.firstWhere(
-        (e) => e['id'] == surahId,
-        orElse: () => null,
-      );
-      if (found != null) {
-        final result = [
-          {'ar_text': found['content'].toString(), 'ayah_surah_index': ''},
-        ];
-        _ayahsCache[surahId] = result;
-        return result;
-      }
-      return [];
-    }
     try {
+      if (_ayahsCache.containsKey(surahId)) {
+        return _ayahsCache[surahId]!;
+      }
+
+      if (kIsWeb || _db == null) {
+        final items = DataManager.getItems('quran');
+        final found = items.firstWhere(
+          (e) => e['id'] == surahId,
+          orElse: () => null,
+        );
+        if (found != null) {
+          final result = [
+            {'ar_text': found['content'].toString(), 'ayah_surah_index': ''},
+          ];
+          _ayahsCache[surahId] = result;
+          return result;
+        }
+        return [];
+      }
       // Using 'text' column for full Tashkeel
       final result = await _db!.query(
         'ayah',
