@@ -485,7 +485,7 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
                         Text(
                           '$hDay'.toEasternArabic(),
                           style: TextStyle(
-                            fontFamily: 'me_quran',
+                            fontFamily: 'Cairo',
                             fontSize: 18,
                             fontWeight: isToday ? FontWeight.bold : FontWeight.normal,
                             color: isToday
