@@ -180,95 +180,106 @@ class _IstikharaScreenState extends State<IstikharaScreen>
   }
 
   Widget _buildDuaStep() {
-    return Padding(
-      padding: const EdgeInsets.all(24.0),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Image.asset(
-            'assets/images/quran_icon_dummy.png',
-            width: 250,
-            height: 250,
-          ),
-          const SizedBox(height: 32),
-          const Text(
-            'دعاء الاستخارة',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFFD4AF37),
-            ),
-          ),
-          const SizedBox(height: 24),
-          const Text(
-            '«اللَّهُمَّ إِنِّي تَفَأَّلْتُ بِكِتَابِكَ، وَتَوَكَّلْتُ عَلَيْكَ، فَأَرِنِي مِنْ كِتَابِكَ مَا هُوَ مَكْتُومٌ مِنْ سِرِّكَ الْمَكْنُونِ فِي غَيْبِكَ»',
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 20, height: 1.8),
-          ),
-          const SizedBox(height: 48),
-          ElevatedButton(
-            onPressed: () {
-              _stepNotifier.value = IstikharaStep.action;
-            },
-            style: ElevatedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
+    return Center(
+      child: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Image.asset(
+                'assets/images/quran_icon_dummy.png',
+                width: 250,
+                height: 250,
               ),
-              backgroundColor: const Color(0xFFD4AF37),
-              foregroundColor: Colors.white,
-            ),
-            child: const Text(
-              'الاستمرار',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
+              const SizedBox(height: 32),
+              const Text(
+                'دعاء الاستخارة',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFFD4AF37),
+                ),
+              ),
+              const SizedBox(height: 24),
+              const Text(
+                '«اللَّهُمَّ إِنِّي تَفَأَّلْتُ بِكِتَابِكَ، وَتَوَكَّلْتُ عَلَيْكَ، فَأَرِنِي مِنْ كِتَابِكَ مَا هُوَ مَكْتُومٌ مِنْ سِرِّكَ الْمَكْنُونِ فِي غَيْبِكَ»',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 20, height: 1.8),
+              ),
+              const SizedBox(height: 48),
+              ElevatedButton(
+                onPressed: () {
+                  _stepNotifier.value = IstikharaStep.action;
+                },
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  backgroundColor: const Color(0xFFD4AF37),
+                  foregroundColor: Colors.white,
+                ),
+                child: const Text(
+                  'الاستمرار',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
 
   Widget _buildActionStep() {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Text(
-            'اعقد النية وتوكل على الله',
-            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 16),
-          const Text(
-            'اضغط على المصحف لفتح الخيرة',
-            style: TextStyle(fontSize: 16, color: Colors.grey),
-          ),
-          const SizedBox(height: 48),
-          GestureDetector(
-            onTap: _triggerIstikhara,
-            child: Container(
-              padding: const EdgeInsets.all(40),
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Theme.of(context).colorScheme.surface,
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFFD4AF37).withValues(alpha: 0.3),
-                    blurRadius: 20,
-                    spreadRadius: 5,
+      child: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Text(
+                'اعقد النية وتوكل على الله',
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'اضغط على المصحف لفتح الخيرة',
+                style: TextStyle(fontSize: 16, color: Colors.grey),
+              ),
+              const SizedBox(height: 48),
+              GestureDetector(
+                onTap: _triggerIstikhara,
+                child: Container(
+                  padding: const EdgeInsets.all(40),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Theme.of(context).colorScheme.surface,
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFFD4AF37).withValues(alpha: 0.3),
+                        blurRadius: 20,
+                        spreadRadius: 5,
+                      ),
+                    ],
+                    border: Border.all(color: const Color(0xFFE0C9A6), width: 2),
                   ),
-                ],
-                border: Border.all(color: const Color(0xFFE0C9A6), width: 2),
+                  child: Image.asset(
+                    'assets/images/quran_icon.png',
+                    width: 250,
+                    height: 250,
+                  ),
+                ),
               ),
-              child: Image.asset(
-                'assets/images/quran_icon.png',
-                width: 250,
-                height: 250,
-              ),
-            ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
