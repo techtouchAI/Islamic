@@ -4,7 +4,7 @@ import 'package:lottie/lottie.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../utils/string_extensions.dart';
 
-final RouteObserver<PageRoute> routeObserver = RouteObserver<PageRoute>();
+final RouteObserver<<PageRoute> routeObserver = RouteObserver<<PageRoute>();
 
 class HijriCalendarScreen extends StatefulWidget {
   const HijriCalendarScreen({Key? key}) : super(key: key);
@@ -213,7 +213,8 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
     _EventModel(hDay: 24, hMonth: 12, hYear: 1, title: 'خروج النبي الأكرم محمد(صلى الله عليه واله وسلم) مع أهل بيته (عليهم السلام) للمباهلة مع نصارى نجران سنة ١٠هـ'),
     _EventModel(hDay: 25, hMonth: 12, hYear: 1, title: 'نزول سورة (هل أتى) في المدينة المنورة بشأن اهل البيت (عليهم السلام)'),
     _EventModel(hDay: 27, hMonth: 12, hYear: 1, title: 'وفاة علي بن الامام جعفر الصادق (عليهما السلام) سنة ٢١٠هـ الملقب (العريضي)'),
-    _EventModel(hDay: 28, hMonth: 12, hYear: 1, title: 'وقعة الحرة التي استباح فيها جيش يزيد بن معاوية المدينة المنورة سنة ٦٣هـ'),    ];
+    _EventModel(hDay: 28, hMonth: 12, hYear: 1, title: 'وقعة الحرة التي استباح فيها جيش يزيد بن معاوية المدينة المنورة سنة ٦٣هـ'),
+    ];
 
     if (mounted) {
       setState(() => _isLoading = false);
@@ -374,8 +375,7 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          '$displayHDay ${monthHijri.longMonthName} ${monthHijri.hYear} هـ', // 
-                         يقرأ اليوم الهجري المتفاعل
+                          '$displayHDay ${monthHijri.longMonthName} ${monthHijri.hYear} هـ',
                           style: const TextStyle(
                             fontFamily: 'me_quran',
                             color: Colors.white,
@@ -385,8 +385,7 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
                         ),
                         const SizedBox(height: 5),
                         Text(
-                          '$weekdayName ${exactGregDate.day} ${_getGregorianMonthName(exactGregDate.month)} ${exactGregDate.year} م', 
-                          // يقرأ اليوم الميلادي واسم الأسبوع المتفاعل
+                          '$weekdayName ${exactGregDate.day} ${_getGregorianMonthName(exactGregDate.month)} ${exactGregDate.year} م',
                           style: const TextStyle(
                             fontFamily: 'me_quran',
                             color: Colors.tealAccent,
