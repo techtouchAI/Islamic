@@ -61,7 +61,6 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
 
   Future<void> _fetchHijriData() async {
     final prefs = await SharedPreferences.getInstance();
-    // MUST match main.dart: _hijriAdjustment = prefs.getInt('hijriAdj') ?? 0;
     _manualOffset = prefs.getInt('hijriAdj') ?? 0;
 
     final DateTime trueNow = DateTime.now().add(Duration(days: _manualOffset));
@@ -227,8 +226,6 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
     super.dispose();
   }
 
-  /// Returns a FULLY INITIALIZED HijriCalendar for the target month.
-  /// Uses round-trip through Gregorian to ensure valid internal state.
   HijriCalendar _getHijriMonthForPage(int pageIndex) {
     int offset = pageIndex - _initialPage;
     int targetYear = _todayHijri!.hYear;
@@ -257,22 +254,18 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
     return _events.any((e) => e.hDay == day && e.hMonth == month);
   }
 
-  /// Returns the next upcoming event from TODAY (with year wrap-around).
-  /// Events are treated as annual (hYear is ignored, only hMonth+hDay matter).
   _EventModel? _getNextEvent() {
     if (_todayHijri == null) return null;
 
     final int currentMonth = _todayHijri!.hMonth;
     final int currentDay = _todayHijri!.hDay;
 
-    // Sort by month then day (annual cycle)
     final sorted = List<_EventModel>.from(_events)
       ..sort((a, b) {
         if (a.hMonth != b.hMonth) return a.hMonth.compareTo(b.hMonth);
         return a.hDay.compareTo(b.hDay);
       });
 
-    // First pass: look for events in remaining months of current year
     for (final event in sorted) {
       if (event.hMonth > currentMonth ||
           (event.hMonth == currentMonth && event.hDay > currentDay)) {
@@ -280,7 +273,6 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
       }
     }
 
-    // Second pass: wrap around to next year (events before current month)
     for (final event in sorted) {
       if (event.hMonth < currentMonth ||
           (event.hMonth == currentMonth && event.hDay < currentDay)) {
@@ -304,9 +296,6 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
     });
   }
 
-  /// ═══════════════════════════════════════════════════════════════
-  /// دالة جديدة: تحويل أيام الأسبوع للعربي
-  /// ═══════════════════════════════════════════════════════════════
   String _getArabicWeekday(int weekday) {
     const days = {
       1: 'الإثنين',
@@ -329,20 +318,15 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
       1,
     );
 
-    // ═══════════════════════════════════════════════════════════════
-    // منطق حساب اليوم المحدد (Selected Day) وتاريخه الميلادي
-    // ═══════════════════════════════════════════════════════════════
-    // 1. تحديد اليوم الذي سيُعرض في الهيدر
     int displayHDay = 1;
     bool isCurrentMonth = monthHijri.hMonth == _todayHijri!.hMonth && monthHijri.hYear == _todayHijri!.hYear;
 
     if (_selectedDay != null && _displayedHijri.hMonth == monthHijri.hMonth && _displayedHijri.hYear == monthHijri.hYear) {
-      displayHDay = _selectedDay!; // اليوم الذي ضغط عليه المستخدم
+      displayHDay = _selectedDay!;
     } else if (isCurrentMonth) {
-      displayHDay = _todayHijri!.hDay; // إذا لم يضغط شيء، أظهر اليوم الحالي
+      displayHDay = _todayHijri!.hDay;
     }
 
-    // 2. حساب التاريخ الميلادي المضبوط لهذا اليوم المحدد
     final DateTime exactGregDate = _todayHijri!.hijriToGregorian(
       monthHijri.hYear,
       monthHijri.hMonth,
@@ -367,9 +351,6 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // ═══════════════════════════════════════════════════════════════
-                  // الهيدر المتفاعل: يعرض اليوم الهجري والميلادي المحدد
-                  // ═══════════════════════════════════════════════════════════════
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
