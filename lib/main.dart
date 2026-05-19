@@ -1390,6 +1390,7 @@ class _HomeSectionState extends State<HomeSection> {
                                         )
                                     : null,
                                 ayahs: ayahs,
+                                surahId: isQuran ? e.value['id'] : null,
                               ),
                             ),
                           );
@@ -1833,6 +1834,7 @@ class _DynamicListSectionState extends State<DynamicListSection> {
                           isQuran: true,
                           surahName: surah['name'].toString(),
                           ayahs: ayahs,
+                          surahId: surah['id'],
                         ),
                       ),
                     );
@@ -1843,13 +1845,12 @@ class _DynamicListSectionState extends State<DynamicListSection> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Expanded(
-                          child: Text(
-                            surah['name'].toString(),
-                            style: TextStyle(
-                              color: Theme.of(context).colorScheme.primary,
-                              fontSize: 32,
-                              fontFamily: 'me_quran',
-                            ),
+                          child: Image.asset(
+                            'assets/images/quran/quran_surah_names_${surah['id']}.png',
+                            height: 40,
+                            alignment: Alignment.centerRight,
+                            color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black,
+                            colorBlendMode: BlendMode.srcIn,
                           ),
                         ),
                         Container(
@@ -2086,56 +2087,33 @@ class _DynamicListSectionState extends State<DynamicListSection> {
 class SurahHeader extends StatelessWidget {
   final String title;
   final Color color;
-  const SurahHeader({super.key, required this.title, required this.color});
+  final int? surahId;
+  const SurahHeader({super.key, required this.title, required this.color, this.surahId});
 
   @override
   Widget build(BuildContext context) {
+    final tintColor = Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black;
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 20),
       child: Stack(
         alignment: Alignment.center,
         children: [
-          Container(
-            height: 50,
-            width: double.infinity,
-            margin: const EdgeInsets.symmetric(horizontal: 10),
-            decoration: BoxDecoration(
-              border: Border.all(color: color.withValues(alpha: 0.5), width: 1),
-              borderRadius: BorderRadius.circular(25),
-            ),
+          Image.asset(
+            'assets/images/quran_surah_name_frame.png',
+            height: 80,
+            color: tintColor,
+            colorBlendMode: BlendMode.srcIn,
           ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 5),
-            decoration: BoxDecoration(
-              color: Theme.of(context).scaffoldBackgroundColor,
-              border: Border.all(color: color, width: 2),
-              borderRadius: BorderRadius.circular(15),
-            ),
-            child: Text(
-              title,
-              style: TextStyle(fontFamily: 'OmarNaskh',
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-                color: color,
+          if (surahId != null)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 10),
+              child: Image.asset(
+                'assets/images/quran/quran_surah_names_$surahId.png',
+                height: 40,
+                color: tintColor,
+                colorBlendMode: BlendMode.srcIn,
               ),
             ),
-          ),
-          Positioned(
-            left: 20,
-            child: Icon(
-              Icons.brightness_7,
-              color: color.withValues(alpha: 0.6),
-              size: 20,
-            ),
-          ),
-          Positioned(
-            right: 20,
-            child: Icon(
-              Icons.brightness_7,
-              color: color.withValues(alpha: 0.6),
-              size: 20,
-            ),
-          ),
         ],
       ),
     );
@@ -2150,6 +2128,7 @@ class ReaderPage extends StatefulWidget {
   final List<Map<String, dynamic>>? ayahs;
   final String? surahName;
   final String? titleColor;
+  final int? surahId;
   const ReaderPage({
     super.key,
     required this.title,
@@ -2160,6 +2139,7 @@ class ReaderPage extends StatefulWidget {
     this.isImamAli = false,
     this.surahName,
     this.ayahs,
+    this.surahId,
   });
   @override
   State<ReaderPage> createState() => _ReaderPageState();
@@ -2265,7 +2245,7 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
                 child: Column(
                   children: [
                     if (widget.isQuran)
-                      SurahHeader(title: widget.title, color: primary),
+                      SurahHeader(title: widget.title, color: primary, surahId: widget.surahId),
                     if (widget.isQuran &&
                         widget.surahName != 'الفاتحة' &&
                         widget.surahName != 'التوبة') ...[
