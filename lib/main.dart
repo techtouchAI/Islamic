@@ -278,7 +278,14 @@ class _AlDhakereenAppState extends State<AlDhakereenApp> {
               children: [
                 buildImage('assets/images/logo.png', height: 100),
                 const SizedBox(height: 20),
-                const CircularProgressIndicator(),
+                const Text(
+                  "اللَّهُمَّ صَلِّ عَلَى مُحَمَّدٍ وَعَلَى آلِ مُحَمَّدٍ",
+                  style: TextStyle(
+                    fontFamily: 'me_quran',
+                    fontSize: 24,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
               ],
             ),
           ),
@@ -1782,7 +1789,16 @@ class _DynamicListSectionState extends State<DynamicListSection> {
         future: _quranFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return const Center(
+              child: Text(
+                "اللَّهُمَّ صَلِّ عَلَى مُحَمَّدٍ وَعَلَى آلِ مُحَمَّدٍ",
+                style: TextStyle(
+                  fontFamily: 'me_quran',
+                  fontSize: 24,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            );
           }
           if (snapshot.hasError) {
             return Center(
@@ -1845,12 +1861,15 @@ class _DynamicListSectionState extends State<DynamicListSection> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Expanded(
-                          child: Image.asset(
-                            'assets/images/quran/quran_surah_names_${surah['id']}.png',
-                            height: 35,
-                            fit: BoxFit.contain,
-                            color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black,
-                            colorBlendMode: BlendMode.srcIn,
+                          child: Align(
+                            alignment: Alignment.centerRight,
+                            child: Image.asset(
+                              'assets/images/quran/quran_surah_names_${surah['id']}.png',
+                              height: 50,
+                              fit: BoxFit.contain,
+                              color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black,
+                              colorBlendMode: BlendMode.srcIn,
+                            ),
                           ),
                         ),
                         Container(
@@ -2104,8 +2123,6 @@ class SurahHeader extends StatelessWidget {
             width: double.infinity,
             height: 65,
             fit: BoxFit.fill,
-            color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black,
-            colorBlendMode: BlendMode.srcIn,
           ),
           if (surahId != null)
             Image.asset(
@@ -3056,7 +3073,18 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
 
   @override
   Widget build(BuildContext context) {
-    if (_loading) return const Center(child: CircularProgressIndicator());
+    if (_loading) {
+      return const Center(
+        child: Text(
+          "اللَّهُمَّ صَلِّ عَلَى مُحَمَّدٍ وَعَلَى آلِ مُحَمَّدٍ",
+          style: TextStyle(
+            fontFamily: 'me_quran',
+            fontSize: 24,
+          ),
+          textAlign: TextAlign.center,
+        ),
+      );
+    }
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
       child: Column(
