@@ -2277,28 +2277,28 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
                           if (widget.isQuran &&
                               widget.surahName != 'الفاتحة' &&
                               widget.surahName != 'التوبة') ...[
-                      Text(
-                        "بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ",
-                        style: TextStyle(fontFamily: 'OmarNaskh',
-                          fontSize: 30,
-                          fontWeight: FontWeight.bold,
-                          color: primary,
-                        ),
-                      ),
-                      const SizedBox(height: 15),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: List.generate(
-                          5,
-                          (index) => Icon(
-                            Icons.star,
-                            size: 12,
-                            color: primary.withValues(alpha: 0.5),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 25),
-                    ],
+                            Text(
+                              "بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ",
+                              style: TextStyle(fontFamily: 'OmarNaskh',
+                                fontSize: 30,
+                                fontWeight: FontWeight.bold,
+                                color: primary,
+                              ),
+                            ),
+                            const SizedBox(height: 15),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: List.generate(
+                                5,
+                                (index) => Icon(
+                                  Icons.star,
+                                  size: 12,
+                                  color: primary.withValues(alpha: 0.5),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 25),
+                          ],
                           widget.isQuran &&
                                   widget.ayahs != null &&
                                   widget.ayahs!.isNotEmpty
@@ -2306,219 +2306,222 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
                                   textDirection: TextDirection.rtl,
                                   alignment: WrapAlignment.center,
                                   children: widget.ayahs!.map((a) {
-                              String text = a['ar_text'].toString().trim();
-                              final index = a['anum']?.toString() ??
-                                  a['ayah_surah_index'].toString();
-                              final arabicIndex = _convertToArabicNumber(index);
+                                    String text = a['ar_text'].toString().trim();
+                                    final index = a['anum']?.toString() ??
+                                        a['ayah_surah_index'].toString();
+                                    final arabicIndex = _convertToArabicNumber(index);
 
-                              text = text
-                                  .replaceAll(_trailingNumbersRegex, '')
-                                  .trim();
+                                    text = text
+                                        .replaceAll(_trailingNumbersRegex, '')
+                                        .trim();
 
-                              final ayahIdxStr = a['anum']?.toString() ??
-                                  a['ayah_surah_index'].toString();
-                              final int ayahIndex =
-                                  int.tryParse(ayahIdxStr) ?? 0;
+                                    final ayahIdxStr = a['anum']?.toString() ??
+                                        a['ayah_surah_index'].toString();
+                                    final int ayahIndex =
+                                        int.tryParse(ayahIdxStr) ?? 0;
 
-                              return GestureDetector(
-                                behavior: HitTestBehavior.opaque,
-                                onTap: () async {
-                                  final prefs =
-                                      await SharedPreferences.getInstance();
-                                  setState(() {
-                                    if (_bookmarkedLineIndex?.toString() ==
-                                        ayahIndex.toString()) {
-                                      _bookmarkedLineIndex = null;
-                                      prefs.remove(
-                                          'bookmark_line_${widget.title}');
-                                    } else {
-                                      _bookmarkedLineIndex = ayahIndex;
-                                      prefs.setInt(
-                                          'bookmark_line_${widget.title}',
-                                          ayahIndex);
-                                    }
-                                  });
-                                },
-                                child: Text.rich(
-                                  TextSpan(
-                                    style: TextStyle(
-                                      fontFamily: 'me_quran',
-                                      fontSize: 32 * _factor,
-                                      height: 1.8,
-                                      color: dynamicTextColor,
-                                    ),
-                                    children: [
-                                      TextSpan(text: '$text '),
-                                      if (arabicIndex.isNotEmpty)
-                                        WidgetSpan(
-                                          alignment:
-                                              PlaceholderAlignment.middle,
-                                          child: Stack(
-                                            clipBehavior: Clip.none,
-                                            alignment: Alignment.center,
-                                            children: [
-                                              Text(
-                                                '﴿$arabicIndex﴾',
-                                                style: TextStyle(
-                                                  fontFamily: 'me_quran',
-                                                  color: _bookmarkedLineIndex
-                                                              ?.toString() ==
-                                                          ayahIndex.toString()
-                                                      ? Colors.green.shade900
-                                                      : Colors.amber[700],
-                                                  fontWeight:
-                                                      _bookmarkedLineIndex
-                                                                  ?.toString() ==
-                                                              ayahIndex
-                                                                  .toString()
-                                                          ? FontWeight.bold
-                                                          : FontWeight.normal,
-                                                  fontSize: 24 * _factor,
+                                    return GestureDetector(
+                                      behavior: HitTestBehavior.opaque,
+                                      onTap: () async {
+                                        final prefs =
+                                            await SharedPreferences.getInstance();
+                                        setState(() {
+                                          if (_bookmarkedLineIndex?.toString() ==
+                                              ayahIndex.toString()) {
+                                            _bookmarkedLineIndex = null;
+                                            prefs.remove(
+                                                'bookmark_line_${widget.title}');
+                                          } else {
+                                            _bookmarkedLineIndex = ayahIndex;
+                                            prefs.setInt(
+                                                'bookmark_line_${widget.title}',
+                                                ayahIndex);
+                                          }
+                                        });
+                                      },
+                                      child: Text.rich(
+                                        TextSpan(
+                                          style: TextStyle(
+                                            fontFamily: 'me_quran',
+                                            fontSize: 32 * _factor,
+                                            height: 1.8,
+                                            color: dynamicTextColor,
+                                          ),
+                                          children: [
+                                            TextSpan(text: '$text '),
+                                            if (arabicIndex.isNotEmpty)
+                                              WidgetSpan(
+                                                alignment:
+                                                    PlaceholderAlignment.middle,
+                                                child: Stack(
+                                                  clipBehavior: Clip.none,
+                                                  alignment: Alignment.center,
+                                                  children: [
+                                                    Text(
+                                                      '﴿$arabicIndex﴾',
+                                                      style: TextStyle(
+                                                        fontFamily: 'me_quran',
+                                                        color: _bookmarkedLineIndex
+                                                                    ?.toString() ==
+                                                                ayahIndex.toString()
+                                                            ? Colors.green.shade900
+                                                            : Colors.amber[700],
+                                                        fontWeight:
+                                                            _bookmarkedLineIndex
+                                                                        ?.toString() ==
+                                                                    ayahIndex
+                                                                        .toString()
+                                                                ? FontWeight.bold
+                                                                : FontWeight.normal,
+                                                        fontSize: 24 * _factor,
+                                                      ),
+                                                    ),
+                                                    if (_bookmarkedLineIndex
+                                                            ?.toString() ==
+                                                        ayahIndex.toString())
+                                                      const Positioned(
+                                                        top: -12,
+                                                        child: Icon(Icons.star,
+                                                            color: Colors.green,
+                                                            size: 14),
+                                                      ),
+                                                  ],
                                                 ),
                                               ),
+                                            const TextSpan(text: ' '),
+                                          ],
+                                        ),
+                                        textAlign: TextAlign.center,
+                                        textDirection: TextDirection.rtl,
+                                      ),
+                                    );
+                                  }).toList(),
+                                )
+                              : Column(
+                                  children: [
+                                    if (widget.isImamAli) ...[
+                                      Text(
+                                        'قال أمير المؤمنين علي (عليه السلام)',
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(
+                                          fontFamily: 'me_quran',
+                                          fontSize: 26 * _factor,
+                                          color: primary,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 15),
+                                    ],
+                                    if (widget.title.isNotEmpty &&
+                                        !widget.isImamAli &&
+                                        !widget.isQuran) ...[
+                                      Text(
+                                        widget.title,
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(fontFamily: 'OmarNaskh',
+                                          fontSize: 22 * _factor,
+                                          height: 2.2,
+                                          fontWeight: FontWeight.bold,
+                                          color: widget.titleColor != null
+                                              ? _parseColor(widget.titleColor!) ??
+                                                  Theme.of(context)
+                                                      .colorScheme
+                                                      .primary
+                                              : dynamicTextColor,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 15),
+                                      Divider(
+                                        color: primary.withValues(alpha: 0.3),
+                                        thickness: 1,
+                                      ),
+                                      const SizedBox(height: 15),
+                                    ],
+                                    Builder(
+                                      builder: (context) {
+                                        final baseStyle =
+                                            widget.isImamAli || widget.isQuran
+                                                ? TextStyle(
+                                                    fontFamily: 'me_quran',
+                                                    fontSize: 26 * _factor,
+                                                    height: 1.8,
+                                                    color: dynamicTextColor,
+                                                  )
+                                                : TextStyle(fontFamily: 'OmarNaskh',
+                                                    fontSize: 20 * _factor,
+                                                    height: 2.2,
+                                                    color: dynamicTextColor,
+                                                  );
+
+                                        String cleanContent = widget.content;
+                                        if (cleanContent.length <= 10000) {
+                                          cleanContent =
+                                              cleanContent.replaceAll('### ', '');
+                                          if (cleanContent
+                                              .trim()
+                                              .toLowerCase()
+                                              .startsWith('html')) {
+                                            cleanContent = cleanContent
+                                                .trim()
+                                                .substring(4)
+                                                .trim();
+                                          }
+                                          cleanContent = cleanContent
+                                              .replaceAll(
+                                                  '\uFDFA', '(صلى الله عليه وآله)')
+                                              .replaceAll('\uFDFB', '(جل جلاله)')
+                                              .replaceAll('!', '(عليه السلام)');
+                                          cleanContent = cleanContent.replaceAll(RegExp(r'<html>|<html|\bhtml\b', caseSensitive: false), '').trim();
+                                        }
+
+                                        cleanContent = cleanContent.trim().replaceAll(RegExp(r'<html>|<html|^html\b', caseSensitive: false), '').trim();
+
+                                        debugPrint(
+                                            'HtmlContentRenderer built for section: ${widget.title} with bookmark: $_bookmarkedLineIndex');
+                                        return HtmlContentRenderer(
+                                          content: cleanContent,
+                                          baseStyle: baseStyle,
+                                          bookmarkedIndex: _bookmarkedLineIndex,
+                                          onParagraphTapped: (index) async {
+                                            final prefs = await SharedPreferences
+                                                .getInstance();
+                                            await prefs.setInt(
+                                                'bookmark_line_${widget.title}',
+                                                index);
+                                            debugPrint(
+                                                'Parent: State updated to index $index');
+                                            setState(() {
                                               if (_bookmarkedLineIndex
                                                       ?.toString() ==
-                                                  ayahIndex.toString())
-                                                const Positioned(
-                                                  top: -12,
-                                                  child: Icon(Icons.star,
-                                                      color: Colors.green,
-                                                      size: 14),
-                                                ),
-                                            ],
-                                          ),
-                                        ),
-                                      const TextSpan(text: ' '),
-                                    ],
-                                  ),
-                                  textAlign: TextAlign.center,
-                                  textDirection: TextDirection.rtl,
+                                                  index.toString()) {
+                                                _bookmarkedLineIndex = null;
+                                                prefs.remove(
+                                                    'bookmark_line_${widget.title}');
+                                              } else {
+                                                _bookmarkedLineIndex = index;
+                                                prefs.setInt(
+                                                    'bookmark_line_${widget.title}',
+                                                    index);
+                                              }
+                                            });
+                                          },
+                                        );
+                                      },
+                                    ),
+                                  ],
                                 ),
-                              );
-                            }).toList(),
-                          )
-                        : Column(
-                            children: [
-                              if (widget.isImamAli) ...[
-                                Text(
-                                  'قال أمير المؤمنين علي (عليه السلام)',
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    fontFamily: 'me_quran',
-                                    fontSize: 26 * _factor,
-                                    color: primary,
-                                  ),
-                                ),
-                                const SizedBox(height: 15),
-                              ],
-                              if (widget.title.isNotEmpty &&
-                                  !widget.isImamAli &&
-                                  !widget.isQuran) ...[
-                                Text(
-                                  widget.title,
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(fontFamily: 'OmarNaskh',
-                                    fontSize: 22 * _factor,
-                                    height: 2.2,
-                                    fontWeight: FontWeight.bold,
-                                    color: widget.titleColor != null
-                                        ? _parseColor(widget.titleColor!) ??
-                                            Theme.of(context)
-                                                .colorScheme
-                                                .primary
-                                        : dynamicTextColor,
-                                  ),
-                                ),
-                                const SizedBox(height: 15),
-                                Divider(
-                                  color: primary.withValues(alpha: 0.3),
-                                  thickness: 1,
-                                ),
-                                const SizedBox(height: 15),
-                              ],
-                              Builder(
-                                builder: (context) {
-                                  final baseStyle =
-                                      widget.isImamAli || widget.isQuran
-                                          ? TextStyle(
-                                              fontFamily: 'me_quran',
-                                              fontSize: 26 * _factor,
-                                              height: 1.8,
-                                              color: dynamicTextColor,
-                                            )
-                                          : TextStyle(fontFamily: 'OmarNaskh',
-                                              fontSize: 20 * _factor,
-                                              height: 2.2,
-                                              color: dynamicTextColor,
-                                            );
-
-                                  String cleanContent = widget.content;
-                                  if (cleanContent.length <= 10000) {
-                                    cleanContent =
-                                        cleanContent.replaceAll('### ', '');
-                                    if (cleanContent
-                                        .trim()
-                                        .toLowerCase()
-                                        .startsWith('html')) {
-                                      cleanContent = cleanContent
-                                          .trim()
-                                          .substring(4)
-                                          .trim();
-                                    }
-                                    cleanContent = cleanContent
-                                        .replaceAll(
-                                            '\uFDFA', '(صلى الله عليه وآله)')
-                                        .replaceAll('\uFDFB', '(جل جلاله)')
-                                        .replaceAll('!', '(عليه السلام)');
-                                    cleanContent = cleanContent.replaceAll(RegExp(r'<html>|<html|\bhtml\b', caseSensitive: false), '').trim();
-                                  }
-
-                                  cleanContent = cleanContent.trim().replaceAll(RegExp(r'<html>|<html|^html\b', caseSensitive: false), '').trim();
-
-                                  debugPrint(
-                                      'HtmlContentRenderer built for section: ${widget.title} with bookmark: $_bookmarkedLineIndex');
-                                  return HtmlContentRenderer(
-                                    content: cleanContent,
-                                    baseStyle: baseStyle,
-                                    bookmarkedIndex: _bookmarkedLineIndex,
-                                    onParagraphTapped: (index) async {
-                                      final prefs = await SharedPreferences
-                                          .getInstance();
-                                      await prefs.setInt(
-                                          'bookmark_line_${widget.title}',
-                                          index);
-                                      debugPrint(
-                                          'Parent: State updated to index $index');
-                                      setState(() {
-                                        if (_bookmarkedLineIndex
-                                                ?.toString() ==
-                                            index.toString()) {
-                                          _bookmarkedLineIndex = null;
-                                          prefs.remove(
-                                              'bookmark_line_${widget.title}');
-                                        } else {
-                                          _bookmarkedLineIndex = index;
-                                          prefs.setInt(
-                                              'bookmark_line_${widget.title}',
-                                              index);
-                                        }
-                                      });
-                                    },
-                                  );
-                                },
+                          const SizedBox(height: 25),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: List.generate(
+                              5,
+                              (index) => Icon(
+                                Icons.star,
+                                size: 12,
+                                color: primary.withValues(alpha: 0.5),
                               ),
-                            ],
+                            ),
                           ),
-                    const SizedBox(height: 25),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: List.generate(
-                        5,
-                        (index) => Icon(
-                          Icons.star,
-                          size: 12,
-                          color: primary.withValues(alpha: 0.5),
-                        ),
+                        ],
                       ),
                     ),
                   ],
@@ -2610,8 +2613,6 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
     );
   }
 }
-
-
 
 class SettingsSection extends StatelessWidget {
   final VoidCallback onThemeToggled;
