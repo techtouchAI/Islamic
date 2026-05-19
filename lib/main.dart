@@ -2113,24 +2113,34 @@ class SurahHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       color: Colors.transparent,
-      height: 65,
+      height: 100, // Increased height to make it flush with the top of the card
       width: double.infinity,
       child: Stack(
         alignment: Alignment.center,
+        clipBehavior: Clip.none,
         children: [
-          Image.asset(
-            'assets/images/quran_surah_name_frame.png',
-            width: double.infinity,
-            height: 65,
-            fit: BoxFit.fill,
-          ),
-          if (surahId != null)
-            Image.asset(
-              'assets/images/quran/quran_surah_names_${surahId! - 1}.png',
-              height: 35,
-              fit: BoxFit.contain,
+          Positioned(
+            top: -10, // Move it up to align perfectly with the border of the card
+            left: -10,
+            right: -10,
+            bottom: 0,
+            child: Image.asset(
+              'assets/images/quran_surah_name_frame.png',
+              fit: BoxFit.fill,
               color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black,
               colorBlendMode: BlendMode.srcIn,
+            ),
+          ),
+          if (surahId != null)
+            Positioned(
+              top: 25, // Adjusted to perfectly center inside the frame
+              child: Image.asset(
+                'assets/images/quran/quran_surah_names_${surahId! - 1}.png',
+                height: 45, // Increased height
+                fit: BoxFit.contain,
+                color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black,
+                colorBlendMode: BlendMode.srcIn,
+              ),
             ),
         ],
       ),
