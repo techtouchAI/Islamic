@@ -1847,10 +1847,10 @@ class _DynamicListSectionState extends State<DynamicListSection> {
                         Expanded(
                           child: Image.asset(
                             'assets/images/quran/quran_surah_names_${surah['id']}.png',
-                            height: 40,
+                            height: 35,
+                            fit: BoxFit.contain,
                             alignment: Alignment.centerRight,
                             color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black,
-                            colorBlendMode: BlendMode.srcIn,
                           ),
                         ),
                         Container(
@@ -2095,24 +2095,24 @@ class SurahHeader extends StatelessWidget {
     final tintColor = Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black;
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 20),
+      color: Colors.transparent,
+      height: 65,
       child: Stack(
         alignment: Alignment.center,
         children: [
           Image.asset(
             'assets/images/quran_surah_name_frame.png',
-            height: 80,
+            width: double.infinity,
+            height: 65,
+            fit: BoxFit.fill,
             color: tintColor,
-            colorBlendMode: BlendMode.srcIn,
           ),
           if (surahId != null)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 10),
-              child: Image.asset(
-                'assets/images/quran/quran_surah_names_$surahId.png',
-                height: 40,
-                color: tintColor,
-                colorBlendMode: BlendMode.srcIn,
-              ),
+            Image.asset(
+              'assets/images/quran/quran_surah_names_$surahId.png',
+              height: 35,
+              fit: BoxFit.contain,
+              color: tintColor,
             ),
         ],
       ),
