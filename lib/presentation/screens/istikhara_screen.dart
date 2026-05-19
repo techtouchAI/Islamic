@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart' as p;
 import '../../data/data_manager.dart';
+import '../../services/quran_service.dart';
 
 enum IstikharaStep { dua, action, result }
 
@@ -55,31 +56,11 @@ class _IstikharaScreenState extends State<IstikharaScreen>
   }
 
   Future<List<Map<String, dynamic>>> _fetchVersesFromDb(int pageNumber) async {
-    Database? db;
     try {
-      final dbPath = await getDatabasesPath();
-      final path = p.join(dbPath, "quran_db.db");
-      db = await openDatabase(path);
-
-      final result = await db.rawQuery(
-        '''
-        SELECT a.ar_text, a.anum, s.name AS surah_name
-        FROM ayah a
-        INNER JOIN surah s ON a.sid = s.id
-        WHERE a.ayah_page_number = ?
-        ORDER BY a.id
-      ''',
-        [pageNumber],
-      );
-      return result;
+      return await QuranService.getVersesByPage(pageNumber);
     } catch (e) {
       debugPrint("Error fetching verses: $e");
       return [];
-    } finally {
-      // ✅ إغلاق قاعدة البيانات لتجنب تسريب الموارد
-      if (db != null && db.isOpen) {
-        await db.close();
-      }
     }
   }
 
