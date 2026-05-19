@@ -49,6 +49,7 @@ flutter:
   assets:
     - assets/data/content.json
     - assets/images/
+    - assets/images/quran/
     - assets/lottie/calendar.json
     - assets/audio/adhan.mp3
     - assets/audio/azan5.mp3
