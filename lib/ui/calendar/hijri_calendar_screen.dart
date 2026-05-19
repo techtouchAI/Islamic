@@ -479,33 +479,18 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
                       ),
                     ),
                     alignment: Alignment.center,
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        Text(
-                          '$hDay'.toEasternArabic(),
-                          style: TextStyle(
-                            fontFamily: 'Cairo',
-                            fontSize: 18,
-                            fontWeight: isToday ? FontWeight.bold : FontWeight.normal,
-                            color: isToday
-                                ? (hasEvent ? Colors.amber.shade200 : Colors.white)
-                                : (hasEvent ? Colors.amber.shade300 : Colors.white70),
-                          ),
+                    child: Center(
+                      child: Text(
+                        '$hDay'.toEasternArabic(),
+                        style: TextStyle(
+                          fontFamily: 'Cairo',
+                          fontSize: 18,
+                          fontWeight: isToday ? FontWeight.bold : FontWeight.normal,
+                          color: isToday
+                              ? (hasEvent ? Colors.amber.shade200 : Colors.white)
+                              : (hasEvent ? Colors.amber.shade300 : Colors.white70),
                         ),
-                        if (isToday && hasEvent)
-                          Positioned(
-                            bottom: 2,
-                            child: Container(
-                              width: 4,
-                              height: 4,
-                              decoration: const BoxDecoration(
-                                color: Colors.amber,
-                                shape: BoxShape.circle,
-                              ),
-                            ),
-                          ),
-                      ],
+                      ),
                     ),
                   ),
                 );
