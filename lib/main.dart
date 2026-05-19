@@ -2113,34 +2113,26 @@ class SurahHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       color: Colors.transparent,
-      height: 100, // Increased height to make it flush with the top of the card
       width: double.infinity,
       child: Stack(
         alignment: Alignment.center,
-        clipBehavior: Clip.none,
         children: [
-          Positioned(
-            top: -10, // Move it up to align perfectly with the border of the card
-            left: -10,
-            right: -10,
-            bottom: 0,
-            child: Image.asset(
-              'assets/images/quran_surah_name_frame.png',
-              fit: BoxFit.fill,
+          // Layer 1: The Frame
+          Image.asset(
+            'assets/images/quran_surah_name_frame.png',
+            width: double.infinity,
+            fit: BoxFit.fitWidth,
+            color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black,
+            colorBlendMode: BlendMode.srcIn,
+          ),
+          // Layer 2: The Surah Name
+          if (surahId != null)
+            Image.asset(
+              'assets/images/quran/quran_surah_names_${surahId! - 1}.png',
+              height: 32, // Proportional height to fit beautifully inside the frame
+              fit: BoxFit.contain,
               color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black,
               colorBlendMode: BlendMode.srcIn,
-            ),
-          ),
-          if (surahId != null)
-            Positioned(
-              top: 25, // Adjusted to perfectly center inside the frame
-              child: Image.asset(
-                'assets/images/quran/quran_surah_names_${surahId! - 1}.png',
-                height: 45, // Increased height
-                fit: BoxFit.contain,
-                color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black,
-                colorBlendMode: BlendMode.srcIn,
-              ),
             ),
         ],
       ),
@@ -2256,8 +2248,6 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
                   const EdgeInsets.symmetric(horizontal: 4.0, vertical: 8.0),
               child: Container(
                 width: double.infinity,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 4.0, vertical: 8.0),
                 decoration: BoxDecoration(
                   border: Border.all(color: primary, width: 1.0),
                   borderRadius: BorderRadius.circular(25),
@@ -2273,10 +2263,20 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
                 child: Column(
                   children: [
                     if (widget.isQuran)
-                      SurahHeader(title: widget.title, color: primary, surahId: widget.surahId),
-                    if (widget.isQuran &&
-                        widget.surahName != 'الفاتحة' &&
-                        widget.surahName != 'التوبة') ...[
+                      ClipRRect(
+                        borderRadius: const BorderRadius.only(
+                          topLeft: Radius.circular(24),
+                          topRight: Radius.circular(24),
+                        ),
+                        child: SurahHeader(title: widget.title, color: primary, surahId: widget.surahId),
+                      ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 8.0),
+                      child: Column(
+                        children: [
+                          if (widget.isQuran &&
+                              widget.surahName != 'الفاتحة' &&
+                              widget.surahName != 'التوبة') ...[
                       Text(
                         "بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ",
                         style: TextStyle(fontFamily: 'OmarNaskh',
@@ -2299,13 +2299,13 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
                       ),
                       const SizedBox(height: 25),
                     ],
-                    widget.isQuran &&
-                            widget.ayahs != null &&
-                            widget.ayahs!.isNotEmpty
-                        ? Wrap(
-                            textDirection: TextDirection.rtl,
-                            alignment: WrapAlignment.center,
-                            children: widget.ayahs!.map((a) {
+                          widget.isQuran &&
+                                  widget.ayahs != null &&
+                                  widget.ayahs!.isNotEmpty
+                              ? Wrap(
+                                  textDirection: TextDirection.rtl,
+                                  alignment: WrapAlignment.center,
+                                  children: widget.ayahs!.map((a) {
                               String text = a['ar_text'].toString().trim();
                               final index = a['anum']?.toString() ??
                                   a['ayah_surah_index'].toString();
