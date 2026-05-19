@@ -1864,7 +1864,7 @@ class _DynamicListSectionState extends State<DynamicListSection> {
                           child: Align(
                             alignment: Alignment.centerRight,
                             child: Image.asset(
-                              'assets/images/quran/quran_surah_names_${surah['id']}.png',
+                              'assets/images/quran/quran_surah_names_${(surah['id'] as int) - 1}.png',
                               height: 50,
                               fit: BoxFit.contain,
                               color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black,
@@ -2126,7 +2126,7 @@ class SurahHeader extends StatelessWidget {
           ),
           if (surahId != null)
             Image.asset(
-              'assets/images/quran/quran_surah_names_$surahId.png',
+              'assets/images/quran/quran_surah_names_${surahId! - 1}.png',
               height: 35,
               fit: BoxFit.contain,
               color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black,
