@@ -1086,6 +1086,9 @@ class _HomeSectionState extends State<HomeSection> {
     Color textColor,
     IconData icon,
   ) {
+    final bool isDarkCard = widget.cardColor.computeLuminance() < 0.5;
+    final Color iconWatermarkColor = isDarkCard ? Colors.white : Colors.black;
+
     return InkWell(
       onTap: () => Navigator.push(
         context,
@@ -1098,72 +1101,134 @@ class _HomeSectionState extends State<HomeSection> {
         ),
       ),
       child: Container(
-        padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: const Color(0xFFF5F1E8),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFFC5A059), width: 1.0),
-          boxShadow: const [
+          borderRadius: BorderRadius.circular(25),
+          boxShadow: [
             BoxShadow(
-              color: Color.fromRGBO(15, 27, 58, 0.06),
-              blurRadius: 16,
-              offset: Offset(0, 4),
+              color: Theme.of(
+                context,
+              ).colorScheme.primary.withValues(alpha: 0.15),
+              blurRadius: 15,
+              offset: const Offset(0, 8),
             ),
           ],
         ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: const Color(0xFFD4AF37),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(
-                icon,
-                color: Colors.white,
-                size: 24,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    tag,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: Color(0xFFC5A059),
-                      fontWeight: FontWeight.bold,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(25),
+          child: Stack(
+            children: [
+              Positioned.fill(
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: widget.cardColor.withValues(
+                        alpha: widget.uiOpacity * 0.8,
+                      ),
+                      borderRadius: BorderRadius.circular(25),
+                      border: Border.all(
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.primary.withValues(alpha: 0.5),
+                        width: 1.5,
+                      ),
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    data['title'].toString(),
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF1A1A1A),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    data['content'].toString(),
-                    maxLines: 4,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: Color(0xFF4A4A4A),
-                      height: 1.5,
-                    ),
-                  ),
-                ],
+                ),
               ),
-            ),
-          ],
+              Positioned(
+                right: -20,
+                bottom: -20,
+                child: Transform.rotate(
+                  angle: -0.2,
+                  child: Icon(
+                    icon,
+                    size: 140,
+                    color: iconWatermarkColor.withValues(alpha: 0.15),
+                    shadows: [
+                      Shadow(
+                        color: Colors.black.withValues(alpha: 0.2),
+                        blurRadius: 8,
+                        offset: const Offset(2, 2),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.primary.withValues(alpha: 0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            icon,
+                            color: Theme.of(context).colorScheme.primary,
+                            size: 20,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Text(
+                          tag,
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.primary,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 22,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      data['content'].toString(),
+                      textAlign: TextAlign.center,
+                      maxLines: 4,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(fontFamily: 'OmarNaskh',
+                        fontSize: 17,
+                        height: 1.9,
+                        color: textColor,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.primary.withValues(alpha: 0.2),
+                        ),
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                      child: Text(
+                        data["title"].toString(),
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Theme.of(context).colorScheme.primary,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -1176,10 +1241,9 @@ class _HomeSectionState extends State<HomeSection> {
     final hijri = HijriCalendar.fromDate(DateTime.now().add(Duration(days: widget.hijriAdjustment)));
     final bool isDarkCard = widget.cardColor.computeLuminance() < 0.5;
     final Color textColor = isDarkCard ? Colors.white : Colors.black87;
-    return Container(
+    return SizedBox(
       width: double.infinity,
       height: double.infinity,
-      color: const Color(0xFF0F1B3A),
       child: SingleChildScrollView(
         physics: const BouncingScrollPhysics(),
         padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
@@ -1187,80 +1251,107 @@ class _HomeSectionState extends State<HomeSection> {
           children: [
             InkWell(
               onTap: widget.onPrayerCardTap,
-              child: Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF5F1E8),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: const Color(0xFFC5A059), width: 1.0),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: Color.fromRGBO(15, 27, 58, 0.06),
-                      blurRadius: 16,
-                      offset: Offset(0, 4),
-                    ),
-                  ],
+              borderRadius: BorderRadius.circular(25),
+              child: Card(
+                elevation: 10,
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? Colors.white.withValues(alpha: widget.uiOpacity)
+                    : Colors.black.withValues(alpha: widget.uiOpacity),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(25),
+                  side: BorderSide(
+                    color: Theme.of(context).colorScheme.primary,
+                    width: 2.5,
+                  ),
                 ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFD4AF37),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Icon(
-                        now.hour >= 6 && now.hour < 18
-                            ? Icons.wb_sunny_rounded
-                            : Icons.nightlight_round,
-                        color: Colors.white,
-                        size: 24,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          if (_currentPrayerName.isNotEmpty)
-                            Text(
-                              "الصلاة القادمة: $_currentPrayerName",
-                              style: const TextStyle(
-                                fontSize: 12,
-                                color: Color(0xFFC5A059),
-                                fontWeight: FontWeight.bold,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(25),
+                  child: Stack(
+                    children: [
+                      Positioned(
+                        left: -20,
+                        top: -20,
+                        child: Transform.rotate(
+                          angle: 0.2,
+                          child: Icon(
+                            now.hour >= 6 && now.hour < 18
+                                ? Icons.wb_sunny_rounded
+                                : Icons.nightlight_round,
+                            size: 130,
+                            color: (Theme.of(context).brightness != Brightness.dark
+                                    ? Colors.white
+                                    : Colors.black)
+                                .withValues(alpha: 0.15),
+                            shadows: [
+                              Shadow(
+                                color: Colors.black.withValues(alpha: 0.2),
+                                blurRadius: 8,
+                                offset: const Offset(2, 2),
                               ),
-                            ),
-                          const SizedBox(height: 8),
-                          _ClockWidget(
-                            color: const Color(0xFF1A1A1A),
+                            ],
                           ),
-                          const SizedBox(height: 8),
-                          Text(
-                            '${hijri.hDay} ${hijri.longMonthName} ${hijri.hYear} هـ'.toEasternArabic(),
-                            style: const TextStyle(
-                              color: Color(0xFF1A1A1A),
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            intl.DateFormat(
-                              'EEEE, d MMMM yyyy',
-                              'ar_SA',
-                            ).format(now).toEasternArabic(),
-                            style: const TextStyle(
-                              color: Color(0xFF4A4A4A),
-                              fontSize: 14,
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
-                    ),
-                  ],
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 20,
+                          horizontal: 15,
+                        ),
+                        child: Column(
+                    children: [
+                      if (_currentPrayerName.isNotEmpty)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.primary.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Text(
+                            "الصلاة القادمة: $_currentPrayerName",
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.primary,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                      const SizedBox(height: 10),
+                      _ClockWidget(
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        '${hijri.hDay} ${hijri.longMonthName} ${hijri.hYear} هـ'.toEasternArabic(),
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.primary,
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        intl.DateFormat(
+                          'EEEE, d MMMM yyyy',
+                          'ar_SA',
+                        ).format(now).toEasternArabic(),
+                        style: TextStyle(
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.primary.withValues(alpha: 0.8),
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                ],
+                ),
                 ),
               ),
             ),
@@ -1299,19 +1390,18 @@ class _HomeSectionState extends State<HomeSection> {
               ),
             ),
             const SizedBox(height: 15),
-            Builder(
-              builder: (context) {
-                final children = items.entries.toList();
-                final rows = <Widget>[];
-                for (int i = 0; i < children.length; i += 2) {
-                  final e1 = children[i];
-                  final e2 = (i + 1 < children.length) ? children[i + 1] : null;
-
-                  Widget buildCard(MapEntry<String, dynamic> e) {
-                    return Expanded(
+            Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              children: items.entries
+                  .map(
+                    (e) => RepaintBoundary(
                       child: _HomeSmallCard(
                         tag: e.key,
-                        title: e.value['sectionKey']?.toString().contains('imam_ali') == true
+                        title: e.value['sectionKey']?.toString().contains(
+                                      'imam_ali',
+                                    ) ==
+                                true
                             ? 'قال أمير المؤمنين علي (عليه السلام)'
                             : e.value['title'].toString(),
                         sectionKey: e.value['sectionKey']?.toString() ?? '',
@@ -1355,7 +1445,10 @@ class _HomeSectionState extends State<HomeSection> {
                                 isQuran: isQuran,
                                 isImamAli: sectionKey.contains('imam_ali'),
                                 surahName: isQuran
-                                    ? e.value['title'].toString().replaceAll('سورة ', '')
+                                    ? e.value['title'].toString().replaceAll(
+                                          'سورة ',
+                                          '',
+                                        )
                                     : null,
                                 ayahs: ayahs,
                                 surahId: isQuran ? e.value['id'] : null,
@@ -1364,25 +1457,9 @@ class _HomeSectionState extends State<HomeSection> {
                           );
                         },
                       ),
-                    );
-                  }
-
-                  rows.add(
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        buildCard(e1),
-                        const SizedBox(width: 12),
-                        if (e2 != null) buildCard(e2) else const Spacer(),
-                      ],
                     ),
-                  );
-                  if (i + 2 < children.length) {
-                    rows.add(const SizedBox(height: 12));
-                  }
-                }
-                return Column(children: rows);
-              },
+                  )
+                  .toList(),
             ),
           ],
         ),
@@ -1422,67 +1499,98 @@ class _HomeSmallCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bool isDarkCard = cardColor.computeLuminance() < 0.5;
+    final Color textColor = isDarkCard ? Colors.white : Colors.black87;
+    final Color iconWatermarkColor = isDarkCard ? Colors.white : Colors.black;
+
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(20),
       child: Container(
-        width: (MediaQuery.of(context).size.width - 44) / 2,
-        height: 140,
-        padding: const EdgeInsets.all(16),
+        width: (MediaQuery.of(context).size.width - 48) / 2,
+        height: 100,
         decoration: BoxDecoration(
-          color: const Color(0xFFF5F1E8),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFFC5A059), width: 1.0),
-          boxShadow: const [
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
             BoxShadow(
-              color: Color.fromRGBO(15, 27, 58, 0.06),
-              blurRadius: 16,
-              offset: Offset(0, 4),
+              color: Theme.of(
+                context,
+              ).colorScheme.primary.withValues(alpha: 0.15),
+              blurRadius: 10,
+              offset: const Offset(0, 5),
             ),
           ],
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                color: const Color(0xFFD4AF37),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(
-                _getIconForSection(sectionKey),
-                color: Colors.white,
-                size: 20,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              tag,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                fontSize: 10,
-                color: Color(0xFFC5A059),
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Expanded(
-              child: Text(
-                title,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF1A1A1A),
-                  height: 1.3,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(20),
+          child: Stack(
+            children: [
+              Positioned.fill(
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: cardColor.withValues(alpha: uiOpacity * 0.8),
+                      border: Border.all(
+                        color: Theme.of(context).colorScheme.primary,
+                        width: 2,
+                      ),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                  ),
                 ),
               ),
-            ),
-          ],
+              Positioned(
+                right: -10,
+                bottom: -15,
+                child: Transform.rotate(
+                  angle: -0.2,
+                  child: Icon(
+                    _getIconForSection(sectionKey),
+                    size: 80,
+                    color: iconWatermarkColor.withValues(alpha: 0.15),
+                    shadows: [
+                      Shadow(
+                        color: Colors.black.withValues(alpha: 0.2),
+                        blurRadius: 5,
+                        offset: const Offset(2, 2),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(15),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      tag,
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: Theme.of(context).colorScheme.primary,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1.2,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                        color: textColor,
+                        height: 1.2,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
