@@ -1,6 +1,5 @@
 
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'services/analytics_service.dart';
 import 'sections/html_content_renderer.dart';
@@ -1277,7 +1276,7 @@ class _HomeSectionState extends State<HomeSection> {
                           child: Icon(
                             now.hour >= 6 && now.hour < 18
                                 ? Icons.wb_sunny_rounded
-                                : FontAwesomeIcons.solidMoon,
+                                : Icons.nightlight_round,
                             size: 130,
                             color: (Theme.of(context).brightness != Brightness.dark
                                     ? Colors.white
@@ -1363,7 +1362,7 @@ class _HomeSectionState extends State<HomeSection> {
                 'دعاء اليوم',
                 _dayDua!,
                 textColor,
-                FontAwesomeIcons.handsPraying,
+                Icons.volunteer_activism,
               ),
             if (_dayDua != null && (widget.visibility['day_dua'] ?? true))
               const SizedBox(height: 15),
@@ -1374,7 +1373,7 @@ class _HomeSectionState extends State<HomeSection> {
                 'إلهام اليوم',
                 _inspirationDua!,
                 textColor,
-                FontAwesomeIcons.lightbulb,
+                Icons.lightbulb_outline,
               ),
             const SizedBox(height: 25),
             Align(
@@ -1484,18 +1483,18 @@ class _HomeSmallCard extends StatelessWidget {
   });
 
   IconData _getIconForSection(String key) {
-    if (key.contains('quran')) return FontAwesomeIcons.bookQuran;
-    if (key.contains('visits')) return FontAwesomeIcons.mosque;
-    if (key.contains('duas')) return FontAwesomeIcons.bookOpen;
-    if (key.contains('sahifa')) return FontAwesomeIcons.scroll;
-    if (key.contains('imam_ali')) return FontAwesomeIcons.buildingColumns;
-    if (key.contains('fatawa')) return FontAwesomeIcons.scaleBalanced;
-    if (key.contains('dreams')) return FontAwesomeIcons.cloudMoon;
-    if (key.contains('prophets_stories')) return FontAwesomeIcons.featherPointed;
-    if (key.contains('names_allah')) return FontAwesomeIcons.handHoldingHeart;
-    if (key.contains('adhkar')) return FontAwesomeIcons.kaaba;
-    if (key.contains('istikhara')) return FontAwesomeIcons.hands;
-    return FontAwesomeIcons.starAndCrescent;
+    if (key.contains('quran')) return Icons.auto_stories;
+    if (key.contains('visits')) return Icons.mosque;
+    if (key.contains('duas')) return Icons.import_contacts;
+    if (key.contains('sahifa')) return Icons.history_edu;
+    if (key.contains('imam_ali')) return Icons.account_balance;
+    if (key.contains('fatawa')) return Icons.balance;
+    if (key.contains('dreams')) return Icons.nights_stay;
+    if (key.contains('prophets_stories')) return Icons.menu_book;
+    if (key.contains('names_allah')) return Icons.favorite;
+    if (key.contains('adhkar')) return Icons.blur_on;
+    if (key.contains('istikhara')) return Icons.pan_tool;
+    return Icons.star;
   }
 
   @override
