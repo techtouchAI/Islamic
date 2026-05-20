@@ -1124,19 +1124,21 @@ class _HomeSectionState extends State<HomeSection> {
                         alpha: widget.uiOpacity * 0.8,
                       ),
                       borderRadius: BorderRadius.circular(25),
+                      image: DecorationImage(
+                        image: AssetImage(frameImagePath),
+                        fit: BoxFit.fill,
+                      ),
                     ),
                   ),
                 ),
               ),
-              Positioned.fill(
-                child: Image.asset(
-                  frameImagePath,
-                  fit: BoxFit.fill,
-                ),
-              ),
               Padding(
-                padding: const EdgeInsets.all(24),
+                padding: frameImagePath.contains('دعاء اليوم') || frameImagePath.contains('إلهام') || frameImagePath.contains('الهام')
+                    ? const EdgeInsets.only(top: 45, bottom: 20, left: 24, right: 24)
+                    : const EdgeInsets.all(24),
                 child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -1212,7 +1214,6 @@ class _HomeSectionState extends State<HomeSection> {
       ),
     );
   }
-
 
   Widget _buildGridSection(BuildContext context) {
     Widget buildCard(String key, String fallbackTitle, String frameImagePath, {bool isFullWidth = false}) {
@@ -1378,84 +1379,97 @@ class _HomeSectionState extends State<HomeSection> {
             InkWell(
               onTap: widget.onPrayerCardTap,
               borderRadius: BorderRadius.circular(25),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(25),
-                child: Stack(
-                  children: [
-                    Positioned.fill(
-                      child: Container(
+              child: Container(
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(25),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
+                      blurRadius: 10,
+                      offset: const Offset(0, 5),
+                    ),
+                  ],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(25),
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                    child: Container(
+                      decoration: BoxDecoration(
                         color: widget.cardColor.withValues(
                           alpha: widget.uiOpacity * 0.8,
                         ),
-                      ),
-                    ),
-                    Positioned.fill(
-                      child: Image.asset(
-                        (now.hour >= 6 && now.hour < 18)
-                          ? 'assets/images/Screen_home/وقت الصلاة والتقويم نهاري 1.png'
-                          : 'assets/images/Screen_home/وقت الصلاة والتقويم ليلي 1.png',
-                        fit: BoxFit.fill,
-                      ),
-                    ),
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(
-                    vertical: 20,
-                    horizontal: 15,
-                  ),
-                  child: Column(
-                    children: [
-                      if (_currentPrayerName.isNotEmpty)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 4,
+                        borderRadius: BorderRadius.circular(25),
+                        image: DecorationImage(
+                          image: AssetImage(
+                            (now.hour >= 6 && now.hour < 18)
+                                ? 'assets/images/Screen_home/وقت الصلاة والتقويم نهاري 1.png'
+                                : 'assets/images/Screen_home/وقت الصلاة والتقويم ليلي 1.png'
                           ),
-                          decoration: BoxDecoration(
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.primary.withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(10),
+                          fit: BoxFit.fill,
+                        ),
+                      ),
+                      padding: const EdgeInsets.only(
+                        top: 20,
+                        bottom: 20,
+                        right: 20,
+                        left: 80,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          if (_currentPrayerName.isNotEmpty)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.primary.withValues(alpha: 0.2),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Text(
+                                "الصلاة القادمة: $_currentPrayerName",
+                                style: TextStyle(
+                                  color: Theme.of(context).colorScheme.primary,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ),
+                          const SizedBox(height: 10),
+                          _ClockWidget(
+                            color: Theme.of(context).colorScheme.primary,
                           ),
-                          child: Text(
-                            "الصلاة القادمة: $_currentPrayerName",
+                          const SizedBox(height: 8),
+                          Text(
+                            '${hijri.hDay} ${hijri.longMonthName} ${hijri.hYear} هـ'.toEasternArabic(),
                             style: TextStyle(
                               color: Theme.of(context).colorScheme.primary,
+                              fontSize: 20,
                               fontWeight: FontWeight.bold,
-                              fontSize: 12,
                             ),
                           ),
-                        ),
-                      const SizedBox(height: 10),
-                      _ClockWidget(
-                        color: Theme.of(context).colorScheme.primary,
+                          Text(
+                            intl.DateFormat(
+                              'EEEE, d MMMM yyyy',
+                              'ar_SA',
+                            ).format(now).toEasternArabic(),
+                            style: TextStyle(
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.primary.withValues(alpha: 0.8),
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 8),
-                      Text(
-                        '${hijri.hDay} ${hijri.longMonthName} ${hijri.hYear} هـ'.toEasternArabic(),
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.primary,
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Text(
-                        intl.DateFormat(
-                          'EEEE, d MMMM yyyy',
-                          'ar_SA',
-                        ).format(now).toEasternArabic(),
-                        style: TextStyle(
-                          color: Theme.of(
-                            context,
-                          ).colorScheme.primary.withValues(alpha: 0.8),
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
-                ),
-                  ],
                 ),
               ),
             ),
@@ -1525,79 +1539,112 @@ class _HomeSmallCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final bool isDarkCard = cardColor.computeLuminance() < 0.5;
     final Color textColor = isDarkCard ? Colors.white : Colors.black87;
+
+    EdgeInsetsGeometry padding = const EdgeInsets.all(15);
+    AlignmentGeometry contentAlignment = Alignment.centerRight;
+    MainAxisAlignment columnAlignment = MainAxisAlignment.center;
+    CrossAxisAlignment crossAlignment = CrossAxisAlignment.start;
+
+    if (frameImagePath.contains('موسوعة الامام علي')) {
+      padding = const EdgeInsets.only(top: 15, right: 15, bottom: 20, left: 60);
+      contentAlignment = Alignment.centerRight;
+    } else if (frameImagePath.contains('الجح') || frameImagePath.contains('الحج')) {
+      padding = const EdgeInsets.only(top: 15, right: 15, bottom: 40, left: 15);
+      contentAlignment = Alignment.topCenter;
+      columnAlignment = MainAxisAlignment.start;
+      crossAlignment = CrossAxisAlignment.center;
+    } else if (frameImagePath.contains('القرآن') || frameImagePath.contains('الادعية') ||
+               frameImagePath.contains('الصحيفة') || frameImagePath.contains('اسماء') ||
+               frameImagePath.contains('الزيارات')) {
+      padding = const EdgeInsets.only(top: 35, right: 15, bottom: 15, left: 15);
+      contentAlignment = Alignment.bottomCenter;
+      columnAlignment = MainAxisAlignment.end;
+      crossAlignment = CrossAxisAlignment.center;
+    }
+
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(20),
       child: Container(
         width: isFullWidth ? double.infinity : (MediaQuery.of(context).size.width - 48) / 2,
-        height: isFullWidth ? 130 : 100,
+        height: isFullWidth ? 130 : 120,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
+              blurRadius: 10,
+              offset: const Offset(0, 5),
+            ),
+          ],
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(20),
-          child: Stack(
-            children: [
-              Positioned.fill(
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: cardColor.withValues(alpha: uiOpacity * 0.8),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                  ),
-                ),
-              ),
-              Positioned.fill(
-                child: Image.asset(
-                  frameImagePath,
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            child: Container(
+              decoration: BoxDecoration(
+                color: cardColor.withValues(alpha: uiOpacity * 0.8),
+                borderRadius: BorderRadius.circular(20),
+                image: DecorationImage(
+                  image: AssetImage(frameImagePath),
                   fit: BoxFit.fill,
                 ),
               ),
-              Positioned(
-                right: -10,
-                bottom: -10,
-                child: Opacity(
-                  opacity: 0.1,
-                  child: Icon(
-                    Icons.star,
-                    size: 80,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(15),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      tag,
-                      style: TextStyle(
-                        fontSize: 10,
+              child: Stack(
+                children: [
+                  Positioned(
+                    right: -10,
+                    bottom: -10,
+                    child: Opacity(
+                      opacity: 0.1,
+                      child: Icon(
+                        Icons.star,
+                        size: 80,
                         color: Theme.of(context).colorScheme.primary,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 1.2,
                       ),
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      title,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.bold,
-                        color: textColor,
-                        height: 1.2,
+                  ),
+                  Align(
+                    alignment: contentAlignment,
+                    child: Padding(
+                      padding: padding,
+                      child: Column(
+                        crossAxisAlignment: crossAlignment,
+                        mainAxisAlignment: columnAlignment,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            tag,
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: Theme.of(context).colorScheme.primary,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 1.2,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Flexible(
+                            child: Text(
+                              title,
+                              maxLines: 2,
+                              textAlign: crossAlignment == CrossAxisAlignment.center ? TextAlign.center : TextAlign.right,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                                color: textColor,
+                                height: 1.2,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),
