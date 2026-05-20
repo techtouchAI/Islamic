@@ -1,5 +1,6 @@
 
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'services/analytics_service.dart';
 import 'sections/html_content_renderer.dart';
@@ -1086,6 +1087,9 @@ class _HomeSectionState extends State<HomeSection> {
     Color textColor,
     IconData icon,
   ) {
+    final bool isDarkCard = widget.cardColor.computeLuminance() < 0.5;
+    final Color iconWatermarkColor = isDarkCard ? Colors.white : Colors.black;
+
     return InkWell(
       onTap: () => Navigator.push(
         context,
@@ -1130,6 +1134,25 @@ class _HomeSectionState extends State<HomeSection> {
                         width: 1.5,
                       ),
                     ),
+                  ),
+                ),
+              ),
+              Positioned(
+                right: -20,
+                bottom: -20,
+                child: Transform.rotate(
+                  angle: -0.2,
+                  child: Icon(
+                    icon,
+                    size: 140,
+                    color: iconWatermarkColor.withValues(alpha: 0.15),
+                    shadows: [
+                      Shadow(
+                        color: Colors.black.withValues(alpha: 0.2),
+                        blurRadius: 8,
+                        offset: const Offset(2, 2),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -1242,13 +1265,41 @@ class _HomeSectionState extends State<HomeSection> {
                     width: 2.5,
                   ),
                 ),
-                child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(
-                    vertical: 20,
-                    horizontal: 15,
-                  ),
-                  child: Column(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(25),
+                  child: Stack(
+                    children: [
+                      Positioned(
+                        left: -20,
+                        top: -20,
+                        child: Transform.rotate(
+                          angle: 0.2,
+                          child: Icon(
+                            now.hour >= 6 && now.hour < 18
+                                ? Icons.wb_sunny_rounded
+                                : FontAwesomeIcons.solidMoon,
+                            size: 130,
+                            color: (Theme.of(context).brightness != Brightness.dark
+                                    ? Colors.white
+                                    : Colors.black)
+                                .withValues(alpha: 0.15),
+                            shadows: [
+                              Shadow(
+                                color: Colors.black.withValues(alpha: 0.2),
+                                blurRadius: 8,
+                                offset: const Offset(2, 2),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 20,
+                          horizontal: 15,
+                        ),
+                        child: Column(
                     children: [
                       if (_currentPrayerName.isNotEmpty)
                         Container(
@@ -1300,6 +1351,9 @@ class _HomeSectionState extends State<HomeSection> {
                     ],
                   ),
                 ),
+                ],
+                ),
+                ),
               ),
             ),
             const SizedBox(height: 20),
@@ -1309,7 +1363,7 @@ class _HomeSectionState extends State<HomeSection> {
                 'دعاء اليوم',
                 _dayDua!,
                 textColor,
-                Icons.calendar_today,
+                FontAwesomeIcons.handsPraying,
               ),
             if (_dayDua != null && (widget.visibility['day_dua'] ?? true))
               const SizedBox(height: 15),
@@ -1320,7 +1374,7 @@ class _HomeSectionState extends State<HomeSection> {
                 'إلهام اليوم',
                 _inspirationDua!,
                 textColor,
-                Icons.auto_awesome,
+                FontAwesomeIcons.lightbulb,
               ),
             const SizedBox(height: 25),
             Align(
@@ -1351,6 +1405,7 @@ class _HomeSectionState extends State<HomeSection> {
                                 true
                             ? 'قال أمير المؤمنين علي (عليه السلام)'
                             : e.value['title'].toString(),
+                        sectionKey: e.value['sectionKey']?.toString() ?? '',
                         uiOpacity: widget.uiOpacity,
                         cardColor: widget.cardColor,
                         onTap: () async {
@@ -1415,22 +1470,40 @@ class _HomeSectionState extends State<HomeSection> {
 }
 
 class _HomeSmallCard extends StatelessWidget {
-  final String tag, title;
+  final String tag, title, sectionKey;
   final double uiOpacity;
   final Color cardColor;
   final VoidCallback onTap;
   const _HomeSmallCard({
     required this.tag,
     required this.title,
+    required this.sectionKey,
     required this.uiOpacity,
     required this.cardColor,
     required this.onTap,
   });
 
+  IconData _getIconForSection(String key) {
+    if (key.contains('quran')) return FontAwesomeIcons.bookQuran;
+    if (key.contains('visits')) return FontAwesomeIcons.mosque;
+    if (key.contains('duas')) return FontAwesomeIcons.bookOpen;
+    if (key.contains('sahifa')) return FontAwesomeIcons.scroll;
+    if (key.contains('imam_ali')) return FontAwesomeIcons.buildingColumns;
+    if (key.contains('fatawa')) return FontAwesomeIcons.scaleBalanced;
+    if (key.contains('dreams')) return FontAwesomeIcons.cloudMoon;
+    if (key.contains('prophets_stories')) return FontAwesomeIcons.featherPointed;
+    if (key.contains('names_allah')) return FontAwesomeIcons.handHoldingHeart;
+    if (key.contains('adhkar')) return FontAwesomeIcons.kaaba;
+    if (key.contains('istikhara')) return FontAwesomeIcons.hands;
+    return FontAwesomeIcons.starAndCrescent;
+  }
+
   @override
   Widget build(BuildContext context) {
     final bool isDarkCard = cardColor.computeLuminance() < 0.5;
     final Color textColor = isDarkCard ? Colors.white : Colors.black87;
+    final Color iconWatermarkColor = isDarkCard ? Colors.white : Colors.black;
+
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(20),
@@ -1470,13 +1543,20 @@ class _HomeSmallCard extends StatelessWidget {
               ),
               Positioned(
                 right: -10,
-                bottom: -10,
-                child: Opacity(
-                  opacity: 0.1,
+                bottom: -15,
+                child: Transform.rotate(
+                  angle: -0.2,
                   child: Icon(
-                    Icons.star,
+                    _getIconForSection(sectionKey),
                     size: 80,
-                    color: Theme.of(context).colorScheme.primary,
+                    color: iconWatermarkColor.withValues(alpha: 0.15),
+                    shadows: [
+                      Shadow(
+                        color: Colors.black.withValues(alpha: 0.2),
+                        blurRadius: 5,
+                        offset: const Offset(2, 2),
+                      ),
+                    ],
                   ),
                 ),
               ),
