@@ -1,3 +1,4 @@
+
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'services/analytics_service.dart';
@@ -226,8 +227,7 @@ class _AlDhakereenAppState extends State<AlDhakereenApp> {
           : ThemeMode.dark;
       _fontSizeFactor = prefs.getDouble('fontSize') ?? 1.0;
       _primaryColor = Color(prefs.getInt('primaryColor') ?? defaultPrimary);
-      _uiOpacity =
-          prefs.getDouble('uiOpacity') ??
+      _uiOpacity = prefs.getDouble('uiOpacity') ??
           (dbSettings['ui_opacity']?.toDouble() ?? 1.0);
       _backgroundImagePath = prefs.getString('backgroundImage');
       _selectedBase64Bg = prefs.getString('custom_bg_base64_selected');
@@ -245,8 +245,7 @@ class _AlDhakereenAppState extends State<AlDhakereenApp> {
         _homeVisibility[key] =
             prefs.getBool('vis_$key') ?? (value['visible_home'] ?? true);
       });
-      _homeVisibility['inspiration'] =
-          prefs.getBool('vis_inspiration') ??
+      _homeVisibility['inspiration'] = prefs.getBool('vis_inspiration') ??
           (dbSettings['show_inspiration'] ?? true);
       _homeVisibility['day_dua'] = prefs.getBool('vis_day_dua') ?? true;
     });
@@ -261,9 +260,8 @@ class _AlDhakereenAppState extends State<AlDhakereenApp> {
 
   void _toggleTheme() {
     setState(() {
-      _themeMode = _themeMode == ThemeMode.light
-          ? ThemeMode.dark
-          : ThemeMode.light;
+      _themeMode =
+          _themeMode == ThemeMode.light ? ThemeMode.dark : ThemeMode.light;
       _saveSetting('theme', _themeMode == ThemeMode.light ? 'light' : 'dark');
     });
   }
@@ -282,7 +280,10 @@ class _AlDhakereenAppState extends State<AlDhakereenApp> {
                 const SizedBox(height: 20),
                 const Text(
                   "اللَّهُمَّ صَلِّ عَلَى مُحَمَّدٍ وَعَلَى آلِ مُحَمَّدٍ",
-                  style: TextStyle(fontFamily: 'me_quran', fontSize: 24),
+                  style: TextStyle(
+                    fontFamily: 'me_quran',
+                    fontSize: 24,
+                  ),
                   textAlign: TextAlign.center,
                 ),
               ],
@@ -296,9 +297,7 @@ class _AlDhakereenAppState extends State<AlDhakereenApp> {
       debugShowCheckedModeBanner: false,
       builder: (context, child) => MediaQuery(
         data: MediaQuery.of(context).copyWith(
-          textScaler: MediaQuery.of(
-            context,
-          ).textScaler, // Respects system font scaling
+          textScaler: MediaQuery.of(context).textScaler, // Respects system font scaling
         ),
         child: child!,
       ),
@@ -471,97 +470,93 @@ class _MainScaffoldState extends State<MainScaffold> {
             _onBack();
           },
           child: Scaffold(
-            drawer: AppDrawer(
-              currentSection: _currentSection,
-              onNavigate: (section) {
-                Navigator.pop(context);
-                _navigateTo(section);
-              },
-            ),
-            appBar: AppBar(
-              title: Text(
-                _getAppBarTitle(_currentSection),
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 20,
-                ),
-              ),
-              centerTitle: true,
-              elevation: 0,
-              backgroundColor: Theme.of(context).appBarTheme.backgroundColor
-                  ?.withValues(alpha: widget.uiOpacity),
-              leading: Builder(
-                builder: (context) => IconButton(
-                  icon: const Icon(Icons.notes),
-                  onPressed: () => Scaffold.of(context).openDrawer(),
-                  tooltip: 'القائمة',
-                ),
-              ),
-              actions: [
-                IconButton(
-                  icon: const Icon(Icons.search),
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) =>
-                            SearchScreen(fontSizeFactor: widget.fontSizeFactor),
-                      ),
-                    );
-                  },
-                  tooltip: 'بحث شامل',
-                ),
-                if (isSubPage)
-                  IconButton(
-                    icon: const Icon(Icons.arrow_forward_ios),
-                    onPressed: _onBack,
-                    tooltip: 'رجوع',
-                  ),
-                if (!isSubPage) const SizedBox(width: 4),
-              ],
-            ),
-            body: Stack(
-              children: [
-                if (_currentSection == 'home') ...[
-                  if (widget.backgroundImagePath != null)
-                    Positioned.fill(
-                      child: Image.file(
-                        File(widget.backgroundImagePath!),
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                  if (widget.backgroundImagePath == null)
-                    Positioned.fill(
-                      child: buildImage(
-                        widget.selectedBase64Bg ??
-                            settings['custom_bg_base64']?.toString() ??
-                            settings['bg_image']?.toString(),
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                ],
-                Positioned.fill(
-                  child: Opacity(
-                    opacity: 0.03,
-                    child: CustomPaint(
-                      painter: IslamicPatternPainter(
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
-                    ),
-                  ),
-                ),
-                SafeArea(
-                  child: AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 400),
-                    child: _buildBody(context),
-                  ),
-                ),
-              ],
+        drawer: AppDrawer(
+          currentSection: _currentSection,
+          onNavigate: (section) {
+            Navigator.pop(context);
+            _navigateTo(section);
+          },
+        ),
+        appBar: AppBar(
+          title: Text(
+            _getAppBarTitle(_currentSection),
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+          ),
+          centerTitle: true,
+          elevation: 0,
+          backgroundColor: Theme.of(
+            context,
+          ).appBarTheme.backgroundColor?.withValues(alpha: widget.uiOpacity),
+          leading: Builder(
+            builder: (context) => IconButton(
+              icon: const Icon(Icons.notes),
+              onPressed: () => Scaffold.of(context).openDrawer(),
+              tooltip: 'القائمة',
             ),
           ),
-        );
-      },
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.search),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => SearchScreen(fontSizeFactor: widget.fontSizeFactor),
+                  ),
+                );
+              },
+              tooltip: 'بحث شامل',
+            ),
+            if (isSubPage)
+              IconButton(
+                icon: const Icon(Icons.arrow_forward_ios),
+                onPressed: _onBack,
+                tooltip: 'رجوع',
+              ),
+            if (!isSubPage) const SizedBox(width: 4),
+          ],
+        ),
+        body: Stack(
+          children: [
+            if (_currentSection == 'home') ...[
+              if (widget.backgroundImagePath != null)
+                Positioned.fill(
+                  child: Image.file(
+                    File(widget.backgroundImagePath!),
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              if (widget.backgroundImagePath == null)
+                Positioned.fill(
+                  child: buildImage(
+                    widget.selectedBase64Bg ??
+                        settings['custom_bg_base64']?.toString() ??
+                        settings['bg_image']?.toString(),
+                    fit: BoxFit.cover,
+                  ),
+                ),
+            ],
+            Positioned.fill(
+              child: Opacity(
+                opacity: 0.03,
+                child: CustomPaint(
+                  painter: IslamicPatternPainter(
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                ),
+              ),
+            ),
+            SafeArea(
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 400),
+                child: _buildBody(context),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
+    });
   }
 
   Widget _buildBody(BuildContext context) {
@@ -594,7 +589,7 @@ class _MainScaffoldState extends State<MainScaffold> {
           hijriAdjustment: widget.hijriAdjustment,
           onHijriAdjustmentChanged: widget.onHijriAdjustmentChanged,
         );
-
+        
       case 'favorites':
         return FavoritesSection(
           key: const ValueKey('favorites'),
@@ -653,9 +648,8 @@ class _MainScaffoldState extends State<MainScaffold> {
         return TabbedSection(
           key: const ValueKey('imam_ali'),
           tabs: imamAliCats.map((c) => c['title'].toString()).toList(),
-          sectionKeys: imamAliCats
-              .map((c) => 'imam_ali_cat_${c['id']}')
-              .toList(),
+          sectionKeys:
+              imamAliCats.map((c) => 'imam_ali_cat_${c['id']}').toList(),
           fontSizeFactor: widget.fontSizeFactor,
           uiOpacity: widget.uiOpacity,
         );
@@ -802,30 +796,18 @@ class AppDrawer extends StatelessWidget {
                 const Divider(),
                 ListTile(
                   leading: const Icon(Icons.calendar_today),
-                  title: const Text(
-                    'التقويم الهجري',
-                    style: TextStyle(fontSize: 16),
-                  ),
+                  title: const Text('التقويم الهجري', style: TextStyle(fontSize: 16)),
                   onTap: () {
                     Navigator.pop(context); // close drawer
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => HijriCalendarScreen()),
-                    );
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => HijriCalendarScreen()));
                   },
                 ),
                 ListTile(
                   leading: const Icon(Icons.explore),
-                  title: const Text(
-                    'اتجاه القبلة',
-                    style: TextStyle(fontSize: 16),
-                  ),
+                  title: const Text('اتجاه القبلة', style: TextStyle(fontSize: 16)),
                   onTap: () {
                     Navigator.pop(context); // close drawer
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => QiblaScreen()),
-                    );
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => QiblaScreen()));
                   },
                 ),
                 const Divider(),
@@ -1104,12 +1086,6 @@ class _HomeSectionState extends State<HomeSection> {
     Color textColor,
     IconData icon,
   ) {
-    String imagePath = 'assets/images/Screen_home/لجميع البطاقات المتبقية.png';
-    if (tag == 'دعاء اليوم') {
-      imagePath = 'assets/images/Screen_home/دعاء اليوم 2.png';
-    } else if (tag == 'إلهام اليوم') {
-      imagePath = 'assets/images/Screen_home/الهام اليوم 3.png';
-    }
     return InkWell(
       onTap: () => Navigator.push(
         context,
@@ -1121,88 +1097,115 @@ class _HomeSectionState extends State<HomeSection> {
           ),
         ),
       ),
-      child: AspectRatio(
-        aspectRatio: 2.5,
-        child: Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(25),
-            image: DecorationImage(
-              image: AssetImage(imagePath),
-              fit: BoxFit.fill,
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(25),
+          boxShadow: [
+            BoxShadow(
+              color: Theme.of(
+                context,
+              ).colorScheme.primary.withValues(alpha: 0.15),
+              blurRadius: 15,
+              offset: const Offset(0, 8),
             ),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(25),
+          child: Stack(
+            children: [
+              Positioned.fill(
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: widget.cardColor.withValues(
+                        alpha: widget.uiOpacity * 0.8,
+                      ),
+                      borderRadius: BorderRadius.circular(25),
+                      border: Border.all(
                         color: Theme.of(
                           context,
-                        ).colorScheme.primary.withValues(alpha: 0.1),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        icon,
-                        color: Theme.of(context).colorScheme.primary,
-                        size: 20,
+                        ).colorScheme.primary.withValues(alpha: 0.5),
+                        width: 1.5,
                       ),
                     ),
-                    const SizedBox(width: 12),
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.primary.withValues(alpha: 0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            icon,
+                            color: Theme.of(context).colorScheme.primary,
+                            size: 20,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Text(
+                          tag,
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.primary,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 22,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
                     Text(
-                      tag,
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.primary,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 22,
-                        letterSpacing: 0.5,
+                      data['content'].toString(),
+                      textAlign: TextAlign.center,
+                      maxLines: 4,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(fontFamily: 'OmarNaskh',
+                        fontSize: 17,
+                        height: 1.9,
+                        color: textColor,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.primary.withValues(alpha: 0.2),
+                        ),
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                      child: Text(
+                        data["title"].toString(),
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Theme.of(context).colorScheme.primary,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 16),
-                Text(
-                  data['content'].toString(),
-                  textAlign: TextAlign.center,
-                  maxLines: 4,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontFamily: 'OmarNaskh',
-                    fontSize: 17,
-                    height: 1.9,
-                    color: textColor,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    border: Border.all(
-                      color: Theme.of(
-                        context,
-                      ).colorScheme.primary.withValues(alpha: 0.2),
-                    ),
-                    borderRadius: BorderRadius.circular(15),
-                  ),
-                  child: Text(
-                    data["title"].toString(),
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Theme.of(context).colorScheme.primary,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
@@ -1213,9 +1216,7 @@ class _HomeSectionState extends State<HomeSection> {
   Widget build(BuildContext context) {
     _loadDailyDua();
     final now = DateTime.now();
-    final hijri = HijriCalendar.fromDate(
-      DateTime.now().add(Duration(days: widget.hijriAdjustment)),
-    );
+    final hijri = HijriCalendar.fromDate(DateTime.now().add(Duration(days: widget.hijriAdjustment)));
     final bool isDarkCard = widget.cardColor.computeLuminance() < 0.5;
     final Color textColor = isDarkCard ? Colors.white : Colors.black87;
     return SizedBox(
@@ -1229,24 +1230,23 @@ class _HomeSectionState extends State<HomeSection> {
             InkWell(
               onTap: widget.onPrayerCardTap,
               borderRadius: BorderRadius.circular(25),
-              child: AspectRatio(
-                aspectRatio: 2.5,
+              child: Card(
+                elevation: 10,
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? Colors.white.withValues(alpha: widget.uiOpacity)
+                    : Colors.black.withValues(alpha: widget.uiOpacity),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(25),
+                  side: BorderSide(
+                    color: Theme.of(context).colorScheme.primary,
+                    width: 2.5,
+                  ),
+                ),
                 child: Container(
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(
                     vertical: 20,
                     horizontal: 15,
-                  ),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(25),
-                    image: DecorationImage(
-                      image: AssetImage(
-                        Theme.of(context).brightness == Brightness.dark
-                            ? 'assets/images/Screen_home/وقت الصلاة والتقويم ليلي 1.png'
-                            : 'assets/images/Screen_home/وقت الصلاة والتقويم نهاري 1.png',
-                      ),
-                      fit: BoxFit.fill,
-                    ),
                   ),
                   child: Column(
                     children: [
@@ -1277,8 +1277,7 @@ class _HomeSectionState extends State<HomeSection> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        '${hijri.hDay} ${hijri.longMonthName} ${hijri.hYear} هـ'
-                            .toEasternArabic(),
+                        '${hijri.hDay} ${hijri.longMonthName} ${hijri.hYear} هـ'.toEasternArabic(),
                         style: TextStyle(
                           color: Theme.of(context).colorScheme.primary,
                           fontSize: 20,
@@ -1346,10 +1345,9 @@ class _HomeSectionState extends State<HomeSection> {
                     (e) => RepaintBoundary(
                       child: _HomeSmallCard(
                         tag: e.key,
-                        title:
-                            e.value['sectionKey']?.toString().contains(
-                                  'imam_ali',
-                                ) ==
+                        title: e.value['sectionKey']?.toString().contains(
+                                      'imam_ali',
+                                    ) ==
                                 true
                             ? 'قال أمير المؤمنين علي (عليه السلام)'
                             : e.value['title'].toString(),
@@ -1394,9 +1392,9 @@ class _HomeSectionState extends State<HomeSection> {
                                 isImamAli: sectionKey.contains('imam_ali'),
                                 surahName: isQuran
                                     ? e.value['title'].toString().replaceAll(
-                                        'سورة ',
-                                        '',
-                                      )
+                                          'سورة ',
+                                          '',
+                                        )
                                     : null,
                                 ayahs: ayahs,
                                 surahId: isQuran ? e.value['id'] : null,
@@ -1433,72 +1431,86 @@ class _HomeSmallCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final bool isDarkCard = cardColor.computeLuminance() < 0.5;
     final Color textColor = isDarkCard ? Colors.white : Colors.black87;
-
-    String imagePath = 'assets/images/Screen_home/لجميع البطاقات المتبقية.png';
-    if (title.contains('القرآن') || tag.contains('quran')) {
-      imagePath = 'assets/images/Screen_home/القرآن 5.png';
-    } else if (title.contains('الأدعية') || tag.contains('duas')) {
-      imagePath = 'assets/images/Screen_home/الادعية 6.png';
-    } else if (title.contains('الزيارات') || tag.contains('visits')) {
-      imagePath = 'assets/images/Screen_home/الزيارات 4.png';
-    } else if (title.contains('الصحيفة السجادية') || tag.contains('sahifa')) {
-      imagePath = 'assets/images/Screen_home/الصحيفة السجادية7.png';
-    } else if (title.contains('موسوعة الإمام علي') ||
-        tag.contains('imam_ali') ||
-        title.contains('قال أمير المؤمنين')) {
-      imagePath = 'assets/images/Screen_home/موسوعة الامام علي 8.png';
-    } else if (title.contains('الحج') || tag.contains('hajj')) {
-      imagePath = 'assets/images/Screen_home/الجح 9.png';
-    } else if (title.contains('أسماء الله الحسنى') ||
-        tag.contains('allah_names')) {
-      imagePath = 'assets/images/Screen_home/اسماء الله الحسنى 10.png';
-    }
-
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(20),
       child: Container(
         width: (MediaQuery.of(context).size.width - 48) / 2,
-        child: AspectRatio(
-          aspectRatio: 1.05,
-          child: Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(20),
-              image: DecorationImage(
-                image: AssetImage(imagePath),
-                fit: BoxFit.fill,
-              ),
+        height: 100,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Theme.of(
+                context,
+              ).colorScheme.primary.withValues(alpha: 0.15),
+              blurRadius: 10,
+              offset: const Offset(0, 5),
             ),
-            child: Padding(
-              padding: const EdgeInsets.all(15),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    tag,
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: Theme.of(context).colorScheme.primary,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 1.2,
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(20),
+          child: Stack(
+            children: [
+              Positioned.fill(
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: cardColor.withValues(alpha: uiOpacity * 0.8),
+                      border: Border.all(
+                        color: Theme.of(context).colorScheme.primary,
+                        width: 2,
+                      ),
+                      borderRadius: BorderRadius.circular(20),
                     ),
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    title,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.bold,
-                      color: textColor,
-                      height: 1.2,
-                    ),
-                  ),
-                ],
+                ),
               ),
-            ),
+              Positioned(
+                right: -10,
+                bottom: -10,
+                child: Opacity(
+                  opacity: 0.1,
+                  child: Icon(
+                    Icons.star,
+                    size: 80,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(15),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      tag,
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: Theme.of(context).colorScheme.primary,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1.2,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                        color: textColor,
+                        height: 1.2,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -1538,10 +1550,8 @@ class _ClockWidgetState extends State<_ClockWidget> {
       'hh:mm:ss a',
       'en_US',
     ).format(DateTime.now());
-    _timeNotifier.value = formattedTime
-        .replaceFirst('AM', 'ص')
-        .replaceFirst('PM', 'م')
-        .toEasternArabic();
+    _timeNotifier.value =
+        formattedTime.replaceFirst('AM', 'ص').replaceFirst('PM', 'م').toEasternArabic();
   }
 
   @override
@@ -1782,7 +1792,10 @@ class _DynamicListSectionState extends State<DynamicListSection> {
             return const Center(
               child: Text(
                 "اللَّهُمَّ صَلِّ عَلَى مُحَمَّدٍ وَعَلَى آلِ مُحَمَّدٍ",
-                style: TextStyle(fontFamily: 'me_quran', fontSize: 24),
+                style: TextStyle(
+                  fontFamily: 'me_quran',
+                  fontSize: 24,
+                ),
                 textAlign: TextAlign.center,
               ),
             );
@@ -1809,13 +1822,9 @@ class _DynamicListSectionState extends State<DynamicListSection> {
             itemBuilder: (context, index) {
               final surah = data[index];
               return Card(
-                color: Theme.of(
-                  context,
-                ).cardColor.withValues(alpha: widget.uiOpacity),
-                margin: const EdgeInsets.symmetric(
-                  horizontal: 4.0,
-                  vertical: 8.0,
-                ),
+                color: Theme.of(context).cardColor.withValues(alpha: widget.uiOpacity),
+                margin:
+                    const EdgeInsets.symmetric(horizontal: 4.0, vertical: 8.0),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(15),
                   side: BorderSide(
@@ -1858,36 +1867,31 @@ class _DynamicListSectionState extends State<DynamicListSection> {
                               'assets/images/quran/quran_surah_names_${(surah['id'] as int) - 1}.png',
                               height: 50,
                               fit: BoxFit.contain,
-                              color:
-                                  Theme.of(context).brightness ==
-                                      Brightness.dark
-                                  ? Colors.white
-                                  : Colors.black,
+                              color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black,
                               colorBlendMode: BlendMode.srcIn,
                             ),
                           ),
                         ),
                         Container(
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 6,
-                          ),
+                              horizontal: 12, vertical: 6),
                           decoration: BoxDecoration(
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.primary.withValues(alpha: 0.1),
+                            color: Theme.of(context)
+                                .colorScheme
+                                .primary
+                                .withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(20),
                             border: Border.all(
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.primary.withValues(alpha: 0.3),
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .primary
+                                  .withValues(alpha: 0.3),
                               width: 1,
                             ),
                           ),
                           child: Text(
                             "آياتها ${surah['total_ayahs']}",
-                            style: TextStyle(
-                              fontFamily: 'OmarNaskh',
+                            style: TextStyle(fontFamily: 'OmarNaskh',
                               fontSize: 12,
                               fontWeight: FontWeight.bold,
                               color: Theme.of(context).colorScheme.primary,
@@ -1958,9 +1962,7 @@ class _DynamicListSectionState extends State<DynamicListSection> {
                   padding: const EdgeInsets.only(bottom: 20),
                   itemBuilder: (context, index) => Container(
                     margin: const EdgeInsets.symmetric(
-                      horizontal: 4.0,
-                      vertical: 8.0,
-                    ),
+                        horizontal: 4.0, vertical: 8.0),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(15),
                       child: Stack(
@@ -1971,8 +1973,8 @@ class _DynamicListSectionState extends State<DynamicListSection> {
                               child: Container(
                                 decoration: BoxDecoration(
                                   color: Theme.of(context).cardColor.withValues(
-                                    alpha: widget.uiOpacity * 0.8,
-                                  ),
+                                        alpha: widget.uiOpacity * 0.8,
+                                      ),
                                   borderRadius: BorderRadius.circular(15),
                                   border: Border.all(
                                     color: Theme.of(
@@ -1986,34 +1988,19 @@ class _DynamicListSectionState extends State<DynamicListSection> {
                           ),
                           Builder(
                             builder: (context) {
-                              String rawText = data[index]['content']
+                                  String rawText = data[index]['content']
                                   .toString()
-                                  .trim()
-                                  .replaceAll(
-                                    RegExp(
-                                      r'<html>|<html|^html\b',
-                                      caseSensitive: false,
-                                    ),
-                                    ' ',
-                                  )
+                                      .trim()
+                                      .replaceAll(RegExp(r'<html>|<html|^html\b', caseSensitive: false), ' ')
                                   .trim();
-                              String cleanSubtitle = rawText.cleanSnippet();
+                                  String cleanSubtitle = rawText.cleanSnippet();
 
                               String displayTitle;
                               TextStyle titleStyle;
 
                               if (widget.sectionKey == 'prophets_stories') {
-                                String rawTitle = data[index]['title']
-                                    .toString();
-                                String cleanName = rawTitle
-                                    .replaceAll(
-                                      RegExp(
-                                        r'قصة\s*|\s*\(?عليه السلام\)?',
-                                        caseSensitive: false,
-                                      ),
-                                      '',
-                                    )
-                                    .trim();
+                                String rawTitle = data[index]['title'].toString();
+                                String cleanName = rawTitle.replaceAll(RegExp(r'قصة\s*|\s*\(?عليه السلام\)?', caseSensitive: false), '').trim();
                                 displayTitle = '$cleanName ﴿عليه السلام﴾';
                                 titleStyle = TextStyle(
                                   fontFamily: 'me_quran',
@@ -2021,11 +2008,8 @@ class _DynamicListSectionState extends State<DynamicListSection> {
                                   fontWeight: FontWeight.normal,
                                   color: Theme.of(context).colorScheme.primary,
                                 );
-                              } else if (widget.sectionKey.contains(
-                                'imam_ali',
-                              )) {
-                                displayTitle =
-                                    'قال أمير المؤمنين علي (عليه السلام)';
+                              } else if (widget.sectionKey.contains('imam_ali')) {
+                                displayTitle = 'قال أمير المؤمنين علي (عليه السلام)';
                                 titleStyle = const TextStyle(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 18,
@@ -2040,55 +2024,41 @@ class _DynamicListSectionState extends State<DynamicListSection> {
 
                               return ListTile(
                                 contentPadding: const EdgeInsets.all(20),
-                                title: Text(displayTitle, style: titleStyle),
-                                subtitle:
-                                    widget.sectionKey == 'prophets_stories'
-                                    ? null
-                                    : Padding(
-                                        padding: const EdgeInsets.only(top: 10),
-                                        child: Text(
-                                          cleanSubtitle.cleanSnippet(),
-                                          maxLines:
-                                              widget.sectionKey.contains(
-                                                'imam_ali',
-                                              )
-                                              ? 3
-                                              : 2,
-                                          overflow: TextOverflow.ellipsis,
-                                          style:
-                                              widget.sectionKey.contains(
-                                                'imam_ali',
-                                              )
-                                              ? TextStyle(
-                                                  fontFamily: 'me_quran',
-                                                  fontSize: 18,
-                                                  height: 1.8,
-                                                )
-                                              : TextStyle(
-                                                  fontFamily: 'OmarNaskh',
-                                                  fontSize: 16,
-                                                ),
-                                        ),
-                                      ),
-                                onTap: () => Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (c) => ReaderPage(
-                                      title: data[index]['title'].toString(),
-                                      content: data[index]['content']
-                                          .toString(),
-                                      fontSizeFactor: widget.fontSizeFactor,
-                                      isQuran: false,
-                                      isImamAli: widget.sectionKey.contains(
-                                        'imam_ali',
-                                      ),
-                                      titleColor: data[index]['color']
-                                          ?.toString(),
-                                    ),
-                                  ),
+                                title: Text(
+                                  displayTitle,
+                                  style: titleStyle,
                                 ),
+                                subtitle: widget.sectionKey == 'prophets_stories' ? null : Padding(
+                                  padding: const EdgeInsets.only(top: 10),
+                                  child: Text(
+                                    cleanSubtitle.cleanSnippet(),
+                                    maxLines:
+                                        widget.sectionKey.contains('imam_ali') ? 3 : 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: widget.sectionKey.contains('imam_ali')
+                                    ? TextStyle(
+                                        fontFamily: 'me_quran',
+                                        fontSize: 18,
+                                        height: 1.8,
+                                      )
+                                    : TextStyle(fontFamily: 'OmarNaskh', fontSize: 16),
+                              ),
+                            ),
+                            onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (c) => ReaderPage(
+                                  title: data[index]['title'].toString(),
+                                  content: data[index]['content'].toString(),
+                                  fontSizeFactor: widget.fontSizeFactor,
+                                  isQuran: false,
+                                  isImamAli: widget.sectionKey.contains('imam_ali'),
+                                  titleColor: data[index]['color']?.toString(),
+                                ),
+                              ),
+                            ),
                               );
-                            },
+                            }
                           ),
                           Positioned(
                             top: 10,
@@ -2096,44 +2066,30 @@ class _DynamicListSectionState extends State<DynamicListSection> {
                             child: Builder(
                               builder: (context) {
                                 final itemId = data[index]['title'].toString();
-                                return ValueListenableBuilder<
-                                  List<FavoriteItem>
-                                >(
-                                  valueListenable: FavoritesService
-                                      .instance
-                                      .favoritesNotifier,
+                                return ValueListenableBuilder<List<FavoriteItem>>(
+                                  valueListenable: FavoritesService.instance.favoritesNotifier,
                                   builder: (context, favorites, _) {
-                                    final isFav = FavoritesService.instance
-                                        .isFavorite(itemId);
+                                    final isFav = FavoritesService.instance.isFavorite(itemId);
                                     return IconButton(
                                       icon: Icon(
-                                        isFav
-                                            ? Icons.favorite
-                                            : Icons.favorite_border,
-                                        color: isFav
-                                            ? Colors.red
-                                            : Theme.of(
-                                                context,
-                                              ).colorScheme.primary,
+                                        isFav ? Icons.favorite : Icons.favorite_border,
+                                        color: isFav ? Colors.red : Theme.of(context).colorScheme.primary,
                                       ),
                                       onPressed: () {
                                         final item = FavoriteItem(
                                           id: itemId,
-                                          title: data[index]['title']
-                                              .toString(),
-                                          content: data[index]['content']
-                                              .toString(),
+                                          title: data[index]['title'].toString(),
+                                          content: data[index]['content'].toString(),
                                           sourceSection: widget.sectionKey,
                                           timestamp: DateTime.now(),
                                           isCustom: false,
                                         );
-                                        FavoritesService.instance
-                                            .toggleFavorite(item);
+                                        FavoritesService.instance.toggleFavorite(item);
                                       },
                                     );
                                   },
                                 );
-                              },
+                              }
                             ),
                           ),
                         ],
@@ -2151,12 +2107,7 @@ class SurahHeader extends StatelessWidget {
   final String title;
   final Color color;
   final int? surahId;
-  const SurahHeader({
-    super.key,
-    required this.title,
-    required this.color,
-    this.surahId,
-  });
+  const SurahHeader({super.key, required this.title, required this.color, this.surahId});
 
   @override
   Widget build(BuildContext context) {
@@ -2171,21 +2122,16 @@ class SurahHeader extends StatelessWidget {
             'assets/images/quran_surah_name_frame.png',
             width: double.infinity,
             fit: BoxFit.fitWidth,
-            color: Theme.of(context).brightness == Brightness.dark
-                ? Colors.white
-                : Colors.black,
+            color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black,
             colorBlendMode: BlendMode.srcIn,
           ),
           // Layer 2: The Surah Name
           if (surahId != null)
             Image.asset(
               'assets/images/quran/quran_surah_names_${surahId! - 1}.png',
-              height:
-                  32, // Proportional height to fit beautifully inside the frame
+              height: 32, // Proportional height to fit beautifully inside the frame
               fit: BoxFit.contain,
-              color: Theme.of(context).brightness == Brightness.dark
-                  ? Colors.white
-                  : Colors.black,
+              color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black,
               colorBlendMode: BlendMode.srcIn,
             ),
         ],
@@ -2268,9 +2214,8 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
   Widget build(BuildContext context) {
     final primary = Theme.of(context).colorScheme.primary;
     final dynamicBgColor = _customBgColor ?? Theme.of(context).cardColor;
-    final dynamicTextColor = dynamicBgColor.computeLuminance() > 0.5
-        ? Colors.black87
-        : Colors.white;
+    final dynamicTextColor =
+        dynamicBgColor.computeLuminance() > 0.5 ? Colors.black87 : Colors.white;
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.title, style: const TextStyle(fontSize: 16)),
@@ -2299,10 +2244,8 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
         children: [
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 4.0,
-                vertical: 8.0,
-              ),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 4.0, vertical: 8.0),
               child: Container(
                 width: double.infinity,
                 decoration: BoxDecoration(
@@ -2325,17 +2268,10 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
                           topLeft: Radius.circular(24),
                           topRight: Radius.circular(24),
                         ),
-                        child: SurahHeader(
-                          title: widget.title,
-                          color: primary,
-                          surahId: widget.surahId,
-                        ),
+                        child: SurahHeader(title: widget.title, color: primary, surahId: widget.surahId),
                       ),
                     Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 4.0,
-                        vertical: 8.0,
-                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 8.0),
                       child: Column(
                         children: [
                           if (widget.isQuran &&
@@ -2343,8 +2279,7 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
                               widget.surahName != 'التوبة') ...[
                             Text(
                               "بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ",
-                              style: TextStyle(
-                                fontFamily: 'OmarNaskh',
+                              style: TextStyle(fontFamily: 'OmarNaskh',
                                 fontSize: 30,
                                 fontWeight: FontWeight.bold,
                                 color: primary,
@@ -2371,22 +2306,16 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
                                   textDirection: TextDirection.rtl,
                                   alignment: WrapAlignment.center,
                                   children: widget.ayahs!.map((a) {
-                                    String text = a['ar_text']
-                                        .toString()
-                                        .trim();
-                                    final index =
-                                        a['anum']?.toString() ??
+                                    String text = a['ar_text'].toString().trim();
+                                    final index = a['anum']?.toString() ??
                                         a['ayah_surah_index'].toString();
-                                    final arabicIndex = _convertToArabicNumber(
-                                      index,
-                                    );
+                                    final arabicIndex = _convertToArabicNumber(index);
 
                                     text = text
                                         .replaceAll(_trailingNumbersRegex, '')
                                         .trim();
 
-                                    final ayahIdxStr =
-                                        a['anum']?.toString() ??
+                                    final ayahIdxStr = a['anum']?.toString() ??
                                         a['ayah_surah_index'].toString();
                                     final int ayahIndex =
                                         int.tryParse(ayahIdxStr) ?? 0;
@@ -2397,19 +2326,16 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
                                         final prefs =
                                             await SharedPreferences.getInstance();
                                         setState(() {
-                                          if (_bookmarkedLineIndex
-                                                  ?.toString() ==
+                                          if (_bookmarkedLineIndex?.toString() ==
                                               ayahIndex.toString()) {
                                             _bookmarkedLineIndex = null;
                                             prefs.remove(
-                                              'bookmark_line_${widget.title}',
-                                            );
+                                                'bookmark_line_${widget.title}');
                                           } else {
                                             _bookmarkedLineIndex = ayahIndex;
                                             prefs.setInt(
-                                              'bookmark_line_${widget.title}',
-                                              ayahIndex,
-                                            );
+                                                'bookmark_line_${widget.title}',
+                                                ayahIndex);
                                           }
                                         });
                                       },
@@ -2435,22 +2361,18 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
                                                       '﴿$arabicIndex﴾',
                                                       style: TextStyle(
                                                         fontFamily: 'me_quran',
-                                                        color:
-                                                            _bookmarkedLineIndex
+                                                        color: _bookmarkedLineIndex
                                                                     ?.toString() ==
-                                                                ayahIndex
-                                                                    .toString()
-                                                            ? Colors
-                                                                  .green
-                                                                  .shade900
+                                                                ayahIndex.toString()
+                                                            ? Colors.green.shade900
                                                             : Colors.amber[700],
                                                         fontWeight:
                                                             _bookmarkedLineIndex
-                                                                    ?.toString() ==
-                                                                ayahIndex
-                                                                    .toString()
-                                                            ? FontWeight.bold
-                                                            : FontWeight.normal,
+                                                                        ?.toString() ==
+                                                                    ayahIndex
+                                                                        .toString()
+                                                                ? FontWeight.bold
+                                                                : FontWeight.normal,
                                                         fontSize: 24 * _factor,
                                                       ),
                                                     ),
@@ -2459,11 +2381,9 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
                                                         ayahIndex.toString())
                                                       const Positioned(
                                                         top: -12,
-                                                        child: Icon(
-                                                          Icons.star,
-                                                          color: Colors.green,
-                                                          size: 14,
-                                                        ),
+                                                        child: Icon(Icons.star,
+                                                            color: Colors.green,
+                                                            size: 14),
                                                       ),
                                                   ],
                                                 ),
@@ -2497,18 +2417,15 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
                                       Text(
                                         widget.title,
                                         textAlign: TextAlign.center,
-                                        style: TextStyle(
-                                          fontFamily: 'OmarNaskh',
+                                        style: TextStyle(fontFamily: 'OmarNaskh',
                                           fontSize: 22 * _factor,
                                           height: 2.2,
                                           fontWeight: FontWeight.bold,
                                           color: widget.titleColor != null
-                                              ? _parseColor(
-                                                      widget.titleColor!,
-                                                    ) ??
-                                                    Theme.of(
-                                                      context,
-                                                    ).colorScheme.primary
+                                              ? _parseColor(widget.titleColor!) ??
+                                                  Theme.of(context)
+                                                      .colorScheme
+                                                      .primary
                                               : dynamicTextColor,
                                         ),
                                       ),
@@ -2523,23 +2440,22 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
                                       builder: (context) {
                                         final baseStyle =
                                             widget.isImamAli || widget.isQuran
-                                            ? TextStyle(
-                                                fontFamily: 'me_quran',
-                                                fontSize: 26 * _factor,
-                                                height: 1.8,
-                                                color: dynamicTextColor,
-                                              )
-                                            : TextStyle(
-                                                fontFamily: 'OmarNaskh',
-                                                fontSize: 20 * _factor,
-                                                height: 2.2,
-                                                color: dynamicTextColor,
-                                              );
+                                                ? TextStyle(
+                                                    fontFamily: 'me_quran',
+                                                    fontSize: 26 * _factor,
+                                                    height: 1.8,
+                                                    color: dynamicTextColor,
+                                                  )
+                                                : TextStyle(fontFamily: 'OmarNaskh',
+                                                    fontSize: 20 * _factor,
+                                                    height: 2.2,
+                                                    color: dynamicTextColor,
+                                                  );
 
                                         String cleanContent = widget.content;
                                         if (cleanContent.length <= 10000) {
-                                          cleanContent = cleanContent
-                                              .replaceAll('### ', '');
+                                          cleanContent =
+                                              cleanContent.replaceAll('### ', '');
                                           if (cleanContent
                                               .trim()
                                               .toLowerCase()
@@ -2551,67 +2467,40 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
                                           }
                                           cleanContent = cleanContent
                                               .replaceAll(
-                                                '\uFDFA',
-                                                '(صلى الله عليه وآله)',
-                                              )
-                                              .replaceAll(
-                                                '\uFDFB',
-                                                '(جل جلاله)',
-                                              )
+                                                  '\uFDFA', '(صلى الله عليه وآله)')
+                                              .replaceAll('\uFDFB', '(جل جلاله)')
                                               .replaceAll('!', '(عليه السلام)');
-                                          cleanContent = cleanContent
-                                              .replaceAll(
-                                                RegExp(
-                                                  r'<html>|<html|\bhtml\b',
-                                                  caseSensitive: false,
-                                                ),
-                                                '',
-                                              )
-                                              .trim();
+                                          cleanContent = cleanContent.replaceAll(RegExp(r'<html>|<html|\bhtml\b', caseSensitive: false), '').trim();
                                         }
 
-                                        cleanContent = cleanContent
-                                            .trim()
-                                            .replaceAll(
-                                              RegExp(
-                                                r'<html>|<html|^html\b',
-                                                caseSensitive: false,
-                                              ),
-                                              '',
-                                            )
-                                            .trim();
+                                        cleanContent = cleanContent.trim().replaceAll(RegExp(r'<html>|<html|^html\b', caseSensitive: false), '').trim();
 
                                         debugPrint(
-                                          'HtmlContentRenderer built for section: ${widget.title} with bookmark: $_bookmarkedLineIndex',
-                                        );
+                                            'HtmlContentRenderer built for section: ${widget.title} with bookmark: $_bookmarkedLineIndex');
                                         return HtmlContentRenderer(
                                           content: cleanContent,
                                           baseStyle: baseStyle,
                                           bookmarkedIndex: _bookmarkedLineIndex,
                                           onParagraphTapped: (index) async {
-                                            final prefs =
-                                                await SharedPreferences.getInstance();
+                                            final prefs = await SharedPreferences
+                                                .getInstance();
                                             await prefs.setInt(
-                                              'bookmark_line_${widget.title}',
-                                              index,
-                                            );
+                                                'bookmark_line_${widget.title}',
+                                                index);
                                             debugPrint(
-                                              'Parent: State updated to index $index',
-                                            );
+                                                'Parent: State updated to index $index');
                                             setState(() {
                                               if (_bookmarkedLineIndex
                                                       ?.toString() ==
                                                   index.toString()) {
                                                 _bookmarkedLineIndex = null;
                                                 prefs.remove(
-                                                  'bookmark_line_${widget.title}',
-                                                );
+                                                    'bookmark_line_${widget.title}');
                                               } else {
                                                 _bookmarkedLineIndex = index;
                                                 prefs.setInt(
-                                                  'bookmark_line_${widget.title}',
-                                                  index,
-                                                );
+                                                    'bookmark_line_${widget.title}',
+                                                    index);
                                               }
                                             });
                                           },
@@ -2819,34 +2708,33 @@ class SettingsSection extends StatelessWidget {
             const SizedBox(height: 10),
             Wrap(
               spacing: 12,
-              children:
-                  [
-                        Colors.blue,
-                        Colors.red,
-                        Colors.black,
-                        Colors.cyan,
-                        const Color(0xFFD4AF37),
-                        Colors.blueGrey,
-                        Colors.teal,
-                        Colors.brown,
-                      ]
-                      .map(
-                        (c) => GestureDetector(
-                          onTap: () => onColorChanged(c),
-                          child: CircleAvatar(
-                            backgroundColor: c,
-                            radius: 18,
-                            child: primaryColor.toARGB32() == c.toARGB32()
-                                ? const Icon(
-                                    Icons.check,
-                                    color: Colors.white,
-                                    size: 16,
-                                  )
-                                : null,
-                          ),
-                        ),
-                      )
-                      .toList(),
+              children: [
+                Colors.blue,
+                Colors.red,
+                Colors.black,
+                Colors.cyan,
+                const Color(0xFFD4AF37),
+                Colors.blueGrey,
+                Colors.teal,
+                Colors.brown,
+              ]
+                  .map(
+                    (c) => GestureDetector(
+                      onTap: () => onColorChanged(c),
+                      child: CircleAvatar(
+                        backgroundColor: c,
+                        radius: 18,
+                        child: primaryColor.toARGB32() == c.toARGB32()
+                            ? const Icon(
+                                Icons.check,
+                                color: Colors.white,
+                                size: 16,
+                              )
+                            : null,
+                      ),
+                    ),
+                  )
+                  .toList(),
             ),
           ]),
           _buildGroup(context, 'تخصيص البطاقات', [
@@ -2920,8 +2808,8 @@ class SettingsSection extends StatelessWidget {
             _visToggle('inspiration', 'إلهام اليوم'),
             _visToggle('day_dua', 'دعاء اليوم'),
             ...DataManager.getSections().entries.map(
-              (e) => _visToggle(e.key, e.value['title'].toString()),
-            ),
+                  (e) => _visToggle(e.key, e.value['title'].toString()),
+                ),
           ]),
         ],
       ),
@@ -3002,12 +2890,14 @@ class SettingsSection extends StatelessWidget {
   }
 
   Widget _visToggle(String key, String title) => SwitchListTile(
-    title: Text(title, style: const TextStyle(fontSize: 14)),
-    value: visibility[key] ?? true,
-    onChanged: (v) => onVisibilityChanged(key, v),
-    dense: true,
-  );
+        title: Text(title, style: const TextStyle(fontSize: 14)),
+        value: visibility[key] ?? true,
+        onChanged: (v) => onVisibilityChanged(key, v),
+        dense: true,
+      );
 }
+
+
 
 class PrayerTimesSection extends StatefulWidget {
   const PrayerTimesSection({super.key});
@@ -3065,11 +2955,9 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
       _fullScreenPrayers['fajr'] = prefs.getBool('fullscreen_fajr') ?? false;
       _fullScreenPrayers['dhuhr'] = prefs.getBool('fullscreen_dhuhr') ?? false;
       _fullScreenPrayers['asr'] = prefs.getBool('fullscreen_asr') ?? false;
-      _fullScreenPrayers['maghrib'] =
-          prefs.getBool('fullscreen_maghrib') ?? false;
+      _fullScreenPrayers['maghrib'] = prefs.getBool('fullscreen_maghrib') ?? false;
       _fullScreenPrayers['isha'] = prefs.getBool('fullscreen_isha') ?? false;
-      _ignoreBatteryOptimizations =
-          prefs.getBool('ignore_battery_optimizations') ?? false;
+      _ignoreBatteryOptimizations = prefs.getBool('ignore_battery_optimizations') ?? false;
       _adhanVolume = prefs.getDouble('adhan_volume') ?? 1.0;
       _adhanPreAlert = prefs.getInt('adhan_pre_alert') ?? 0;
       _manualAdjustments['fajr'] = prefs.getInt('adj_fajr') ?? 0;
@@ -3200,7 +3088,10 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
       return const Center(
         child: Text(
           "اللَّهُمَّ صَلِّ عَلَى مُحَمَّدٍ وَعَلَى آلِ مُحَمَّدٍ",
-          style: TextStyle(fontFamily: 'me_quran', fontSize: 24),
+          style: TextStyle(
+            fontFamily: 'me_quran',
+            fontSize: 24,
+          ),
           textAlign: TextAlign.center,
         ),
       );
@@ -3293,7 +3184,13 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
                 children: [
                   SwitchListTile(
                     title: Text(
-                      'تفعيل أذان ${{'fajr': 'الفجر', 'dhuhr': 'الظهر', 'asr': 'العصر', 'maghrib': 'المغرب', 'isha': 'العشاء'}[k]}',
+                      'تفعيل أذان ${{
+                        'fajr': 'الفجر',
+                        'dhuhr': 'الظهر',
+                        'asr': 'العصر',
+                        'maghrib': 'المغرب',
+                        'isha': 'العشاء'
+                      }[k]}',
                       style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                     value: _enabledPrayers[k] ?? true,
@@ -3305,55 +3202,26 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
                     },
                   ),
                   Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 5,
-                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                     child: Row(
                       children: [
                         Expanded(
                           child: InkWell(
                             onTap: () async {
                               setState(() => _fullScreenPrayers[k] = false);
-                              final prefs =
-                                  await SharedPreferences.getInstance();
+                              final prefs = await SharedPreferences.getInstance();
                               await prefs.setBool('fullscreen_$k', false);
                             },
                             child: Card(
-                              color: (_fullScreenPrayers[k] ?? false)
-                                  ? Theme.of(
-                                      context,
-                                    ).colorScheme.surfaceContainerHighest
-                                  : Theme.of(
-                                      context,
-                                    ).colorScheme.primaryContainer,
-                              elevation: (_fullScreenPrayers[k] ?? false)
-                                  ? 0
-                                  : 2,
+                              color: (_fullScreenPrayers[k] ?? false) ? Theme.of(context).colorScheme.surfaceContainerHighest : Theme.of(context).colorScheme.primaryContainer,
+                              elevation: (_fullScreenPrayers[k] ?? false) ? 0 : 2,
                               child: Padding(
                                 padding: const EdgeInsets.all(10.0),
                                 child: Column(
                                   children: [
-                                    Icon(
-                                      Icons.notifications,
-                                      color: (_fullScreenPrayers[k] ?? false)
-                                          ? Colors.grey
-                                          : Theme.of(
-                                              context,
-                                            ).colorScheme.primary,
-                                    ),
+                                    Icon(Icons.notifications, color: (_fullScreenPrayers[k] ?? false) ? Colors.grey : Theme.of(context).colorScheme.primary),
                                     const SizedBox(height: 5),
-                                    Text(
-                                      'إشعار',
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        color: (_fullScreenPrayers[k] ?? false)
-                                            ? Colors.grey
-                                            : Theme.of(
-                                                context,
-                                              ).colorScheme.primary,
-                                      ),
-                                    ),
+                                    Text('إشعار', style: TextStyle(fontSize: 14, color: (_fullScreenPrayers[k] ?? false) ? Colors.grey : Theme.of(context).colorScheme.primary)),
                                   ],
                                 ),
                               ),
@@ -3364,45 +3232,19 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
                           child: InkWell(
                             onTap: () async {
                               setState(() => _fullScreenPrayers[k] = true);
-                              final prefs =
-                                  await SharedPreferences.getInstance();
+                              final prefs = await SharedPreferences.getInstance();
                               await prefs.setBool('fullscreen_$k', true);
                             },
                             child: Card(
-                              color: (_fullScreenPrayers[k] ?? false)
-                                  ? Theme.of(
-                                      context,
-                                    ).colorScheme.primaryContainer
-                                  : Theme.of(
-                                      context,
-                                    ).colorScheme.surfaceContainerHighest,
-                              elevation: (_fullScreenPrayers[k] ?? false)
-                                  ? 2
-                                  : 0,
+                              color: (_fullScreenPrayers[k] ?? false) ? Theme.of(context).colorScheme.primaryContainer : Theme.of(context).colorScheme.surfaceContainerHighest,
+                              elevation: (_fullScreenPrayers[k] ?? false) ? 2 : 0,
                               child: Padding(
                                 padding: const EdgeInsets.all(10.0),
                                 child: Column(
                                   children: [
-                                    Icon(
-                                      Icons.fullscreen,
-                                      color: (_fullScreenPrayers[k] ?? false)
-                                          ? Theme.of(
-                                              context,
-                                            ).colorScheme.primary
-                                          : Colors.grey,
-                                    ),
+                                    Icon(Icons.fullscreen, color: (_fullScreenPrayers[k] ?? false) ? Theme.of(context).colorScheme.primary : Colors.grey),
                                     const SizedBox(height: 5),
-                                    Text(
-                                      'شاشة كاملة',
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        color: (_fullScreenPrayers[k] ?? false)
-                                            ? Theme.of(
-                                                context,
-                                              ).colorScheme.primary
-                                            : Colors.grey,
-                                      ),
-                                    ),
+                                    Text('شاشة كاملة', style: TextStyle(fontSize: 14, color: (_fullScreenPrayers[k] ?? false) ? Theme.of(context).colorScheme.primary : Colors.grey)),
                                   ],
                                 ),
                               ),
@@ -3418,13 +3260,7 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'مستوى الصوت',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                        const Text('مستوى الصوت', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
                         Slider(
                           value: _adhanVolume,
                           onChanged: (v) async {
@@ -3439,17 +3275,8 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
                   ),
                   const Divider(),
                   ListTile(
-                    title: const Text(
-                      'تنبيه قبل الأذان',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    subtitle: const Text(
-                      'دقائق',
-                      style: TextStyle(fontSize: 12),
-                    ),
+                    title: const Text('تنبيه قبل الأذان', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                    subtitle: const Text('دقائق', style: TextStyle(fontSize: 12)),
                     trailing: DropdownButton<int>(
                       value: _adhanPreAlert,
                       items: [0, 5, 10, 15, 20, 30].map((int value) {
@@ -3470,49 +3297,30 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
                   ),
                   const Divider(),
                   ListTile(
-                    title: const Text(
-                      'قناة الإشعارات',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    subtitle: const Text(
-                      'إعدادات النظام للإشعارات',
-                      style: TextStyle(fontSize: 12),
-                    ),
+                    title: const Text('قناة الإشعارات', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                    subtitle: const Text('إعدادات النظام للإشعارات', style: TextStyle(fontSize: 12)),
                     trailing: const Icon(Icons.settings),
                     onTap: () async {
                       // Launch native Android notification settings for the app channel
-                      await const MethodChannel(
-                        'com.techtouchai.islamic/adhan',
-                      ).invokeMethod('openNotificationSettings');
+                      await const MethodChannel('com.techtouchai.islamic/adhan').invokeMethod('openNotificationSettings');
                     },
                   ),
                   const Divider(),
                   SwitchListTile(
-                    title: const Text(
-                      'تخطي وضع توفير الطاقة (Doze Mode)',
-                      style: TextStyle(fontSize: 14),
-                    ),
-                    subtitle: const Text(
-                      'مطلوب لضمان عمل الأذان في وقته بدقة',
-                      style: TextStyle(fontSize: 12),
-                    ),
+                    title: const Text('تخطي وضع توفير الطاقة (Doze Mode)', style: TextStyle(fontSize: 14)),
+                    subtitle: const Text('مطلوب لضمان عمل الأذان في وقته بدقة', style: TextStyle(fontSize: 12)),
                     value: _ignoreBatteryOptimizations,
                     onChanged: (v) async {
-                      setState(() => _ignoreBatteryOptimizations = v);
-                      final prefs = await SharedPreferences.getInstance();
-                      await prefs.setBool('ignore_battery_optimizations', v);
-                      if (v) {
-                        if (await Permission
-                            .ignoreBatteryOptimizations
-                            .isDenied) {
-                          await Permission.ignoreBatteryOptimizations.request();
-                        }
-                      }
+                       setState(() => _ignoreBatteryOptimizations = v);
+                       final prefs = await SharedPreferences.getInstance();
+                       await prefs.setBool('ignore_battery_optimizations', v);
+                       if (v) {
+                         if (await Permission.ignoreBatteryOptimizations.isDenied) {
+                           await Permission.ignoreBatteryOptimizations.request();
+                         }
+                       }
                     },
-                  ),
+                  )
                 ],
               ),
             ),
