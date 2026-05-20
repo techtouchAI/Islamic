@@ -1085,7 +1085,6 @@ class _HomeSectionState extends State<HomeSection> {
     Map<String, dynamic> data,
     Color textColor,
     IconData icon,
-    String frameImagePath,
   ) {
     return InkWell(
       onTap: () => Navigator.push(
@@ -1124,21 +1123,19 @@ class _HomeSectionState extends State<HomeSection> {
                         alpha: widget.uiOpacity * 0.8,
                       ),
                       borderRadius: BorderRadius.circular(25),
-                      image: DecorationImage(
-                        image: AssetImage(frameImagePath),
-                        fit: BoxFit.fill,
+                      border: Border.all(
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.primary.withValues(alpha: 0.5),
+                        width: 1.5,
                       ),
                     ),
                   ),
                 ),
               ),
               Padding(
-                padding: frameImagePath.contains('دعاء اليوم') || frameImagePath.contains('إلهام') || frameImagePath.contains('الهام')
-                    ? const EdgeInsets.only(top: 45, bottom: 20, left: 24, right: 24)
-                    : const EdgeInsets.all(24),
+                padding: const EdgeInsets.all(24),
                 child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -1215,152 +1212,6 @@ class _HomeSectionState extends State<HomeSection> {
     );
   }
 
-  Widget _buildGridSection(BuildContext context) {
-    Widget buildCard(String key, String fallbackTitle, String frameImagePath, {bool isFullWidth = false}) {
-      final entry = items.entries.where((e) => e.value['sectionKey'] == key).firstOrNull;
-      if (entry == null) return const SizedBox();
-      final e = entry;
-      return RepaintBoundary(
-        child: _HomeSmallCard(
-          tag: e.key,
-          title: e.value['sectionKey']?.toString().contains('imam_ali') == true
-              ? 'قال أمير المؤمنين علي (عليه السلام)'
-              : e.value['title'].toString(),
-          uiOpacity: widget.uiOpacity,
-          cardColor: widget.cardColor,
-          frameImagePath: frameImagePath,
-          isFullWidth: isFullWidth,
-          onTap: () async {
-            final sectionKey = e.value['sectionKey'];
-            if (sectionKey == 'istikhara') {
-              if (!context.mounted) return;
-              Navigator.push(context, MaterialPageRoute(builder: (c) => const IstikharaScreen()));
-              return;
-            }
-            final isQuran = sectionKey == 'quran';
-            List<Map<String, dynamic>>? ayahs;
-            String contentStr = e.value['content'].toString();
-
-            if (isQuran) {
-              final surahId = e.value['id'];
-              if (surahId != null) {
-                ayahs = await QuranService.getAyahs(surahId);
-                contentStr = QuranService.getFormattedContent(surahId, ayahs);
-              }
-            }
-
-            if (!context.mounted) return;
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (c) => ReaderPage(
-                  title: e.value['title'].toString(),
-                  content: contentStr,
-                  fontSizeFactor: widget.fontSizeFactor,
-                  isQuran: isQuran,
-                  isImamAli: sectionKey.contains('imam_ali'),
-                  surahName: isQuran ? e.value['title'].toString().replaceAll('سورة ', '') : null,
-                  ayahs: ayahs,
-                  surahId: isQuran ? e.value['id'] : null,
-                ),
-              ),
-            );
-          },
-        ),
-      );
-    }
-
-    final usedKeys = {'visits', 'quran', 'duas', 'sahifa_sajjadiya', 'imam_ali', 'stories', 'names_allah'};
-    final remainingEntries = items.entries.where((e) => !usedKeys.contains(e.value['sectionKey'])).toList();
-
-    return Column(
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Expanded(child: buildCard('quran', 'القرآن', 'assets/images/Screen_home/القرآن 5.png')),
-            const SizedBox(width: 12),
-            Expanded(child: buildCard('visits', 'الزيارات', 'assets/images/Screen_home/الزيارات 4.png')),
-          ],
-        ),
-        const SizedBox(height: 12),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Expanded(child: buildCard('sahifa_sajjadiya', 'الصحيفة السجادية', 'assets/images/Screen_home/الصحيفة السجادية7.png')),
-            const SizedBox(width: 12),
-            Expanded(child: buildCard('duas', 'الأدعية', 'assets/images/Screen_home/الادعية 6.png')),
-          ],
-        ),
-        const SizedBox(height: 12),
-        buildCard('imam_ali', 'موسوعة الإمام علي', 'assets/images/Screen_home/موسوعة الامام علي 8.png', isFullWidth: true),
-        const SizedBox(height: 12),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Expanded(child: buildCard('names_allah', 'أسماء الله الحسنى', 'assets/images/Screen_home/اسماء الله الحسنى 10.png')),
-            const SizedBox(width: 12),
-            Expanded(child: buildCard('stories', 'الحج', 'assets/images/Screen_home/الجح 9.png')),
-          ],
-        ),
-        const SizedBox(height: 12),
-        Wrap(
-          spacing: 12,
-          runSpacing: 12,
-          children: remainingEntries.map((e) {
-            return RepaintBoundary(
-              child: _HomeSmallCard(
-                tag: e.key,
-                title: e.value['sectionKey']?.toString().contains('imam_ali') == true
-                    ? 'قال أمير المؤمنين علي (عليه السلام)'
-                    : e.value['title'].toString(),
-                uiOpacity: widget.uiOpacity,
-                cardColor: widget.cardColor,
-                frameImagePath: 'assets/images/Screen_home/لجميع البطاقات المتبقية.png',
-                onTap: () async {
-                  final sectionKey = e.value['sectionKey'];
-                  if (sectionKey == 'istikhara') {
-                    if (!context.mounted) return;
-                    Navigator.push(context, MaterialPageRoute(builder: (c) => const IstikharaScreen()));
-                    return;
-                  }
-                  final isQuran = sectionKey == 'quran';
-                  List<Map<String, dynamic>>? ayahs;
-                  String contentStr = e.value['content'].toString();
-
-                  if (isQuran) {
-                    final surahId = e.value['id'];
-                    if (surahId != null) {
-                      ayahs = await QuranService.getAyahs(surahId);
-                      contentStr = QuranService.getFormattedContent(surahId, ayahs);
-                    }
-                  }
-
-                  if (!context.mounted) return;
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (c) => ReaderPage(
-                        title: e.value['title'].toString(),
-                        content: contentStr,
-                        fontSizeFactor: widget.fontSizeFactor,
-                        isQuran: isQuran,
-                        isImamAli: sectionKey.contains('imam_ali'),
-                        surahName: isQuran ? e.value['title'].toString().replaceAll('سورة ', '') : null,
-                        ayahs: ayahs,
-                        surahId: isQuran ? e.value['id'] : null,
-                      ),
-                    ),
-                  );
-                },
-              ),
-            );
-          }).toList(),
-        ),
-      ],
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     _loadDailyDua();
@@ -1379,96 +1230,74 @@ class _HomeSectionState extends State<HomeSection> {
             InkWell(
               onTap: widget.onPrayerCardTap,
               borderRadius: BorderRadius.circular(25),
-              child: Container(
-                width: double.infinity,
-                decoration: BoxDecoration(
+              child: Card(
+                elevation: 10,
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? Colors.white.withValues(alpha: widget.uiOpacity)
+                    : Colors.black.withValues(alpha: widget.uiOpacity),
+                shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(25),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
-                      blurRadius: 10,
-                      offset: const Offset(0, 5),
-                    ),
-                  ],
+                  side: BorderSide(
+                    color: Theme.of(context).colorScheme.primary,
+                    width: 2.5,
+                  ),
                 ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(25),
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: widget.cardColor.withValues(
-                          alpha: widget.uiOpacity * 0.8,
-                        ),
-                        borderRadius: BorderRadius.circular(25),
-                        image: DecorationImage(
-                          image: AssetImage(
-                            (now.hour >= 6 && now.hour < 18)
-                                ? 'assets/images/Screen_home/وقت الصلاة والتقويم نهاري 1.png'
-                                : 'assets/images/Screen_home/وقت الصلاة والتقويم ليلي 1.png'
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 20,
+                    horizontal: 15,
+                  ),
+                  child: Column(
+                    children: [
+                      if (_currentPrayerName.isNotEmpty)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 4,
                           ),
-                          fit: BoxFit.fill,
-                        ),
-                      ),
-                      padding: const EdgeInsets.only(
-                        top: 20,
-                        bottom: 20,
-                        right: 20,
-                        left: 80,
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          if (_currentPrayerName.isNotEmpty)
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.primary.withValues(alpha: 0.2),
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: Text(
-                                "الصلاة القادمة: $_currentPrayerName",
-                                style: TextStyle(
-                                  color: Theme.of(context).colorScheme.primary,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ),
-                          const SizedBox(height: 10),
-                          _ClockWidget(
-                            color: Theme.of(context).colorScheme.primary,
+                          decoration: BoxDecoration(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.primary.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(10),
                           ),
-                          const SizedBox(height: 8),
-                          Text(
-                            '${hijri.hDay} ${hijri.longMonthName} ${hijri.hYear} هـ'.toEasternArabic(),
+                          child: Text(
+                            "الصلاة القادمة: $_currentPrayerName",
                             style: TextStyle(
                               color: Theme.of(context).colorScheme.primary,
-                              fontSize: 20,
                               fontWeight: FontWeight.bold,
+                              fontSize: 12,
                             ),
                           ),
-                          Text(
-                            intl.DateFormat(
-                              'EEEE, d MMMM yyyy',
-                              'ar_SA',
-                            ).format(now).toEasternArabic(),
-                            style: TextStyle(
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.primary.withValues(alpha: 0.8),
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
+                        ),
+                      const SizedBox(height: 10),
+                      _ClockWidget(
+                        color: Theme.of(context).colorScheme.primary,
                       ),
-                    ),
+                      const SizedBox(height: 8),
+                      Text(
+                        '${hijri.hDay} ${hijri.longMonthName} ${hijri.hYear} هـ'.toEasternArabic(),
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.primary,
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        intl.DateFormat(
+                          'EEEE, d MMMM yyyy',
+                          'ar_SA',
+                        ).format(now).toEasternArabic(),
+                        style: TextStyle(
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.primary.withValues(alpha: 0.8),
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -1481,7 +1310,6 @@ class _HomeSectionState extends State<HomeSection> {
                 _dayDua!,
                 textColor,
                 Icons.calendar_today,
-                'assets/images/Screen_home/دعاء اليوم 2.png',
               ),
             if (_dayDua != null && (widget.visibility['day_dua'] ?? true))
               const SizedBox(height: 15),
@@ -1493,7 +1321,6 @@ class _HomeSectionState extends State<HomeSection> {
                 _inspirationDua!,
                 textColor,
                 Icons.auto_awesome,
-                'assets/images/Screen_home/الهام اليوم 3.png',
               ),
             const SizedBox(height: 25),
             Align(
@@ -1510,7 +1337,76 @@ class _HomeSectionState extends State<HomeSection> {
               ),
             ),
             const SizedBox(height: 15),
-            _buildGridSection(context),
+            Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              children: items.entries
+                  .map(
+                    (e) => RepaintBoundary(
+                      child: _HomeSmallCard(
+                        tag: e.key,
+                        title: e.value['sectionKey']?.toString().contains(
+                                      'imam_ali',
+                                    ) ==
+                                true
+                            ? 'قال أمير المؤمنين علي (عليه السلام)'
+                            : e.value['title'].toString(),
+                        uiOpacity: widget.uiOpacity,
+                        cardColor: widget.cardColor,
+                        onTap: () async {
+                          final sectionKey = e.value['sectionKey'];
+                          if (sectionKey == 'istikhara') {
+                            if (!context.mounted) return;
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (c) => const IstikharaScreen(),
+                              ),
+                            );
+                            return;
+                          }
+                          final isQuran = sectionKey == 'quran';
+                          List<Map<String, dynamic>>? ayahs;
+                          String contentStr = e.value['content'].toString();
+
+                          if (isQuran) {
+                            final surahId = e.value['id'];
+                            if (surahId != null) {
+                              ayahs = await QuranService.getAyahs(surahId);
+                              contentStr = QuranService.getFormattedContent(
+                                surahId,
+                                ayahs,
+                              );
+                            }
+                          }
+
+                          if (!context.mounted) return;
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (c) => ReaderPage(
+                                title: e.value['title'].toString(),
+                                content: contentStr,
+                                fontSizeFactor: widget.fontSizeFactor,
+                                isQuran: isQuran,
+                                isImamAli: sectionKey.contains('imam_ali'),
+                                surahName: isQuran
+                                    ? e.value['title'].toString().replaceAll(
+                                          'سورة ',
+                                          '',
+                                        )
+                                    : null,
+                                ayahs: ayahs,
+                                surahId: isQuran ? e.value['id'] : null,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  )
+                  .toList(),
+            ),
           ],
         ),
       ),
@@ -1523,56 +1419,31 @@ class _HomeSmallCard extends StatelessWidget {
   final double uiOpacity;
   final Color cardColor;
   final VoidCallback onTap;
-  final String frameImagePath;
-  final bool isFullWidth;
   const _HomeSmallCard({
     required this.tag,
     required this.title,
     required this.uiOpacity,
     required this.cardColor,
     required this.onTap,
-    required this.frameImagePath,
-    this.isFullWidth = false,
   });
 
   @override
   Widget build(BuildContext context) {
     final bool isDarkCard = cardColor.computeLuminance() < 0.5;
     final Color textColor = isDarkCard ? Colors.white : Colors.black87;
-
-    EdgeInsetsGeometry padding = const EdgeInsets.all(15);
-    AlignmentGeometry contentAlignment = Alignment.centerRight;
-    MainAxisAlignment columnAlignment = MainAxisAlignment.center;
-    CrossAxisAlignment crossAlignment = CrossAxisAlignment.start;
-
-    if (frameImagePath.contains('موسوعة الامام علي')) {
-      padding = const EdgeInsets.only(top: 15, right: 15, bottom: 20, left: 60);
-      contentAlignment = Alignment.centerRight;
-    } else if (frameImagePath.contains('الجح') || frameImagePath.contains('الحج')) {
-      padding = const EdgeInsets.only(top: 15, right: 15, bottom: 40, left: 15);
-      contentAlignment = Alignment.topCenter;
-      columnAlignment = MainAxisAlignment.start;
-      crossAlignment = CrossAxisAlignment.center;
-    } else if (frameImagePath.contains('القرآن') || frameImagePath.contains('الادعية') ||
-               frameImagePath.contains('الصحيفة') || frameImagePath.contains('اسماء') ||
-               frameImagePath.contains('الزيارات')) {
-      padding = const EdgeInsets.only(top: 35, right: 15, bottom: 15, left: 15);
-      contentAlignment = Alignment.bottomCenter;
-      columnAlignment = MainAxisAlignment.end;
-      crossAlignment = CrossAxisAlignment.center;
-    }
-
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(20),
       child: Container(
-        width: isFullWidth ? double.infinity : (MediaQuery.of(context).size.width - 48) / 2,
-        height: isFullWidth ? 130 : 120,
+        width: (MediaQuery.of(context).size.width - 48) / 2,
+        height: 100,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
+              color: Theme.of(
+                context,
+              ).colorScheme.primary.withValues(alpha: 0.15),
               blurRadius: 10,
               offset: const Offset(0, 5),
             ),
@@ -1580,71 +1451,66 @@ class _HomeSmallCard extends StatelessWidget {
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(20),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-            child: Container(
-              decoration: BoxDecoration(
-                color: cardColor.withValues(alpha: uiOpacity * 0.8),
-                borderRadius: BorderRadius.circular(20),
-                image: DecorationImage(
-                  image: AssetImage(frameImagePath),
-                  fit: BoxFit.fill,
+          child: Stack(
+            children: [
+              Positioned.fill(
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: cardColor.withValues(alpha: uiOpacity * 0.8),
+                      border: Border.all(
+                        color: Theme.of(context).colorScheme.primary,
+                        width: 2,
+                      ),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                  ),
                 ),
               ),
-              child: Stack(
-                children: [
-                  Positioned(
-                    right: -10,
-                    bottom: -10,
-                    child: Opacity(
-                      opacity: 0.1,
-                      child: Icon(
-                        Icons.star,
-                        size: 80,
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
-                    ),
+              Positioned(
+                right: -10,
+                bottom: -10,
+                child: Opacity(
+                  opacity: 0.1,
+                  child: Icon(
+                    Icons.star,
+                    size: 80,
+                    color: Theme.of(context).colorScheme.primary,
                   ),
-                  Align(
-                    alignment: contentAlignment,
-                    child: Padding(
-                      padding: padding,
-                      child: Column(
-                        crossAxisAlignment: crossAlignment,
-                        mainAxisAlignment: columnAlignment,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            tag,
-                            style: TextStyle(
-                              fontSize: 10,
-                              color: Theme.of(context).colorScheme.primary,
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: 1.2,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Flexible(
-                            child: Text(
-                              title,
-                              maxLines: 2,
-                              textAlign: crossAlignment == CrossAxisAlignment.center ? TextAlign.center : TextAlign.right,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                                color: textColor,
-                                height: 1.2,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
+                ),
               ),
-            ),
+              Padding(
+                padding: const EdgeInsets.all(15),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      tag,
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: Theme.of(context).colorScheme.primary,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1.2,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                        color: textColor,
+                        height: 1.2,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
       ),
