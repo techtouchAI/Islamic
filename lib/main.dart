@@ -40,7 +40,6 @@ import 'search/screens/search_screen.dart';
 import 'ui/calendar/hijri_calendar_screen.dart';
 import 'ui/qibla/qibla_screen.dart';
 import 'presentation/screens/istikhara_screen.dart';
-import 'ui/calendar/hijri_calendar_screen.dart' show routeObserver;
 
 class IslamicPatternPainter extends CustomPainter {
   final Color color;
@@ -385,7 +384,7 @@ class _AlDhakereenAppState extends State<AlDhakereenApp> {
         onHijriAdjustmentChanged: (val) async {
           setState(() => _hijriAdjustment = val);
           final prefs = await SharedPreferences.getInstance();
-          prefs.setInt('hijriAdj', val);
+          prefs.setInt('hijri.date.correction.value', val);
         },
       ),
     );
