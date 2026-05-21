@@ -1148,9 +1148,10 @@ class _HomeSectionState extends State<HomeSection> {
 
               Positioned(
                 left: -20,
-                bottom: -20,
+                bottom: tag == 'دعاء اليوم' ? null : (tag == 'إلهام اليوم' ? 20 : -20),
+                top: tag == 'دعاء اليوم' ? -20 : null,
                 child: Opacity(
-                  opacity: 0.1,
+                  opacity: 0.5,
                   child: Image.asset(
                     getExactWatermark(tag),
                     width: 150,
@@ -1160,7 +1161,7 @@ class _HomeSectionState extends State<HomeSection> {
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.all(24),
+                padding: EdgeInsets.all(tag == 'إلهام اليوم' ? 16 : 24),
                 child: Column(
                   children: [
                     Row(
@@ -1286,7 +1287,7 @@ class _HomeSectionState extends State<HomeSection> {
                       left: -20,
                       bottom: -20,
                       child: Opacity(
-                        opacity: 0.1,
+                        opacity: 0.5,
                         child: Image.asset(
                           isDayTime ? 'assets/images/Mscreen/بطاقة الساعة والتقويم النهاري.png' : 'assets/images/Mscreen/بطاقة الساعة والتقويم الليلي.png',
                           width: 150,
@@ -1409,6 +1410,7 @@ class _HomeSectionState extends State<HomeSection> {
                         uiOpacity: widget.uiOpacity,
                         cardColor: widget.cardColor,
                         watermarkPath: getExactWatermark(e.key),
+                        isFullWidth: e.key.contains('علي') || e.key.contains('موسوعة'),
                         onTap: () async {
                           final sectionKey = e.value['sectionKey'];
                           if (sectionKey == 'istikhara') {
@@ -1475,6 +1477,7 @@ class _HomeSmallCard extends StatelessWidget {
   final double uiOpacity;
   final Color cardColor;
   final String watermarkPath;
+  final bool isFullWidth;
   final VoidCallback onTap;
   const _HomeSmallCard({
     required this.tag,
@@ -1482,6 +1485,7 @@ class _HomeSmallCard extends StatelessWidget {
     required this.uiOpacity,
     required this.cardColor,
     required this.watermarkPath,
+    this.isFullWidth = false,
     required this.onTap,
   });
 
@@ -1493,7 +1497,7 @@ class _HomeSmallCard extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(20),
       child: Container(
-        width: (MediaQuery.of(context).size.width - 48) / 2,
+        width: isFullWidth ? double.infinity : (MediaQuery.of(context).size.width - 48) / 2,
         height: 100,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(20),
@@ -1529,9 +1533,10 @@ class _HomeSmallCard extends StatelessWidget {
 
               Positioned(
                 left: -10,
-                bottom: -10,
+                top: 10,
+                bottom: 10,
                 child: Opacity(
-                  opacity: 0.1,
+                  opacity: 0.5,
                   child: Image.asset(
                     watermarkPath,
                     width: 80,
