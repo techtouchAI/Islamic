@@ -33,9 +33,9 @@ android {
 
     signingConfigs {
         create("release") {
-            keyAlias = "androiddebugkey"
+            keyAlias = "releasekey"
             keyPassword = System.getenv("KEYSTORE_KEYPASS") ?: "android"
-            storeFile = file("debug.keystore")
+            storeFile = file("release.keystore")
             storePassword = System.getenv("KEYSTORE_STOREPASS") ?: "android"
             enableV1Signing = true
             enableV2Signing = true
