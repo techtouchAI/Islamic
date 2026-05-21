@@ -47,7 +47,12 @@ class DataManager {
       }
     } catch (e) {
       debugPrint("DataManager Error: $e");
-      _db = {};
+      _db = {
+        'content': {},
+        'sections': {},
+        'fatawa_categories': [],
+        'dreams_categories': []
+      };
     }
   }
 

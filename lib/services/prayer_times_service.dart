@@ -224,7 +224,7 @@ class PrayerTimesService {
     }
   }
 
-  void _scheduleSingleNotification(
+  Future<void> _scheduleSingleNotification(
     int id,
     String name,
     DateTime time,
