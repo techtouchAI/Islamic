@@ -908,16 +908,16 @@ class HomeSection extends StatefulWidget {
 }
 
 class _HomeSectionState extends State<HomeSection> {
-  String getWatermarkForCard(String title) {
-    if (title.contains('إلهام')) return 'assets/images/Mscreen/إلهام اليوم.png';
-    if (title.contains('دعاء اليوم')) return 'assets/images/Mscreen/دعاء اليوم 2.png';
-    if (title.contains('القرآن') || title.contains('القرأن')) return 'assets/images/Mscreen/القرأن الكريم.png';
-    if (title.contains('الزيارات')) return 'assets/images/Mscreen/الزيارات.png';
-    if (title.contains('الصحيفة')) return 'assets/images/Mscreen/الصحيفة السجادية.png';
-    if (title.contains('الحج')) return 'assets/images/Mscreen/بطاقة الحج.png';
-    if (title.contains('الاحلام') || title.contains('الأحلام')) return 'assets/images/Mscreen/تفسير الاحلام.png';
-    if (title.contains('علي')) return 'assets/images/Mscreen/موسوعة الامام علي.png';
-    return 'assets/images/Mscreen/جميع البطاقات التي ليس لها بطاقة.png'; // Fallback
+  String getExactWatermark(String tag) {
+    if (tag.contains('إلهام')) return 'assets/images/Mscreen/إلهام اليوم.png';
+    if (tag.contains('دعاء اليوم')) return 'assets/images/Mscreen/دعاء اليوم 2.png';
+    if (tag.contains('قرآن') || tag.contains('قرأن')) return 'assets/images/Mscreen/القرأن الكريم.png';
+    if (tag.contains('زيار')) return 'assets/images/Mscreen/الزيارات.png';
+    if (tag.contains('سجادي') || tag.contains('صحيفة')) return 'assets/images/Mscreen/الصحيفة السجادية.png';
+    if (tag.contains('حج')) return 'assets/images/Mscreen/بطاقة الحج.png';
+    if (tag.contains('احلام') || tag.contains('أحلام')) return 'assets/images/Mscreen/تفسير الاحلام.png';
+    if (tag.contains('علي') || tag.contains('موسوعة')) return 'assets/images/Mscreen/موسوعة الامام علي.png';
+    return 'assets/images/Mscreen/جميع البطاقات التي ليس لها بطاقة.png';
   }
 
   static String? _cachedDuaKey;
@@ -1135,6 +1135,12 @@ class _HomeSectionState extends State<HomeSection> {
                         alpha: widget.uiOpacity * 0.8,
                       ),
                       borderRadius: BorderRadius.circular(25),
+                      border: Border.all(
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.primary.withValues(alpha: 0.5),
+                        width: 1.5,
+                      ),
                     ),
                   ),
                 ),
@@ -1146,7 +1152,7 @@ class _HomeSectionState extends State<HomeSection> {
                 child: Opacity(
                   opacity: 0.1,
                   child: Image.asset(
-                    getWatermarkForCard(tag),
+                    getExactWatermark(tag),
                     width: 150,
                     height: 150,
                     color: Theme.of(context).colorScheme.primary,
@@ -1268,6 +1274,10 @@ class _HomeSectionState extends State<HomeSection> {
                     : Colors.black.withValues(alpha: widget.uiOpacity),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(25),
+                  side: BorderSide(
+                    color: Theme.of(context).colorScheme.primary,
+                    width: 2.5,
+                  ),
                 ),
                 child: Stack(
                   children: [
@@ -1398,7 +1408,7 @@ class _HomeSectionState extends State<HomeSection> {
                             : e.value['title'].toString(),
                         uiOpacity: widget.uiOpacity,
                         cardColor: widget.cardColor,
-                        watermarkPath: getWatermarkForCard(e.value['title'].toString()),
+                        watermarkPath: getExactWatermark(e.key),
                         onTap: () async {
                           final sectionKey = e.value['sectionKey'];
                           if (sectionKey == 'istikhara') {
@@ -1507,6 +1517,10 @@ class _HomeSmallCard extends StatelessWidget {
                   child: Container(
                     decoration: BoxDecoration(
                       color: cardColor.withValues(alpha: uiOpacity * 0.8),
+                      border: Border.all(
+                        color: Theme.of(context).colorScheme.primary,
+                        width: 2,
+                      ),
                       borderRadius: BorderRadius.circular(20),
                     ),
                   ),
