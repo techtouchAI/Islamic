@@ -908,6 +908,18 @@ class HomeSection extends StatefulWidget {
 }
 
 class _HomeSectionState extends State<HomeSection> {
+  String getWatermarkForCard(String title) {
+    if (title.contains('إلهام')) return 'assets/images/Mscreen/إلهام اليوم.png';
+    if (title.contains('دعاء اليوم')) return 'assets/images/Mscreen/دعاء اليوم 2.png';
+    if (title.contains('القرآن') || title.contains('القرأن')) return 'assets/images/Mscreen/القرأن الكريم.png';
+    if (title.contains('الزيارات')) return 'assets/images/Mscreen/الزيارات.png';
+    if (title.contains('الصحيفة')) return 'assets/images/Mscreen/الصحيفة السجادية.png';
+    if (title.contains('الحج')) return 'assets/images/Mscreen/بطاقة الحج.png';
+    if (title.contains('الاحلام') || title.contains('الأحلام')) return 'assets/images/Mscreen/تفسير الاحلام.png';
+    if (title.contains('علي')) return 'assets/images/Mscreen/موسوعة الامام علي.png';
+    return 'assets/images/Mscreen/جميع البطاقات التي ليس لها بطاقة.png'; // Fallback
+  }
+
   static String? _cachedDuaKey;
   static Map<String, dynamic>? _cachedInspirationDua;
   static Map<String, dynamic>? _cachedDayDua;
@@ -1127,22 +1139,14 @@ class _HomeSectionState extends State<HomeSection> {
                   ),
                 ),
               ),
-              Positioned.fill(
-                child: IgnorePointer(
-                  child: Image.asset(
-                    'assets/images/frame_pattern.png',
-                    fit: BoxFit.fill,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                ),
-              ),
+
               Positioned(
                 left: -20,
                 bottom: -20,
                 child: Opacity(
                   opacity: 0.1,
                   child: Image.asset(
-                    'assets/images/Mscreen/watermark_special.png',
+                    getWatermarkForCard(tag),
                     width: 150,
                     height: 150,
                     color: Theme.of(context).colorScheme.primary,
@@ -1267,22 +1271,14 @@ class _HomeSectionState extends State<HomeSection> {
                 ),
                 child: Stack(
                   children: [
-                    Positioned.fill(
-                      child: IgnorePointer(
-                        child: Image.asset(
-                          'assets/images/frame_pattern.png',
-                          fit: BoxFit.fill,
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
-                      ),
-                    ),
+
                     Positioned(
                       left: -20,
                       bottom: -20,
                       child: Opacity(
                         opacity: 0.1,
                         child: Image.asset(
-                          isDayTime ? 'assets/images/Mscreen/day_icon.png' : 'assets/images/Mscreen/night_icon.png',
+                          isDayTime ? 'assets/images/Mscreen/بطاقة الساعة والتقويم النهاري.png' : 'assets/images/Mscreen/بطاقة الساعة والتقويم الليلي.png',
                           width: 150,
                           height: 150,
                           color: Theme.of(context).colorScheme.primary,
@@ -1402,6 +1398,7 @@ class _HomeSectionState extends State<HomeSection> {
                             : e.value['title'].toString(),
                         uiOpacity: widget.uiOpacity,
                         cardColor: widget.cardColor,
+                        watermarkPath: getWatermarkForCard(e.value['title'].toString()),
                         onTap: () async {
                           final sectionKey = e.value['sectionKey'];
                           if (sectionKey == 'istikhara') {
@@ -1467,12 +1464,14 @@ class _HomeSmallCard extends StatelessWidget {
   final String tag, title;
   final double uiOpacity;
   final Color cardColor;
+  final String watermarkPath;
   final VoidCallback onTap;
   const _HomeSmallCard({
     required this.tag,
     required this.title,
     required this.uiOpacity,
     required this.cardColor,
+    required this.watermarkPath,
     required this.onTap,
   });
 
@@ -1513,22 +1512,14 @@ class _HomeSmallCard extends StatelessWidget {
                   ),
                 ),
               ),
-              Positioned.fill(
-                child: IgnorePointer(
-                  child: Image.asset(
-                    'assets/images/frame_pattern.png',
-                    fit: BoxFit.fill,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                ),
-              ),
+
               Positioned(
                 left: -10,
                 bottom: -10,
                 child: Opacity(
                   opacity: 0.1,
                   child: Image.asset(
-                    'assets/images/Mscreen/watermark_small.png',
+                    watermarkPath,
                     width: 80,
                     height: 80,
                     color: Theme.of(context).colorScheme.primary,
