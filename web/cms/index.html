@@ -700,24 +700,42 @@
           title.innerText = "معلومات المطور";
           icon.innerText = "contact_support";
           ws.innerHTML = `
-                    <div class="card card-lux p-4 p-md-5 mx-auto shadow-lg" style="max-width:900px;">
+                    <div class="card card-lux p-4 mx-auto shadow-lg" style="max-width:900px;">
                         <div class="row g-4">
                             <div class="col-md-4 text-center">
-                                <div class="bg-light p-4 rounded-circle mb-3 d-inline-block border border-gold"><i class="material-icons text-gold" style="font-size:4rem">${db.about.developer_icon}</i></div>
-                                <input type="text" class="form-control text-center mb-3" value="${db.about.developer_icon}" onchange="db.about.developer_icon=this.value">
-                                <small class="text-muted">أيقونة Material</small>
+                                <div class="bg-light rounded-circle mb-3 d-inline-flex justify-content-center align-items-center border border-gold" style="width: 150px; height: 150px; overflow: hidden; position: relative;">
+                                    ${db.about.developer_image
+                                        ? `<img id="dev_img_preview" src="${db.about.developer_image}" style="width: 100%; height: 100%; object-fit: cover;">`
+                                        : `<i id="dev_icon_preview" class="material-icons text-gold" style="font-size:4rem">${db.about.developer_icon || 'person'}</i>`
+                                    }
+                                </div>
+                                <label class="fw-bold small d-block">صورة المطور (رابط أو Base64)</label>
+                                <input type="text" class="form-control text-center mb-2" id="dev_image_input" value="${db.about.developer_image || ''}" onchange="updateDevImage(this.value)" placeholder="رابط الصورة">
+                                <label class="btn btn-sm btn-outline-primary w-100 mb-2">
+                                    رفع صورة من الجهاز <input type="file" hidden accept="image/*" onchange="handleDevImageUpload(this)">
+                                </label>
+
+                                <label class="fw-bold small d-block mt-3">أو أيقونة (في حال عدم وجود صورة)</label>
+                                <input type="text" class="form-control text-center mb-3" value="${db.about.developer_icon || 'person'}" onchange="db.about.developer_icon=this.value; document.getElementById('dev_icon_preview') && (document.getElementById('dev_icon_preview').innerText = this.value)">
                             </div>
                             <div class="col-md-8">
                                 <label class="fw-bold small">اسم المطور</label>
-                                <input type="text" class="form-control mb-3" value="${db.about.developer_name}" onchange="db.about.developer_name=this.value">
-                                <label class="fw-bold small">رابط الصفحة</label>
-                                <input type="text" class="form-control mb-3" value="${db.about.developer_page}" onchange="db.about.developer_page=this.value">
+                                <input type="text" class="form-control mb-3" value="${db.about.developer_name || ''}" onchange="db.about.developer_name=this.value">
+                                <label class="fw-bold small">رابط الصفحة الرئيسية</label>
+                                <input type="text" class="form-control mb-3" value="${db.about.developer_page || ''}" onchange="db.about.developer_page=this.value">
                                 <label class="fw-bold small">عن التطبيق</label>
-                                <textarea class="form-control" rows="6" onchange="db.about.app_info=this.value">${db.about.app_info}</textarea>
+                                <textarea class="form-control mb-3" rows="5" onchange="db.about.app_info=this.value">${db.about.app_info || ''}</textarea>
+
+                                <hr>
+                                <h6 class="fw-bold text-primary mb-3">مواقع التواصل الاجتماعي</h6>
+                                <div id="social_media_container">
+                                    ${renderSocialMediaInputs()}
+                                </div>
+                                <button class="btn btn-sm btn-outline-success mt-2" onclick="addSocialMedia()">+ إضافة رابط جديد</button>
                             </div>
                         </div>
                     </div>
-                `;
+`;
         } else if (id === "adhan_settings") {
           title.innerText = "إعدادات الأذان والتوقيت";
           icon.innerText = "notifications_active";
@@ -1494,6 +1512,62 @@
       }
 
       init();
-    </script>
+
+      window.updateDevImage = function(val) {
+          db.about.developer_image = val;
+          renderUI();
+      };
+
+      window.handleDevImageUpload = function(input) {
+          if (input.files && input.files[0]) {
+              var reader = new FileReader();
+              reader.onload = function(e) {
+                  db.about.developer_image = e.target.result;
+                  renderUI();
+              }
+              reader.readAsDataURL(input.files[0]);
+          }
+      };
+
+      window.renderSocialMediaInputs = function() {
+          if (!db.about.social_media) db.about.social_media = [];
+          return db.about.social_media.map((s, idx) => `
+              <div class="row g-2 mb-2 align-items-center">
+                  <div class="col-3">
+                      <select class="form-select form-select-sm" onchange="db.about.social_media[${idx}].icon = this.value">
+                          <option value="facebook" ${s.icon === 'facebook' ? 'selected' : ''}>Facebook</option>
+                          <option value="twitter" ${s.icon === 'twitter' || s.icon === 'x' ? 'selected' : ''}>Twitter / X</option>
+                          <option value="instagram" ${s.icon === 'instagram' ? 'selected' : ''}>Instagram</option>
+                          <option value="youtube" ${s.icon === 'youtube' ? 'selected' : ''}>YouTube</option>
+                          <option value="tiktok" ${s.icon === 'tiktok' ? 'selected' : ''}>TikTok</option>
+                          <option value="telegram" ${s.icon === 'telegram' ? 'selected' : ''}>Telegram</option>
+                          <option value="whatsapp" ${s.icon === 'whatsapp' ? 'selected' : ''}>WhatsApp</option>
+                          <option value="snapchat" ${s.icon === 'snapchat' ? 'selected' : ''}>Snapchat</option>
+                          <option value="linkedin" ${s.icon === 'linkedin' ? 'selected' : ''}>LinkedIn</option>
+                          <option value="github" ${s.icon === 'github' ? 'selected' : ''}>GitHub</option>
+                          <option value="link" ${s.icon === 'link' ? 'selected' : ''}>أخرى</option>
+                      </select>
+                  </div>
+                  <div class="col-8">
+                      <input type="text" class="form-control form-control-sm" placeholder="الرابط" value="${s.url || ''}" onchange="db.about.social_media[${idx}].url = this.value">
+                  </div>
+                  <div class="col-1 text-center">
+                      <button class="btn btn-sm btn-outline-danger p-1" onclick="removeSocialMedia(${idx})"><i class="material-icons" style="font-size: 1rem;">delete</i></button>
+                  </div>
+              </div>
+          `).join('');
+      };
+
+      window.addSocialMedia = function() {
+          if (!db.about.social_media) db.about.social_media = [];
+          db.about.social_media.push({ icon: 'facebook', url: '' });
+          renderUI();
+      };
+
+      window.removeSocialMedia = function(idx) {
+          db.about.social_media.splice(idx, 1);
+          renderUI();
+      };
+</script>
   </body>
 </html>

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:convert';
 import 'package:flutter_linkify/flutter_linkify.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -1706,13 +1707,20 @@ class AboutSection extends StatelessWidget {
                 backgroundColor: Theme.of(
                   context,
                 ).colorScheme.primary.withValues(alpha: 0.1),
-                backgroundImage: about['developer_image'] != null
+                backgroundImage: about['developer_image'] != null && about['developer_image'].toString().isNotEmpty
                     ? (about['developer_image'].toString().startsWith('http')
                         ? NetworkImage(about['developer_image'].toString())
-                        : AssetImage(about['developer_image'].toString())
-                            as ImageProvider)
+                        : (about['developer_image']
+                                .toString()
+                                .startsWith('data:image')
+                            ? MemoryImage(base64Decode(about['developer_image']
+                                .toString()
+                                .split(',')
+                                .last))
+                            : AssetImage(about['developer_image'].toString())
+                                as ImageProvider))
                     : null,
-                child: about['developer_image'] == null
+                child: (about['developer_image'] == null || about['developer_image'].toString().isEmpty)
                     ? Icon(
                         getMaterialIcon(
                           about['developer_icon']?.toString() ?? 'person',
@@ -1749,7 +1757,8 @@ class AboutSection extends StatelessWidget {
                   decoration: TextDecoration.underline,
                 ),
               ),
-              if (about['social_media'] != null && (about['social_media'] as List).isNotEmpty) ...[
+              if (about['social_media'] != null &&
+                  (about['social_media'] as List).isNotEmpty) ...[
                 const SizedBox(height: 20),
                 Wrap(
                   spacing: 15,
@@ -1757,17 +1766,39 @@ class AboutSection extends StatelessWidget {
                   alignment: WrapAlignment.center,
                   children: (about['social_media'] as List).map((social) {
                     Widget iconWidget = const Icon(Icons.link, size: 30);
-                    String iconName = social['icon']?.toString().toLowerCase() ?? '';
-                    if (iconName.contains('facebook')) iconWidget = const FaIcon(FontAwesomeIcons.facebook, size: 30);
-                    else if (iconName.contains('twitter') || iconName.contains('x')) iconWidget = const FaIcon(FontAwesomeIcons.xTwitter, size: 30);
-                    else if (iconName.contains('instagram')) iconWidget = const FaIcon(FontAwesomeIcons.instagram, size: 30);
-                    else if (iconName.contains('youtube')) iconWidget = const FaIcon(FontAwesomeIcons.youtube, size: 30);
-                    else if (iconName.contains('tiktok')) iconWidget = const FaIcon(FontAwesomeIcons.tiktok, size: 30);
-                    else if (iconName.contains('telegram')) iconWidget = const FaIcon(FontAwesomeIcons.telegram, size: 30);
-                    else if (iconName.contains('whatsapp')) iconWidget = const FaIcon(FontAwesomeIcons.whatsapp, size: 30);
-                    else if (iconName.contains('snapchat')) iconWidget = const FaIcon(FontAwesomeIcons.snapchat, size: 30);
-                    else if (iconName.contains('linkedin')) iconWidget = const FaIcon(FontAwesomeIcons.linkedin, size: 30);
-                    else if (iconName.contains('github')) iconWidget = const FaIcon(FontAwesomeIcons.github, size: 30);
+                    String iconName =
+                        social['icon']?.toString().toLowerCase() ?? '';
+                    if (iconName.contains('facebook'))
+                      iconWidget =
+                          const FaIcon(FontAwesomeIcons.facebook, size: 30);
+                    else if (iconName.contains('twitter') ||
+                        iconName.contains('x'))
+                      iconWidget =
+                          const FaIcon(FontAwesomeIcons.xTwitter, size: 30);
+                    else if (iconName.contains('instagram'))
+                      iconWidget =
+                          const FaIcon(FontAwesomeIcons.instagram, size: 30);
+                    else if (iconName.contains('youtube'))
+                      iconWidget =
+                          const FaIcon(FontAwesomeIcons.youtube, size: 30);
+                    else if (iconName.contains('tiktok'))
+                      iconWidget =
+                          const FaIcon(FontAwesomeIcons.tiktok, size: 30);
+                    else if (iconName.contains('telegram'))
+                      iconWidget =
+                          const FaIcon(FontAwesomeIcons.telegram, size: 30);
+                    else if (iconName.contains('whatsapp'))
+                      iconWidget =
+                          const FaIcon(FontAwesomeIcons.whatsapp, size: 30);
+                    else if (iconName.contains('snapchat'))
+                      iconWidget =
+                          const FaIcon(FontAwesomeIcons.snapchat, size: 30);
+                    else if (iconName.contains('linkedin'))
+                      iconWidget =
+                          const FaIcon(FontAwesomeIcons.linkedin, size: 30);
+                    else if (iconName.contains('github'))
+                      iconWidget =
+                          const FaIcon(FontAwesomeIcons.github, size: 30);
 
                     return InkWell(
                       onTap: () async {
@@ -1775,7 +1806,8 @@ class AboutSection extends StatelessWidget {
                         if (url != null) {
                           final uri = Uri.tryParse(url);
                           if (uri != null) {
-                            await launchUrl(uri, mode: LaunchMode.externalApplication);
+                            await launchUrl(uri,
+                                mode: LaunchMode.externalApplication);
                           }
                         }
                       },
