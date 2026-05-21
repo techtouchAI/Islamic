@@ -1123,13 +1123,29 @@ class _HomeSectionState extends State<HomeSection> {
                         alpha: widget.uiOpacity * 0.8,
                       ),
                       borderRadius: BorderRadius.circular(25),
-                      border: Border.all(
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.primary.withValues(alpha: 0.5),
-                        width: 1.5,
-                      ),
                     ),
+                  ),
+                ),
+              ),
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: Image.asset(
+                    'assets/images/frame_pattern.png',
+                    fit: BoxFit.fill,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                ),
+              ),
+              Positioned(
+                left: -20,
+                bottom: -20,
+                child: Opacity(
+                  opacity: 0.1,
+                  child: Image.asset(
+                    'assets/images/Mscreen/watermark_special.png',
+                    width: 150,
+                    height: 150,
+                    color: Theme.of(context).colorScheme.primary,
                   ),
                 ),
               ),
@@ -1215,6 +1231,16 @@ class _HomeSectionState extends State<HomeSection> {
   @override
   Widget build(BuildContext context) {
     _loadDailyDua();
+    final nowTime = DateTime.now();
+    bool isDayTime = false;
+    if (_prayerTimes != null && _prayerTimes!.containsKey('sunrise') && _prayerTimes!.containsKey('maghrib')) {
+      final sunrise = _prayerTimes!['sunrise']!;
+      final maghrib = _prayerTimes!['maghrib']!;
+      isDayTime = nowTime.isAfter(sunrise) && nowTime.isBefore(maghrib);
+    } else {
+      isDayTime = nowTime.hour >= 6 && nowTime.hour < 18;
+    }
+
     final now = DateTime.now();
     final hijri = HijriCalendar.fromDate(DateTime.now().add(Duration(days: widget.hijriAdjustment)));
     final bool isDarkCard = widget.cardColor.computeLuminance() < 0.5;
@@ -1232,17 +1258,38 @@ class _HomeSectionState extends State<HomeSection> {
               borderRadius: BorderRadius.circular(25),
               child: Card(
                 elevation: 10,
+                clipBehavior: Clip.antiAlias,
                 color: Theme.of(context).brightness == Brightness.dark
                     ? Colors.white.withValues(alpha: widget.uiOpacity)
                     : Colors.black.withValues(alpha: widget.uiOpacity),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(25),
-                  side: BorderSide(
-                    color: Theme.of(context).colorScheme.primary,
-                    width: 2.5,
-                  ),
                 ),
-                child: Container(
+                child: Stack(
+                  children: [
+                    Positioned.fill(
+                      child: IgnorePointer(
+                        child: Image.asset(
+                          'assets/images/frame_pattern.png',
+                          fit: BoxFit.fill,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      left: -20,
+                      bottom: -20,
+                      child: Opacity(
+                        opacity: 0.1,
+                        child: Image.asset(
+                          isDayTime ? 'assets/images/Mscreen/day_icon.png' : 'assets/images/Mscreen/night_icon.png',
+                          width: 150,
+                          height: 150,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                      ),
+                    ),
+                    Container(
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(
                     vertical: 20,
@@ -1299,6 +1346,8 @@ class _HomeSectionState extends State<HomeSection> {
                       ),
                     ],
                   ),
+                ),
+                  ],
                 ),
               ),
             ),
@@ -1459,23 +1508,29 @@ class _HomeSmallCard extends StatelessWidget {
                   child: Container(
                     decoration: BoxDecoration(
                       color: cardColor.withValues(alpha: uiOpacity * 0.8),
-                      border: Border.all(
-                        color: Theme.of(context).colorScheme.primary,
-                        width: 2,
-                      ),
                       borderRadius: BorderRadius.circular(20),
                     ),
                   ),
                 ),
               ),
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: Image.asset(
+                    'assets/images/frame_pattern.png',
+                    fit: BoxFit.fill,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                ),
+              ),
               Positioned(
-                right: -10,
+                left: -10,
                 bottom: -10,
                 child: Opacity(
                   opacity: 0.1,
-                  child: Icon(
-                    Icons.star,
-                    size: 80,
+                  child: Image.asset(
+                    'assets/images/Mscreen/watermark_small.png',
+                    width: 80,
+                    height: 80,
                     color: Theme.of(context).colorScheme.primary,
                   ),
                 ),
