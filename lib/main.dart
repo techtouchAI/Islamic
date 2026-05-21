@@ -1,5 +1,6 @@
-
 import 'package:flutter/material.dart';
+import 'package:flutter_linkify/flutter_linkify.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'services/analytics_service.dart';
 import 'sections/html_content_renderer.dart';
@@ -297,7 +298,8 @@ class _AlDhakereenAppState extends State<AlDhakereenApp> {
       debugShowCheckedModeBanner: false,
       builder: (context, child) => MediaQuery(
         data: MediaQuery.of(context).copyWith(
-          textScaler: MediaQuery.of(context).textScaler, // Respects system font scaling
+          textScaler:
+              MediaQuery.of(context).textScaler, // Respects system font scaling
         ),
         child: child!,
       ),
@@ -460,103 +462,108 @@ class _MainScaffoldState extends State<MainScaffold> {
   Widget build(BuildContext context) {
     final bool isSubPage = _history.length > 1;
     return ValueListenableBuilder<int>(
-      valueListenable: DataManager.dbNotifier,
-      builder: (context, _, __) {
-        final settings = DataManager.getSettings();
-        return PopScope(
-          canPop: !isSubPage,
-          onPopInvokedWithResult: (didPop, result) {
-            if (didPop) return;
-            _onBack();
-          },
-          child: Scaffold(
-        drawer: AppDrawer(
-          currentSection: _currentSection,
-          onNavigate: (section) {
-            Navigator.pop(context);
-            _navigateTo(section);
-          },
-        ),
-        appBar: AppBar(
-          title: Text(
-            _getAppBarTitle(_currentSection),
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
-          ),
-          centerTitle: true,
-          elevation: 0,
-          backgroundColor: Theme.of(
-            context,
-          ).appBarTheme.backgroundColor?.withValues(alpha: widget.uiOpacity),
-          leading: Builder(
-            builder: (context) => IconButton(
-              icon: const Icon(Icons.notes),
-              onPressed: () => Scaffold.of(context).openDrawer(),
-              tooltip: 'القائمة',
-            ),
-          ),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.search),
-              onPressed: () {
-                Navigator.push(
+        valueListenable: DataManager.dbNotifier,
+        builder: (context, _, __) {
+          final settings = DataManager.getSettings();
+          return PopScope(
+            canPop: !isSubPage,
+            onPopInvokedWithResult: (didPop, result) {
+              if (didPop) return;
+              _onBack();
+            },
+            child: Scaffold(
+              drawer: AppDrawer(
+                currentSection: _currentSection,
+                onNavigate: (section) {
+                  Navigator.pop(context);
+                  _navigateTo(section);
+                },
+              ),
+              appBar: AppBar(
+                title: Text(
+                  _getAppBarTitle(_currentSection),
+                  style: const TextStyle(
+                      fontWeight: FontWeight.bold, fontSize: 20),
+                ),
+                centerTitle: true,
+                elevation: 0,
+                backgroundColor: Theme.of(
                   context,
-                  MaterialPageRoute(
-                    builder: (context) => SearchScreen(fontSizeFactor: widget.fontSizeFactor),
-                  ),
-                );
-              },
-              tooltip: 'بحث شامل',
-            ),
-            if (isSubPage)
-              IconButton(
-                icon: const Icon(Icons.arrow_forward_ios),
-                onPressed: _onBack,
-                tooltip: 'رجوع',
-              ),
-            if (!isSubPage) const SizedBox(width: 4),
-          ],
-        ),
-        body: Stack(
-          children: [
-            if (_currentSection == 'home') ...[
-              if (widget.backgroundImagePath != null)
-                Positioned.fill(
-                  child: Image.file(
-                    File(widget.backgroundImagePath!),
-                    fit: BoxFit.cover,
+                )
+                    .appBarTheme
+                    .backgroundColor
+                    ?.withValues(alpha: widget.uiOpacity),
+                leading: Builder(
+                  builder: (context) => IconButton(
+                    icon: const Icon(Icons.notes),
+                    onPressed: () => Scaffold.of(context).openDrawer(),
+                    tooltip: 'القائمة',
                   ),
                 ),
-              if (widget.backgroundImagePath == null)
-                Positioned.fill(
-                  child: buildImage(
-                    widget.selectedBase64Bg ??
-                        settings['custom_bg_base64']?.toString() ??
-                        settings['bg_image']?.toString(),
-                    fit: BoxFit.cover,
+                actions: [
+                  IconButton(
+                    icon: const Icon(Icons.search),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => SearchScreen(
+                              fontSizeFactor: widget.fontSizeFactor),
+                        ),
+                      );
+                    },
+                    tooltip: 'بحث شامل',
                   ),
-                ),
-            ],
-            Positioned.fill(
-              child: Opacity(
-                opacity: 0.03,
-                child: CustomPaint(
-                  painter: IslamicPatternPainter(
-                    color: Theme.of(context).colorScheme.primary,
+                  if (isSubPage)
+                    IconButton(
+                      icon: const Icon(Icons.arrow_forward_ios),
+                      onPressed: _onBack,
+                      tooltip: 'رجوع',
+                    ),
+                  if (!isSubPage) const SizedBox(width: 4),
+                ],
+              ),
+              body: Stack(
+                children: [
+                  if (_currentSection == 'home') ...[
+                    if (widget.backgroundImagePath != null)
+                      Positioned.fill(
+                        child: Image.file(
+                          File(widget.backgroundImagePath!),
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                    if (widget.backgroundImagePath == null)
+                      Positioned.fill(
+                        child: buildImage(
+                          widget.selectedBase64Bg ??
+                              settings['custom_bg_base64']?.toString() ??
+                              settings['bg_image']?.toString(),
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                  ],
+                  Positioned.fill(
+                    child: Opacity(
+                      opacity: 0.03,
+                      child: CustomPaint(
+                        painter: IslamicPatternPainter(
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                      ),
+                    ),
                   ),
-                ),
+                  SafeArea(
+                    child: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 400),
+                      child: _buildBody(context),
+                    ),
+                  ),
+                ],
               ),
             ),
-            SafeArea(
-              child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 400),
-                child: _buildBody(context),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-    });
+          );
+        });
   }
 
   Widget _buildBody(BuildContext context) {
@@ -589,7 +596,7 @@ class _MainScaffoldState extends State<MainScaffold> {
           hijriAdjustment: widget.hijriAdjustment,
           onHijriAdjustmentChanged: widget.onHijriAdjustmentChanged,
         );
-        
+
       case 'favorites':
         return FavoritesSection(
           key: const ValueKey('favorites'),
@@ -796,18 +803,24 @@ class AppDrawer extends StatelessWidget {
                 const Divider(),
                 ListTile(
                   leading: const Icon(Icons.calendar_today),
-                  title: const Text('التقويم الهجري', style: TextStyle(fontSize: 16)),
+                  title: const Text('التقويم الهجري',
+                      style: TextStyle(fontSize: 16)),
                   onTap: () {
                     Navigator.pop(context); // close drawer
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => HijriCalendarScreen()));
+                    Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (_) => HijriCalendarScreen()));
                   },
                 ),
                 ListTile(
                   leading: const Icon(Icons.explore),
-                  title: const Text('اتجاه القبلة', style: TextStyle(fontSize: 16)),
+                  title: const Text('اتجاه القبلة',
+                      style: TextStyle(fontSize: 16)),
                   onTap: () {
                     Navigator.pop(context); // close drawer
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => QiblaScreen()));
+                    Navigator.push(context,
+                        MaterialPageRoute(builder: (_) => QiblaScreen()));
                   },
                 ),
                 const Divider(),
@@ -910,13 +923,18 @@ class HomeSection extends StatefulWidget {
 class _HomeSectionState extends State<HomeSection> {
   String getExactWatermark(String tag) {
     if (tag.contains('إلهام')) return 'assets/images/Mscreen/إلهام اليوم.png';
-    if (tag.contains('دعاء اليوم')) return 'assets/images/Mscreen/دعاء اليوم 2.png';
-    if (tag.contains('قرآن') || tag.contains('قرأن')) return 'assets/images/Mscreen/القرأن الكريم.png';
+    if (tag.contains('دعاء اليوم'))
+      return 'assets/images/Mscreen/دعاء اليوم 2.png';
+    if (tag.contains('قرآن') || tag.contains('قرأن'))
+      return 'assets/images/Mscreen/القرأن الكريم.png';
     if (tag.contains('زيار')) return 'assets/images/Mscreen/الزيارات.png';
-    if (tag.contains('سجادي') || tag.contains('صحيفة')) return 'assets/images/Mscreen/الصحيفة السجادية.png';
+    if (tag.contains('سجادي') || tag.contains('صحيفة'))
+      return 'assets/images/Mscreen/الصحيفة السجادية.png';
     if (tag.contains('حج')) return 'assets/images/Mscreen/بطاقة الحج.png';
-    if (tag.contains('احلام') || tag.contains('أحلام')) return 'assets/images/Mscreen/تفسير الاحلام.png';
-    if (tag.contains('علي') || tag.contains('موسوعة')) return 'assets/images/Mscreen/موسوعة الامام علي.png';
+    if (tag.contains('احلام') || tag.contains('أحلام'))
+      return 'assets/images/Mscreen/تفسير الاحلام.png';
+    if (tag.contains('علي') || tag.contains('موسوعة'))
+      return 'assets/images/Mscreen/موسوعة الامام علي.png';
     return 'assets/images/Mscreen/جميع البطاقات التي ليس لها بطاقة.png';
   }
 
@@ -1145,10 +1163,11 @@ class _HomeSectionState extends State<HomeSection> {
                   ),
                 ),
               ),
-
               Positioned(
                 left: -20,
-                bottom: tag == 'دعاء اليوم' ? null : (tag == 'إلهام اليوم' ? 20 : -20),
+                bottom: tag == 'دعاء اليوم'
+                    ? null
+                    : (tag == 'إلهام اليوم' ? 20 : -20),
                 top: tag == 'دعاء اليوم' ? -20 : null,
                 child: Opacity(
                   opacity: 0.5,
@@ -1199,7 +1218,8 @@ class _HomeSectionState extends State<HomeSection> {
                       textAlign: TextAlign.center,
                       maxLines: 4,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(fontFamily: 'OmarNaskh',
+                      style: TextStyle(
+                        fontFamily: 'OmarNaskh',
                         fontSize: 17,
                         height: 1.9,
                         color: textColor,
@@ -1244,7 +1264,9 @@ class _HomeSectionState extends State<HomeSection> {
     _loadDailyDua();
     final nowTime = DateTime.now();
     bool isDayTime = false;
-    if (_prayerTimes != null && _prayerTimes!.containsKey('sunrise') && _prayerTimes!.containsKey('maghrib')) {
+    if (_prayerTimes != null &&
+        _prayerTimes!.containsKey('sunrise') &&
+        _prayerTimes!.containsKey('maghrib')) {
       final sunrise = _prayerTimes!['sunrise']!;
       final maghrib = _prayerTimes!['maghrib']!;
       isDayTime = nowTime.isAfter(sunrise) && nowTime.isBefore(maghrib);
@@ -1253,7 +1275,8 @@ class _HomeSectionState extends State<HomeSection> {
     }
 
     final now = DateTime.now();
-    final hijri = HijriCalendar.fromDate(DateTime.now().add(Duration(days: widget.hijriAdjustment)));
+    final hijri = HijriCalendar.fromDate(
+        DateTime.now().add(Duration(days: widget.hijriAdjustment)));
     final bool isDarkCard = widget.cardColor.computeLuminance() < 0.5;
     final Color textColor = isDarkCard ? Colors.white : Colors.black87;
     return SizedBox(
@@ -1282,14 +1305,15 @@ class _HomeSectionState extends State<HomeSection> {
                 ),
                 child: Stack(
                   children: [
-
                     Positioned(
                       left: -20,
                       bottom: -20,
                       child: Opacity(
                         opacity: 0.5,
                         child: Image.asset(
-                          isDayTime ? 'assets/images/Mscreen/بطاقة الساعة والتقويم النهاري.png' : 'assets/images/Mscreen/بطاقة الساعة والتقويم الليلي.png',
+                          isDayTime
+                              ? 'assets/images/Mscreen/بطاقة الساعة والتقويم النهاري.png'
+                              : 'assets/images/Mscreen/بطاقة الساعة والتقويم الليلي.png',
                           width: 150,
                           height: 150,
                           color: Theme.of(context).colorScheme.primary,
@@ -1297,63 +1321,64 @@ class _HomeSectionState extends State<HomeSection> {
                       ),
                     ),
                     Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(
-                    vertical: 20,
-                    horizontal: 15,
-                  ),
-                  child: Column(
-                    children: [
-                      if (_currentPrayerName.isNotEmpty)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 4,
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 20,
+                        horizontal: 15,
+                      ),
+                      child: Column(
+                        children: [
+                          if (_currentPrayerName.isNotEmpty)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.primary.withValues(alpha: 0.2),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Text(
+                                "الصلاة القادمة: $_currentPrayerName",
+                                style: TextStyle(
+                                  color: Theme.of(context).colorScheme.primary,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ),
+                          const SizedBox(height: 10),
+                          _ClockWidget(
+                            color: Theme.of(context).colorScheme.primary,
                           ),
-                          decoration: BoxDecoration(
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.primary.withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Text(
-                            "الصلاة القادمة: $_currentPrayerName",
+                          const SizedBox(height: 8),
+                          Text(
+                            '${hijri.hDay} ${hijri.longMonthName} ${hijri.hYear} هـ'
+                                .toEasternArabic(),
                             style: TextStyle(
                               color: Theme.of(context).colorScheme.primary,
+                              fontSize: 20,
                               fontWeight: FontWeight.bold,
-                              fontSize: 12,
                             ),
                           ),
-                        ),
-                      const SizedBox(height: 10),
-                      _ClockWidget(
-                        color: Theme.of(context).colorScheme.primary,
+                          Text(
+                            intl.DateFormat(
+                              'EEEE, d MMMM yyyy',
+                              'ar_SA',
+                            ).format(now).toEasternArabic(),
+                            style: TextStyle(
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.primary.withValues(alpha: 0.8),
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 8),
-                      Text(
-                        '${hijri.hDay} ${hijri.longMonthName} ${hijri.hYear} هـ'.toEasternArabic(),
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.primary,
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Text(
-                        intl.DateFormat(
-                          'EEEE, d MMMM yyyy',
-                          'ar_SA',
-                        ).format(now).toEasternArabic(),
-                        style: TextStyle(
-                          color: Theme.of(
-                            context,
-                          ).colorScheme.primary.withValues(alpha: 0.8),
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+                    ),
                   ],
                 ),
               ),
@@ -1410,7 +1435,8 @@ class _HomeSectionState extends State<HomeSection> {
                         uiOpacity: widget.uiOpacity,
                         cardColor: widget.cardColor,
                         watermarkPath: getExactWatermark(e.key),
-                        isFullWidth: e.key.contains('علي') || e.key.contains('موسوعة'),
+                        isFullWidth:
+                            e.key.contains('علي') || e.key.contains('موسوعة'),
                         onTap: () async {
                           final sectionKey = e.value['sectionKey'];
                           if (sectionKey == 'istikhara') {
@@ -1497,7 +1523,9 @@ class _HomeSmallCard extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(20),
       child: Container(
-        width: isFullWidth ? double.infinity : (MediaQuery.of(context).size.width - 48) / 2,
+        width: isFullWidth
+            ? double.infinity
+            : (MediaQuery.of(context).size.width - 48) / 2,
         height: 100,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(20),
@@ -1530,7 +1558,6 @@ class _HomeSmallCard extends StatelessWidget {
                   ),
                 ),
               ),
-
               Positioned(
                 left: -10,
                 top: 10,
@@ -1615,8 +1642,10 @@ class _ClockWidgetState extends State<_ClockWidget> {
       'hh:mm:ss a',
       'en_US',
     ).format(DateTime.now());
-    _timeNotifier.value =
-        formattedTime.replaceFirst('AM', 'ص').replaceFirst('PM', 'م').toEasternArabic();
+    _timeNotifier.value = formattedTime
+        .replaceFirst('AM', 'ص')
+        .replaceFirst('PM', 'م')
+        .toEasternArabic();
   }
 
   @override
@@ -1677,13 +1706,21 @@ class AboutSection extends StatelessWidget {
                 backgroundColor: Theme.of(
                   context,
                 ).colorScheme.primary.withValues(alpha: 0.1),
-                child: Icon(
-                  getMaterialIcon(
-                    about['developer_icon']?.toString() ?? 'person',
-                  ),
-                  size: 60,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
+                backgroundImage: about['developer_image'] != null
+                    ? (about['developer_image'].toString().startsWith('http')
+                        ? NetworkImage(about['developer_image'].toString())
+                        : AssetImage(about['developer_image'].toString())
+                            as ImageProvider)
+                    : null,
+                child: about['developer_image'] == null
+                    ? Icon(
+                        getMaterialIcon(
+                          about['developer_icon']?.toString() ?? 'person',
+                        ),
+                        size: 60,
+                        color: Theme.of(context).colorScheme.primary,
+                      )
+                    : null,
               ),
               const SizedBox(height: 20),
               Text(
@@ -1696,11 +1733,62 @@ class AboutSection extends StatelessWidget {
               const SizedBox(height: 15),
               const Divider(),
               const SizedBox(height: 15),
-              Text(
-                about['app_info']?.toString() ?? '',
+              Linkify(
+                onOpen: (link) async {
+                  if (!await launchUrl(Uri.parse(link.url))) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Could not launch url')),
+                    );
+                  }
+                },
+                text: about['app_info']?.toString() ?? '',
                 textAlign: TextAlign.center,
                 style: const TextStyle(fontSize: 16, height: 1.6),
+                linkStyle: TextStyle(
+                  color: Theme.of(context).colorScheme.primary,
+                  decoration: TextDecoration.underline,
+                ),
               ),
+              if (about['social_media'] != null && (about['social_media'] as List).isNotEmpty) ...[
+                const SizedBox(height: 20),
+                Wrap(
+                  spacing: 15,
+                  runSpacing: 15,
+                  alignment: WrapAlignment.center,
+                  children: (about['social_media'] as List).map((social) {
+                    Widget iconWidget = const Icon(Icons.link, size: 30);
+                    String iconName = social['icon']?.toString().toLowerCase() ?? '';
+                    if (iconName.contains('facebook')) iconWidget = const FaIcon(FontAwesomeIcons.facebook, size: 30);
+                    else if (iconName.contains('twitter') || iconName.contains('x')) iconWidget = const FaIcon(FontAwesomeIcons.xTwitter, size: 30);
+                    else if (iconName.contains('instagram')) iconWidget = const FaIcon(FontAwesomeIcons.instagram, size: 30);
+                    else if (iconName.contains('youtube')) iconWidget = const FaIcon(FontAwesomeIcons.youtube, size: 30);
+                    else if (iconName.contains('tiktok')) iconWidget = const FaIcon(FontAwesomeIcons.tiktok, size: 30);
+                    else if (iconName.contains('telegram')) iconWidget = const FaIcon(FontAwesomeIcons.telegram, size: 30);
+                    else if (iconName.contains('whatsapp')) iconWidget = const FaIcon(FontAwesomeIcons.whatsapp, size: 30);
+                    else if (iconName.contains('snapchat')) iconWidget = const FaIcon(FontAwesomeIcons.snapchat, size: 30);
+                    else if (iconName.contains('linkedin')) iconWidget = const FaIcon(FontAwesomeIcons.linkedin, size: 30);
+                    else if (iconName.contains('github')) iconWidget = const FaIcon(FontAwesomeIcons.github, size: 30);
+
+                    return InkWell(
+                      onTap: () async {
+                        final url = social['url']?.toString();
+                        if (url != null) {
+                          final uri = Uri.tryParse(url);
+                          if (uri != null) {
+                            await launchUrl(uri, mode: LaunchMode.externalApplication);
+                          }
+                        }
+                      },
+                      child: IconTheme(
+                        data: IconThemeData(
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                        child: iconWidget,
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ],
               const SizedBox(height: 30),
               if (about['developer_page'] != null)
                 ElevatedButton.icon(
@@ -1887,7 +1975,9 @@ class _DynamicListSectionState extends State<DynamicListSection> {
             itemBuilder: (context, index) {
               final surah = data[index];
               return Card(
-                color: Theme.of(context).cardColor.withValues(alpha: widget.uiOpacity),
+                color: Theme.of(context)
+                    .cardColor
+                    .withValues(alpha: widget.uiOpacity),
                 margin:
                     const EdgeInsets.symmetric(horizontal: 4.0, vertical: 8.0),
                 shape: RoundedRectangleBorder(
@@ -1932,7 +2022,10 @@ class _DynamicListSectionState extends State<DynamicListSection> {
                               'assets/images/quran/quran_surah_names_${(surah['id'] as int) - 1}.png',
                               height: 50,
                               fit: BoxFit.contain,
-                              color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black,
+                              color: Theme.of(context).brightness ==
+                                      Brightness.dark
+                                  ? Colors.white
+                                  : Colors.black,
                               colorBlendMode: BlendMode.srcIn,
                             ),
                           ),
@@ -1956,7 +2049,8 @@ class _DynamicListSectionState extends State<DynamicListSection> {
                           ),
                           child: Text(
                             "آياتها ${surah['total_ayahs']}",
-                            style: TextStyle(fontFamily: 'OmarNaskh',
+                            style: TextStyle(
+                              fontFamily: 'OmarNaskh',
                               fontSize: 12,
                               fontWeight: FontWeight.bold,
                               color: Theme.of(context).colorScheme.primary,
@@ -2051,111 +2145,135 @@ class _DynamicListSectionState extends State<DynamicListSection> {
                               ),
                             ),
                           ),
-                          Builder(
-                            builder: (context) {
-                                  String rawText = data[index]['content']
-                                  .toString()
-                                      .trim()
-                                      .replaceAll(RegExp(r'<html>|<html|^html\b', caseSensitive: false), ' ')
+                          Builder(builder: (context) {
+                            String rawText = data[index]['content']
+                                .toString()
+                                .trim()
+                                .replaceAll(
+                                    RegExp(r'<html>|<html|^html\b',
+                                        caseSensitive: false),
+                                    ' ')
+                                .trim();
+                            String cleanSubtitle = rawText.cleanSnippet();
+
+                            String displayTitle;
+                            TextStyle titleStyle;
+
+                            if (widget.sectionKey == 'prophets_stories') {
+                              String rawTitle = data[index]['title'].toString();
+                              String cleanName = rawTitle
+                                  .replaceAll(
+                                      RegExp(r'قصة\s*|\s*\(?عليه السلام\)?',
+                                          caseSensitive: false),
+                                      '')
                                   .trim();
-                                  String cleanSubtitle = rawText.cleanSnippet();
-
-                              String displayTitle;
-                              TextStyle titleStyle;
-
-                              if (widget.sectionKey == 'prophets_stories') {
-                                String rawTitle = data[index]['title'].toString();
-                                String cleanName = rawTitle.replaceAll(RegExp(r'قصة\s*|\s*\(?عليه السلام\)?', caseSensitive: false), '').trim();
-                                displayTitle = '$cleanName ﴿عليه السلام﴾';
-                                titleStyle = TextStyle(
-                                  fontFamily: 'me_quran',
-                                  fontSize: 24 * widget.fontSizeFactor,
-                                  fontWeight: FontWeight.normal,
-                                  color: Theme.of(context).colorScheme.primary,
-                                );
-                              } else if (widget.sectionKey.contains('imam_ali')) {
-                                displayTitle = 'قال أمير المؤمنين علي (عليه السلام)';
-                                titleStyle = const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 18,
-                                );
-                              } else {
-                                displayTitle = data[index]['title'].toString();
-                                titleStyle = const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 18,
-                                );
-                              }
-
-                              return ListTile(
-                                contentPadding: const EdgeInsets.all(20),
-                                title: Text(
-                                  displayTitle,
-                                  style: titleStyle,
-                                ),
-                                subtitle: widget.sectionKey == 'prophets_stories' ? null : Padding(
-                                  padding: const EdgeInsets.only(top: 10),
-                                  child: Text(
-                                    cleanSubtitle.cleanSnippet(),
-                                    maxLines:
-                                        widget.sectionKey.contains('imam_ali') ? 3 : 2,
-                                overflow: TextOverflow.ellipsis,
-                                style: widget.sectionKey.contains('imam_ali')
-                                    ? TextStyle(
-                                        fontFamily: 'me_quran',
-                                        fontSize: 18,
-                                        height: 1.8,
-                                      )
-                                    : TextStyle(fontFamily: 'OmarNaskh', fontSize: 16),
-                              ),
-                            ),
-                            onTap: () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (c) => ReaderPage(
-                                  title: data[index]['title'].toString(),
-                                  content: data[index]['content'].toString(),
-                                  fontSizeFactor: widget.fontSizeFactor,
-                                  isQuran: false,
-                                  isImamAli: widget.sectionKey.contains('imam_ali'),
-                                  titleColor: data[index]['color']?.toString(),
-                                ),
-                              ),
-                            ),
+                              displayTitle = '$cleanName ﴿عليه السلام﴾';
+                              titleStyle = TextStyle(
+                                fontFamily: 'me_quran',
+                                fontSize: 24 * widget.fontSizeFactor,
+                                fontWeight: FontWeight.normal,
+                                color: Theme.of(context).colorScheme.primary,
+                              );
+                            } else if (widget.sectionKey.contains('imam_ali')) {
+                              displayTitle =
+                                  'قال أمير المؤمنين علي (عليه السلام)';
+                              titleStyle = const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 18,
+                              );
+                            } else {
+                              displayTitle = data[index]['title'].toString();
+                              titleStyle = const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 18,
                               );
                             }
-                          ),
+
+                            return ListTile(
+                              contentPadding: const EdgeInsets.all(20),
+                              title: Text(
+                                displayTitle,
+                                style: titleStyle,
+                              ),
+                              subtitle: widget.sectionKey == 'prophets_stories'
+                                  ? null
+                                  : Padding(
+                                      padding: const EdgeInsets.only(top: 10),
+                                      child: Text(
+                                        cleanSubtitle.cleanSnippet(),
+                                        maxLines: widget.sectionKey
+                                                .contains('imam_ali')
+                                            ? 3
+                                            : 2,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: widget.sectionKey
+                                                .contains('imam_ali')
+                                            ? TextStyle(
+                                                fontFamily: 'me_quran',
+                                                fontSize: 18,
+                                                height: 1.8,
+                                              )
+                                            : TextStyle(
+                                                fontFamily: 'OmarNaskh',
+                                                fontSize: 16),
+                                      ),
+                                    ),
+                              onTap: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (c) => ReaderPage(
+                                    title: data[index]['title'].toString(),
+                                    content: data[index]['content'].toString(),
+                                    fontSizeFactor: widget.fontSizeFactor,
+                                    isQuran: false,
+                                    isImamAli:
+                                        widget.sectionKey.contains('imam_ali'),
+                                    titleColor:
+                                        data[index]['color']?.toString(),
+                                  ),
+                                ),
+                              ),
+                            );
+                          }),
                           Positioned(
                             top: 10,
                             left: 10,
-                            child: Builder(
-                              builder: (context) {
-                                final itemId = data[index]['title'].toString();
-                                return ValueListenableBuilder<List<FavoriteItem>>(
-                                  valueListenable: FavoritesService.instance.favoritesNotifier,
-                                  builder: (context, favorites, _) {
-                                    final isFav = FavoritesService.instance.isFavorite(itemId);
-                                    return IconButton(
-                                      icon: Icon(
-                                        isFav ? Icons.favorite : Icons.favorite_border,
-                                        color: isFav ? Colors.red : Theme.of(context).colorScheme.primary,
-                                      ),
-                                      onPressed: () {
-                                        final item = FavoriteItem(
-                                          id: itemId,
-                                          title: data[index]['title'].toString(),
-                                          content: data[index]['content'].toString(),
-                                          sourceSection: widget.sectionKey,
-                                          timestamp: DateTime.now(),
-                                          isCustom: false,
-                                        );
-                                        FavoritesService.instance.toggleFavorite(item);
-                                      },
-                                    );
-                                  },
-                                );
-                              }
-                            ),
+                            child: Builder(builder: (context) {
+                              final itemId = data[index]['title'].toString();
+                              return ValueListenableBuilder<List<FavoriteItem>>(
+                                valueListenable:
+                                    FavoritesService.instance.favoritesNotifier,
+                                builder: (context, favorites, _) {
+                                  final isFav = FavoritesService.instance
+                                      .isFavorite(itemId);
+                                  return IconButton(
+                                    icon: Icon(
+                                      isFav
+                                          ? Icons.favorite
+                                          : Icons.favorite_border,
+                                      color: isFav
+                                          ? Colors.red
+                                          : Theme.of(context)
+                                              .colorScheme
+                                              .primary,
+                                    ),
+                                    onPressed: () {
+                                      final item = FavoriteItem(
+                                        id: itemId,
+                                        title: data[index]['title'].toString(),
+                                        content:
+                                            data[index]['content'].toString(),
+                                        sourceSection: widget.sectionKey,
+                                        timestamp: DateTime.now(),
+                                        isCustom: false,
+                                      );
+                                      FavoritesService.instance
+                                          .toggleFavorite(item);
+                                    },
+                                  );
+                                },
+                              );
+                            }),
                           ),
                         ],
                       ),
@@ -2172,7 +2290,8 @@ class SurahHeader extends StatelessWidget {
   final String title;
   final Color color;
   final int? surahId;
-  const SurahHeader({super.key, required this.title, required this.color, this.surahId});
+  const SurahHeader(
+      {super.key, required this.title, required this.color, this.surahId});
 
   @override
   Widget build(BuildContext context) {
@@ -2187,16 +2306,21 @@ class SurahHeader extends StatelessWidget {
             'assets/images/quran_surah_name_frame.png',
             width: double.infinity,
             fit: BoxFit.fitWidth,
-            color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black,
+            color: Theme.of(context).brightness == Brightness.dark
+                ? Colors.white
+                : Colors.black,
             colorBlendMode: BlendMode.srcIn,
           ),
           // Layer 2: The Surah Name
           if (surahId != null)
             Image.asset(
               'assets/images/quran/quran_surah_names_${surahId! - 1}.png',
-              height: 32, // Proportional height to fit beautifully inside the frame
+              height:
+                  32, // Proportional height to fit beautifully inside the frame
               fit: BoxFit.contain,
-              color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black,
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? Colors.white
+                  : Colors.black,
               colorBlendMode: BlendMode.srcIn,
             ),
         ],
@@ -2333,10 +2457,14 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
                           topLeft: Radius.circular(24),
                           topRight: Radius.circular(24),
                         ),
-                        child: SurahHeader(title: widget.title, color: primary, surahId: widget.surahId),
+                        child: SurahHeader(
+                            title: widget.title,
+                            color: primary,
+                            surahId: widget.surahId),
                       ),
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 8.0),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 4.0, vertical: 8.0),
                       child: Column(
                         children: [
                           if (widget.isQuran &&
@@ -2344,7 +2472,8 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
                               widget.surahName != 'التوبة') ...[
                             Text(
                               "بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ",
-                              style: TextStyle(fontFamily: 'OmarNaskh',
+                              style: TextStyle(
+                                fontFamily: 'OmarNaskh',
                                 fontSize: 30,
                                 fontWeight: FontWeight.bold,
                                 color: primary,
@@ -2371,10 +2500,12 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
                                   textDirection: TextDirection.rtl,
                                   alignment: WrapAlignment.center,
                                   children: widget.ayahs!.map((a) {
-                                    String text = a['ar_text'].toString().trim();
+                                    String text =
+                                        a['ar_text'].toString().trim();
                                     final index = a['anum']?.toString() ??
                                         a['ayah_surah_index'].toString();
-                                    final arabicIndex = _convertToArabicNumber(index);
+                                    final arabicIndex =
+                                        _convertToArabicNumber(index);
 
                                     text = text
                                         .replaceAll(_trailingNumbersRegex, '')
@@ -2388,10 +2519,11 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
                                     return GestureDetector(
                                       behavior: HitTestBehavior.opaque,
                                       onTap: () async {
-                                        final prefs =
-                                            await SharedPreferences.getInstance();
+                                        final prefs = await SharedPreferences
+                                            .getInstance();
                                         setState(() {
-                                          if (_bookmarkedLineIndex?.toString() ==
+                                          if (_bookmarkedLineIndex
+                                                  ?.toString() ==
                                               ayahIndex.toString()) {
                                             _bookmarkedLineIndex = null;
                                             prefs.remove(
@@ -2428,16 +2560,20 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
                                                         fontFamily: 'me_quran',
                                                         color: _bookmarkedLineIndex
                                                                     ?.toString() ==
-                                                                ayahIndex.toString()
-                                                            ? Colors.green.shade900
+                                                                ayahIndex
+                                                                    .toString()
+                                                            ? Colors
+                                                                .green.shade900
                                                             : Colors.amber[700],
                                                         fontWeight:
                                                             _bookmarkedLineIndex
                                                                         ?.toString() ==
                                                                     ayahIndex
                                                                         .toString()
-                                                                ? FontWeight.bold
-                                                                : FontWeight.normal,
+                                                                ? FontWeight
+                                                                    .bold
+                                                                : FontWeight
+                                                                    .normal,
                                                         fontSize: 24 * _factor,
                                                       ),
                                                     ),
@@ -2482,12 +2618,14 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
                                       Text(
                                         widget.title,
                                         textAlign: TextAlign.center,
-                                        style: TextStyle(fontFamily: 'OmarNaskh',
+                                        style: TextStyle(
+                                          fontFamily: 'OmarNaskh',
                                           fontSize: 22 * _factor,
                                           height: 2.2,
                                           fontWeight: FontWeight.bold,
                                           color: widget.titleColor != null
-                                              ? _parseColor(widget.titleColor!) ??
+                                              ? _parseColor(
+                                                      widget.titleColor!) ??
                                                   Theme.of(context)
                                                       .colorScheme
                                                       .primary
@@ -2511,7 +2649,8 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
                                                     height: 1.8,
                                                     color: dynamicTextColor,
                                                   )
-                                                : TextStyle(fontFamily: 'OmarNaskh',
+                                                : TextStyle(
+                                                    fontFamily: 'OmarNaskh',
                                                     fontSize: 20 * _factor,
                                                     height: 2.2,
                                                     color: dynamicTextColor,
@@ -2519,8 +2658,8 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
 
                                         String cleanContent = widget.content;
                                         if (cleanContent.length <= 10000) {
-                                          cleanContent =
-                                              cleanContent.replaceAll('### ', '');
+                                          cleanContent = cleanContent
+                                              .replaceAll('### ', '');
                                           if (cleanContent
                                               .trim()
                                               .toLowerCase()
@@ -2531,14 +2670,27 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
                                                 .trim();
                                           }
                                           cleanContent = cleanContent
+                                              .replaceAll('\uFDFA',
+                                                  '(صلى الله عليه وآله)')
                                               .replaceAll(
-                                                  '\uFDFA', '(صلى الله عليه وآله)')
-                                              .replaceAll('\uFDFB', '(جل جلاله)')
+                                                  '\uFDFB', '(جل جلاله)')
                                               .replaceAll('!', '(عليه السلام)');
-                                          cleanContent = cleanContent.replaceAll(RegExp(r'<html>|<html|\bhtml\b', caseSensitive: false), '').trim();
+                                          cleanContent = cleanContent
+                                              .replaceAll(
+                                                  RegExp(
+                                                      r'<html>|<html|\bhtml\b',
+                                                      caseSensitive: false),
+                                                  '')
+                                              .trim();
                                         }
 
-                                        cleanContent = cleanContent.trim().replaceAll(RegExp(r'<html>|<html|^html\b', caseSensitive: false), '').trim();
+                                        cleanContent = cleanContent
+                                            .trim()
+                                            .replaceAll(
+                                                RegExp(r'<html>|<html|^html\b',
+                                                    caseSensitive: false),
+                                                '')
+                                            .trim();
 
                                         debugPrint(
                                             'HtmlContentRenderer built for section: ${widget.title} with bookmark: $_bookmarkedLineIndex');
@@ -2547,8 +2699,9 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
                                           baseStyle: baseStyle,
                                           bookmarkedIndex: _bookmarkedLineIndex,
                                           onParagraphTapped: (index) async {
-                                            final prefs = await SharedPreferences
-                                                .getInstance();
+                                            final prefs =
+                                                await SharedPreferences
+                                                    .getInstance();
                                             await prefs.setInt(
                                                 'bookmark_line_${widget.title}',
                                                 index);
@@ -2962,8 +3115,6 @@ class SettingsSection extends StatelessWidget {
       );
 }
 
-
-
 class PrayerTimesSection extends StatefulWidget {
   const PrayerTimesSection({super.key});
   @override
@@ -3020,9 +3171,11 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
       _fullScreenPrayers['fajr'] = prefs.getBool('fullscreen_fajr') ?? false;
       _fullScreenPrayers['dhuhr'] = prefs.getBool('fullscreen_dhuhr') ?? false;
       _fullScreenPrayers['asr'] = prefs.getBool('fullscreen_asr') ?? false;
-      _fullScreenPrayers['maghrib'] = prefs.getBool('fullscreen_maghrib') ?? false;
+      _fullScreenPrayers['maghrib'] =
+          prefs.getBool('fullscreen_maghrib') ?? false;
       _fullScreenPrayers['isha'] = prefs.getBool('fullscreen_isha') ?? false;
-      _ignoreBatteryOptimizations = prefs.getBool('ignore_battery_optimizations') ?? false;
+      _ignoreBatteryOptimizations =
+          prefs.getBool('ignore_battery_optimizations') ?? false;
       _adhanVolume = prefs.getDouble('adhan_volume') ?? 1.0;
       _adhanPreAlert = prefs.getInt('adhan_pre_alert') ?? 0;
       _manualAdjustments['fajr'] = prefs.getInt('adj_fajr') ?? 0;
@@ -3267,26 +3420,48 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
                     },
                   ),
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                     child: Row(
                       children: [
                         Expanded(
                           child: InkWell(
                             onTap: () async {
                               setState(() => _fullScreenPrayers[k] = false);
-                              final prefs = await SharedPreferences.getInstance();
+                              final prefs =
+                                  await SharedPreferences.getInstance();
                               await prefs.setBool('fullscreen_$k', false);
                             },
                             child: Card(
-                              color: (_fullScreenPrayers[k] ?? false) ? Theme.of(context).colorScheme.surfaceContainerHighest : Theme.of(context).colorScheme.primaryContainer,
-                              elevation: (_fullScreenPrayers[k] ?? false) ? 0 : 2,
+                              color: (_fullScreenPrayers[k] ?? false)
+                                  ? Theme.of(context)
+                                      .colorScheme
+                                      .surfaceContainerHighest
+                                  : Theme.of(context)
+                                      .colorScheme
+                                      .primaryContainer,
+                              elevation:
+                                  (_fullScreenPrayers[k] ?? false) ? 0 : 2,
                               child: Padding(
                                 padding: const EdgeInsets.all(10.0),
                                 child: Column(
                                   children: [
-                                    Icon(Icons.notifications, color: (_fullScreenPrayers[k] ?? false) ? Colors.grey : Theme.of(context).colorScheme.primary),
+                                    Icon(Icons.notifications,
+                                        color: (_fullScreenPrayers[k] ?? false)
+                                            ? Colors.grey
+                                            : Theme.of(context)
+                                                .colorScheme
+                                                .primary),
                                     const SizedBox(height: 5),
-                                    Text('إشعار', style: TextStyle(fontSize: 14, color: (_fullScreenPrayers[k] ?? false) ? Colors.grey : Theme.of(context).colorScheme.primary)),
+                                    Text('إشعار',
+                                        style: TextStyle(
+                                            fontSize: 14,
+                                            color:
+                                                (_fullScreenPrayers[k] ?? false)
+                                                    ? Colors.grey
+                                                    : Theme.of(context)
+                                                        .colorScheme
+                                                        .primary)),
                                   ],
                                 ),
                               ),
@@ -3297,19 +3472,40 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
                           child: InkWell(
                             onTap: () async {
                               setState(() => _fullScreenPrayers[k] = true);
-                              final prefs = await SharedPreferences.getInstance();
+                              final prefs =
+                                  await SharedPreferences.getInstance();
                               await prefs.setBool('fullscreen_$k', true);
                             },
                             child: Card(
-                              color: (_fullScreenPrayers[k] ?? false) ? Theme.of(context).colorScheme.primaryContainer : Theme.of(context).colorScheme.surfaceContainerHighest,
-                              elevation: (_fullScreenPrayers[k] ?? false) ? 2 : 0,
+                              color: (_fullScreenPrayers[k] ?? false)
+                                  ? Theme.of(context)
+                                      .colorScheme
+                                      .primaryContainer
+                                  : Theme.of(context)
+                                      .colorScheme
+                                      .surfaceContainerHighest,
+                              elevation:
+                                  (_fullScreenPrayers[k] ?? false) ? 2 : 0,
                               child: Padding(
                                 padding: const EdgeInsets.all(10.0),
                                 child: Column(
                                   children: [
-                                    Icon(Icons.fullscreen, color: (_fullScreenPrayers[k] ?? false) ? Theme.of(context).colorScheme.primary : Colors.grey),
+                                    Icon(Icons.fullscreen,
+                                        color: (_fullScreenPrayers[k] ?? false)
+                                            ? Theme.of(context)
+                                                .colorScheme
+                                                .primary
+                                            : Colors.grey),
                                     const SizedBox(height: 5),
-                                    Text('شاشة كاملة', style: TextStyle(fontSize: 14, color: (_fullScreenPrayers[k] ?? false) ? Theme.of(context).colorScheme.primary : Colors.grey)),
+                                    Text('شاشة كاملة',
+                                        style: TextStyle(
+                                            fontSize: 14,
+                                            color:
+                                                (_fullScreenPrayers[k] ?? false)
+                                                    ? Theme.of(context)
+                                                        .colorScheme
+                                                        .primary
+                                                    : Colors.grey)),
                                   ],
                                 ),
                               ),
@@ -3325,7 +3521,9 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('مستوى الصوت', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                        const Text('مستوى الصوت',
+                            style: TextStyle(
+                                fontSize: 14, fontWeight: FontWeight.bold)),
                         Slider(
                           value: _adhanVolume,
                           onChanged: (v) async {
@@ -3340,8 +3538,11 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
                   ),
                   const Divider(),
                   ListTile(
-                    title: const Text('تنبيه قبل الأذان', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
-                    subtitle: const Text('دقائق', style: TextStyle(fontSize: 12)),
+                    title: const Text('تنبيه قبل الأذان',
+                        style: TextStyle(
+                            fontSize: 14, fontWeight: FontWeight.bold)),
+                    subtitle:
+                        const Text('دقائق', style: TextStyle(fontSize: 12)),
                     trailing: DropdownButton<int>(
                       value: _adhanPreAlert,
                       items: [0, 5, 10, 15, 20, 30].map((int value) {
@@ -3362,28 +3563,35 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
                   ),
                   const Divider(),
                   ListTile(
-                    title: const Text('قناة الإشعارات', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
-                    subtitle: const Text('إعدادات النظام للإشعارات', style: TextStyle(fontSize: 12)),
+                    title: const Text('قناة الإشعارات',
+                        style: TextStyle(
+                            fontSize: 14, fontWeight: FontWeight.bold)),
+                    subtitle: const Text('إعدادات النظام للإشعارات',
+                        style: TextStyle(fontSize: 12)),
                     trailing: const Icon(Icons.settings),
                     onTap: () async {
                       // Launch native Android notification settings for the app channel
-                      await const MethodChannel('com.techtouchai.islamic/adhan').invokeMethod('openNotificationSettings');
+                      await const MethodChannel('com.techtouchai.islamic/adhan')
+                          .invokeMethod('openNotificationSettings');
                     },
                   ),
                   const Divider(),
                   SwitchListTile(
-                    title: const Text('تخطي وضع توفير الطاقة (Doze Mode)', style: TextStyle(fontSize: 14)),
-                    subtitle: const Text('مطلوب لضمان عمل الأذان في وقته بدقة', style: TextStyle(fontSize: 12)),
+                    title: const Text('تخطي وضع توفير الطاقة (Doze Mode)',
+                        style: TextStyle(fontSize: 14)),
+                    subtitle: const Text('مطلوب لضمان عمل الأذان في وقته بدقة',
+                        style: TextStyle(fontSize: 12)),
                     value: _ignoreBatteryOptimizations,
                     onChanged: (v) async {
-                       setState(() => _ignoreBatteryOptimizations = v);
-                       final prefs = await SharedPreferences.getInstance();
-                       await prefs.setBool('ignore_battery_optimizations', v);
-                       if (v) {
-                         if (await Permission.ignoreBatteryOptimizations.isDenied) {
-                           await Permission.ignoreBatteryOptimizations.request();
-                         }
-                       }
+                      setState(() => _ignoreBatteryOptimizations = v);
+                      final prefs = await SharedPreferences.getInstance();
+                      await prefs.setBool('ignore_battery_optimizations', v);
+                      if (v) {
+                        if (await Permission
+                            .ignoreBatteryOptimizations.isDenied) {
+                          await Permission.ignoreBatteryOptimizations.request();
+                        }
+                      }
                     },
                   )
                 ],
