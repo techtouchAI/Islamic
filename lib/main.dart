@@ -792,7 +792,7 @@ class AppDrawer extends StatelessWidget {
                   'المسبحة الإلكترونية',
                   Icons.vibration,
                 ),
-                ...sections.entries.map(
+                ...sections.entries.where((e) => e.key != 'istikhara').map(
                   (e) => _buildItem(
                     context,
                     e.key,
@@ -824,8 +824,8 @@ class AppDrawer extends StatelessWidget {
                   },
                 ),
                 ListTile(
-                  leading: const Icon(Icons.menu_book),
-                  title: const Text('الخيرة', style: TextStyle(fontSize: 16)),
+                  leading: const Icon(Icons.book),
+                  title: const Text('خيرة القرآن الكريم', style: TextStyle(fontSize: 16)),
                   onTap: () {
                     Navigator.pop(context); // close drawer
                     Navigator.push(
@@ -1179,10 +1179,10 @@ class _HomeSectionState extends State<HomeSection> {
               Positioned(
                 left: (tag == 'دعاء اليوم'
                     ? -40
-                    : (tag == 'إلهام اليوم' ? -20 : -20)),
+                    : (tag == 'إلهام اليوم' ? 10 : -20)),
                 bottom: tag == 'دعاء اليوم'
                     ? null
-                    : (tag == 'إلهام اليوم' ? -20 : -20),
+                    : (tag == 'إلهام اليوم' ? 10 : -20),
                 top: tag == 'دعاء اليوم' ? -20 : null,
                 child: Opacity(
                   opacity: 0.5,
@@ -1451,7 +1451,7 @@ class _HomeSectionState extends State<HomeSection> {
                         cardColor: widget.cardColor,
                         watermarkPath: getExactWatermark(e.key),
                         isFullWidth:
-                            e.key.contains('علي') || e.key.contains('موسوعة'),
+                            e.key.contains('علي') || e.key.contains('موسوعة') || e.key.contains('istikhara'),
                         onTap: () async {
                           final sectionKey = e.value['sectionKey'];
                           if (sectionKey == 'istikhara') {
