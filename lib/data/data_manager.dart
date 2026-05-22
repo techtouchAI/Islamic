@@ -24,7 +24,8 @@ class DataManager {
     _normalizeDB(_db);
   }
 
-  static Map<String, dynamic> _decodeJson(String source) => json.decode(source) as Map<String, dynamic>;
+  static Map<String, dynamic> _decodeJson(String source) =>
+      json.decode(source) as Map<String, dynamic>;
 
   static Future<void> loadContent() async {
     try {
@@ -70,7 +71,7 @@ class DataManager {
           if (oldContent == content) return false;
         }
 
-        final newDb = json.decode(content);
+        final newDb = await compute(_decodeJson, content);
         if (newDb is Map && newDb.containsKey('sections')) {
           await localFile.writeAsString(content);
           _db = Map<String, dynamic>.from(newDb);
@@ -129,7 +130,8 @@ class DataManager {
         );
         if (cat != null) {
           if (cat is Map) {
-            if (cat.containsKey('items')) return cat['items'] as List<dynamic>? ?? [];
+            if (cat.containsKey('items'))
+              return cat['items'] as List<dynamic>? ?? [];
             return cat['items'] ?? [];
           }
         }
@@ -149,7 +151,8 @@ class DataManager {
         );
         if (cat != null) {
           if (cat is Map) {
-            if (cat.containsKey('items')) return cat['items'] as List<dynamic>? ?? [];
+            if (cat.containsKey('items'))
+              return cat['items'] as List<dynamic>? ?? [];
             return cat['items'] ?? [];
           }
           return _db!['content']['dreams_cat_$idString'] as List<dynamic>? ??
@@ -171,7 +174,8 @@ class DataManager {
         );
         if (cat != null) {
           if (cat is Map) {
-            if (cat.containsKey('items')) return cat['items'] as List<dynamic>? ?? [];
+            if (cat.containsKey('items'))
+              return cat['items'] as List<dynamic>? ?? [];
             return cat['items'] ?? [];
           }
           return _db!['content']['imam_ali_cat_$idString'] as List<dynamic>? ??
@@ -218,7 +222,8 @@ class DataManager {
         item['_normalized_title'] = item['title'].toString().normalizeArabic();
       }
       if (item['content'] != null) {
-        item['_normalized_content'] = item['content'].toString().normalizeArabic();
+        item['_normalized_content'] =
+            item['content'].toString().normalizeArabic();
       }
       if (item.containsKey('items') && item['items'] is List) {
         for (var nestedItem in item['items']) {
