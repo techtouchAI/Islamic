@@ -793,13 +793,13 @@ class AppDrawer extends StatelessWidget {
                   Icons.vibration,
                 ),
                 ...sections.entries.where((e) => e.key != 'istikhara').map(
-                  (e) => _buildItem(
-                    context,
-                    e.key,
-                    e.value['title'],
-                    getMaterialIcon(e.value['icon']),
-                  ),
-                ),
+                      (e) => _buildItem(
+                        context,
+                        e.key,
+                        e.value['title'],
+                        getMaterialIcon(e.value['icon']),
+                      ),
+                    ),
                 const Divider(),
                 ListTile(
                   leading: const Icon(Icons.calendar_today),
@@ -825,7 +825,8 @@ class AppDrawer extends StatelessWidget {
                 ),
                 ListTile(
                   leading: const Icon(Icons.book),
-                  title: const Text('خيرة القرآن الكريم', style: TextStyle(fontSize: 16)),
+                  title: const Text('خيرة القرآن الكريم',
+                      style: TextStyle(fontSize: 16)),
                   onTap: () {
                     Navigator.pop(context); // close drawer
                     Navigator.push(
@@ -959,7 +960,7 @@ class _HomeSectionState extends State<HomeSection> {
   Map<String, dynamic>? _inspirationDua;
   Map<String, dynamic>? _dayDua;
   Map<String, DateTime>? _prayerTimes;
-  String _currentPrayerName = "";
+  final ValueNotifier<String> _currentPrayerNotifier = ValueNotifier<String>("");
   Timer? _prayerTimer;
 
   @override
@@ -976,6 +977,7 @@ class _HomeSectionState extends State<HomeSection> {
   @override
   void dispose() {
     _prayerTimer?.cancel();
+    _currentPrayerNotifier.dispose();
     super.dispose();
   }
 
@@ -1009,7 +1011,7 @@ class _HomeSectionState extends State<HomeSection> {
         break;
       }
     }
-    if (mounted) setState(() => _currentPrayerName = next);
+    if (mounted) _currentPrayerNotifier.value = next;
   }
 
   String _getArName(String key) {
@@ -1294,220 +1296,294 @@ class _HomeSectionState extends State<HomeSection> {
         DateTime.now().add(Duration(days: widget.hijriAdjustment)));
     final bool isDarkCard = widget.cardColor.computeLuminance() < 0.5;
     final Color textColor = isDarkCard ? Colors.white : Colors.black87;
+    // Process items into rows for lazy loading
+    List<List<MapEntry<String, dynamic>>> groupedRows = [];
+    List<MapEntry<String, dynamic>> currentRow = [];
+
+    for (var e in items.entries) {
+      bool isFullWidth = e.key.contains('علي') ||
+          e.key.contains('موسوعة') ||
+          e.key.contains('istikhara');
+      if (isFullWidth) {
+        if (currentRow.isNotEmpty) {
+          groupedRows.add(List.from(currentRow));
+          currentRow.clear();
+        }
+        groupedRows.add([e]);
+      } else {
+        currentRow.add(e);
+        if (currentRow.length == 2) {
+          groupedRows.add(List.from(currentRow));
+          currentRow.clear();
+        }
+      }
+    }
+    if (currentRow.isNotEmpty) {
+      groupedRows.add(List.from(currentRow));
+    }
+
     return SizedBox(
       width: double.infinity,
       height: double.infinity,
-      child: SingleChildScrollView(
+      child: CustomScrollView(
         physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
-        child: Column(
-          children: [
-            InkWell(
-              onTap: widget.onPrayerCardTap,
-              borderRadius: BorderRadius.circular(25),
-              child: Card(
-                elevation: 10,
-                clipBehavior: Clip.antiAlias,
-                color: Theme.of(context).brightness == Brightness.dark
-                    ? Colors.white.withValues(alpha: widget.uiOpacity)
-                    : Colors.black.withValues(alpha: widget.uiOpacity),
-                shape: RoundedRectangleBorder(
+        slivers: [
+          SliverPadding(
+            padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+            sliver: SliverList(
+              delegate: SliverChildListDelegate([
+                InkWell(
+                  onTap: widget.onPrayerCardTap,
                   borderRadius: BorderRadius.circular(25),
-                  side: BorderSide(
-                    color: Theme.of(context).colorScheme.primary,
-                    width: 2.5,
-                  ),
-                ),
-                child: Stack(
-                  children: [
-                    Positioned(
-                      left: -20,
-                      bottom: -20,
-                      child: Opacity(
-                        opacity: 0.5,
-                        child: Image.asset(
-                          isDayTime
-                              ? 'assets/images/Mscreen/بطاقة الساعة والتقويم النهاري.png'
-                              : 'assets/images/Mscreen/بطاقة الساعة والتقويم الليلي.png',
-                          width: 150,
-                          height: 150,
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
+                  child: Card(
+                    elevation: 10,
+                    clipBehavior: Clip.antiAlias,
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? Colors.white.withValues(alpha: widget.uiOpacity)
+                        : Colors.black.withValues(alpha: widget.uiOpacity),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(25),
+                      side: BorderSide(
+                        color: Theme.of(context).colorScheme.primary,
+                        width: 2.5,
                       ),
                     ),
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 20,
-                        horizontal: 15,
-                      ),
-                      child: Column(
-                        children: [
-                          if (_currentPrayerName.isNotEmpty)
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 4,
+                    child: Stack(
+                      children: [
+                        Positioned(
+                          left: -20,
+                          bottom: -20,
+                          child: Opacity(
+                            opacity: 0.5,
+                            child: Image.asset(
+                              isDayTime
+                                  ? 'assets/images/Mscreen/بطاقة الساعة والتقويم النهاري.png'
+                                  : 'assets/images/Mscreen/بطاقة الساعة والتقويم الليلي.png',
+                              width: 150,
+                              height: 150,
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
+                          ),
+                        ),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 20,
+                            horizontal: 15,
+                          ),
+                          child: Column(
+                            children: [
+                              ValueListenableBuilder<String>(
+                                valueListenable: _currentPrayerNotifier,
+                                builder: (context, currentPrayerName, child) {
+                                  if (currentPrayerName.isEmpty) return const SizedBox.shrink();
+                                  return Column(
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 12,
+                                          vertical: 4,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: Theme.of(
+                                            context,
+                                          ).colorScheme.primary.withValues(alpha: 0.2),
+                                          borderRadius: BorderRadius.circular(10),
+                                        ),
+                                        child: Text(
+                                          "الصلاة القادمة: $currentPrayerName",
+                                          style: TextStyle(
+                                            color: Theme.of(context).colorScheme.primary,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 12,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 10),
+                                    ],
+                                  );
+                                },
                               ),
-                              decoration: BoxDecoration(
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.primary.withValues(alpha: 0.2),
-                                borderRadius: BorderRadius.circular(10),
+                              _ClockWidget(
+                                color: Theme.of(context).colorScheme.primary,
                               ),
-                              child: Text(
-                                "الصلاة القادمة: $_currentPrayerName",
+                              const SizedBox(height: 8),
+                              Text(
+                                '${hijri.hDay} ${hijri.longMonthName} ${hijri.hYear} هـ'
+                                    .toEasternArabic(),
                                 style: TextStyle(
                                   color: Theme.of(context).colorScheme.primary,
+                                  fontSize: 20,
                                   fontWeight: FontWeight.bold,
-                                  fontSize: 12,
                                 ),
                               ),
-                            ),
-                          const SizedBox(height: 10),
-                          _ClockWidget(
-                            color: Theme.of(context).colorScheme.primary,
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            '${hijri.hDay} ${hijri.longMonthName} ${hijri.hYear} هـ'
-                                .toEasternArabic(),
-                            style: TextStyle(
-                              color: Theme.of(context).colorScheme.primary,
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          Text(
-                            intl.DateFormat(
-                              'EEEE, d MMMM yyyy',
-                              'ar_SA',
-                            ).format(now).toEasternArabic(),
-                            style: TextStyle(
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.primary.withValues(alpha: 0.8),
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 20),
-            if (_dayDua != null && (widget.visibility['day_dua'] ?? true))
-              _buildSpecialCard(
-                context,
-                'دعاء اليوم',
-                _dayDua!,
-                textColor,
-                Icons.calendar_today,
-              ),
-            if (_dayDua != null && (widget.visibility['day_dua'] ?? true))
-              const SizedBox(height: 15),
-            if (_inspirationDua != null &&
-                (widget.visibility['inspiration'] ?? true))
-              _buildSpecialCard(
-                context,
-                'إلهام اليوم',
-                _inspirationDua!,
-                textColor,
-                Icons.auto_awesome,
-              ),
-            const SizedBox(height: 25),
-            Align(
-              alignment: Alignment.centerRight,
-              child: Text(
-                'مقتطفات إيمانية',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Theme.of(context).brightness == Brightness.dark
-                      ? Colors.white70
-                      : Colors.black87,
-                ),
-              ),
-            ),
-            const SizedBox(height: 15),
-            Wrap(
-              spacing: 12,
-              runSpacing: 12,
-              children: items.entries
-                  .map(
-                    (e) => RepaintBoundary(
-                      child: _HomeSmallCard(
-                        tag: e.key,
-                        title: e.value['sectionKey']?.toString().contains(
-                                      'imam_ali',
-                                    ) ==
-                                true
-                            ? 'قال أمير المؤمنين علي (عليه السلام)'
-                            : e.value['title'].toString(),
-                        uiOpacity: widget.uiOpacity,
-                        cardColor: widget.cardColor,
-                        watermarkPath: getExactWatermark(e.key),
-                        isFullWidth:
-                            e.key.contains('علي') || e.key.contains('موسوعة') || e.key.contains('istikhara'),
-                        onTap: () async {
-                          final sectionKey = e.value['sectionKey'];
-                          if (sectionKey == 'istikhara') {
-                            if (!context.mounted) return;
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (c) => const IstikharaScreen(),
+                              Text(
+                                intl.DateFormat(
+                                  'EEEE, d MMMM yyyy',
+                                  'ar_SA',
+                                ).format(now).toEasternArabic(),
+                                style: TextStyle(
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.primary.withValues(alpha: 0.8),
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                ),
                               ),
-                            );
-                            return;
-                          }
-                          final isQuran = sectionKey == 'quran';
-                          List<Map<String, dynamic>>? ayahs;
-                          String contentStr = e.value['content'].toString();
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                if (_dayDua != null && (widget.visibility['day_dua'] ?? true))
+                  _buildSpecialCard(
+                    context,
+                    'دعاء اليوم',
+                    _dayDua!,
+                    textColor,
+                    Icons.calendar_today,
+                  ),
+                if (_dayDua != null && (widget.visibility['day_dua'] ?? true))
+                  const SizedBox(height: 15),
+                if (_inspirationDua != null &&
+                    (widget.visibility['inspiration'] ?? true))
+                  _buildSpecialCard(
+                    context,
+                    'إلهام اليوم',
+                    _inspirationDua!,
+                    textColor,
+                    Icons.auto_awesome,
+                  ),
+                const SizedBox(height: 25),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: Text(
+                    'مقتطفات إيمانية',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? Colors.white70
+                          : Colors.black87,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 15),
+              ]),
+            ),
+          ),
+          SliverPadding(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 16).copyWith(bottom: 20),
+            sliver: SliverList.builder(
+              itemCount: groupedRows.length,
+              itemBuilder: (context, index) {
+                final rowItems = groupedRows[index];
 
-                          if (isQuran) {
-                            final surahId = e.value['id'];
-                            if (surahId != null) {
-                              ayahs = await QuranService.getAyahs(surahId);
-                              contentStr = QuranService.getFormattedContent(
-                                surahId,
-                                ayahs,
-                              );
-                            }
-                          }
-
+                Widget buildCard(MapEntry<String, dynamic> e) {
+                  return RepaintBoundary(
+                    child: _HomeSmallCard(
+                      tag: e.key,
+                      title: e.value['sectionKey']
+                                  ?.toString()
+                                  .contains('imam_ali') ==
+                              true
+                          ? 'قال أمير المؤمنين علي (عليه السلام)'
+                          : e.value['title'].toString(),
+                      uiOpacity: widget.uiOpacity,
+                      cardColor: widget.cardColor,
+                      watermarkPath: getExactWatermark(e.key),
+                      isFullWidth: e.key.contains('علي') ||
+                          e.key.contains('موسوعة') ||
+                          e.key.contains('istikhara'),
+                      onTap: () async {
+                        final sectionKey = e.value['sectionKey'];
+                        if (sectionKey == 'istikhara') {
                           if (!context.mounted) return;
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (c) => ReaderPage(
-                                title: e.value['title'].toString(),
-                                content: contentStr,
-                                fontSizeFactor: widget.fontSizeFactor,
-                                isQuran: isQuran,
-                                isImamAli: sectionKey.contains('imam_ali'),
-                                surahName: isQuran
-                                    ? e.value['title'].toString().replaceAll(
-                                          'سورة ',
-                                          '',
-                                        )
-                                    : null,
-                                ayahs: ayahs,
-                                surahId: isQuran ? e.value['id'] : null,
-                              ),
+                              builder: (c) => const IstikharaScreen(),
                             ),
                           );
-                        },
-                      ),
+                          return;
+                        }
+                        final isQuran = sectionKey == 'quran';
+                        List<Map<String, dynamic>>? ayahs;
+                        String contentStr = e.value['content'].toString();
+
+                        if (isQuran) {
+                          final surahId = e.value['id'];
+                          if (surahId != null) {
+                            ayahs = await QuranService.getAyahs(surahId);
+                            contentStr = QuranService.getFormattedContent(
+                              surahId,
+                              ayahs,
+                            );
+                          }
+                        }
+
+                        if (!context.mounted) return;
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (c) => ReaderPage(
+                              title: e.value['title'].toString(),
+                              content: contentStr,
+                              fontSizeFactor: widget.fontSizeFactor,
+                              isQuran: isQuran,
+                              isImamAli: sectionKey.contains('imam_ali'),
+                              surahName: isQuran
+                                  ? e.value['title'].toString().replaceAll(
+                                        'سورة ',
+                                        '',
+                                      )
+                                  : null,
+                              ayahs: ayahs,
+                              surahId: isQuran ? e.value['id'] : null,
+                            ),
+                          ),
+                        );
+                      },
                     ),
-                  )
-                  .toList(),
+                  );
+                }
+
+                if (rowItems.length == 1 &&
+                    (rowItems[0].key.contains('علي') ||
+                        rowItems[0].key.contains('موسوعة') ||
+                        rowItems[0].key.contains('istikhara'))) {
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 12.0),
+                    child: buildCard(rowItems[0]),
+                  );
+                }
+
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 12.0),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: buildCard(rowItems[0]),
+                      ),
+                      const SizedBox(width: 12.0),
+                      if (rowItems.length > 1)
+                        Expanded(
+                          child: buildCard(rowItems[1]),
+                        )
+                      else
+                        const Expanded(child: SizedBox.shrink()),
+                    ],
+                  ),
+                );
+              },
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
