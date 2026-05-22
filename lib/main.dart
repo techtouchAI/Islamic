@@ -823,6 +823,19 @@ class AppDrawer extends StatelessWidget {
                         MaterialPageRoute(builder: (_) => QiblaScreen()));
                   },
                 ),
+                ListTile(
+                  leading: const Icon(Icons.menu_book),
+                  title: const Text('الخيرة', style: TextStyle(fontSize: 16)),
+                  onTap: () {
+                    Navigator.pop(context); // close drawer
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (c) => const IstikharaScreen(),
+                      ),
+                    );
+                  },
+                ),
                 const Divider(),
                 _buildItem(context, 'favorites', 'المحفوظات', Icons.favorite),
                 _buildItem(context, 'about', 'حول المطور', Icons.person),
@@ -1164,17 +1177,19 @@ class _HomeSectionState extends State<HomeSection> {
                 ),
               ),
               Positioned(
-                left: -20,
+                left: (tag == 'دعاء اليوم'
+                    ? -40
+                    : (tag == 'إلهام اليوم' ? -20 : -20)),
                 bottom: tag == 'دعاء اليوم'
                     ? null
-                    : (tag == 'إلهام اليوم' ? 20 : -20),
+                    : (tag == 'إلهام اليوم' ? -20 : -20),
                 top: tag == 'دعاء اليوم' ? -20 : null,
                 child: Opacity(
                   opacity: 0.5,
                   child: Image.asset(
                     getExactWatermark(tag),
-                    width: 150,
-                    height: 150,
+                    width: (tag == 'إلهام اليوم' ? 120 : 150),
+                    height: (tag == 'إلهام اليوم' ? 120 : 150),
                     color: Theme.of(context).colorScheme.primary,
                   ),
                 ),
@@ -1200,7 +1215,7 @@ class _HomeSectionState extends State<HomeSection> {
                             size: 20,
                           ),
                         ),
-                        const SizedBox(width: 12),
+                        SizedBox(width: tag == 'دعاء اليوم' ? 6 : 12),
                         Text(
                           tag,
                           style: TextStyle(
@@ -1566,8 +1581,22 @@ class _HomeSmallCard extends StatelessWidget {
                   opacity: 0.5,
                   child: Image.asset(
                     watermarkPath,
-                    width: 80,
-                    height: 80,
+                    width: (tag.contains('قرآن') ||
+                            tag.contains('قرأن') ||
+                            tag.contains('سجادي') ||
+                            tag.contains('صحيفة') ||
+                            tag.contains('احلام') ||
+                            tag.contains('أحلام'))
+                        ? 60
+                        : 80,
+                    height: (tag.contains('قرآن') ||
+                            tag.contains('قرأن') ||
+                            tag.contains('سجادي') ||
+                            tag.contains('صحيفة') ||
+                            tag.contains('احلام') ||
+                            tag.contains('أحلام'))
+                        ? 60
+                        : 80,
                     color: Theme.of(context).colorScheme.primary,
                   ),
                 ),
@@ -1581,7 +1610,7 @@ class _HomeSmallCard extends StatelessWidget {
                     Text(
                       tag,
                       style: TextStyle(
-                        fontSize: 10,
+                        fontSize: 14,
                         color: Theme.of(context).colorScheme.primary,
                         fontWeight: FontWeight.bold,
                         letterSpacing: 1.2,
@@ -1593,7 +1622,7 @@ class _HomeSmallCard extends StatelessWidget {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        fontSize: 15,
+                        fontSize: 12,
                         fontWeight: FontWeight.bold,
                         color: textColor,
                         height: 1.2,
@@ -1706,7 +1735,8 @@ class AboutSection extends StatelessWidget {
                 backgroundColor: Theme.of(
                   context,
                 ).colorScheme.primary.withValues(alpha: 0.1),
-                backgroundImage: about['developer_image'] != null && about['developer_image'].toString().isNotEmpty
+                backgroundImage: about['developer_image'] != null &&
+                        about['developer_image'].toString().isNotEmpty
                     ? (about['developer_image'].toString().startsWith('http')
                         ? NetworkImage(about['developer_image'].toString())
                         : (about['developer_image']
@@ -1719,7 +1749,8 @@ class AboutSection extends StatelessWidget {
                             : AssetImage(about['developer_image'].toString())
                                 as ImageProvider))
                     : null,
-                child: (about['developer_image'] == null || about['developer_image'].toString().isEmpty)
+                child: (about['developer_image'] == null ||
+                        about['developer_image'].toString().isEmpty)
                     ? Icon(
                         getMaterialIcon(
                           about['developer_icon']?.toString() ?? 'person',
@@ -1907,7 +1938,7 @@ class TabbedSection extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(tabs[i]),
-                      const SizedBox(width: 6),
+                      const SizedBox(width: 12),
                       _CountBadge(
                         count: DataManager.getItems(sectionKeys[i]).length,
                       ),
