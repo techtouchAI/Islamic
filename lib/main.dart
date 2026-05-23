@@ -2162,23 +2162,13 @@ class _DynamicListSectionState extends State<DynamicListSection> {
                                 final color = Theme.of(context).brightness == Brightness.dark
                                     ? Colors.white
                                     : Colors.black;
-                                if (surahId == 108) {
-                                  return Image.network(
-                                    'https://raw.githubusercontent.com/techtouchAI/Islamic/main/assets/images/quran/quran_surah_names_108.png',
-                                    height: 50,
-                                    fit: BoxFit.contain,
-                                    color: color,
-                                    colorBlendMode: BlendMode.srcIn,
-                                  );
-                                } else {
-                                  return Image.asset(
-                                    'assets/images/quran/quran_surah_names_$surahId.png',
-                                    height: 50,
-                                    fit: BoxFit.contain,
-                                    color: color,
-                                    colorBlendMode: BlendMode.srcIn,
-                                  );
-                                }
+                                return Image.asset(
+                                  'assets/images/quran/quran_surah_names_$surahId.png',
+                                  height: 50,
+                                  fit: BoxFit.contain,
+                                  color: color,
+                                  colorBlendMode: BlendMode.srcIn,
+                                );
                               },
                             ),
                           ),
@@ -2472,23 +2462,13 @@ class SurahHeader extends StatelessWidget {
                 final color = Theme.of(context).brightness == Brightness.dark
                     ? Colors.white
                     : Colors.black;
-                if (id == 108) {
-                  return Image.network(
-                    'https://raw.githubusercontent.com/techtouchAI/Islamic/main/assets/images/quran/quran_surah_names_108.png',
-                    height: 32, // Proportional height to fit beautifully inside the frame
-                    fit: BoxFit.contain,
-                    color: color,
-                    colorBlendMode: BlendMode.srcIn,
-                  );
-                } else {
-                  return Image.asset(
-                    'assets/images/quran/quran_surah_names_$id.png',
-                    height: 32,
-                    fit: BoxFit.contain,
-                    color: color,
-                    colorBlendMode: BlendMode.srcIn,
-                  );
-                }
+                return Image.asset(
+                  'assets/images/quran/quran_surah_names_$id.png',
+                  height: 32,
+                  fit: BoxFit.contain,
+                  color: color,
+                  colorBlendMode: BlendMode.srcIn,
+                );
               },
             ),
         ],
