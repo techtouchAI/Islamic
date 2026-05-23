@@ -2170,17 +2170,9 @@ class _DynamicListSectionState extends State<DynamicListSection> {
                                     color: color,
                                     colorBlendMode: BlendMode.srcIn,
                                   );
-                                } else if (surahId < 108) {
-                                  return Image.asset(
-                                    'assets/images/quran/quran_surah_names_$surahId.png',
-                                    height: 50,
-                                    fit: BoxFit.contain,
-                                    color: color,
-                                    colorBlendMode: BlendMode.srcIn,
-                                  );
                                 } else {
                                   return Image.asset(
-                                    'assets/images/quran/quran_surah_names_${surahId - 1}.png',
+                                    'assets/images/quran/quran_surah_names_$surahId.png',
                                     height: 50,
                                     fit: BoxFit.contain,
                                     color: color,
@@ -2488,17 +2480,9 @@ class SurahHeader extends StatelessWidget {
                     color: color,
                     colorBlendMode: BlendMode.srcIn,
                   );
-                } else if (id < 108) {
-                  return Image.asset(
-                    'assets/images/quran/quran_surah_names_$id.png',
-                    height: 32,
-                    fit: BoxFit.contain,
-                    color: color,
-                    colorBlendMode: BlendMode.srcIn,
-                  );
                 } else {
                   return Image.asset(
-                    'assets/images/quran/quran_surah_names_${id - 1}.png',
+                    'assets/images/quran/quran_surah_names_$id.png',
                     height: 32,
                     fit: BoxFit.contain,
                     color: color,
