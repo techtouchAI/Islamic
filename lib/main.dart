@@ -2156,15 +2156,38 @@ class _DynamicListSectionState extends State<DynamicListSection> {
                         Expanded(
                           child: Align(
                             alignment: Alignment.centerRight,
-                            child: Image.asset(
-                              'assets/images/quran/quran_surah_names_${(surah['id'] as int) - 1}.png',
-                              height: 50,
-                              fit: BoxFit.contain,
-                              color: Theme.of(context).brightness ==
-                                      Brightness.dark
-                                  ? Colors.white
-                                  : Colors.black,
-                              colorBlendMode: BlendMode.srcIn,
+                            child: Builder(
+                              builder: (context) {
+                                final surahId = surah['id'] as int;
+                                final color = Theme.of(context).brightness == Brightness.dark
+                                    ? Colors.white
+                                    : Colors.black;
+                                if (surahId == 108) {
+                                  return Image.network(
+                                    'https://raw.githubusercontent.com/techtouchAI/Islamic/main/assets/images/quran/quran_surah_names_108.png',
+                                    height: 50,
+                                    fit: BoxFit.contain,
+                                    color: color,
+                                    colorBlendMode: BlendMode.srcIn,
+                                  );
+                                } else if (surahId < 108) {
+                                  return Image.asset(
+                                    'assets/images/quran/quran_surah_names_$surahId.png',
+                                    height: 50,
+                                    fit: BoxFit.contain,
+                                    color: color,
+                                    colorBlendMode: BlendMode.srcIn,
+                                  );
+                                } else {
+                                  return Image.asset(
+                                    'assets/images/quran/quran_surah_names_${surahId - 1}.png',
+                                    height: 50,
+                                    fit: BoxFit.contain,
+                                    color: color,
+                                    colorBlendMode: BlendMode.srcIn,
+                                  );
+                                }
+                              },
                             ),
                           ),
                         ),
@@ -2451,15 +2474,38 @@ class SurahHeader extends StatelessWidget {
           ),
           // Layer 2: The Surah Name
           if (surahId != null)
-            Image.asset(
-              'assets/images/quran/quran_surah_names_${surahId! - 1}.png',
-              height:
-                  32, // Proportional height to fit beautifully inside the frame
-              fit: BoxFit.contain,
-              color: Theme.of(context).brightness == Brightness.dark
-                  ? Colors.white
-                  : Colors.black,
-              colorBlendMode: BlendMode.srcIn,
+            Builder(
+              builder: (context) {
+                final id = surahId!;
+                final color = Theme.of(context).brightness == Brightness.dark
+                    ? Colors.white
+                    : Colors.black;
+                if (id == 108) {
+                  return Image.network(
+                    'https://raw.githubusercontent.com/techtouchAI/Islamic/main/assets/images/quran/quran_surah_names_108.png',
+                    height: 32, // Proportional height to fit beautifully inside the frame
+                    fit: BoxFit.contain,
+                    color: color,
+                    colorBlendMode: BlendMode.srcIn,
+                  );
+                } else if (id < 108) {
+                  return Image.asset(
+                    'assets/images/quran/quran_surah_names_$id.png',
+                    height: 32,
+                    fit: BoxFit.contain,
+                    color: color,
+                    colorBlendMode: BlendMode.srcIn,
+                  );
+                } else {
+                  return Image.asset(
+                    'assets/images/quran/quran_surah_names_${id - 1}.png',
+                    height: 32,
+                    fit: BoxFit.contain,
+                    color: color,
+                    colorBlendMode: BlendMode.srcIn,
+                  );
+                }
+              },
             ),
         ],
       ),
