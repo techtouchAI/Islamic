@@ -1,0 +1,221 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_linkify/flutter_linkify.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:intl/intl.dart' as intl;
+import 'package:intl/date_symbol_data_local.dart';
+import 'dart:async';
+import 'dart:math';
+import 'package:share_plus/share_plus.dart';
+import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:hijri/hijri_calendar.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
+
+import '../../data/data_manager.dart';
+import '../../utils/string_extensions.dart';
+import '../../services/prayer_times_service.dart';
+import '../../services/quran_service.dart';
+import '../../services/favorites_service.dart';
+import '../../models/favorite_item.dart';
+import '../../sections/html_content_renderer.dart';
+import '../../ui/calendar/hijri_calendar_screen.dart';
+import '../../ui/qibla/qibla_screen.dart';
+import '../../presentation/screens/istikhara_screen.dart';
+import '../../main.dart'; // For AlDhakereenApp globals
+
+
+class AppDrawer extends StatelessWidget {
+  final String currentSection;
+  final ValueChanged<String> onNavigate;
+  const AppDrawer({
+    super.key,
+    required this.currentSection,
+    required this.onNavigate,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final about = DataManager.getAbout();
+    final settings = DataManager.getSettings();
+    final sections = DataManager.getSections();
+    return Drawer(
+      child: Column(
+        children: [
+          DrawerHeader(
+            padding: EdgeInsets.zero,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topRight,
+                end: Alignment.bottomLeft,
+                colors: [
+                  Theme.of(context).colorScheme.primary,
+                  Theme.of(context).colorScheme.primary.withValues(alpha: 0.8),
+                ],
+              ),
+            ),
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  buildImage(
+                    settings['custom_logo_base64']?.toString() ??
+                        settings['logo_image']?.toString(),
+                    height: 60,
+                  ),
+                  const SizedBox(height: 10),
+                  const Text(
+                    'تطبيق الذاكرين',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Text(
+                    about['developer_name']?.toString() ?? '',
+                    style: const TextStyle(color: Colors.white70, fontSize: 14),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          Expanded(
+            child: ListView(
+              padding: EdgeInsets.zero,
+              children: [
+                _buildItem(context, 'home', 'الرئيسية', Icons.home),
+                _buildItem(
+                  context,
+                  'prayer_times',
+                  'أوقات الصلاة',
+                  Icons.access_time,
+                ),
+                _buildItem(
+                  context,
+                  'tasbih',
+                  'المسبحة الإلكترونية',
+                  Icons.vibration,
+                ),
+                ...sections.entries.where((e) => e.key != 'istikhara').map(
+                      (e) => _buildItem(
+                        context,
+                        e.key,
+                        e.value['title'],
+                        getMaterialIcon(e.value['icon']),
+                      ),
+                    ),
+                const Divider(),
+                ListTile(
+                  leading: const Icon(Icons.calendar_today),
+                  title: const Text('التقويم الهجري',
+                      style: TextStyle(fontSize: 16)),
+                  onTap: () {
+                    Navigator.pop(context); // close drawer
+                    Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (_) => HijriCalendarScreen()));
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.explore),
+                  title: const Text('اتجاه القبلة',
+                      style: TextStyle(fontSize: 16)),
+                  onTap: () {
+                    Navigator.pop(context); // close drawer
+                    Navigator.push(context,
+                        MaterialPageRoute(builder: (_) => QiblaScreen()));
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.book),
+                  title: const Text('خيرة القرآن الكريم',
+                      style: TextStyle(fontSize: 16)),
+                  onTap: () {
+                    Navigator.pop(context); // close drawer
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (c) => const IstikharaScreen(),
+                      ),
+                    );
+                  },
+                ),
+                const Divider(),
+                _buildItem(context, 'favorites', 'المحفوظات', Icons.favorite),
+                _buildItem(context, 'about', 'حول المطور', Icons.person),
+                _buildItem(context, 'settings', 'الإعدادات', Icons.settings),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildItem(
+    BuildContext context,
+    String id,
+    String title,
+    IconData icon,
+  ) {
+    final bool active = currentSection == id;
+    int count = 0;
+    if (id == 'fatawa' || id == 'imam_ali' || id == 'dreams') {
+      final cats = DataManager.getItems(id);
+      for (var cat in cats) {
+        count += DataManager.getItems(
+          '${id}_cat_${cat["id"]?.toString()}',
+        ).length;
+      }
+    } else {
+      count = DataManager.getItems(id).length;
+    }
+
+    return ListTile(
+      leading: Icon(
+        icon,
+        color: active ? Theme.of(context).colorScheme.primary : null,
+      ),
+      title: Text(
+        title,
+        style: TextStyle(
+          fontWeight: active ? FontWeight.bold : FontWeight.normal,
+          fontSize: 16,
+        ),
+      ),
+      trailing: count > 0 ? CountBadge(count: count) : null,
+      selected: active,
+      selectedTileColor: Theme.of(
+        context,
+      ).colorScheme.primary.withValues(alpha: 0.1),
+      onTap: () => onNavigate(id),
+    );
+  }
+}
+
+class CountBadge extends StatelessWidget {
+  final int count;
+  const CountBadge({required this.count});
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Text(
+        '$count',
+        style: TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.bold,
+          color: Theme.of(context).colorScheme.primary,
+        ),
+      ),
+    );
+  }
+}

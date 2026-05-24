@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../ui/reader/reader_page.dart';
 import '../controllers/search_controller.dart' as app_search;
 import '../controllers/search_notifier.dart';
 import '../models/search_models.dart';
