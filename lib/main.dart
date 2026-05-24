@@ -2162,8 +2162,18 @@ class _DynamicListSectionState extends State<DynamicListSection> {
                                 final color = Theme.of(context).brightness == Brightness.dark
                                     ? Colors.white
                                     : Colors.black;
+                                // surah['surah_index'] usually contains the correct 1..114 index
+                                // From the SQL dump we saw:
+                                // Fatiha: id=2, surah_index=1
+                                // Al-Ma'un: id=108, surah_index=107
+                                // Kawthar: id=110, surah_index=108
+                                // Kafirun: id=111, surah_index=109
+                                // Nas: id=116, surah_index=114
+                                // So surah_index perfectly maps to 1..114 matching the images.
+                                int imageId = (surah['surah_index'] as int?) ??
+                                    (surahId >= 110 ? surahId - 2 : (surahId == 108 ? 107 : surahId - 1));
                                 return Image.asset(
-                                  'assets/images/quran/quran_surah_names_$surahId.png',
+                                  'assets/images/quran/quran_surah_names_$imageId.png',
                                   height: 50,
                                   fit: BoxFit.contain,
                                   color: color,
@@ -2462,8 +2472,16 @@ class SurahHeader extends StatelessWidget {
                 final color = Theme.of(context).brightness == Brightness.dark
                     ? Colors.white
                     : Colors.black;
+                // SurahHeader only receives `surahId` (which maps to db 'id').
+                // Fatiha (id 2) -> 1
+                // Baqarah (id 3) -> 2
+                // Al-Ma'un (id 108) -> 107
+                // Al-Kawthar (id 110) -> 108
+                // Al-Kafirun (id 111) -> 109
+                // An-Nas (id 116) -> 114
+                int imageId = (id >= 110) ? id - 2 : (id == 108 ? 107 : id - 1);
                 return Image.asset(
-                  'assets/images/quran/quran_surah_names_$id.png',
+                  'assets/images/quran/quran_surah_names_$imageId.png',
                   height: 32,
                   fit: BoxFit.contain,
                   color: color,
