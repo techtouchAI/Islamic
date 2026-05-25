@@ -31,6 +31,14 @@ import 'ui/reader/reader_page.dart';
 import 'ui/settings/settings_section.dart';
 import 'ui/prayer_times/prayer_times_section.dart';
 
+import 'dart:math';
+import 'dart:typed_data';
+import 'dart:io';
+import 'package:intl/date_symbol_data_local.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'presentation/screens/istikhara_screen.dart';
+
+
 
 class IslamicPatternPainter extends CustomPainter {
   final Color color;
@@ -684,7 +692,7 @@ class _MainScaffoldState extends State<MainScaffold> {
           uiOpacity: widget.uiOpacity,
         );
       case 'istikhara':
-        return const IstikharaScreen(key: ValueKey('istikhara'));
+        return IstikharaScreen(key: const ValueKey('istikhara'));
       default:
         return DynamicListSection(
           key: ValueKey(_currentSection),
