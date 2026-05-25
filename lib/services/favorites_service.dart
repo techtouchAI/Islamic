@@ -162,7 +162,7 @@ class FavoritesService {
       final File file = File('${directory.path}/aldhakereen_backup.json');
 
       // 3. Write data to the file
-      await file.writeAsString(jsonString);
+      await file.writeAsString(jsonString, encoding: utf8);
 
       // 4. Trigger the native Share dialog
       await Share.shareXFiles(

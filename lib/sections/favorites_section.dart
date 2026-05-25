@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../ui/reader/reader_page.dart';
 import 'package:file_picker/file_picker.dart';
@@ -39,7 +40,7 @@ class _FavoritesSectionState extends State<FavoritesSection> {
 
       if (result != null && result.files.single.path != null) {
         final file = File(result.files.single.path!);
-        final jsonString = await file.readAsString();
+        final jsonString = await file.readAsString(encoding: utf8);
 
         final success = await FavoritesService.instance.importFavorites(jsonString);
 
