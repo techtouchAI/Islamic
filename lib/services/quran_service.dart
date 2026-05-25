@@ -28,7 +28,7 @@ class QuranService {
         );
         await File(path).writeAsBytes(bytes);
       }
-      _db = await openDatabase(path);
+      _db = await openDatabase(path, readOnly: true);
     } catch (e) {
       debugPrint("QuranService Init Error: $e");
     }

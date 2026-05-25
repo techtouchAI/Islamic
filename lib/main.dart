@@ -116,6 +116,10 @@ Widget buildImage(String? path, {double? height, BoxFit fit = BoxFit.contain}) {
   if (path == null || path.isEmpty) {
     return const SizedBox();
   }
+  if (path.startsWith('/')) { // Check for local file path
+      final file = File(path);
+      if (file.existsSync()) return Image.file(file, height: height, fit: fit);
+  }
   if (path.startsWith('data:image')) {
     try {
       final bytes = Uri.parse(path).data!.contentAsBytes();
