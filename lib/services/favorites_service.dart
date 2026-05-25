@@ -25,6 +25,7 @@ class FavoritesService {
       Hive.registerAdapter(FavoriteItemAdapter());
     }
     _favoritesBox = await Hive.openBox<FavoriteItem>(_boxName);
+    await _favoritesBox?.compact();
     _updateNotifier();
   }
 
