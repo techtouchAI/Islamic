@@ -33,7 +33,7 @@ class DataManager {
 
       // 1. Try to load from local storage first
       if (await localFile.exists()) {
-        final content = await localFile.readAsString();
+        final content = await localFile.readAsString(encoding: utf8);
         _db = await compute(_decodeJson, content);
         _normalizeDB(_db);
         debugPrint("DataManager: Loaded from local storage.");
@@ -62,18 +62,18 @@ class DataManager {
       client = client ?? httpClient ?? http.Client();
       final response = await client.get(Uri.parse(_repoUrl));
       if (response.statusCode == 200) {
-        final content = response.body;
+        final content = utf8.decode(response.bodyBytes);
 
         // التحقق من وجود تغييرات فعلية لتجنب إعادة التحميل غير الضرورية
         final localFile = await _getLocalFile();
         if (await localFile.exists()) {
-          final oldContent = await localFile.readAsString();
+          final oldContent = await localFile.readAsString(encoding: utf8);
           if (oldContent == content) return false;
         }
 
         final newDb = await compute(_decodeJson, content);
         if (newDb is Map && newDb.containsKey('sections')) {
-          await localFile.writeAsString(content);
+          await localFile.writeAsString(content, encoding: utf8);
           _db = Map<String, dynamic>.from(newDb);
           _normalizeDB(_db);
           dbNotifier.value++;
