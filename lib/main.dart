@@ -23,6 +23,7 @@ import 'ui/calendar/hijri_calendar_screen.dart';
 import 'ui/qibla/qibla_screen.dart';
 
 import 'ui/widgets/app_drawer.dart';
+import 'ui/splash_screen.dart';
 import 'ui/home/home_section.dart';
 import 'ui/about/about_section.dart';
 import 'ui/tabs/tabbed_section.dart';
@@ -181,41 +182,18 @@ class _AlDhakereenAppState extends State<AlDhakereenApp> {
   Color _cardColor = Colors.white;
   Map<String, bool> _homeVisibility = {};
   int _hijriAdjustment = 0;
-  bool _isInitialized = false;
 
   @override
   void initState() {
     super.initState();
-    _initializeApp();
+    _loadSettings();
+    DataManager.dbNotifier.addListener(_loadSettings);
   }
 
-  Future<void> _initializeApp() async {
-    try {
-      await initializeDateFormatting('ar_SA', null);
-      HijriCalendar.setLocal('ar');
-      await DataManager.loadContent();
-      await SearchEngine.instance.init();
-      await QuranService.initDB();
-      await _loadSettings();
-      DataManager.syncCloudData().then((updated) {
-        if (updated && mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
-                'تم تحديث المحتوى بنجاح',
-                textAlign: TextAlign.center,
-              ),
-              duration: Duration(seconds: 2),
-              backgroundColor: Colors.green,
-            ),
-          );
-        }
-      });
-    } catch (e) {
-      debugPrint("Initialization Error: $e");
-    } finally {
-      if (mounted) setState(() => _isInitialized = true);
-    }
+  @override
+  void dispose() {
+    DataManager.dbNotifier.removeListener(_loadSettings);
+    super.dispose();
   }
 
   Future<void> _loadSettings() async {
@@ -225,34 +203,36 @@ class _AlDhakereenAppState extends State<AlDhakereenApp> {
         int.tryParse(dbSettings['primary_color'] ?? '0xFF2196F3') ?? 0xFF2196F3;
     int defaultCard =
         int.tryParse(dbSettings['card_color'] ?? '0xFFFFFFFF') ?? 0xFFFFFFFF;
-    setState(() {
-      _themeMode = (prefs.getString('theme') ?? 'light') == 'light'
-          ? ThemeMode.light
-          : ThemeMode.dark;
-      _fontSizeFactor = prefs.getDouble('fontSize') ?? 1.0;
-      _primaryColor = Color(prefs.getInt('primaryColor') ?? defaultPrimary);
-      _uiOpacity = prefs.getDouble('uiOpacity') ??
-          (dbSettings['ui_opacity']?.toDouble() ?? 1.0);
-      _backgroundImagePath = prefs.getString('backgroundImage');
-      _selectedBase64Bg = prefs.getString('custom_bg_base64_selected');
-      _cardColor = Color(prefs.getInt('cardColor') ?? defaultCard);
-      _hijriAdjustment = prefs.getInt('hijri.date.correction.value') ?? 0;
-      final sections = DataManager.getSections();
-      final allSections = {
-        ...sections,
-        'hadith': {},
-        'names_allah': {},
-        'adhkar': {},
-      };
-      _homeVisibility = {};
-      allSections.forEach((key, value) {
-        _homeVisibility[key] =
-            prefs.getBool('vis_$key') ?? (value['visible_home'] ?? true);
+    if (mounted) {
+      setState(() {
+        _themeMode = (prefs.getString('theme') ?? 'light') == 'light'
+            ? ThemeMode.light
+            : ThemeMode.dark;
+        _fontSizeFactor = prefs.getDouble('fontSize') ?? 1.0;
+        _primaryColor = Color(prefs.getInt('primaryColor') ?? defaultPrimary);
+        _uiOpacity = prefs.getDouble('uiOpacity') ??
+            (dbSettings['ui_opacity']?.toDouble() ?? 1.0);
+        _backgroundImagePath = prefs.getString('backgroundImage');
+        _selectedBase64Bg = prefs.getString('custom_bg_base64_selected');
+        _cardColor = Color(prefs.getInt('cardColor') ?? defaultCard);
+        _hijriAdjustment = prefs.getInt('hijri.date.correction.value') ?? 0;
+        final sections = DataManager.getSections();
+        final allSections = {
+          ...sections,
+          'hadith': {},
+          'names_allah': {},
+          'adhkar': {},
+        };
+        _homeVisibility = {};
+        allSections.forEach((key, value) {
+          _homeVisibility[key] =
+              prefs.getBool('vis_$key') ?? (value['visible_home'] ?? true);
+        });
+        _homeVisibility['inspiration'] = prefs.getBool('vis_inspiration') ??
+            (dbSettings['show_inspiration'] ?? true);
+        _homeVisibility['day_dua'] = prefs.getBool('vis_day_dua') ?? true;
       });
-      _homeVisibility['inspiration'] = prefs.getBool('vis_inspiration') ??
-          (dbSettings['show_inspiration'] ?? true);
-      _homeVisibility['day_dua'] = prefs.getBool('vis_day_dua') ?? true;
-    });
+    }
   }
 
   Future<void> _saveSetting(String key, dynamic value) async {
@@ -272,30 +252,6 @@ class _AlDhakereenAppState extends State<AlDhakereenApp> {
 
   @override
   Widget build(BuildContext context) {
-    if (!_isInitialized) {
-      return MaterialApp(
-        debugShowCheckedModeBanner: false,
-        home: Scaffold(
-          body: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                buildImage('assets/images/logo.png', height: 100),
-                const SizedBox(height: 20),
-                const Text(
-                  "اللَّهُمَّ صَلِّ عَلَى مُحَمَّدٍ وَعَلَى آلِ مُحَمَّدٍ",
-                  style: TextStyle(
-                    fontFamily: 'me_quran',
-                    fontSize: 24,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
-    }
     return MaterialApp(
       title: 'الذاكرين',
       debugShowCheckedModeBanner: false,
@@ -335,7 +291,7 @@ class _AlDhakereenAppState extends State<AlDhakereenApp> {
         scaffoldBackgroundColor: const Color(0xFF0A0A0A),
       ),
       themeMode: _themeMode,
-      home: MainScaffold(
+      home: SplashScreen(
         themeMode: _themeMode,
         fontSizeFactor: _fontSizeFactor,
         onFontSizeChanged: (val) {

@@ -6,6 +6,6 @@ void main() {
   testWidgets('App basic smoke test', (WidgetTester tester) async {
     await tester.pumpWidget(const AlDhakereenApp());
     // Initially shows loading or splash
-    expect(find.text("اللَّهُمَّ صَلِّ عَلَى مُحَمَّدٍ وَعَلَى آلِ مُحَمَّدٍ"), findsOneWidget);
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
   });
 }
