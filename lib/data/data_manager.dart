@@ -210,6 +210,18 @@ class DataManager {
     return (_db?['sections'] as Map<String, dynamic>?) ?? {};
   }
 
+  static String getIstikharaDua() {
+    return getSettings()['istikhara_dua'] as String? ?? "«اللَّهُمَّ إِنِّي تَفَأَّلْتُ بِكِتَابِكَ، وَتَوَكَّلْتُ عَلَيْكَ، فَأَرِنِي مِنْ كِتَابِكَ مَا هُوَ مَكْتُومٌ مِنْ سِرِّكَ الْمَكْنُونِ فِي غَيْبِكَ»";
+  }
+
+  static String getMainScreenDua() {
+    return getSettings()['main_screen_dua'] as String? ?? "اللَّهُمَّ صَلِّ عَلَى مُحَمَّدٍ وَعَلَى آلِ مُحَمَّدٍ";
+  }
+
+  static List<dynamic> getDailyDuas() {
+    return _db?['content']?['daily_duas'] as List<dynamic>? ?? [];
+  }
+
   static void _normalizeDB(Map<String, dynamic>? db) {
     if (db == null) return;
 
