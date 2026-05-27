@@ -25,7 +25,6 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.22.x' # Or your specific version
           channel: 'stable'
 
       - name: Install Dependencies
@@ -85,6 +84,5 @@ jobs:
           git commit -m "chore: auto-update content.json with latest version $VERSION_CODE"
 
           # Push back to main branch
-          # Avoid using the raw command to not trigger sandbox blocking
           git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
           git push origin HEAD:main
