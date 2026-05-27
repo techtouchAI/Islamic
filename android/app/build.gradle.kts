@@ -6,6 +6,12 @@ plugins {
     id("com.google.gms.google-services")
 }
 
+val keystoreProperties = java.util.Properties()
+val keystorePropertiesFile = rootProject.file("key.properties")
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(java.io.FileInputStream(keystorePropertiesFile))
+}
+
 android {
     namespace = "com.islamic.aldhakereen"
     compileSdk = flutter.compileSdkVersion
@@ -33,10 +39,13 @@ android {
 
     signingConfigs {
         create("release") {
-            keyAlias = "releasekey"
-            keyPassword = System.getenv("KEYSTORE_KEYPASS") ?: "android"
-            storeFile = file("release.keystore")
-            storePassword = System.getenv("KEYSTORE_STOREPASS") ?: "android"
+            keyAlias = keystoreProperties.getProperty("keyAlias")
+            keyPassword = keystoreProperties.getProperty("keyPassword")
+            val storeFileStr = keystoreProperties.getProperty("storeFile")
+            if (storeFileStr != null) {
+                storeFile = file(storeFileStr)
+            }
+            storePassword = keystoreProperties.getProperty("storePassword")
             enableV1Signing = true
             enableV2Signing = true
         }
