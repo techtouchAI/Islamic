@@ -1,8 +1,12 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:hijri/hijri_calendar.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:dio/dio.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:open_file/open_file.dart';
 
 import '../data/data_manager.dart';
 import '../services/search_engine.dart';
@@ -56,6 +60,8 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
+  double _downloadProgress = -1.0;
+
   @override
   void initState() {
     super.initState();
@@ -98,35 +104,46 @@ class _SplashScreenState extends State<SplashScreen> {
           context: context,
           barrierDismissible: !forceUpdate,
           builder: (context) {
-            return PopScope(
-              canPop: !forceUpdate,
-              child: AlertDialog(
-                title: const Text('تحديث متوفر', textAlign: TextAlign.right),
-                content: const Text(
-                  'نسخة جديدة من التطبيق متوفرة. يرجى التحديث للحصول على أفضل تجربة.',
-                  textAlign: TextAlign.right,
-                ),
-                actions: [
-                  if (!forceUpdate)
-                    TextButton(
-                      onPressed: () {
-                        Navigator.of(context).pop();
-                        _navigateToHome();
-                      },
-                      child: const Text('تخطي'),
-                    ),
-                  ElevatedButton(
-                    onPressed: () async {
-                      final uri = Uri.parse(updateUrl);
-                      if (await canLaunchUrl(uri)) {
-                        await launchUrl(uri, mode: LaunchMode.externalApplication);
-                      }
-                    },
-                    child: const Text('تحديث الآن'),
+            return StatefulBuilder(builder: (context, setDialogState) {
+              return PopScope(
+                canPop: !forceUpdate && _downloadProgress < 0,
+                child: AlertDialog(
+                  title: const Text('تحديث متوفر', textAlign: TextAlign.right),
+                  content: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text(
+                        'نسخة جديدة من التطبيق متوفرة. يرجى التحديث للحصول على أفضل تجربة.',
+                        textAlign: TextAlign.right,
+                      ),
+                      if (_downloadProgress >= 0) ...[
+                        const SizedBox(height: 20),
+                        LinearProgressIndicator(value: _downloadProgress),
+                        const SizedBox(height: 10),
+                        Text('${(_downloadProgress * 100).toStringAsFixed(0)}%'),
+                      ],
+                    ],
                   ),
-                ],
-              ),
-            );
+                  actions: [
+                    if (!forceUpdate && _downloadProgress < 0)
+                      TextButton(
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                          _navigateToHome();
+                        },
+                        child: const Text('تخطي'),
+                      ),
+                    if (_downloadProgress < 0)
+                      ElevatedButton(
+                        onPressed: () async {
+                          await _downloadAndInstallApk(updateUrl, setDialogState);
+                        },
+                        child: const Text('تحديث الآن'),
+                      ),
+                  ],
+                ),
+              );
+            });
           },
         );
       } else {
@@ -135,6 +152,63 @@ class _SplashScreenState extends State<SplashScreen> {
     } catch (e) {
       debugPrint("Update Check Error: $e");
       _navigateToHome();
+    }
+  }
+
+  Future<void> _downloadAndInstallApk(String url, StateSetter setDialogState) async {
+    // 1. Request permissions
+    if (Platform.isAndroid) {
+      // Storage permissions
+      if (await Permission.storage.request().isDenied) {
+        // Handle denied permission (you might want to show a message)
+      }
+      // Install permissions (Android 8+)
+      if (await Permission.requestInstallPackages.request().isDenied) {
+        // Handle denied permission
+      }
+    }
+
+    try {
+      final Directory tempDir = await getTemporaryDirectory();
+      final String savePath = '${tempDir.path}/app-update.apk';
+
+      final Dio dio = Dio();
+
+      setDialogState(() {
+        _downloadProgress = 0.0;
+      });
+
+      await dio.download(
+        url,
+        savePath,
+        onReceiveProgress: (received, total) {
+          if (total != -1) {
+            setDialogState(() {
+              _downloadProgress = received / total;
+            });
+          }
+        },
+      );
+
+      // Reset progress indicator after download
+      setDialogState(() {
+        _downloadProgress = -1.0;
+      });
+
+      // 3. Trigger Installation
+      final result = await OpenFile.open(savePath);
+      debugPrint("OpenFile result: ${result.message}");
+
+    } catch (e) {
+      debugPrint("Download/Install error: $e");
+      setDialogState(() {
+        _downloadProgress = -1.0; // Reset on error
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('فشل تحميل التحديث')),
+        );
+      }
     }
   }
 
