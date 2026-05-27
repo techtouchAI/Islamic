@@ -39,8 +39,6 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'presentation/screens/istikhara_screen.dart';
 
-
-
 class IslamicPatternPainter extends CustomPainter {
   final Color color;
   IslamicPatternPainter({required this.color});
@@ -117,7 +115,7 @@ Widget buildImage(String? path, {double? height, BoxFit fit = BoxFit.contain}) {
   if (path == null || path.isEmpty) {
     return const SizedBox();
   }
-  if (path.startsWith('/')) { // Check for local file path
+  if (path.startsWith('/')) { 
       final file = File(path);
       if (file.existsSync()) return Image.file(file, height: height, fit: fit);
   }
@@ -152,18 +150,31 @@ Widget buildImage(String? path, {double? height, BoxFit fit = BoxFit.contain}) {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await PrayerAlarmService.init();
+  
+  // تهيئة قواعد البيانات المحلية السريعة أولاً ليتمكن التطبيق من الإقلاع فوراً
+  await Hive.initFlutter();
+  await FavoritesService.instance.init();
 
+  // تشغيل الواجهة فوراً لإنهاء شاشة الانتظار
+  runApp(const AlDhakereenApp());
+
+  // تهيئة الخدمات الثقيلة في الخلفية لتجنب تجميد الشاشة
+  _initializeHeavyServices();
+}
+
+Future<void> _initializeHeavyServices() async {
   try {
     await Firebase.initializeApp();
-    // Call the analytics service in a non-blocking way
     AnalyticsService().checkAndRegisterDevice();
   } catch (e) {
     debugPrint("Firebase initialization error: $e");
   }
-  await Hive.initFlutter();
-  await FavoritesService.instance.init();
-  runApp(const AlDhakereenApp());
+  
+  try {
+    await PrayerAlarmService.init();
+  } catch (e) {
+    debugPrint("PrayerAlarmService initialization error: $e");
+  }
 }
 
 class AlDhakereenApp extends StatefulWidget {
@@ -258,7 +269,7 @@ class _AlDhakereenAppState extends State<AlDhakereenApp> {
       builder: (context, child) => MediaQuery(
         data: MediaQuery.of(context).copyWith(
           textScaler:
-              MediaQuery.of(context).textScaler, // Respects system font scaling
+              MediaQuery.of(context).textScaler,
         ),
         child: child!,
       ),
@@ -553,174 +564,4 @@ class _MainScaffoldState extends State<MainScaffold> {
           visibility: widget.homeVisibility,
           onVisibilityChanged: widget.onVisibilityChanged,
           hijriAdjustment: widget.hijriAdjustment,
-          onHijriAdjustmentChanged: widget.onHijriAdjustmentChanged,
-        );
-
-      case 'favorites':
-        return FavoritesSection(
-          key: const ValueKey('favorites'),
-          fontSizeFactor: widget.fontSizeFactor,
-          uiOpacity: widget.uiOpacity,
-        );
-      case 'about':
-        return const AboutSection(key: ValueKey('about'));
-      case 'tasbih':
-        return const TasbihSection(key: ValueKey('tasbih'));
-      case 'prayer_times':
-        return const PrayerTimesSection(key: ValueKey('prayer_times'));
-      case 'qibla':
-        return QiblaScreen();
-      case 'calendar':
-        return HijriCalendarScreen();
-      case 'duas':
-        return TabbedSection(
-          key: const ValueKey('duas'),
-          tabs: const [
-            'أدعية الأيام',
-            'تعقيبات الصلاة',
-            'الأدعية العامة',
-            'الصلوات',
-          ],
-          sectionKeys: const [
-            'duas_days',
-            'duas_taqeebat',
-            'duas_general',
-            'duas_salawat',
-          ],
-          fontSizeFactor: widget.fontSizeFactor,
-          uiOpacity: widget.uiOpacity,
-        );
-      case 'visits':
-        return TabbedSection(
-          key: const ValueKey('visits'),
-          tabs: const ['زيارات الأيام', 'الزيارات العامة'],
-          sectionKeys: const ['visits_days', 'visits_general'],
-          fontSizeFactor: widget.fontSizeFactor,
-          uiOpacity: widget.uiOpacity,
-        );
-      case 'adhkar':
-        return TabbedSection(
-          key: const ValueKey('adhkar'),
-          tabs: const ['المناجاة', 'التسبيحات'],
-          sectionKeys: const ['adhkar_munajat', 'adhkar_tasbihs'],
-          fontSizeFactor: widget.fontSizeFactor,
-          uiOpacity: widget.uiOpacity,
-        );
-      case 'imam_ali':
-        final imamAliCats = DataManager.getItems('imam_ali');
-        if (imamAliCats.isEmpty) {
-          return const Center(child: Text('لا يوجد محتوى متوفر حالياً'));
-        }
-        return TabbedSection(
-          key: const ValueKey('imam_ali'),
-          tabs: imamAliCats.map((c) => c['title'].toString()).toList(),
-          sectionKeys:
-              imamAliCats.map((c) => 'imam_ali_cat_${c['id']}').toList(),
-          fontSizeFactor: widget.fontSizeFactor,
-          uiOpacity: widget.uiOpacity,
-        );
-      case 'dreams':
-        final dreamsCats = DataManager.getItems('dreams');
-        if (dreamsCats.isEmpty) {
-          return const Center(child: Text('لا يوجد محتوى متوفر حالياً'));
-        }
-        return TabbedSection(
-          key: const ValueKey('dreams'),
-          tabs: dreamsCats.map((c) => c['title'].toString()).toList(),
-          sectionKeys: dreamsCats.map((c) => 'dreams_cat_${c['id']}').toList(),
-          fontSizeFactor: widget.fontSizeFactor,
-          uiOpacity: widget.uiOpacity,
-        );
-      case 'fatawa':
-        final fatawaCats = DataManager.getItems('fatawa');
-        if (fatawaCats.isEmpty) {
-          return const Center(child: Text('لا يوجد محتوى متوفر حالياً'));
-        }
-        return TabbedSection(
-          key: const ValueKey('fatawa'),
-          tabs: fatawaCats.map((c) => c['title'].toString()).toList(),
-          sectionKeys: fatawaCats.map((c) => 'fatawa_cat_${c['id']}').toList(),
-          fontSizeFactor: widget.fontSizeFactor,
-          uiOpacity: widget.uiOpacity,
-        );
-      case 'prophets_stories':
-        return DynamicListSection(
-          key: const ValueKey('prophets_stories'),
-          title: _getSectionTitle('prophets_stories'),
-          sectionKey: 'prophets_stories',
-          fontSizeFactor: widget.fontSizeFactor,
-          uiOpacity: widget.uiOpacity,
-        );
-      case 'istikhara':
-        return IstikharaScreen(key: const ValueKey('istikhara'));
-      default:
-        return DynamicListSection(
-          key: ValueKey(_currentSection),
-          title: _getSectionTitle(_currentSection),
-          sectionKey: _currentSection,
-          fontSizeFactor: widget.fontSizeFactor,
-          uiOpacity: widget.uiOpacity,
-        );
-    }
-  }
-
-  String _getSectionTitle(String key) {
-    final sections = DataManager.getSections();
-    if (sections.containsKey(key)) return sections[key]['title'].toString();
-    return 'المحتوى';
-  }
-
-  String _getAppBarTitle(String section) {
-    if (section == 'home') return 'الذاكرين';
-    if (section == 'settings') return 'الإعدادات';
-    if (section == 'about') return 'حول المطور';
-    if (section == 'universal_batch') return 'استيراد بالدفعة';
-    return _getSectionTitle(section);
-  }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-Color? _parseColor(String? colorString) {
-  if (colorString == null || colorString.isEmpty) return null;
-  try {
-    if (colorString.startsWith('#')) {
-      return Color(int.parse(colorString.substring(1), radix: 16) + 0xFF000000);
-    }
-    return Color(int.parse(colorString));
-  } catch (e) {
-    return null;
-  }
-}
-
-
-
-
-
-
-
-
+          onHijriAdjustment
