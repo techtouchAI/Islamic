@@ -83,7 +83,9 @@ class IslamicPatternPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(covariant IslamicPatternPainter oldDelegate) {
+    return oldDelegate.color != color;
+  }
 }
 
 IconData getMaterialIcon(String? name) {
@@ -271,6 +273,8 @@ class _AlDhakereenAppState extends State<AlDhakereenApp> {
         GlobalCupertinoLocalizations.delegate,
       ],
       theme: ThemeData(
+        appBarTheme: AppBarTheme(backgroundColor: settingsProvider.primaryColor.withValues(alpha: settingsProvider.uiOpacity)),
+        appBarTheme: AppBarTheme(backgroundColor: settingsProvider.primaryColor.withValues(alpha: settingsProvider.uiOpacity)),
         useMaterial3: true,
         textTheme: ThemeData.light().textTheme.apply(fontFamily: 'Cairo'),
         colorScheme: ColorScheme.fromSeed(
@@ -279,8 +283,12 @@ class _AlDhakereenAppState extends State<AlDhakereenApp> {
           primary: _primaryColor,
         ),
         scaffoldBackgroundColor: const Color(0xFFFDFBF7),
+        cardColor: settingsProvider.cardColor,
+        cardColor: settingsProvider.cardColor,
       ),
       darkTheme: ThemeData(
+        appBarTheme: AppBarTheme(backgroundColor: settingsProvider.primaryColor.withValues(alpha: settingsProvider.uiOpacity)),
+        appBarTheme: AppBarTheme(backgroundColor: settingsProvider.primaryColor.withValues(alpha: settingsProvider.uiOpacity)),
         useMaterial3: true,
         textTheme: ThemeData.dark().textTheme.apply(fontFamily: 'Cairo'),
         colorScheme: ColorScheme.fromSeed(
@@ -289,6 +297,8 @@ class _AlDhakereenAppState extends State<AlDhakereenApp> {
           primary: _primaryColor,
         ),
         scaffoldBackgroundColor: const Color(0xFF0A0A0A),
+        cardColor: settingsProvider.cardColor,
+        cardColor: settingsProvider.cardColor,
       ),
       themeMode: _themeMode,
       home: SplashScreen(
