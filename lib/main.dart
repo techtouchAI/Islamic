@@ -169,7 +169,7 @@ Future<void> _initializeHeavyServices() async {
   } catch (e) {
     debugPrint("Firebase initialization error: $e");
   }
-  
+
   try {
     await PrayerAlarmService.init();
   } catch (e) {
