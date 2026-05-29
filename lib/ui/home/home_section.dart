@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../../providers/settings_provider.dart';
 import 'package:flutter_linkify/flutter_linkify.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart' as intl;
@@ -397,13 +395,6 @@ class _HomeSectionState extends State<HomeSection> {
 
   @override
   Widget build(BuildContext context) {
-    final providerWatch = context.watch<SettingsProvider>();
-    final fontSizeFactor = providerWatch.fontSizeFactor;
-    final uiOpacity = providerWatch.uiOpacity;
-    final cardColor = providerWatch.cardColor;
-    final visibility = providerWatch.homeVisibility;
-    final hijriAdjustment = providerWatch.hijriAdjustment;
-
     _loadDailyDua();
     final nowTime = DateTime.now();
     bool isDayTime = false;
@@ -734,13 +725,6 @@ class _HomeSmallCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final providerWatch = context.watch<SettingsProvider>();
-    final fontSizeFactor = providerWatch.fontSizeFactor;
-    final uiOpacity = providerWatch.uiOpacity;
-    final cardColor = providerWatch.cardColor;
-    final visibility = providerWatch.homeVisibility;
-    final hijriAdjustment = providerWatch.hijriAdjustment;
-
     final bool isDarkCard = cardColor.computeLuminance() < 0.5;
     final Color textColor = isDarkCard ? Colors.white : Colors.black87;
     return InkWell(
@@ -888,13 +872,6 @@ class _ClockWidgetState extends State<_ClockWidget> {
 
   @override
   Widget build(BuildContext context) {
-    final providerWatch = context.watch<SettingsProvider>();
-    final fontSizeFactor = providerWatch.fontSizeFactor;
-    final uiOpacity = providerWatch.uiOpacity;
-    final cardColor = providerWatch.cardColor;
-    final visibility = providerWatch.homeVisibility;
-    final hijriAdjustment = providerWatch.hijriAdjustment;
-
     return RepaintBoundary(
       child: ValueListenableBuilder<String>(
         valueListenable: _timeNotifier,

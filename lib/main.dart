@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'providers/settings_provider.dart';
 import 'dart:convert';
 import 'package:firebase_core/firebase_core.dart';
 import 'services/analytics_service.dart';
@@ -83,9 +81,7 @@ class IslamicPatternPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant IslamicPatternPainter oldDelegate) {
-    return oldDelegate.color != color;
-  }
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
 IconData getMaterialIcon(String? name) {
@@ -173,66 +169,239 @@ Future<void> _initializeHeavyServices() async {
   } catch (e) {
     debugPrint("Firebase initialization error: $e");
   }
-  await Hive.initFlutter();
-  await FavoritesService.instance.init();
-  runApp(ChangeNotifierProvider(create: (_) => SettingsProvider()..init(), child: const AlDhakereenApp()));
+
+  try {
+    await PrayerAlarmService.init();
+  } catch (e) {
+    debugPrint("PrayerAlarmService initialization error: $e");
+  }
 }
 
-class AlDhakereenApp extends StatelessWidget {
+class AlDhakereenApp extends StatefulWidget {
   const AlDhakereenApp({super.key});
+  @override
+  State<AlDhakereenApp> createState() => _AlDhakereenAppState();
+}
+
+class _AlDhakereenAppState extends State<AlDhakereenApp> {
+  ThemeMode _themeMode = ThemeMode.light;
+  double _fontSizeFactor = 1.0;
+  Color _primaryColor = Colors.blue;
+  double _uiOpacity = 1.0;
+  String? _backgroundImagePath;
+  String? _selectedBase64Bg;
+  Color _cardColor = Colors.white;
+  Map<String, bool> _homeVisibility = {};
+  int _hijriAdjustment = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSettings();
+    DataManager.dbNotifier.addListener(_loadSettings);
+  }
+
+  @override
+  void dispose() {
+    DataManager.dbNotifier.removeListener(_loadSettings);
+    super.dispose();
+  }
+
+  Future<void> _loadSettings() async {
+    final prefs = await SharedPreferences.getInstance();
+    final dbSettings = DataManager.getSettings();
+    int defaultPrimary =
+        int.tryParse(dbSettings['primary_color'] ?? '0xFF2196F3') ?? 0xFF2196F3;
+    int defaultCard =
+        int.tryParse(dbSettings['card_color'] ?? '0xFFFFFFFF') ?? 0xFFFFFFFF;
+    if (mounted) {
+      setState(() {
+        _themeMode = (prefs.getString('theme') ?? 'light') == 'light'
+            ? ThemeMode.light
+            : ThemeMode.dark;
+        _fontSizeFactor = prefs.getDouble('fontSize') ?? 1.0;
+        _primaryColor = Color(prefs.getInt('primaryColor') ?? defaultPrimary);
+        _uiOpacity = prefs.getDouble('uiOpacity') ??
+            (dbSettings['ui_opacity']?.toDouble() ?? 1.0);
+        _backgroundImagePath = prefs.getString('backgroundImage');
+        _selectedBase64Bg = prefs.getString('custom_bg_base64_selected');
+        _cardColor = Color(prefs.getInt('cardColor') ?? defaultCard);
+        _hijriAdjustment = prefs.getInt('hijri.date.correction.value') ?? 0;
+        final sections = DataManager.getSections();
+        final allSections = {
+          ...sections,
+          'hadith': {},
+          'names_allah': {},
+          'adhkar': {},
+        };
+        _homeVisibility = {};
+        allSections.forEach((key, value) {
+          _homeVisibility[key] =
+              prefs.getBool('vis_$key') ?? (value['visible_home'] ?? true);
+        });
+        _homeVisibility['inspiration'] = prefs.getBool('vis_inspiration') ??
+            (dbSettings['show_inspiration'] ?? true);
+        _homeVisibility['day_dua'] = prefs.getBool('vis_day_dua') ?? true;
+      });
+    }
+  }
+
+  Future<void> _saveSetting(String key, dynamic value) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (value is String) prefs.setString(key, value);
+    if (value is double) prefs.setDouble(key, value);
+    if (value is int) prefs.setInt(key, value);
+  }
+
+  void _toggleTheme() {
+    setState(() {
+      _themeMode =
+          _themeMode == ThemeMode.light ? ThemeMode.dark : ThemeMode.light;
+      _saveSetting('theme', _themeMode == ThemeMode.light ? 'light' : 'dark');
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    final provider = context.watch<SettingsProvider>();
-
     return MaterialApp(
       title: 'الذاكرين',
       debugShowCheckedModeBanner: false,
+      builder: (context, child) => MediaQuery(
+        data: MediaQuery.of(context).copyWith(
+          textScaler:
+              MediaQuery.of(context).textScaler, // Respects system font scaling
+        ),
+        child: child!,
+      ),
+      navigatorObservers: [routeObserver],
+      locale: const Locale('ar', 'SA'),
+      supportedLocales: const [Locale('ar', 'SA')],
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      supportedLocales: const [Locale('ar', 'SA')],
-      locale: const Locale('ar', 'SA'),
-      builder: (context, child) {
-        return Directionality(
-          textDirection: TextDirection.rtl,
-          child: child!,
-        );
-      },
       theme: ThemeData(
-        appBarTheme: AppBarTheme(backgroundColor: provider.primaryColor.withValues(alpha: provider.uiOpacity)),
         useMaterial3: true,
         textTheme: ThemeData.light().textTheme.apply(fontFamily: 'Cairo'),
         colorScheme: ColorScheme.fromSeed(
-          seedColor: provider.primaryColor,
+          seedColor: _primaryColor,
           brightness: Brightness.light,
-          primary: provider.primaryColor,
+          primary: _primaryColor,
         ),
         scaffoldBackgroundColor: const Color(0xFFFDFBF7),
-        cardColor: provider.cardColor,
       ),
       darkTheme: ThemeData(
-        appBarTheme: AppBarTheme(backgroundColor: provider.primaryColor.withValues(alpha: provider.uiOpacity)),
         useMaterial3: true,
         textTheme: ThemeData.dark().textTheme.apply(fontFamily: 'Cairo'),
         colorScheme: ColorScheme.fromSeed(
-          seedColor: provider.primaryColor,
+          seedColor: _primaryColor,
           brightness: Brightness.dark,
-          primary: provider.primaryColor,
+          primary: _primaryColor,
         ),
         scaffoldBackgroundColor: const Color(0xFF0A0A0A),
-        cardColor: provider.cardColor,
       ),
-      themeMode: provider.themeMode,
-      home: const SplashScreen(),
+      themeMode: _themeMode,
+      home: SplashScreen(
+        themeMode: _themeMode,
+        fontSizeFactor: _fontSizeFactor,
+        onFontSizeChanged: (val) {
+          setState(() => _fontSizeFactor = val);
+          _saveSetting('fontSize', val);
+        },
+        onThemeToggled: _toggleTheme,
+        primaryColor: _primaryColor,
+        onColorChanged: (c) {
+          setState(() => _primaryColor = c);
+          _saveSetting('primaryColor', c.toARGB32());
+        },
+        uiOpacity: _uiOpacity,
+        onOpacityChanged: (val) {
+          setState(() => _uiOpacity = val);
+          _saveSetting('uiOpacity', val);
+        },
+        backgroundImagePath: _backgroundImagePath,
+        selectedBase64Bg: _selectedBase64Bg,
+        onBackgroundImageChanged: (path) async {
+          final prefs = await SharedPreferences.getInstance();
+          setState(() {
+            _backgroundImagePath = path;
+            if (path != null) {
+              _selectedBase64Bg = null;
+              prefs.remove('custom_bg_base64_selected');
+            }
+          });
+          if (path != null) _saveSetting('backgroundImage', path);
+        },
+        onBase64BgChanged: (base64) {
+          setState(() {
+            _selectedBase64Bg = base64;
+            _backgroundImagePath = null;
+          });
+        },
+        cardColor: _cardColor,
+        onCardColorChanged: (c) {
+          setState(() => _cardColor = c);
+          _saveSetting('cardColor', c.toARGB32());
+        },
+        homeVisibility: _homeVisibility,
+        onVisibilityChanged: (key, val) async {
+          setState(() => _homeVisibility[key] = val);
+          final prefs = await SharedPreferences.getInstance();
+          prefs.setBool('vis_$key', val);
+        },
+        hijriAdjustment: _hijriAdjustment,
+        onHijriAdjustmentChanged: (val) async {
+          setState(() => _hijriAdjustment = val);
+          final prefs = await SharedPreferences.getInstance();
+          prefs.setInt('hijri.date.correction.value', val);
+        },
+      ),
     );
   }
 }
 
 class MainScaffold extends StatefulWidget {
-  const MainScaffold({super.key});
+  final ThemeMode themeMode;
+  final double fontSizeFactor;
+  final ValueChanged<double> onFontSizeChanged;
+  final VoidCallback onThemeToggled;
+  final Color primaryColor;
+  final ValueChanged<Color> onColorChanged;
+  final double uiOpacity;
+  final ValueChanged<double> onOpacityChanged;
+  final String? backgroundImagePath;
+  final String? selectedBase64Bg;
+  final ValueChanged<String?> onBackgroundImageChanged;
+  final ValueChanged<String?> onBase64BgChanged;
+  final Color cardColor;
+  final ValueChanged<Color> onCardColorChanged;
+  final Map<String, bool> homeVisibility;
+  final void Function(String, bool) onVisibilityChanged;
+  final int hijriAdjustment;
+  final ValueChanged<int> onHijriAdjustmentChanged;
+
+  const MainScaffold({
+    super.key,
+    required this.themeMode,
+    required this.fontSizeFactor,
+    required this.onFontSizeChanged,
+    required this.onThemeToggled,
+    required this.primaryColor,
+    required this.onColorChanged,
+    required this.uiOpacity,
+    required this.onOpacityChanged,
+    required this.backgroundImagePath,
+    required this.selectedBase64Bg,
+    required this.onBackgroundImageChanged,
+    required this.onBase64BgChanged,
+    required this.cardColor,
+    required this.onCardColorChanged,
+    required this.homeVisibility,
+    required this.onVisibilityChanged,
+    required this.hijriAdjustment,
+    required this.onHijriAdjustmentChanged,
+  });
 
   @override
   State<MainScaffold> createState() => _MainScaffoldState();
@@ -293,7 +462,7 @@ class _MainScaffoldState extends State<MainScaffold> {
                 )
                     .appBarTheme
                     .backgroundColor
-                    ?.withValues(alpha: context.watch<SettingsProvider>().uiOpacity),
+                    ?.withValues(alpha: widget.uiOpacity),
                 leading: Builder(
                   builder: (context) => IconButton(
                     icon: const Icon(Icons.notes),
@@ -308,7 +477,8 @@ class _MainScaffoldState extends State<MainScaffold> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => SearchScreen().fontSizeFactor),
+                          builder: (context) => SearchScreen(
+                              fontSizeFactor: widget.fontSizeFactor),
                         ),
                       );
                     },
@@ -326,17 +496,17 @@ class _MainScaffoldState extends State<MainScaffold> {
               body: Stack(
                 children: [
                   if (_currentSection == 'home') ...[
-                    if (context.watch<SettingsProvider>().backgroundImagePath != null)
+                    if (widget.backgroundImagePath != null)
                       Positioned.fill(
                         child: Image.file(
-                          File(context.watch<SettingsProvider>().backgroundImagePath!),
+                          File(widget.backgroundImagePath!),
                           fit: BoxFit.cover,
                         ),
                       ),
-                    if (context.watch<SettingsProvider>().backgroundImagePath == null)
+                    if (widget.backgroundImagePath == null)
                       Positioned.fill(
                         child: buildImage(
-                          context.watch<SettingsProvider>().selectedBase64Bg ??
+                          widget.selectedBase64Bg ??
                               settings['custom_bg_base64']?.toString() ??
                               settings['bg_image']?.toString(),
                           fit: BoxFit.cover,
@@ -367,22 +537,41 @@ class _MainScaffoldState extends State<MainScaffold> {
   }
 
   Widget _buildBody(BuildContext context) {
-    final providerWatch = context.watch<SettingsProvider>();
-    final providerRead = context.read<SettingsProvider>();
     switch (_currentSection) {
       case 'home':
         return HomeSection(
           key: const ValueKey('home'),
+          fontSizeFactor: widget.fontSizeFactor,
+          uiOpacity: widget.uiOpacity,
+          cardColor: widget.cardColor,
+          visibility: widget.homeVisibility,
+          hijriAdjustment: widget.hijriAdjustment,
           onPrayerCardTap: () => _navigateTo('prayer_times'),
         );
       case 'settings':
         return SettingsSection(
           key: const ValueKey('settings'),
+          onThemeToggled: widget.onThemeToggled,
+          primaryColor: widget.primaryColor,
+          onColorChanged: widget.onColorChanged,
+          uiOpacity: widget.uiOpacity,
+          onOpacityChanged: widget.onOpacityChanged,
+          onBackgroundImageChanged: widget.onBackgroundImageChanged,
+          onBase64BgChanged: widget.onBase64BgChanged,
+          backgroundImagePath: widget.backgroundImagePath,
+          cardColor: widget.cardColor,
+          onCardColorChanged: widget.onCardColorChanged,
+          visibility: widget.homeVisibility,
+          onVisibilityChanged: widget.onVisibilityChanged,
+          hijriAdjustment: widget.hijriAdjustment,
+          onHijriAdjustmentChanged: widget.onHijriAdjustmentChanged,
         );
 
       case 'favorites':
         return FavoritesSection(
           key: const ValueKey('favorites'),
+          fontSizeFactor: widget.fontSizeFactor,
+          uiOpacity: widget.uiOpacity,
         );
       case 'about':
         return const AboutSection(key: ValueKey('about'));
@@ -409,21 +598,24 @@ class _MainScaffoldState extends State<MainScaffold> {
             'duas_general',
             'duas_salawat',
           ],
-
+          fontSizeFactor: widget.fontSizeFactor,
+          uiOpacity: widget.uiOpacity,
         );
       case 'visits':
         return TabbedSection(
           key: const ValueKey('visits'),
           tabs: const ['زيارات الأيام', 'الزيارات العامة'],
           sectionKeys: const ['visits_days', 'visits_general'],
-
+          fontSizeFactor: widget.fontSizeFactor,
+          uiOpacity: widget.uiOpacity,
         );
       case 'adhkar':
         return TabbedSection(
           key: const ValueKey('adhkar'),
           tabs: const ['المناجاة', 'التسبيحات'],
           sectionKeys: const ['adhkar_munajat', 'adhkar_tasbihs'],
-
+          fontSizeFactor: widget.fontSizeFactor,
+          uiOpacity: widget.uiOpacity,
         );
       case 'imam_ali':
         final imamAliCats = DataManager.getItems('imam_ali');
@@ -435,7 +627,8 @@ class _MainScaffoldState extends State<MainScaffold> {
           tabs: imamAliCats.map((c) => c['title'].toString()).toList(),
           sectionKeys:
               imamAliCats.map((c) => 'imam_ali_cat_${c['id']}').toList(),
-
+          fontSizeFactor: widget.fontSizeFactor,
+          uiOpacity: widget.uiOpacity,
         );
       case 'dreams':
         final dreamsCats = DataManager.getItems('dreams');
@@ -446,7 +639,8 @@ class _MainScaffoldState extends State<MainScaffold> {
           key: const ValueKey('dreams'),
           tabs: dreamsCats.map((c) => c['title'].toString()).toList(),
           sectionKeys: dreamsCats.map((c) => 'dreams_cat_${c['id']}').toList(),
-
+          fontSizeFactor: widget.fontSizeFactor,
+          uiOpacity: widget.uiOpacity,
         );
       case 'fatawa':
         final fatawaCats = DataManager.getItems('fatawa');
@@ -457,14 +651,16 @@ class _MainScaffoldState extends State<MainScaffold> {
           key: const ValueKey('fatawa'),
           tabs: fatawaCats.map((c) => c['title'].toString()).toList(),
           sectionKeys: fatawaCats.map((c) => 'fatawa_cat_${c['id']}').toList(),
-
+          fontSizeFactor: widget.fontSizeFactor,
+          uiOpacity: widget.uiOpacity,
         );
       case 'prophets_stories':
         return DynamicListSection(
           key: const ValueKey('prophets_stories'),
           title: _getSectionTitle('prophets_stories'),
           sectionKey: 'prophets_stories',
-
+          fontSizeFactor: widget.fontSizeFactor,
+          uiOpacity: widget.uiOpacity,
         );
       case 'istikhara':
         return IstikharaScreen(key: const ValueKey('istikhara'));
@@ -473,7 +669,8 @@ class _MainScaffoldState extends State<MainScaffold> {
           key: ValueKey(_currentSection),
           title: _getSectionTitle(_currentSection),
           sectionKey: _currentSection,
-
+          fontSizeFactor: widget.fontSizeFactor,
+          uiOpacity: widget.uiOpacity,
         );
     }
   }

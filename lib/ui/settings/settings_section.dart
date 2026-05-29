@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../../providers/settings_provider.dart';
 import 'package:flutter_linkify/flutter_linkify.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart' as intl;
@@ -31,29 +29,41 @@ import 'package:path_provider/path_provider.dart';
 
 
 class SettingsSection extends StatelessWidget {
-  const SettingsSection({super.key});
+  final VoidCallback onThemeToggled;
+  final Color primaryColor;
+  final ValueChanged<Color> onColorChanged;
+  final double uiOpacity;
+  final ValueChanged<double> onOpacityChanged;
+  final ValueChanged<String?> onBackgroundImageChanged;
+  final ValueChanged<String?> onBase64BgChanged;
+  final String? backgroundImagePath;
+  final Color cardColor;
+  final ValueChanged<Color> onCardColorChanged;
+  final Map<String, bool> visibility;
+  final int hijriAdjustment;
+  final void Function(String, bool) onVisibilityChanged;
+  final ValueChanged<int> onHijriAdjustmentChanged;
+
+  const SettingsSection({
+    super.key,
+    required this.onThemeToggled,
+    required this.primaryColor,
+    required this.onColorChanged,
+    required this.uiOpacity,
+    required this.onOpacityChanged,
+    required this.onBackgroundImageChanged,
+    required this.onBase64BgChanged,
+    required this.backgroundImagePath,
+    required this.cardColor,
+    required this.onCardColorChanged,
+    required this.visibility,
+    required this.hijriAdjustment,
+    required this.onVisibilityChanged,
+    required this.onHijriAdjustmentChanged,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final providerWatch = context.watch<SettingsProvider>();
-    final providerRead = context.read<SettingsProvider>();
-
-    final primaryColor = providerWatch.primaryColor;
-    final uiOpacity = providerWatch.uiOpacity;
-    final backgroundImagePath = providerWatch.backgroundImagePath;
-    final cardColor = providerWatch.cardColor;
-    final visibility = providerWatch.homeVisibility;
-    final hijriAdjustment = providerWatch.hijriAdjustment;
-
-    final onThemeToggled = providerRead.toggleTheme;
-    final onColorChanged = providerRead.setPrimaryColor;
-    final onOpacityChanged = providerRead.setUiOpacity;
-    final onBackgroundImageChanged = providerRead.setBackgroundImagePath;
-    final onBase64BgChanged = providerRead.setSelectedBase64Bg;
-    final onCardColorChanged = providerRead.setCardColor;
-    final onVisibilityChanged = providerRead.setHomeSectionVisibility;
-    final onHijriAdjustmentChanged = providerRead.setHijriAdjustment;
-
     final comfortColors = [
       Colors.white,
       const Color(0xFFFDF5E6),
@@ -310,7 +320,7 @@ class SettingsSection extends StatelessWidget {
   Widget _visToggle(String key, String title) => SwitchListTile(
         title: Text(title, style: const TextStyle(fontSize: 14)),
         value: visibility[key] ?? true,
-        onChanged: (v) => providerRead.setHomeSectionVisibility(key, v),
+        onChanged: (v) => onVisibilityChanged(key, v),
         dense: true,
       );
 }
