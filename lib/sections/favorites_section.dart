@@ -1,5 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/settings_provider.dart';
 import '../ui/reader/reader_page.dart';
 import 'package:file_picker/file_picker.dart';
 import 'dart:io';
@@ -9,13 +11,9 @@ import '../models/favorite_item.dart';
 import '../main.dart' show ReaderPage;
 
 class FavoritesSection extends StatefulWidget {
-  final double fontSizeFactor;
-  final double uiOpacity;
 
   const FavoritesSection({
     super.key,
-    required this.fontSizeFactor,
-    required this.uiOpacity,
   });
 
   @override
@@ -180,7 +178,7 @@ class _FavoritesSectionState extends State<FavoritesSection> {
         return Container(
           margin: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
           decoration: BoxDecoration(
-            color: Theme.of(context).cardColor.withValues(alpha: widget.uiOpacity * 0.8),
+            color: Theme.of(context).cardColor.withValues(alpha: context.watch<SettingsProvider>().uiOpacity * 0.8),
             borderRadius: BorderRadius.circular(15),
             border: Border.all(
               color: Theme.of(context).colorScheme.primary,
@@ -206,7 +204,7 @@ class _FavoritesSectionState extends State<FavoritesSection> {
                   builder: (c) => ReaderPage(
                     title: item.title,
                     content: item.content,
-                    fontSizeFactor: widget.fontSizeFactor,
+                    fontSizeFactor: context.watch<SettingsProvider>().fontSizeFactor,
                   ),
                 ),
               );
@@ -231,7 +229,7 @@ class _FavoritesSectionState extends State<FavoritesSection> {
         return Container(
           margin: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
           decoration: BoxDecoration(
-            color: Theme.of(context).cardColor.withValues(alpha: widget.uiOpacity * 0.8),
+            color: Theme.of(context).cardColor.withValues(alpha: context.watch<SettingsProvider>().uiOpacity * 0.8),
             borderRadius: BorderRadius.circular(15),
             border: Border.all(
               color: Theme.of(context).colorScheme.primary,
@@ -275,7 +273,7 @@ class _FavoritesSectionState extends State<FavoritesSection> {
                   builder: (c) => ReaderPage(
                     title: item.title,
                     content: item.content,
-                    fontSizeFactor: widget.fontSizeFactor,
+                    fontSizeFactor: context.watch<SettingsProvider>().fontSizeFactor,
                   ),
                 ),
               );

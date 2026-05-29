@@ -34,7 +34,11 @@ import '../../main.dart'; // For AlDhakereenApp globals
 class DynamicListSection extends StatefulWidget {
   final String title;
   final String sectionKey;
-  const DynamicListSection({super.key, required this.title, required this.sectionKey});
+  const DynamicListSection({
+    super.key,
+    required this.title,
+    required this.sectionKey,
+  });
 
   @override
   State<DynamicListSection> createState() => _DynamicListSectionState();
