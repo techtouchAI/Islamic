@@ -39,6 +39,8 @@ dependencies:
   font_awesome_flutter: ^11.0.0
   dio: ^5.9.2
   open_file: ^3.5.11
+  provider: ^6.1.5+1
+  package_info_plus: ^9.0.1
 
 dev_dependencies:
   lottie: ^3.3.3

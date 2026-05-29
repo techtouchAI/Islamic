@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../providers/settings_provider.dart';
 import '../../ui/reader/reader_page.dart';
 import '../controllers/search_controller.dart' as app_search;
 import '../controllers/search_notifier.dart';
@@ -12,9 +14,7 @@ import '../../services/quran_service.dart';
 import '../../main.dart'; // To access ReaderPage
 
 class SearchScreen extends StatefulWidget {
-  final double fontSizeFactor;
-
-  const SearchScreen({super.key, required this.fontSizeFactor});
+  const SearchScreen({super.key});
 
   @override
   State<SearchScreen> createState() => _SearchScreenState();
@@ -311,7 +311,7 @@ class _SearchScreenState extends State<SearchScreen> {
                 isQuran: true,
                 surahName: item.title,
                 ayahs: ayahs,
-                fontSizeFactor: widget.fontSizeFactor,
+                fontSizeFactor: context.watch<SettingsProvider>().fontSizeFactor,
               ),
             ),
           );
@@ -326,7 +326,7 @@ class _SearchScreenState extends State<SearchScreen> {
             title: item.title,
             content: item.content,
             isImamAli: isImamAli,
-            fontSizeFactor: widget.fontSizeFactor,
+            fontSizeFactor: context.watch<SettingsProvider>().fontSizeFactor,
           ),
         ),
       );
