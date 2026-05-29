@@ -1,49 +1,40 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_linkify/flutter_linkify.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+
+
 import 'package:intl/intl.dart' as intl;
-import 'package:intl/date_symbol_data_local.dart';
+
 import 'dart:async';
 import 'dart:ui';
 import 'dart:math';
-import 'package:share_plus/share_plus.dart';
-import 'package:flutter/services.dart';
-import 'package:url_launcher/url_launcher.dart';
+
+
+
 import 'package:hijri/hijri_calendar.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:image_picker/image_picker.dart';
-import 'dart:io';
+
+
+
 
 import '../../data/data_manager.dart';
 import '../../data/daily_duas.dart';
 import '../../utils/string_extensions.dart';
 import '../../services/prayer_times_service.dart';
 import '../../services/quran_service.dart';
-import '../../services/favorites_service.dart';
-import '../../models/favorite_item.dart';
-import '../../sections/html_content_renderer.dart';
-import '../../ui/calendar/hijri_calendar_screen.dart';
+
+
+
+
 import '../reader/reader_page.dart';
-import '../../ui/qibla/qibla_screen.dart';
+
 import '../../presentation/screens/istikhara_screen.dart';
-import '../../main.dart'; // For AlDhakereenApp globals
+import 'package:provider/provider.dart';
+import '../../providers/settings_provider.dart';
 
 
 class HomeSection extends StatefulWidget {
-  final double fontSizeFactor;
-  final double uiOpacity;
-  final Color cardColor;
-  final Map<String, bool> visibility;
-  final int hijriAdjustment;
   final VoidCallback? onPrayerCardTap;
   const HomeSection({
     super.key,
-    required this.fontSizeFactor,
-    required this.uiOpacity,
-    required this.cardColor,
-    required this.visibility,
-    required this.hijriAdjustment,
     this.onPrayerCardTap,
   });
 
@@ -73,7 +64,7 @@ class _HomeSectionState extends State<HomeSection> {
   static Map<String, dynamic>? _cachedInspirationDua;
   static Map<String, dynamic>? _cachedDayDua;
 
-  late Map<String, dynamic> items;
+  Map<String, dynamic> items = {};
   Map<String, dynamic>? _inspirationDua;
   Map<String, dynamic>? _dayDua;
   Map<String, DateTime>? _prayerTimes;
@@ -83,7 +74,10 @@ class _HomeSectionState extends State<HomeSection> {
   @override
   void initState() {
     super.initState();
-    _refreshItems();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _refreshItems(context.read<SettingsProvider>());
+      if (mounted) setState(() {});
+    });
     _initPrayerTimes();
     _prayerTimer = Timer.periodic(
       const Duration(minutes: 1),
@@ -144,12 +138,12 @@ class _HomeSectionState extends State<HomeSection> {
     return map[key] ?? key;
   }
 
-  void _refreshItems() {
+  void _refreshItems(SettingsProvider settingsProvider) {
     final random = Random();
     final sections = DataManager.getSections();
     items = {};
     sections.forEach((key, value) {
-      if (widget.visibility[key] ?? true) {
+      if (settingsProvider.homeVisibility[key] ?? true) {
         String fetchKey = key;
         if (key == 'visits') fetchKey = 'visits_general';
         if (key == 'duas') fetchKey = 'duas_general';
@@ -241,7 +235,7 @@ class _HomeSectionState extends State<HomeSection> {
     return list[r.nextInt(list.length)];
   }
 
-  Widget _buildSpecialCard(
+  Widget _buildSpecialCard(SettingsProvider settingsProvider,
     BuildContext context,
     String tag,
     Map<String, dynamic> data,
@@ -255,7 +249,7 @@ class _HomeSectionState extends State<HomeSection> {
           builder: (c) => ReaderPage(
             title: data['title'].toString(),
             content: data['content'].toString(),
-            fontSizeFactor: widget.fontSizeFactor,
+            fontSizeFactor: settingsProvider.fontSizeFactor,
           ),
         ),
       ),
@@ -281,8 +275,8 @@ class _HomeSectionState extends State<HomeSection> {
                   filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
                   child: Container(
                     decoration: BoxDecoration(
-                      color: widget.cardColor.withValues(
-                        alpha: widget.uiOpacity * 0.8,
+                      color: settingsProvider.cardColor.withValues(
+                        alpha: settingsProvider.uiOpacity * 0.8,
                       ),
                       borderRadius: BorderRadius.circular(25),
                       border: Border.all(
@@ -395,6 +389,7 @@ class _HomeSectionState extends State<HomeSection> {
 
   @override
   Widget build(BuildContext context) {
+    final settingsProvider = context.watch<SettingsProvider>();
     _loadDailyDua();
     final nowTime = DateTime.now();
     bool isDayTime = false;
@@ -410,8 +405,8 @@ class _HomeSectionState extends State<HomeSection> {
 
     final now = DateTime.now();
     final hijri = HijriCalendar.fromDate(
-        DateTime.now().add(Duration(days: widget.hijriAdjustment)));
-    final bool isDarkCard = widget.cardColor.computeLuminance() < 0.5;
+        DateTime.now().add(Duration(days: settingsProvider.hijriAdjustment)));
+    final bool isDarkCard = settingsProvider.cardColor.computeLuminance() < 0.5;
     final Color textColor = isDarkCard ? Colors.white : Colors.black87;
     // Process items into rows for lazy loading
     List<List<MapEntry<String, dynamic>>> groupedRows = [];
@@ -456,8 +451,8 @@ class _HomeSectionState extends State<HomeSection> {
                     elevation: 10,
                     clipBehavior: Clip.antiAlias,
                     color: Theme.of(context).brightness == Brightness.dark
-                        ? Colors.white.withValues(alpha: widget.uiOpacity)
-                        : Colors.black.withValues(alpha: widget.uiOpacity),
+                        ? Colors.white.withValues(alpha: settingsProvider.uiOpacity)
+                        : Colors.black.withValues(alpha: settingsProvider.uiOpacity),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(25),
                       side: BorderSide(
@@ -555,19 +550,21 @@ class _HomeSectionState extends State<HomeSection> {
                   ),
                 ),
                 const SizedBox(height: 20),
-                if (_dayDua != null && (widget.visibility['day_dua'] ?? true))
+                if (_dayDua != null && (settingsProvider.homeVisibility['day_dua'] ?? true))
                   _buildSpecialCard(
+                    settingsProvider,
                     context,
                     'دعاء اليوم',
                     _dayDua!,
                     textColor,
                     Icons.calendar_today,
                   ),
-                if (_dayDua != null && (widget.visibility['day_dua'] ?? true))
+                if (_dayDua != null && (settingsProvider.homeVisibility['day_dua'] ?? true))
                   const SizedBox(height: 15),
                 if (_inspirationDua != null &&
-                    (widget.visibility['inspiration'] ?? true))
+                    (settingsProvider.homeVisibility['inspiration'] ?? true))
                   _buildSpecialCard(
+                    settingsProvider,
                     context,
                     'إلهام اليوم',
                     _inspirationDua!,
@@ -610,8 +607,8 @@ class _HomeSectionState extends State<HomeSection> {
                               true
                           ? 'قال أمير المؤمنين علي (عليه السلام)'
                           : e.value['title'].toString(),
-                      uiOpacity: widget.uiOpacity,
-                      cardColor: widget.cardColor,
+                      uiOpacity: settingsProvider.uiOpacity,
+                      cardColor: settingsProvider.cardColor,
                       watermarkPath: getExactWatermark(e.key),
                       isFullWidth: e.key.contains('علي') ||
                           e.key.contains('موسوعة') ||
@@ -650,7 +647,7 @@ class _HomeSectionState extends State<HomeSection> {
                             builder: (c) => ReaderPage(
                               title: e.value['title'].toString(),
                               content: contentStr,
-                              fontSizeFactor: widget.fontSizeFactor,
+                              fontSizeFactor: settingsProvider.fontSizeFactor,
                               isQuran: isQuran,
                               isImamAli: sectionKey.contains('imam_ali'),
                               surahName: isQuran

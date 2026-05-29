@@ -1,69 +1,41 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_linkify/flutter_linkify.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:intl/intl.dart' as intl;
-import 'package:intl/date_symbol_data_local.dart';
-import 'dart:async';
-import 'dart:math';
-import 'package:share_plus/share_plus.dart';
-import 'package:flutter/services.dart';
-import 'package:url_launcher/url_launcher.dart';
-import 'package:hijri/hijri_calendar.dart';
-import 'package:geolocator/geolocator.dart';
+
+
+
+
+
+
+
+
+
+
+
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 
 import '../../data/data_manager.dart';
-import '../../utils/string_extensions.dart';
-import '../../services/prayer_times_service.dart';
-import '../../services/quran_service.dart';
-import '../../services/favorites_service.dart';
-import '../../models/favorite_item.dart';
-import '../../sections/html_content_renderer.dart';
-import '../../ui/calendar/hijri_calendar_screen.dart';
-import '../../ui/qibla/qibla_screen.dart';
-import '../../presentation/screens/istikhara_screen.dart';
-import '../../main.dart'; // For AlDhakereenApp globals
+
+
+
+
+
+
+
+
+
+import 'package:provider/provider.dart';
+import '../../providers/settings_provider.dart';
+import '../../main.dart';
 import 'package:path_provider/path_provider.dart';
 
 
 class SettingsSection extends StatelessWidget {
-  final VoidCallback onThemeToggled;
-  final Color primaryColor;
-  final ValueChanged<Color> onColorChanged;
-  final double uiOpacity;
-  final ValueChanged<double> onOpacityChanged;
-  final ValueChanged<String?> onBackgroundImageChanged;
-  final ValueChanged<String?> onBase64BgChanged;
-  final String? backgroundImagePath;
-  final Color cardColor;
-  final ValueChanged<Color> onCardColorChanged;
-  final Map<String, bool> visibility;
-  final int hijriAdjustment;
-  final void Function(String, bool) onVisibilityChanged;
-  final ValueChanged<int> onHijriAdjustmentChanged;
-
-  const SettingsSection({
-    super.key,
-    required this.onThemeToggled,
-    required this.primaryColor,
-    required this.onColorChanged,
-    required this.uiOpacity,
-    required this.onOpacityChanged,
-    required this.onBackgroundImageChanged,
-    required this.onBase64BgChanged,
-    required this.backgroundImagePath,
-    required this.cardColor,
-    required this.onCardColorChanged,
-    required this.visibility,
-    required this.hijriAdjustment,
-    required this.onVisibilityChanged,
-    required this.onHijriAdjustmentChanged,
-  });
+  const SettingsSection({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final settingsProvider = context.watch<SettingsProvider>();
     final comfortColors = [
       Colors.white,
       const Color(0xFFFDF5E6),
@@ -91,16 +63,16 @@ class SettingsSection extends StatelessWidget {
                     IconButton(
                       icon: const Icon(Icons.remove_circle_outline),
                       onPressed: () =>
-                          onHijriAdjustmentChanged(hijriAdjustment - 1),
+                          settingsProvider.setHijriAdjustment(settingsProvider.hijriAdjustment - 1),
                     ),
                     Text(
-                      '$hijriAdjustment',
+                      '${settingsProvider.hijriAdjustment}',
                       style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                     IconButton(
                       icon: const Icon(Icons.add_circle_outline),
                       onPressed: () =>
-                          onHijriAdjustmentChanged(hijriAdjustment + 1),
+                          settingsProvider.setHijriAdjustment(settingsProvider.hijriAdjustment + 1),
                     ),
                   ],
                 ),
@@ -111,7 +83,7 @@ class SettingsSection extends StatelessWidget {
             SwitchListTile(
               title: const Text('الوضع الليلي'),
               value: Theme.of(context).brightness == Brightness.dark,
-              onChanged: (v) => onThemeToggled(),
+              onChanged: (v) => settingsProvider.toggleTheme(),
               contentPadding: EdgeInsets.zero,
             ),
             const SizedBox(height: 10),
@@ -134,11 +106,11 @@ class SettingsSection extends StatelessWidget {
               ]
                   .map(
                     (c) => GestureDetector(
-                      onTap: () => onColorChanged(c),
+                      onTap: () => settingsProvider.setPrimaryColor(c),
                       child: CircleAvatar(
                         backgroundColor: c,
                         radius: 18,
-                        child: primaryColor.toARGB32() == c.toARGB32()
+                        child: settingsProvider.primaryColor.toARGB32() == c.toARGB32()
                             ? const Icon(
                                 Icons.check,
                                 color: Colors.white,
@@ -163,11 +135,11 @@ class SettingsSection extends StatelessWidget {
               children: comfortColors
                   .map(
                     (c) => GestureDetector(
-                      onTap: () => onCardColorChanged(c),
+                      onTap: () => settingsProvider.setCardColor(c),
                       child: CircleAvatar(
                         backgroundColor: c,
                         radius: 18,
-                        child: cardColor.toARGB32() == c.toARGB32()
+                        child: settingsProvider.cardColor.toARGB32() == c.toARGB32()
                             ? Icon(
                                 Icons.check,
                                 color: c.computeLuminance() > 0.5
@@ -187,11 +159,11 @@ class SettingsSection extends StatelessWidget {
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
             ),
             Slider(
-              value: uiOpacity,
+              value: settingsProvider.uiOpacity,
               min: 0.3,
               max: 1.0,
-              onChanged: onOpacityChanged,
-              activeColor: primaryColor,
+              onChanged: settingsProvider.setUiOpacity,
+              activeColor: settingsProvider.primaryColor,
             ),
           ]),
           _buildGroup(context, 'الوسائط', [
@@ -202,7 +174,7 @@ class SettingsSection extends StatelessWidget {
               onTap: () async {
                 final picker = ImagePicker();
                 final img = await picker.pickImage(source: ImageSource.gallery);
-                if (img != null) onBackgroundImageChanged(img.path);
+                if (img != null) settingsProvider.setBackgroundImagePath(img.path);
               },
             ),
             const SizedBox(height: 10),
@@ -214,15 +186,15 @@ class SettingsSection extends StatelessWidget {
             SizedBox(
               height: 100,
               child: _buildBgGallery(context, (img) {
-                onBase64BgChanged(img);
+                settingsProvider.setBase64Bg(img);
               }),
             ),
           ]),
           _buildGroup(context, 'إعدادات ظهور الصفحة الرئيسية', [
-            _visToggle('inspiration', 'إلهام اليوم'),
-            _visToggle('day_dua', 'دعاء اليوم'),
+            _visToggle(context, 'inspiration', 'إلهام اليوم'),
+            _visToggle(context, 'day_dua', 'دعاء اليوم'),
             ...DataManager.getSections().entries.map(
-                  (e) => _visToggle(e.key, e.value['title'].toString()),
+                  (e) => _visToggle(context, e.key, e.value['title'].toString()),
                 ),
           ]),
         ],
@@ -234,6 +206,7 @@ class SettingsSection extends StatelessWidget {
     BuildContext context,
     ValueChanged<String> onSelected,
   ) {
+    final settingsProvider = context.watch<SettingsProvider>();
     final gallery =
         (DataManager.getSettings()['bg_gallery'] as List<dynamic>? ?? []);
     if (gallery.isEmpty)
@@ -262,7 +235,7 @@ class SettingsSection extends StatelessWidget {
                }
             } else { filePath = img; }
             final prefs = await SharedPreferences.getInstance();
-            await prefs.setString('custom_bg_base64_selected', filePath!);
+            await prefs.setString('custom_bg_base64_selected', filePath);
             await prefs.remove('backgroundImage');
             onSelected(filePath);
           },
@@ -271,7 +244,7 @@ class SettingsSection extends StatelessWidget {
             width: 80,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: primaryColor, width: 1),
+              border: Border.all(color: settingsProvider.primaryColor, width: 1),
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(9),
@@ -288,6 +261,7 @@ class SettingsSection extends StatelessWidget {
     String title,
     List<Widget> children,
   ) {
+    final settingsProvider = context.watch<SettingsProvider>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
@@ -297,7 +271,7 @@ class SettingsSection extends StatelessWidget {
       decoration: BoxDecoration(
         color: isDark ? Colors.black : Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: primaryColor, width: 2),
+        border: Border.all(color: settingsProvider.primaryColor, width: 2),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -305,7 +279,7 @@ class SettingsSection extends StatelessWidget {
           Text(
             title,
             style: TextStyle(
-              color: primaryColor,
+              color: settingsProvider.primaryColor,
               fontWeight: FontWeight.bold,
               fontSize: 15,
             ),
@@ -317,10 +291,13 @@ class SettingsSection extends StatelessWidget {
     );
   }
 
-  Widget _visToggle(String key, String title) => SwitchListTile(
+  Widget _visToggle(BuildContext context, String key, String title) {
+    final settingsProvider = context.watch<SettingsProvider>();
+    return SwitchListTile(
         title: Text(title, style: const TextStyle(fontSize: 14)),
-        value: visibility[key] ?? true,
-        onChanged: (v) => onVisibilityChanged(key, v),
+        value: settingsProvider.homeVisibility[key] ?? true,
+        onChanged: (v) => settingsProvider.setHomeVisibility(key, v),
         dense: true,
       );
+  }
 }
