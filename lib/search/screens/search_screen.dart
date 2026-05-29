@@ -14,8 +14,7 @@ import '../../services/quran_service.dart';
 import '../../main.dart'; // To access ReaderPage
 
 class SearchScreen extends StatefulWidget {
-
-  const SearchScreen({super.key,});
+  const SearchScreen({super.key});
 
   @override
   State<SearchScreen> createState() => _SearchScreenState();

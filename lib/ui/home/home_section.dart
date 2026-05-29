@@ -33,9 +33,19 @@ import '../../main.dart'; // For AlDhakereenApp globals
 
 
 class HomeSection extends StatefulWidget {
+  final double fontSizeFactor;
+  final double uiOpacity;
+  final Color cardColor;
+  final Map<String, bool> visibility;
+  final int hijriAdjustment;
   final VoidCallback? onPrayerCardTap;
   const HomeSection({
     super.key,
+    required this.fontSizeFactor,
+    required this.uiOpacity,
+    required this.cardColor,
+    required this.visibility,
+    required this.hijriAdjustment,
     this.onPrayerCardTap,
   });
 
@@ -141,7 +151,7 @@ class _HomeSectionState extends State<HomeSection> {
     final sections = DataManager.getSections();
     items = {};
     sections.forEach((key, value) {
-      if (context.watch<SettingsProvider>().homeVisibility[key] ?? true) {
+      if (widget.visibility[key] ?? true) {
         String fetchKey = key;
         if (key == 'visits') fetchKey = 'visits_general';
         if (key == 'duas') fetchKey = 'duas_general';
@@ -247,7 +257,7 @@ class _HomeSectionState extends State<HomeSection> {
           builder: (c) => ReaderPage(
             title: data['title'].toString(),
             content: data['content'].toString(),
-            fontSizeFactor: context.watch<SettingsProvider>().fontSizeFactor,
+            fontSizeFactor: widget.fontSizeFactor,
           ),
         ),
       ),
@@ -273,8 +283,8 @@ class _HomeSectionState extends State<HomeSection> {
                   filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
                   child: Container(
                     decoration: BoxDecoration(
-                      color: context.watch<SettingsProvider>().cardColor.withValues(
-                        alpha: context.watch<SettingsProvider>().uiOpacity * 0.8,
+                      color: widget.cardColor.withValues(
+                        alpha: widget.uiOpacity * 0.8,
                       ),
                       borderRadius: BorderRadius.circular(25),
                       border: Border.all(
@@ -387,6 +397,13 @@ class _HomeSectionState extends State<HomeSection> {
 
   @override
   Widget build(BuildContext context) {
+    final providerWatch = context.watch<SettingsProvider>();
+    final fontSizeFactor = providerWatch.fontSizeFactor;
+    final uiOpacity = providerWatch.uiOpacity;
+    final cardColor = providerWatch.cardColor;
+    final visibility = providerWatch.homeVisibility;
+    final hijriAdjustment = providerWatch.hijriAdjustment;
+
     _loadDailyDua();
     final nowTime = DateTime.now();
     bool isDayTime = false;
@@ -402,8 +419,8 @@ class _HomeSectionState extends State<HomeSection> {
 
     final now = DateTime.now();
     final hijri = HijriCalendar.fromDate(
-        DateTime.now().add(Duration(days: context.watch<SettingsProvider>().hijriAdjustment)));
-    final bool isDarkCard = context.watch<SettingsProvider>().cardColor.computeLuminance() < 0.5;
+        DateTime.now().add(Duration(days: widget.hijriAdjustment)));
+    final bool isDarkCard = widget.cardColor.computeLuminance() < 0.5;
     final Color textColor = isDarkCard ? Colors.white : Colors.black87;
     // Process items into rows for lazy loading
     List<List<MapEntry<String, dynamic>>> groupedRows = [];
@@ -448,8 +465,8 @@ class _HomeSectionState extends State<HomeSection> {
                     elevation: 10,
                     clipBehavior: Clip.antiAlias,
                     color: Theme.of(context).brightness == Brightness.dark
-                        ? Colors.white.withValues(alpha: context.watch<SettingsProvider>().uiOpacity)
-                        : Colors.black.withValues(alpha: context.watch<SettingsProvider>().uiOpacity),
+                        ? Colors.white.withValues(alpha: widget.uiOpacity)
+                        : Colors.black.withValues(alpha: widget.uiOpacity),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(25),
                       side: BorderSide(
@@ -547,7 +564,7 @@ class _HomeSectionState extends State<HomeSection> {
                   ),
                 ),
                 const SizedBox(height: 20),
-                if (_dayDua != null && (context.watch<SettingsProvider>().homeVisibility['day_dua'] ?? true))
+                if (_dayDua != null && (widget.visibility['day_dua'] ?? true))
                   _buildSpecialCard(
                     context,
                     'دعاء اليوم',
@@ -555,10 +572,10 @@ class _HomeSectionState extends State<HomeSection> {
                     textColor,
                     Icons.calendar_today,
                   ),
-                if (_dayDua != null && (context.watch<SettingsProvider>().homeVisibility['day_dua'] ?? true))
+                if (_dayDua != null && (widget.visibility['day_dua'] ?? true))
                   const SizedBox(height: 15),
                 if (_inspirationDua != null &&
-                    (context.watch<SettingsProvider>().homeVisibility['inspiration'] ?? true))
+                    (widget.visibility['inspiration'] ?? true))
                   _buildSpecialCard(
                     context,
                     'إلهام اليوم',
@@ -602,8 +619,8 @@ class _HomeSectionState extends State<HomeSection> {
                               true
                           ? 'قال أمير المؤمنين علي (عليه السلام)'
                           : e.value['title'].toString(),
-
-
+                      uiOpacity: widget.uiOpacity,
+                      cardColor: widget.cardColor,
                       watermarkPath: getExactWatermark(e.key),
                       isFullWidth: e.key.contains('علي') ||
                           e.key.contains('موسوعة') ||
@@ -642,7 +659,7 @@ class _HomeSectionState extends State<HomeSection> {
                             builder: (c) => ReaderPage(
                               title: e.value['title'].toString(),
                               content: contentStr,
-                              fontSizeFactor: context.watch<SettingsProvider>().fontSizeFactor,
+                              fontSizeFactor: widget.fontSizeFactor,
                               isQuran: isQuran,
                               isImamAli: sectionKey.contains('imam_ali'),
                               surahName: isQuran
@@ -700,12 +717,16 @@ class _HomeSectionState extends State<HomeSection> {
 
 class _HomeSmallCard extends StatelessWidget {
   final String tag, title;
+  final double uiOpacity;
+  final Color cardColor;
   final String watermarkPath;
   final bool isFullWidth;
   final VoidCallback onTap;
   const _HomeSmallCard({
     required this.tag,
     required this.title,
+    required this.uiOpacity,
+    required this.cardColor,
     required this.watermarkPath,
     this.isFullWidth = false,
     required this.onTap,
@@ -713,7 +734,14 @@ class _HomeSmallCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bool isDarkCard = context.watch<SettingsProvider>().cardColor.computeLuminance() < 0.5;
+    final providerWatch = context.watch<SettingsProvider>();
+    final fontSizeFactor = providerWatch.fontSizeFactor;
+    final uiOpacity = providerWatch.uiOpacity;
+    final cardColor = providerWatch.cardColor;
+    final visibility = providerWatch.homeVisibility;
+    final hijriAdjustment = providerWatch.hijriAdjustment;
+
+    final bool isDarkCard = cardColor.computeLuminance() < 0.5;
     final Color textColor = isDarkCard ? Colors.white : Colors.black87;
     return InkWell(
       onTap: onTap,
@@ -744,7 +772,7 @@ class _HomeSmallCard extends StatelessWidget {
                   filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
                   child: Container(
                     decoration: BoxDecoration(
-                      color: context.watch<SettingsProvider>().cardColor.withValues(alpha: context.watch<SettingsProvider>().uiOpacity * 0.8),
+                      color: cardColor.withValues(alpha: uiOpacity * 0.8),
                       border: Border.all(
                         color: Theme.of(context).colorScheme.primary,
                         width: 2,
@@ -860,6 +888,13 @@ class _ClockWidgetState extends State<_ClockWidget> {
 
   @override
   Widget build(BuildContext context) {
+    final providerWatch = context.watch<SettingsProvider>();
+    final fontSizeFactor = providerWatch.fontSizeFactor;
+    final uiOpacity = providerWatch.uiOpacity;
+    final cardColor = providerWatch.cardColor;
+    final visibility = providerWatch.homeVisibility;
+    final hijriAdjustment = providerWatch.hijriAdjustment;
+
     return RepaintBoundary(
       child: ValueListenableBuilder<String>(
         valueListenable: _timeNotifier,

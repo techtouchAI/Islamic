@@ -1,206 +1,283 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/settings_provider.dart';
+import 'package:flutter_linkify/flutter_linkify.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:intl/intl.dart' as intl;
+import 'package:intl/date_symbol_data_local.dart';
+import 'dart:async';
+import 'dart:math';
+import 'package:share_plus/share_plus.dart';
+import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:hijri/hijri_calendar.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:image_picker/image_picker.dart';
+import 'dart:io';
+
 import '../../data/data_manager.dart';
+import '../../utils/string_extensions.dart';
+import '../../services/prayer_times_service.dart';
+import '../../services/quran_service.dart';
+import '../../services/favorites_service.dart';
+import '../../models/favorite_item.dart';
+import '../../sections/html_content_renderer.dart';
+import '../../ui/calendar/hijri_calendar_screen.dart';
+import '../../ui/qibla/qibla_screen.dart';
+import '../../presentation/screens/istikhara_screen.dart';
+import '../../main.dart'; // For AlDhakereenApp globals
+import 'package:path_provider/path_provider.dart';
+
 
 class SettingsSection extends StatelessWidget {
   const SettingsSection({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final provider = context.watch<SettingsProvider>();
-    final isDark = provider.themeMode == ThemeMode.dark;
+    final providerWatch = context.watch<SettingsProvider>();
+    final providerRead = context.read<SettingsProvider>();
 
+    final primaryColor = providerWatch.primaryColor;
+    final uiOpacity = providerWatch.uiOpacity;
+    final backgroundImagePath = providerWatch.backgroundImagePath;
+    final cardColor = providerWatch.cardColor;
+    final visibility = providerWatch.homeVisibility;
+    final hijriAdjustment = providerWatch.hijriAdjustment;
+
+    final onThemeToggled = providerRead.toggleTheme;
+    final onColorChanged = providerRead.setPrimaryColor;
+    final onOpacityChanged = providerRead.setUiOpacity;
+    final onBackgroundImageChanged = providerRead.setBackgroundImagePath;
+    final onBase64BgChanged = providerRead.setSelectedBase64Bg;
+    final onCardColorChanged = providerRead.setCardColor;
+    final onVisibilityChanged = providerRead.setHomeSectionVisibility;
+    final onHijriAdjustmentChanged = providerRead.setHijriAdjustment;
+
+    final comfortColors = [
+      Colors.white,
+      const Color(0xFFFDF5E6),
+      const Color(0xFFF5F5DC),
+      const Color(0xFFE0EEE0),
+      const Color(0xFFE6E6FA),
+      const Color(0xFF2C2C2C),
+      Colors.black,
+    ];
     return SingleChildScrollView(
-      physics: const BouncingScrollPhysics(),
       padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildGroup(
-            context,
-            'المظهر',
-            [
-              _buildSwitchItem(
-                context,
-                title: 'الوضع الليلي',
-                value: isDark,
-                onChanged: (v) => context.read<SettingsProvider>().toggleTheme(),
-              ),
-              const Divider(),
-              _buildSliderItem(
-                context,
-                title: 'حجم الخط',
-                value: provider.fontSizeFactor,
-                min: 0.8,
-                max: 2.0,
-                onChanged: (v) => context.read<SettingsProvider>().setFontSizeFactor(v),
-              ),
-              const Divider(),
-              _buildSliderItem(
-                context,
-                title: 'شفافية الواجهة',
-                value: provider.uiOpacity,
-                min: 0.1,
-                max: 1.0,
-                onChanged: (v) => context.read<SettingsProvider>().setUiOpacity(v),
-              ),
-              const Divider(),
-              const SizedBox(height: 10),
-              const Text('اللون الأساسي:'),
-              const SizedBox(height: 10),
-              Wrap(
-                spacing: 10,
-                children: [
-                  Colors.blue,
-                  Colors.green,
-                  Colors.teal,
-                  Colors.red,
-                  Colors.orange,
-                  Colors.purple,
-                  Colors.brown,
-                ]
-                    .map(
-                      (c) => GestureDetector(
-                        onTap: () => context.read<SettingsProvider>().setPrimaryColor(c),
-                        child: CircleAvatar(
-                          backgroundColor: c,
-                          radius: 18,
-                          child: provider.primaryColor.toARGB32() == c.toARGB32()
-                              ? const Icon(
-                                  Icons.check,
-                                  color: Colors.white,
-                                  size: 16,
-                                )
-                              : null,
-                        ),
-                      ),
-                    )
-                    .toList(),
-              ),
-              const SizedBox(height: 20),
-              const Text('لون البطاقات:'),
-              const SizedBox(height: 10),
-              Wrap(
-                spacing: 10,
-                children: [
-                  Colors.white,
-                  const Color(0xFFF0F0F0),
-                  const Color(0xFFE8F5E9),
-                  const Color(0xFFFFF3E0),
-                  const Color(0xFFE3F2FD),
-                  const Color(0xFFF3E5F5),
-                  const Color(0xFFFCE4EC),
-                  const Color(0xFFFFF8E1),
-                  Colors.black,
-                  const Color(0xFF1E1E1E),
-                ]
-                    .map(
-                      (c) => GestureDetector(
-                        onTap: () => context.read<SettingsProvider>().setCardColor(c),
-                        child: Container(
-                          width: 36,
-                          height: 36,
-                          decoration: BoxDecoration(
-                            color: c,
-                            shape: BoxShape.circle,
-                            border: Border.all(color: Colors.grey, width: 1),
-                          ),
-                          child: provider.cardColor.toARGB32() == c.toARGB32()
-                              ? Icon(
-                                  Icons.check,
-                                  color: c.computeLuminance() > 0.5 ? Colors.black : Colors.white,
-                                  size: 16,
-                                )
-                              : null,
-                        ),
-                      ),
-                    )
-                    .toList(),
-              ),
-            ],
-          ),
-          _buildGroup(
-            context,
-            'الخلفية',
-            [
-              ListTile(
-                title: const Text('اختيار خلفية من الجهاز'),
-                trailing: const Icon(Icons.image),
-                onTap: () async {
-                  final picker = ImagePicker();
-                  final image = await picker.pickImage(source: ImageSource.gallery);
-                  if (image != null) {
-                    context.read<SettingsProvider>().setBackgroundImagePath(image.path);
-                    context.read<SettingsProvider>().setSelectedBase64Bg(null);
-                  }
-                },
-              ),
-              if (provider.backgroundImagePath != null || provider.selectedBase64Bg != null) ...[
-                const Divider(),
-                ListTile(
-                  title: const Text('إزالة الخلفية المخصصة', style: TextStyle(color: Colors.red)),
-                  trailing: const Icon(Icons.delete, color: Colors.red),
-                  onTap: () {
-                    context.read<SettingsProvider>().setBackgroundImagePath(null);
-                    context.read<SettingsProvider>().setSelectedBase64Bg(null);
-                  },
+          _buildGroup(context, 'التقويم الهجري', [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'تعديل التاريخ الهجري:',
+                  style: TextStyle(fontSize: 14),
+                ),
+                Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.remove_circle_outline),
+                      onPressed: () =>
+                          onHijriAdjustmentChanged(hijriAdjustment - 1),
+                    ),
+                    Text(
+                      '$hijriAdjustment',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.add_circle_outline),
+                      onPressed: () =>
+                          onHijriAdjustmentChanged(hijriAdjustment + 1),
+                    ),
+                  ],
                 ),
               ],
-            ],
-          ),
-          _buildGroup(
-            context,
-            'أقسام الشاشة الرئيسية',
-            [
-              _visToggle(context, 'show_daily_dua', 'دعاء اليوم'),
-              _visToggle(context, 'show_today_visit', 'زيارة اليوم'),
-              _visToggle(context, 'show_today_prayer', 'صلاة اليوم'),
-              _visToggle(context, 'show_taqeebat', 'تعقيبات الصلاة'),
-              _visToggle(context, 'show_quran_shortcuts', 'اختصارات السور'),
-            ],
-          ),
-          _buildGroup(
-            context,
-            'التقويم',
-            [
-              Row(
-                children: [
-                  const Expanded(child: Text('تعديل التاريخ الهجري:')),
-                  IconButton(
-                    icon: const Icon(Icons.remove_circle_outline),
-                    onPressed: () {
-                      context.read<SettingsProvider>().setHijriAdjustment(provider.hijriAdjustment - 1);
-                    },
-                  ),
-                  Text(
-                    '${provider.hijriAdjustment > 0 ? '+' : ''}${provider.hijriAdjustment}',
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.add_circle_outline),
-                    onPressed: () {
-                      context.read<SettingsProvider>().setHijriAdjustment(provider.hijriAdjustment + 1);
-                    },
-                  ),
-                ],
-              ),
-              const Center(
-                child: Text(
-                  'يتم تطبيقه على تقويم الصفحة الرئيسية فقط',
-                  style: TextStyle(fontSize: 12, color: Colors.grey),
+            ),
+          ]),
+          _buildGroup(context, 'المظهر العام', [
+            SwitchListTile(
+              title: const Text('الوضع الليلي'),
+              value: Theme.of(context).brightness == Brightness.dark,
+              onChanged: (v) => onThemeToggled(),
+              contentPadding: EdgeInsets.zero,
+            ),
+            const SizedBox(height: 10),
+            const Text(
+              'لون سمة التطبيق',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+            ),
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 12,
+              children: [
+                Colors.blue,
+                Colors.red,
+                Colors.black,
+                Colors.cyan,
+                const Color(0xFFD4AF37),
+                Colors.blueGrey,
+                Colors.teal,
+                Colors.brown,
+              ]
+                  .map(
+                    (c) => GestureDetector(
+                      onTap: () => onColorChanged(c),
+                      child: CircleAvatar(
+                        backgroundColor: c,
+                        radius: 18,
+                        child: primaryColor.toARGB32() == c.toARGB32()
+                            ? const Icon(
+                                Icons.check,
+                                color: Colors.white,
+                                size: 16,
+                              )
+                            : null,
+                      ),
+                    ),
+                  )
+                  .toList(),
+            ),
+          ]),
+          _buildGroup(context, 'تخصيص البطاقات', [
+            const Text(
+              'لون خلفية البطاقات (مريح للعين)',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+            ),
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 10,
+              runSpacing: 10,
+              children: comfortColors
+                  .map(
+                    (c) => GestureDetector(
+                      onTap: () => onCardColorChanged(c),
+                      child: CircleAvatar(
+                        backgroundColor: c,
+                        radius: 18,
+                        child: cardColor.toARGB32() == c.toARGB32()
+                            ? Icon(
+                                Icons.check,
+                                color: c.computeLuminance() > 0.5
+                                    ? Colors.black
+                                    : Colors.white,
+                                size: 16,
+                              )
+                            : null,
+                      ),
+                    ),
+                  )
+                  .toList(),
+            ),
+            const SizedBox(height: 15),
+            const Text(
+              'مستوى الشفافية',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+            ),
+            Slider(
+              value: uiOpacity,
+              min: 0.3,
+              max: 1.0,
+              onChanged: onOpacityChanged,
+              activeColor: primaryColor,
+            ),
+          ]),
+          _buildGroup(context, 'الوسائط', [
+            ListTile(
+              title: const Text('اختيار خلفية مخصصة'),
+              trailing: const Icon(Icons.image_search),
+              contentPadding: EdgeInsets.zero,
+              onTap: () async {
+                final picker = ImagePicker();
+                final img = await picker.pickImage(source: ImageSource.gallery);
+                if (img != null) onBackgroundImageChanged(img.path);
+              },
+            ),
+            const SizedBox(height: 10),
+            const Text(
+              'معرض الخلفيات المرفوعة',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+            ),
+            const SizedBox(height: 10),
+            SizedBox(
+              height: 100,
+              child: _buildBgGallery(context, (img) {
+                onBase64BgChanged(img);
+              }),
+            ),
+          ]),
+          _buildGroup(context, 'إعدادات ظهور الصفحة الرئيسية', [
+            _visToggle('inspiration', 'إلهام اليوم'),
+            _visToggle('day_dua', 'دعاء اليوم'),
+            ...DataManager.getSections().entries.map(
+                  (e) => _visToggle(e.key, e.value['title'].toString()),
                 ),
-              ),
-            ],
-          ),
+          ]),
         ],
       ),
     );
   }
 
-  Widget _buildGroup(BuildContext context, String title, List<Widget> children) {
-    final provider = context.watch<SettingsProvider>();
+  Widget _buildBgGallery(
+    BuildContext context,
+    ValueChanged<String> onSelected,
+  ) {
+    final gallery =
+        (DataManager.getSettings()['bg_gallery'] as List<dynamic>? ?? []);
+    if (gallery.isEmpty)
+      return const Center(
+        child: Text('المعرض فارغ', style: TextStyle(fontSize: 12)),
+      );
+    return ListView.builder(
+      scrollDirection: Axis.horizontal,
+      itemCount: gallery.length,
+      itemBuilder: (context, index) {
+        final img = gallery[index].toString();
+        return GestureDetector(
+          onTap: () async {
+            // Create physical file instead of storing base64 string
+            String? filePath;
+            if (img.startsWith('data:image')) {
+               try {
+                  final bytes = Uri.parse(img).data!.contentAsBytes();
+                  final dir = await getTemporaryDirectory();
+                  final file = File('${dir.path}/custom_bg_${img.hashCode}.png');
+                  await file.writeAsBytes(bytes);
+                  filePath = file.path;
+               } catch (e) {
+                  debugPrint("Error saving base64 image: $e");
+                  filePath = img; // Fallback
+               }
+            } else { filePath = img; }
+            final prefs = await SharedPreferences.getInstance();
+            await prefs.setString('custom_bg_base64_selected', filePath!);
+            await prefs.remove('backgroundImage');
+            onSelected(filePath);
+          },
+          child: Container(
+            margin: const EdgeInsets.only(left: 10),
+            width: 80,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: primaryColor, width: 1),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(9),
+              child: buildImage(img, fit: BoxFit.cover),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildGroup(
+    BuildContext context,
+    String title,
+    List<Widget> children,
+  ) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
@@ -210,7 +287,7 @@ class SettingsSection extends StatelessWidget {
       decoration: BoxDecoration(
         color: isDark ? Colors.black : Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: provider.primaryColor, width: 2),
+        border: Border.all(color: primaryColor, width: 2),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -218,53 +295,22 @@ class SettingsSection extends StatelessWidget {
           Text(
             title,
             style: TextStyle(
-              color: provider.primaryColor,
+              color: primaryColor,
               fontWeight: FontWeight.bold,
               fontSize: 15,
             ),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 15),
           ...children,
         ],
       ),
     );
   }
 
-  Widget _buildSwitchItem(BuildContext context, {required String title, required bool value, required ValueChanged<bool> onChanged}) {
-    final provider = context.watch<SettingsProvider>();
-    return SwitchListTile(
-      title: Text(title, style: const TextStyle(fontSize: 14)),
-      value: value,
-      onChanged: onChanged,
-      activeColor: provider.primaryColor,
-      dense: true,
-    );
-  }
-
-  Widget _buildSliderItem(BuildContext context, {required String title, required double value, required double min, required double max, required ValueChanged<double> onChanged}) {
-    final provider = context.watch<SettingsProvider>();
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(title, style: const TextStyle(fontSize: 14)),
-        Slider(
-          value: value,
-          min: min,
-          max: max,
-          activeColor: provider.primaryColor,
-          onChanged: onChanged,
-        ),
-      ],
-    );
-  }
-
-  Widget _visToggle(BuildContext context, String key, String title) {
-    final provider = context.watch<SettingsProvider>();
-    return SwitchListTile(
-      title: Text(title, style: const TextStyle(fontSize: 14)),
-      value: provider.homeVisibility[key] ?? true,
-      onChanged: (v) => context.read<SettingsProvider>().setHomeSectionVisibility(key, v),
-      dense: true,
-    );
-  }
+  Widget _visToggle(String key, String title) => SwitchListTile(
+        title: Text(title, style: const TextStyle(fontSize: 14)),
+        value: visibility[key] ?? true,
+        onChanged: (v) => providerRead.setHomeSectionVisibility(key, v),
+        dense: true,
+      );
 }
