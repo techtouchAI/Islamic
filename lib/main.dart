@@ -1,25 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'providers/settings_provider.dart';
-import 'dart:convert';
+
 import 'package:firebase_core/firebase_core.dart';
 import 'services/analytics_service.dart';
-import 'sections/html_content_renderer.dart';
 
 import 'sections/tasbih_section.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'dart:ui';
-import 'package:flutter/gestures.dart';
-import 'package:hijri/hijri_calendar.dart';
 
 import 'data/data_manager.dart';
-import 'services/quran_service.dart';
-import 'services/favorites_service.dart';
 import 'services/prayer_alarm_service.dart';
 import 'sections/favorites_section.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'services/search_engine.dart';
 import 'search/screens/search_screen.dart';
 import 'ui/calendar/hijri_calendar_screen.dart';
 import 'ui/qibla/qibla_screen.dart';
@@ -30,15 +22,11 @@ import 'ui/home/home_section.dart';
 import 'ui/about/about_section.dart';
 import 'ui/tabs/tabbed_section.dart';
 import 'ui/dynamic_list/dynamic_list_section.dart';
-import 'ui/reader/reader_page.dart';
 import 'ui/settings/settings_section.dart';
 import 'ui/prayer_times/prayer_times_section.dart';
 
 import 'dart:math';
-import 'dart:typed_data';
 import 'dart:io';
-import 'package:intl/date_symbol_data_local.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'presentation/screens/istikhara_screen.dart';
 
 class IslamicPatternPainter extends CustomPainter {
@@ -49,37 +37,41 @@ class IslamicPatternPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
       ..color = color.withValues(alpha: 0.1)
-      ..strokeWidth = 0.8
-      ..style = PaintingStyle.stroke;
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.0;
 
-    const double step = 60;
-    for (double x = 0; x < size.width + step; x += step) {
-      for (double y = 0; y < size.height + step; y += step) {
-        final center = Offset(x, y);
-        _drawStar(canvas, center, step * 0.4, paint);
-        canvas.drawCircle(center, step * 0.1, paint);
-      }
-    }
-  }
-
-  void _drawStar(Canvas canvas, Offset center, double radius, Paint paint) {
     final path = Path();
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = min(size.width, size.height) * 0.8;
+
     for (int i = 0; i < 8; i++) {
-      double angle = (i * 45) * pi / 180;
-      double x = center.dx + radius * cos(angle);
-      double y = center.dy + radius * sin(angle);
-      if (i == 0) {
-        path.moveTo(x, y);
-      } else {
-        path.lineTo(x, y);
-      }
-      double nextAngle = (i * 45 + 22.5) * pi / 180;
-      double nextX = center.dx + (radius * 0.7) * cos(nextAngle);
-      double nextY = center.dy + (radius * 0.7) * sin(nextAngle);
-      path.lineTo(nextX, nextY);
+      final angle = i * pi / 4;
+      final x = center.dx + radius * cos(angle);
+      final y = center.dy + radius * sin(angle);
+
+      path.moveTo(center.dx, center.dy);
+      path.lineTo(x, y);
+
+      final nextAngle = (i + 1) * pi / 4;
+      final nextX = center.dx + radius * cos(nextAngle);
+      final nextY = center.dy + radius * sin(nextAngle);
+      path.quadraticBezierTo(
+        center.dx + radius * 1.5 * cos((angle + nextAngle) / 2),
+        center.dy + radius * 1.5 * sin((angle + nextAngle) / 2),
+        nextX,
+        nextY,
+      );
     }
-    path.close();
+
     canvas.drawPath(path, paint);
+
+    for (int i = 0; i < 4; i++) {
+      canvas.drawCircle(
+        center,
+        radius * (0.2 + i * 0.2),
+        paint,
+      );
+    }
   }
 
   @override
@@ -88,64 +80,19 @@ class IslamicPatternPainter extends CustomPainter {
   }
 }
 
-IconData getMaterialIcon(String? name) {
-  const iconMap = {
-    'menu_book': Icons.menu_book,
-    'auto_stories': Icons.auto_stories,
-    'place': Icons.place,
-    'translate': Icons.translate,
-    'bedtime': Icons.bedtime,
-    'history_edu': Icons.history_edu,
-    'shield': Icons.shield,
-    'favorite': Icons.favorite,
-    'home': Icons.home,
-    'settings': Icons.settings,
-    'person': Icons.person,
-    'notes': Icons.notes,
-    'notifications': Icons.notifications,
-    'search': Icons.search,
-    'mosque': Icons.mosque,
-    'book': Icons.book,
-    'event': Icons.event,
-    'info': Icons.info,
-    'group': Icons.group,
-    'verified': Icons.verified,
-    'code': Icons.code,
-  };
-  return iconMap[name] ?? Icons.star;
-}
-
-Widget buildImage(String? path, {double? height, BoxFit fit = BoxFit.contain}) {
-  if (path == null || path.isEmpty) {
-    return const SizedBox();
-  }
-  if (path.startsWith('/')) { // Check for local file path
-      final file = File(path);
-      if (file.existsSync()) return Image.file(file, height: height, fit: fit);
-  }
-  if (path.startsWith('data:image')) {
-    try {
-      final bytes = Uri.parse(path).data!.contentAsBytes();
-      return Image.memory(
-        Uint8List.fromList(bytes),
-        height: height,
-        fit: fit,
-        errorBuilder: (c, e, s) => const Icon(Icons.broken_image),
-      );
-    } catch (e) {
-      return const Icon(Icons.broken_image);
-    }
-  }
-  if (path.startsWith('https://')) {
-    return Image.network(
-      path,
+Widget buildImage(String? base64String,
+    {double? width, double? height, BoxFit fit = BoxFit.cover}) {
+  if (base64String == null || base64String.isEmpty) {
+    return Image.asset(
+      'assets/images/Mscreen/2.png',
+      width: width,
       height: height,
       fit: fit,
-      errorBuilder: (c, e, s) => const Icon(Icons.error),
     );
   }
   return Image.asset(
-    path,
+    base64String,
+    width: width,
     height: height,
     fit: fit,
     errorBuilder: (c, e, s) => const Icon(Icons.image_not_supported),
@@ -154,19 +101,8 @@ Widget buildImage(String? path, {double? height, BoxFit fit = BoxFit.contain}) {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
-  // تهيئة قواعد البيانات المحلية السريعة أولاً ليتمكن التطبيق من الإقلاع فوراً
-  await Hive.initFlutter();
-  await FavoritesService.instance.init();
+  await PrayerAlarmService.init();
 
-  // تشغيل الواجهة فوراً لإنهاء شاشة الانتظار
-  runApp(const AlDhakereenApp());
-
-  // تهيئة الخدمات الثقيلة في الخلفية لتجنب تجميد الشاشة
-  _initializeHeavyServices();
-}
-
-Future<void> _initializeHeavyServices() async {
   try {
     await Firebase.initializeApp();
     AnalyticsService().checkAndRegisterDevice();
@@ -174,7 +110,6 @@ Future<void> _initializeHeavyServices() async {
     debugPrint("Firebase initialization error: $e");
   }
   await Hive.initFlutter();
-  await FavoritesService.instance.init();
   runApp(ChangeNotifierProvider(create: (_) => SettingsProvider()..init(), child: const AlDhakereenApp()));
 }
 
@@ -262,6 +197,8 @@ class _MainScaffoldState extends State<MainScaffold> {
   @override
   Widget build(BuildContext context) {
     final bool isSubPage = _history.length > 1;
+    final provider = context.watch<SettingsProvider>();
+
     return ValueListenableBuilder<int>(
         valueListenable: DataManager.dbNotifier,
         builder: (context, _, __) {
@@ -293,7 +230,7 @@ class _MainScaffoldState extends State<MainScaffold> {
                 )
                     .appBarTheme
                     .backgroundColor
-                    ?.withValues(alpha: context.watch<SettingsProvider>().uiOpacity),
+                    ?.withValues(alpha: provider.uiOpacity),
                 leading: Builder(
                   builder: (context) => IconButton(
                     icon: const Icon(Icons.notes),
@@ -308,7 +245,7 @@ class _MainScaffoldState extends State<MainScaffold> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => SearchScreen().fontSizeFactor),
+                          builder: (context) => const SearchScreen(),
                         ),
                       );
                     },
@@ -326,17 +263,17 @@ class _MainScaffoldState extends State<MainScaffold> {
               body: Stack(
                 children: [
                   if (_currentSection == 'home') ...[
-                    if (context.watch<SettingsProvider>().backgroundImagePath != null)
+                    if (provider.backgroundImagePath != null)
                       Positioned.fill(
                         child: Image.file(
-                          File(context.watch<SettingsProvider>().backgroundImagePath!),
+                          File(provider.backgroundImagePath!),
                           fit: BoxFit.cover,
                         ),
                       ),
-                    if (context.watch<SettingsProvider>().backgroundImagePath == null)
+                    if (provider.backgroundImagePath == null)
                       Positioned.fill(
                         child: buildImage(
-                          context.watch<SettingsProvider>().selectedBase64Bg ??
+                          provider.selectedBase64Bg ??
                               settings['custom_bg_base64']?.toString() ??
                               settings['bg_image']?.toString(),
                           fit: BoxFit.cover,
@@ -367,8 +304,6 @@ class _MainScaffoldState extends State<MainScaffold> {
   }
 
   Widget _buildBody(BuildContext context) {
-    final providerWatch = context.watch<SettingsProvider>();
-    final providerRead = context.read<SettingsProvider>();
     switch (_currentSection) {
       case 'home':
         return HomeSection(
@@ -376,13 +311,13 @@ class _MainScaffoldState extends State<MainScaffold> {
           onPrayerCardTap: () => _navigateTo('prayer_times'),
         );
       case 'settings':
-        return SettingsSection(
-          key: const ValueKey('settings'),
+        return const SettingsSection(
+          key: ValueKey('settings'),
         );
 
       case 'favorites':
-        return FavoritesSection(
-          key: const ValueKey('favorites'),
+        return const FavoritesSection(
+          key: ValueKey('favorites'),
         );
       case 'about':
         return const AboutSection(key: ValueKey('about'));
@@ -395,35 +330,32 @@ class _MainScaffoldState extends State<MainScaffold> {
       case 'calendar':
         return HijriCalendarScreen();
       case 'duas':
-        return TabbedSection(
-          key: const ValueKey('duas'),
-          tabs: const [
+        return const TabbedSection(
+          key: ValueKey('duas'),
+          tabs: [
             'أدعية الأيام',
             'تعقيبات الصلاة',
             'الأدعية العامة',
             'الصلوات',
           ],
-          sectionKeys: const [
+          sectionKeys: [
             'duas_days',
             'duas_taqeebat',
             'duas_general',
             'duas_salawat',
           ],
-
         );
       case 'visits':
-        return TabbedSection(
-          key: const ValueKey('visits'),
-          tabs: const ['زيارات الأيام', 'الزيارات العامة'],
-          sectionKeys: const ['visits_days', 'visits_general'],
-
+        return const TabbedSection(
+          key: ValueKey('visits'),
+          tabs: ['زيارات الأيام', 'الزيارات العامة'],
+          sectionKeys: ['visits_days', 'visits_general'],
         );
       case 'adhkar':
-        return TabbedSection(
-          key: const ValueKey('adhkar'),
-          tabs: const ['المناجاة', 'التسبيحات'],
-          sectionKeys: const ['adhkar_munajat', 'adhkar_tasbihs'],
-
+        return const TabbedSection(
+          key: ValueKey('adhkar'),
+          tabs: ['المناجاة', 'التسبيحات'],
+          sectionKeys: ['adhkar_munajat', 'adhkar_tasbihs'],
         );
       case 'imam_ali':
         final imamAliCats = DataManager.getItems('imam_ali');
@@ -435,7 +367,6 @@ class _MainScaffoldState extends State<MainScaffold> {
           tabs: imamAliCats.map((c) => c['title'].toString()).toList(),
           sectionKeys:
               imamAliCats.map((c) => 'imam_ali_cat_${c['id']}').toList(),
-
         );
       case 'dreams':
         final dreamsCats = DataManager.getItems('dreams');
@@ -446,7 +377,6 @@ class _MainScaffoldState extends State<MainScaffold> {
           key: const ValueKey('dreams'),
           tabs: dreamsCats.map((c) => c['title'].toString()).toList(),
           sectionKeys: dreamsCats.map((c) => 'dreams_cat_${c['id']}').toList(),
-
         );
       case 'fatawa':
         final fatawaCats = DataManager.getItems('fatawa');
@@ -457,23 +387,20 @@ class _MainScaffoldState extends State<MainScaffold> {
           key: const ValueKey('fatawa'),
           tabs: fatawaCats.map((c) => c['title'].toString()).toList(),
           sectionKeys: fatawaCats.map((c) => 'fatawa_cat_${c['id']}').toList(),
-
         );
       case 'prophets_stories':
         return DynamicListSection(
           key: const ValueKey('prophets_stories'),
           title: _getSectionTitle('prophets_stories'),
           sectionKey: 'prophets_stories',
-
         );
       case 'istikhara':
-        return IstikharaScreen(key: const ValueKey('istikhara'));
+        return const IstikharaScreen(key: ValueKey('istikhara'));
       default:
         return DynamicListSection(
           key: ValueKey(_currentSection),
           title: _getSectionTitle(_currentSection),
           sectionKey: _currentSection,
-
         );
     }
   }
@@ -493,14 +420,27 @@ class _MainScaffoldState extends State<MainScaffold> {
   }
 }
 
-Color? _parseColor(String? colorString) {
-  if (colorString == null || colorString.isEmpty) return null;
-  try {
-    if (colorString.startsWith('#')) {
-      return Color(int.parse(colorString.substring(1), radix: 16) + 0xFF000000);
-    }
-    return Color(int.parse(colorString));
-  } catch (e) {
-    return null;
+IconData getMaterialIcon(String? name) {
+  switch (name) {
+    case 'book': return Icons.book;
+    case 'mosque': return Icons.mosque;
+    case 'star': return Icons.star;
+    case 'article': return Icons.article;
+    case 'menu_book': return Icons.menu_book;
+    case 'import_contacts': return Icons.import_contacts;
+    case 'wb_sunny': return Icons.wb_sunny;
+    case 'nightlight_round': return Icons.nightlight_round;
+    case 'favorite': return Icons.favorite;
+    case 'search': return Icons.search;
+    case 'settings': return Icons.settings;
+    case 'info': return Icons.info;
+    case 'library_books': return Icons.library_books;
+    case 'collections_bookmark': return Icons.collections_bookmark;
+    case 'auto_stories': return Icons.auto_stories;
+    case 'chrome_reader_mode': return Icons.chrome_reader_mode;
+    case 'live_help': return Icons.live_help;
+    case 'local_library': return Icons.local_library;
+    case 'format_quote': return Icons.format_quote;
+    default: return Icons.folder;
   }
 }
