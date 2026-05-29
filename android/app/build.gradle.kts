@@ -1,9 +1,18 @@
+import java.util.Properties
+import java.io.FileInputStream
+
 plugins {
     id("com.android.application")
     id("kotlin-android")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
-    id("com.google.gms.google-services")
+    id("com.google.gms.google-services") version "4.4.1"
+}
+
+val keystoreProperties = Properties()
+val keystorePropertiesFile = rootProject.file("key.properties")
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(FileInputStream(keystorePropertiesFile))
 }
 
 android {
@@ -23,8 +32,6 @@ android {
 
     defaultConfig {
         applicationId = "com.islamic.aldhakereen"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
@@ -33,10 +40,13 @@ android {
 
     signingConfigs {
         create("release") {
-            keyAlias = "releasekey"
-            keyPassword = System.getenv("KEYSTORE_KEYPASS") ?: "android"
-            storeFile = file("release.keystore")
-            storePassword = System.getenv("KEYSTORE_STOREPASS") ?: "android"
+            keyAlias = keystoreProperties.getProperty("keyAlias")
+            keyPassword = keystoreProperties.getProperty("keyPassword")
+            val storeFileStr = keystoreProperties.getProperty("storeFile")
+            if (storeFileStr != null) {
+                storeFile = file(storeFileStr)
+            }
+            storePassword = keystoreProperties.getProperty("storePassword")
             enableV1Signing = true
             enableV2Signing = true
         }

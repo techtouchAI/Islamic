@@ -41,8 +41,6 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'presentation/screens/istikhara_screen.dart';
 
-
-
 class IslamicPatternPainter extends CustomPainter {
   final Color color;
   IslamicPatternPainter({required this.color});
@@ -156,11 +154,21 @@ Widget buildImage(String? path, {double? height, BoxFit fit = BoxFit.contain}) {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await PrayerAlarmService.init();
+  
+  // تهيئة قواعد البيانات المحلية السريعة أولاً ليتمكن التطبيق من الإقلاع فوراً
+  await Hive.initFlutter();
+  await FavoritesService.instance.init();
 
+  // تشغيل الواجهة فوراً لإنهاء شاشة الانتظار
+  runApp(const AlDhakereenApp());
+
+  // تهيئة الخدمات الثقيلة في الخلفية لتجنب تجميد الشاشة
+  _initializeHeavyServices();
+}
+
+Future<void> _initializeHeavyServices() async {
   try {
     await Firebase.initializeApp();
-    // Call the analytics service in a non-blocking way
     AnalyticsService().checkAndRegisterDevice();
   } catch (e) {
     debugPrint("Firebase initialization error: $e");
@@ -485,32 +493,6 @@ class _MainScaffoldState extends State<MainScaffold> {
   }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 Color? _parseColor(String? colorString) {
   if (colorString == null || colorString.isEmpty) return null;
   try {
@@ -522,11 +504,3 @@ Color? _parseColor(String? colorString) {
     return null;
   }
 }
-
-
-
-
-
-
-
-

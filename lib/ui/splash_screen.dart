@@ -19,13 +19,26 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> {
+class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderStateMixin {
   double _downloadProgress = -1.0;
+  late AnimationController _fadeController;
 
   @override
   void initState() {
     super.initState();
+    // إعداد تأثير النبض/التلاشي لعبارة الصلاة على محمد وآل محمد
+    _fadeController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    )..repeat(reverse: true);
+    
     _initializeApp();
+  }
+
+  @override
+  void dispose() {
+    _fadeController.dispose();
+    super.dispose();
   }
 
   Future<void> _initializeApp() async {
@@ -197,8 +210,20 @@ class _SplashScreenState extends State<SplashScreen> {
               ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 20),
-            const CircularProgressIndicator(),
+            const SizedBox(height: 30),
+            // النص المتحرك بديلاً عن الدائرة
+            FadeTransition(
+              opacity: _fadeController,
+              child: Text(
+                'اللهم صل على محمد وال محمد',
+                style: TextStyle(
+                  fontFamily: 'me_quran',
+                  fontSize: 22,
+                  color: widget.primaryColor,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
           ],
         ),
       ),
