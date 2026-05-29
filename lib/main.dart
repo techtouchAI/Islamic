@@ -38,6 +38,8 @@ import 'dart:io';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'presentation/screens/istikhara_screen.dart';
+import 'package:provider/provider.dart';
+import 'providers/settings_provider.dart';
 
 class IslamicPatternPainter extends CustomPainter {
   final Color color;
@@ -115,9 +117,10 @@ Widget buildImage(String? path, {double? height, BoxFit fit = BoxFit.contain}) {
   if (path == null || path.isEmpty) {
     return const SizedBox();
   }
-  if (path.startsWith('/')) { // Check for local file path
-      final file = File(path);
-      if (file.existsSync()) return Image.file(file, height: height, fit: fit);
+  if (path.startsWith('/')) {
+    // Check for local file path
+    final file = File(path);
+    if (file.existsSync()) return Image.file(file, height: height, fit: fit);
   }
   if (path.startsWith('data:image')) {
     try {
@@ -150,13 +153,18 @@ Widget buildImage(String? path, {double? height, BoxFit fit = BoxFit.contain}) {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // تهيئة قواعد البيانات المحلية السريعة أولاً ليتمكن التطبيق من الإقلاع فوراً
   await Hive.initFlutter();
   await FavoritesService.instance.init();
 
   // تشغيل الواجهة فوراً لإنهاء شاشة الانتظار
-  runApp(const AlDhakereenApp());
+  runApp(
+    ChangeNotifierProvider(
+      create: (_) => SettingsProvider(),
+      child: const AlDhakereenApp(),
+    ),
+  );
 
   // تهيئة الخدمات الثقيلة في الخلفية لتجنب تجميد الشاشة
   _initializeHeavyServices();
@@ -184,85 +192,12 @@ class AlDhakereenApp extends StatefulWidget {
 }
 
 class _AlDhakereenAppState extends State<AlDhakereenApp> {
-  ThemeMode _themeMode = ThemeMode.light;
-  double _fontSizeFactor = 1.0;
-  Color _primaryColor = Colors.blue;
-  double _uiOpacity = 1.0;
-  String? _backgroundImagePath;
-  String? _selectedBase64Bg;
-  Color _cardColor = Colors.white;
-  Map<String, bool> _homeVisibility = {};
-  int _hijriAdjustment = 0;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadSettings();
-    DataManager.dbNotifier.addListener(_loadSettings);
-  }
-
-  @override
-  void dispose() {
-    DataManager.dbNotifier.removeListener(_loadSettings);
-    super.dispose();
-  }
-
-  Future<void> _loadSettings() async {
-    final prefs = await SharedPreferences.getInstance();
-    final dbSettings = DataManager.getSettings();
-    int defaultPrimary =
-        int.tryParse(dbSettings['primary_color'] ?? '0xFF2196F3') ?? 0xFF2196F3;
-    int defaultCard =
-        int.tryParse(dbSettings['card_color'] ?? '0xFFFFFFFF') ?? 0xFFFFFFFF;
-    if (mounted) {
-      setState(() {
-        _themeMode = (prefs.getString('theme') ?? 'light') == 'light'
-            ? ThemeMode.light
-            : ThemeMode.dark;
-        _fontSizeFactor = prefs.getDouble('fontSize') ?? 1.0;
-        _primaryColor = Color(prefs.getInt('primaryColor') ?? defaultPrimary);
-        _uiOpacity = prefs.getDouble('uiOpacity') ??
-            (dbSettings['ui_opacity']?.toDouble() ?? 1.0);
-        _backgroundImagePath = prefs.getString('backgroundImage');
-        _selectedBase64Bg = prefs.getString('custom_bg_base64_selected');
-        _cardColor = Color(prefs.getInt('cardColor') ?? defaultCard);
-        _hijriAdjustment = prefs.getInt('hijri.date.correction.value') ?? 0;
-        final sections = DataManager.getSections();
-        final allSections = {
-          ...sections,
-          'hadith': {},
-          'names_allah': {},
-          'adhkar': {},
-        };
-        _homeVisibility = {};
-        allSections.forEach((key, value) {
-          _homeVisibility[key] =
-              prefs.getBool('vis_$key') ?? (value['visible_home'] ?? true);
-        });
-        _homeVisibility['inspiration'] = prefs.getBool('vis_inspiration') ??
-            (dbSettings['show_inspiration'] ?? true);
-        _homeVisibility['day_dua'] = prefs.getBool('vis_day_dua') ?? true;
-      });
-    }
-  }
-
-  Future<void> _saveSetting(String key, dynamic value) async {
-    final prefs = await SharedPreferences.getInstance();
-    if (value is String) prefs.setString(key, value);
-    if (value is double) prefs.setDouble(key, value);
-    if (value is int) prefs.setInt(key, value);
-  }
-
-  void _toggleTheme() {
-    setState(() {
-      _themeMode =
-          _themeMode == ThemeMode.light ? ThemeMode.dark : ThemeMode.light;
-      _saveSetting('theme', _themeMode == ThemeMode.light ? 'light' : 'dark');
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
+    final settingsProvider = context.watch<SettingsProvider>();
+    if (!settingsProvider.isLoaded)
+      return const Center(child: CircularProgressIndicator());
+
     return MaterialApp(
       title: 'الذاكرين',
       debugShowCheckedModeBanner: false,
@@ -285,9 +220,9 @@ class _AlDhakereenAppState extends State<AlDhakereenApp> {
         useMaterial3: true,
         textTheme: ThemeData.light().textTheme.apply(fontFamily: 'Cairo'),
         colorScheme: ColorScheme.fromSeed(
-          seedColor: _primaryColor,
+          seedColor: settingsProvider.primaryColor,
           brightness: Brightness.light,
-          primary: _primaryColor,
+          primary: settingsProvider.primaryColor,
         ),
         scaffoldBackgroundColor: const Color(0xFFFDFBF7),
       ),
@@ -295,113 +230,20 @@ class _AlDhakereenAppState extends State<AlDhakereenApp> {
         useMaterial3: true,
         textTheme: ThemeData.dark().textTheme.apply(fontFamily: 'Cairo'),
         colorScheme: ColorScheme.fromSeed(
-          seedColor: _primaryColor,
+          seedColor: settingsProvider.primaryColor,
           brightness: Brightness.dark,
-          primary: _primaryColor,
+          primary: settingsProvider.primaryColor,
         ),
         scaffoldBackgroundColor: const Color(0xFF0A0A0A),
       ),
-      themeMode: _themeMode,
-      home: SplashScreen(
-        themeMode: _themeMode,
-        fontSizeFactor: _fontSizeFactor,
-        onFontSizeChanged: (val) {
-          setState(() => _fontSizeFactor = val);
-          _saveSetting('fontSize', val);
-        },
-        onThemeToggled: _toggleTheme,
-        primaryColor: _primaryColor,
-        onColorChanged: (c) {
-          setState(() => _primaryColor = c);
-          _saveSetting('primaryColor', c.toARGB32());
-        },
-        uiOpacity: _uiOpacity,
-        onOpacityChanged: (val) {
-          setState(() => _uiOpacity = val);
-          _saveSetting('uiOpacity', val);
-        },
-        backgroundImagePath: _backgroundImagePath,
-        selectedBase64Bg: _selectedBase64Bg,
-        onBackgroundImageChanged: (path) async {
-          final prefs = await SharedPreferences.getInstance();
-          setState(() {
-            _backgroundImagePath = path;
-            if (path != null) {
-              _selectedBase64Bg = null;
-              prefs.remove('custom_bg_base64_selected');
-            }
-          });
-          if (path != null) _saveSetting('backgroundImage', path);
-        },
-        onBase64BgChanged: (base64) {
-          setState(() {
-            _selectedBase64Bg = base64;
-            _backgroundImagePath = null;
-          });
-        },
-        cardColor: _cardColor,
-        onCardColorChanged: (c) {
-          setState(() => _cardColor = c);
-          _saveSetting('cardColor', c.toARGB32());
-        },
-        homeVisibility: _homeVisibility,
-        onVisibilityChanged: (key, val) async {
-          setState(() => _homeVisibility[key] = val);
-          final prefs = await SharedPreferences.getInstance();
-          prefs.setBool('vis_$key', val);
-        },
-        hijriAdjustment: _hijriAdjustment,
-        onHijriAdjustmentChanged: (val) async {
-          setState(() => _hijriAdjustment = val);
-          final prefs = await SharedPreferences.getInstance();
-          prefs.setInt('hijri.date.correction.value', val);
-        },
-      ),
+      themeMode: settingsProvider.themeMode,
+      home: const SplashScreen(),
     );
   }
 }
 
 class MainScaffold extends StatefulWidget {
-  final ThemeMode themeMode;
-  final double fontSizeFactor;
-  final ValueChanged<double> onFontSizeChanged;
-  final VoidCallback onThemeToggled;
-  final Color primaryColor;
-  final ValueChanged<Color> onColorChanged;
-  final double uiOpacity;
-  final ValueChanged<double> onOpacityChanged;
-  final String? backgroundImagePath;
-  final String? selectedBase64Bg;
-  final ValueChanged<String?> onBackgroundImageChanged;
-  final ValueChanged<String?> onBase64BgChanged;
-  final Color cardColor;
-  final ValueChanged<Color> onCardColorChanged;
-  final Map<String, bool> homeVisibility;
-  final void Function(String, bool) onVisibilityChanged;
-  final int hijriAdjustment;
-  final ValueChanged<int> onHijriAdjustmentChanged;
-
-  const MainScaffold({
-    super.key,
-    required this.themeMode,
-    required this.fontSizeFactor,
-    required this.onFontSizeChanged,
-    required this.onThemeToggled,
-    required this.primaryColor,
-    required this.onColorChanged,
-    required this.uiOpacity,
-    required this.onOpacityChanged,
-    required this.backgroundImagePath,
-    required this.selectedBase64Bg,
-    required this.onBackgroundImageChanged,
-    required this.onBase64BgChanged,
-    required this.cardColor,
-    required this.onCardColorChanged,
-    required this.homeVisibility,
-    required this.onVisibilityChanged,
-    required this.hijriAdjustment,
-    required this.onHijriAdjustmentChanged,
-  });
+  const MainScaffold({super.key});
 
   @override
   State<MainScaffold> createState() => _MainScaffoldState();
@@ -434,7 +276,7 @@ class _MainScaffoldState extends State<MainScaffold> {
     return ValueListenableBuilder<int>(
         valueListenable: DataManager.dbNotifier,
         builder: (context, _, __) {
-          final settings = DataManager.getSettings();
+          final settingsProvider = context.watch<SettingsProvider>();
           return PopScope(
             canPop: !isSubPage,
             onPopInvokedWithResult: (didPop, result) {
@@ -462,7 +304,7 @@ class _MainScaffoldState extends State<MainScaffold> {
                 )
                     .appBarTheme
                     .backgroundColor
-                    ?.withValues(alpha: widget.uiOpacity),
+                    ?.withValues(alpha: settingsProvider.uiOpacity),
                 leading: Builder(
                   builder: (context) => IconButton(
                     icon: const Icon(Icons.notes),
@@ -478,7 +320,7 @@ class _MainScaffoldState extends State<MainScaffold> {
                         context,
                         MaterialPageRoute(
                           builder: (context) => SearchScreen(
-                              fontSizeFactor: widget.fontSizeFactor),
+                              fontSizeFactor: settingsProvider.fontSizeFactor),
                         ),
                       );
                     },
@@ -496,19 +338,19 @@ class _MainScaffoldState extends State<MainScaffold> {
               body: Stack(
                 children: [
                   if (_currentSection == 'home') ...[
-                    if (widget.backgroundImagePath != null)
+                    if (settingsProvider.backgroundImagePath != null)
                       Positioned.fill(
                         child: Image.file(
-                          File(widget.backgroundImagePath!),
+                          File(settingsProvider.backgroundImagePath!),
                           fit: BoxFit.cover,
                         ),
                       ),
-                    if (widget.backgroundImagePath == null)
+                    if (settingsProvider.backgroundImagePath == null)
                       Positioned.fill(
                         child: buildImage(
-                          widget.selectedBase64Bg ??
-                              settings['custom_bg_base64']?.toString() ??
-                              settings['bg_image']?.toString(),
+                          settingsProvider.selectedBase64Bg ??
+                              DataManager.getSettings()['custom_bg_base64']?.toString() ??
+                              DataManager.getSettings()['bg_image']?.toString(),
                           fit: BoxFit.cover,
                         ),
                       ),
@@ -537,41 +379,23 @@ class _MainScaffoldState extends State<MainScaffold> {
   }
 
   Widget _buildBody(BuildContext context) {
+    final settingsProvider = context.watch<SettingsProvider>();
     switch (_currentSection) {
       case 'home':
         return HomeSection(
           key: const ValueKey('home'),
-          fontSizeFactor: widget.fontSizeFactor,
-          uiOpacity: widget.uiOpacity,
-          cardColor: widget.cardColor,
-          visibility: widget.homeVisibility,
-          hijriAdjustment: widget.hijriAdjustment,
           onPrayerCardTap: () => _navigateTo('prayer_times'),
         );
       case 'settings':
-        return SettingsSection(
-          key: const ValueKey('settings'),
-          onThemeToggled: widget.onThemeToggled,
-          primaryColor: widget.primaryColor,
-          onColorChanged: widget.onColorChanged,
-          uiOpacity: widget.uiOpacity,
-          onOpacityChanged: widget.onOpacityChanged,
-          onBackgroundImageChanged: widget.onBackgroundImageChanged,
-          onBase64BgChanged: widget.onBase64BgChanged,
-          backgroundImagePath: widget.backgroundImagePath,
-          cardColor: widget.cardColor,
-          onCardColorChanged: widget.onCardColorChanged,
-          visibility: widget.homeVisibility,
-          onVisibilityChanged: widget.onVisibilityChanged,
-          hijriAdjustment: widget.hijriAdjustment,
-          onHijriAdjustmentChanged: widget.onHijriAdjustmentChanged,
+        return const SettingsSection(
+          key: ValueKey('settings'),
         );
 
       case 'favorites':
         return FavoritesSection(
           key: const ValueKey('favorites'),
-          fontSizeFactor: widget.fontSizeFactor,
-          uiOpacity: widget.uiOpacity,
+          fontSizeFactor: settingsProvider.fontSizeFactor,
+          uiOpacity: settingsProvider.uiOpacity,
         );
       case 'about':
         return const AboutSection(key: ValueKey('about'));
@@ -598,24 +422,24 @@ class _MainScaffoldState extends State<MainScaffold> {
             'duas_general',
             'duas_salawat',
           ],
-          fontSizeFactor: widget.fontSizeFactor,
-          uiOpacity: widget.uiOpacity,
+          fontSizeFactor: settingsProvider.fontSizeFactor,
+          uiOpacity: settingsProvider.uiOpacity,
         );
       case 'visits':
         return TabbedSection(
           key: const ValueKey('visits'),
           tabs: const ['زيارات الأيام', 'الزيارات العامة'],
           sectionKeys: const ['visits_days', 'visits_general'],
-          fontSizeFactor: widget.fontSizeFactor,
-          uiOpacity: widget.uiOpacity,
+          fontSizeFactor: settingsProvider.fontSizeFactor,
+          uiOpacity: settingsProvider.uiOpacity,
         );
       case 'adhkar':
         return TabbedSection(
           key: const ValueKey('adhkar'),
           tabs: const ['المناجاة', 'التسبيحات'],
           sectionKeys: const ['adhkar_munajat', 'adhkar_tasbihs'],
-          fontSizeFactor: widget.fontSizeFactor,
-          uiOpacity: widget.uiOpacity,
+          fontSizeFactor: settingsProvider.fontSizeFactor,
+          uiOpacity: settingsProvider.uiOpacity,
         );
       case 'imam_ali':
         final imamAliCats = DataManager.getItems('imam_ali');
@@ -627,8 +451,8 @@ class _MainScaffoldState extends State<MainScaffold> {
           tabs: imamAliCats.map((c) => c['title'].toString()).toList(),
           sectionKeys:
               imamAliCats.map((c) => 'imam_ali_cat_${c['id']}').toList(),
-          fontSizeFactor: widget.fontSizeFactor,
-          uiOpacity: widget.uiOpacity,
+          fontSizeFactor: settingsProvider.fontSizeFactor,
+          uiOpacity: settingsProvider.uiOpacity,
         );
       case 'dreams':
         final dreamsCats = DataManager.getItems('dreams');
@@ -639,8 +463,8 @@ class _MainScaffoldState extends State<MainScaffold> {
           key: const ValueKey('dreams'),
           tabs: dreamsCats.map((c) => c['title'].toString()).toList(),
           sectionKeys: dreamsCats.map((c) => 'dreams_cat_${c['id']}').toList(),
-          fontSizeFactor: widget.fontSizeFactor,
-          uiOpacity: widget.uiOpacity,
+          fontSizeFactor: settingsProvider.fontSizeFactor,
+          uiOpacity: settingsProvider.uiOpacity,
         );
       case 'fatawa':
         final fatawaCats = DataManager.getItems('fatawa');
@@ -651,16 +475,16 @@ class _MainScaffoldState extends State<MainScaffold> {
           key: const ValueKey('fatawa'),
           tabs: fatawaCats.map((c) => c['title'].toString()).toList(),
           sectionKeys: fatawaCats.map((c) => 'fatawa_cat_${c['id']}').toList(),
-          fontSizeFactor: widget.fontSizeFactor,
-          uiOpacity: widget.uiOpacity,
+          fontSizeFactor: settingsProvider.fontSizeFactor,
+          uiOpacity: settingsProvider.uiOpacity,
         );
       case 'prophets_stories':
         return DynamicListSection(
           key: const ValueKey('prophets_stories'),
           title: _getSectionTitle('prophets_stories'),
           sectionKey: 'prophets_stories',
-          fontSizeFactor: widget.fontSizeFactor,
-          uiOpacity: widget.uiOpacity,
+          fontSizeFactor: settingsProvider.fontSizeFactor,
+          uiOpacity: settingsProvider.uiOpacity,
         );
       case 'istikhara':
         return IstikharaScreen(key: const ValueKey('istikhara'));
@@ -669,8 +493,8 @@ class _MainScaffoldState extends State<MainScaffold> {
           key: ValueKey(_currentSection),
           title: _getSectionTitle(_currentSection),
           sectionKey: _currentSection,
-          fontSizeFactor: widget.fontSizeFactor,
-          uiOpacity: widget.uiOpacity,
+          fontSizeFactor: settingsProvider.fontSizeFactor,
+          uiOpacity: settingsProvider.uiOpacity,
         );
     }
   }
@@ -690,14 +514,3 @@ class _MainScaffoldState extends State<MainScaffold> {
   }
 }
 
-Color? _parseColor(String? colorString) {
-  if (colorString == null || colorString.isEmpty) return null;
-  try {
-    if (colorString.startsWith('#')) {
-      return Color(int.parse(colorString.substring(1), radix: 16) + 0xFF000000);
-    }
-    return Color(int.parse(colorString));
-  } catch (e) {
-    return null;
-  }
-}
