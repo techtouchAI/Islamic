@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../providers/settings_provider.dart';
 import 'package:flutter_linkify/flutter_linkify.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart' as intl;
@@ -32,15 +34,7 @@ import '../../main.dart'; // For AlDhakereenApp globals
 class DynamicListSection extends StatefulWidget {
   final String title;
   final String sectionKey;
-  final double fontSizeFactor;
-  final double uiOpacity;
-  const DynamicListSection({
-    super.key,
-    required this.title,
-    required this.sectionKey,
-    required this.fontSizeFactor,
-    required this.uiOpacity,
-  });
+  const DynamicListSection({super.key, required this.title, required this.sectionKey});
 
   @override
   State<DynamicListSection> createState() => _DynamicListSectionState();
@@ -100,7 +94,7 @@ class _DynamicListSectionState extends State<DynamicListSection> {
               return Card(
                 color: Theme.of(context)
                     .cardColor
-                    .withValues(alpha: widget.uiOpacity),
+                    .withValues(alpha: context.watch<SettingsProvider>().uiOpacity),
                 margin:
                     const EdgeInsets.symmetric(horizontal: 4.0, vertical: 8.0),
                 shape: RoundedRectangleBorder(
@@ -124,7 +118,7 @@ class _DynamicListSectionState extends State<DynamicListSection> {
                         builder: (c) => ReaderPage(
                           title: "سورة ${surah['name']}",
                           content: content,
-                          fontSizeFactor: widget.fontSizeFactor,
+                          fontSizeFactor: context.watch<SettingsProvider>().fontSizeFactor,
                           isQuran: true,
                           surahName: surah['name'].toString(),
                           ayahs: ayahs,
@@ -224,7 +218,7 @@ class _DynamicListSectionState extends State<DynamicListSection> {
                 decoration: BoxDecoration(
                   color: Theme.of(
                     context,
-                  ).cardColor.withValues(alpha: widget.uiOpacity * 0.8),
+                  ).cardColor.withValues(alpha: context.watch<SettingsProvider>().uiOpacity * 0.8),
                   borderRadius: BorderRadius.circular(15),
                   border: Border.all(
                     color: Theme.of(context).colorScheme.primary,
@@ -239,7 +233,7 @@ class _DynamicListSectionState extends State<DynamicListSection> {
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
-                    fontSize: 20 * widget.fontSizeFactor,
+                    fontSize: 20 * context.watch<SettingsProvider>().fontSizeFactor,
                     fontFamily: 'me_quran',
                     color: Theme.of(context).colorScheme.primary,
                   ),
@@ -270,7 +264,7 @@ class _DynamicListSectionState extends State<DynamicListSection> {
                               child: Container(
                                 decoration: BoxDecoration(
                                   color: Theme.of(context).cardColor.withValues(
-                                        alpha: widget.uiOpacity * 0.8,
+                                        alpha: context.watch<SettingsProvider>().uiOpacity * 0.8,
                                       ),
                                   borderRadius: BorderRadius.circular(15),
                                   border: Border.all(
@@ -308,7 +302,7 @@ class _DynamicListSectionState extends State<DynamicListSection> {
                               displayTitle = '$cleanName ﴿عليه السلام﴾';
                               titleStyle = TextStyle(
                                 fontFamily: 'me_quran',
-                                fontSize: 24 * widget.fontSizeFactor,
+                                fontSize: 24 * context.watch<SettingsProvider>().fontSizeFactor,
                                 fontWeight: FontWeight.normal,
                                 color: Theme.of(context).colorScheme.primary,
                               );
@@ -362,7 +356,7 @@ class _DynamicListSectionState extends State<DynamicListSection> {
                                   builder: (c) => ReaderPage(
                                     title: data[index]['title'].toString(),
                                     content: data[index]['content'].toString(),
-                                    fontSizeFactor: widget.fontSizeFactor,
+                                    fontSizeFactor: context.watch<SettingsProvider>().fontSizeFactor,
                                     isQuran: false,
                                     isImamAli:
                                         widget.sectionKey.contains('imam_ali'),

@@ -1,3 +1,4 @@
+import "../main.dart";
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -11,49 +12,8 @@ import 'package:open_file/open_file.dart';
 import '../data/data_manager.dart';
 import '../services/search_engine.dart';
 import '../services/quran_service.dart';
-import '../main.dart'; // To access MainScaffold or replace later
-
 class SplashScreen extends StatefulWidget {
-  final ThemeMode themeMode;
-  final double fontSizeFactor;
-  final Function(double) onFontSizeChanged;
-  final VoidCallback onThemeToggled;
-  final Color primaryColor;
-  final Function(Color) onColorChanged;
-  final double uiOpacity;
-  final Function(double) onOpacityChanged;
-  final String? backgroundImagePath;
-  final String? selectedBase64Bg;
-  final Function(String?) onBackgroundImageChanged;
-  final Function(String?) onBase64BgChanged;
-  final Color cardColor;
-  final Function(Color) onCardColorChanged;
-  final Map<String, bool> homeVisibility;
-  final Function(String, bool) onVisibilityChanged;
-  final int hijriAdjustment;
-  final Function(int) onHijriAdjustmentChanged;
-
-  const SplashScreen({
-    Key? key,
-    required this.themeMode,
-    required this.fontSizeFactor,
-    required this.onFontSizeChanged,
-    required this.onThemeToggled,
-    required this.primaryColor,
-    required this.onColorChanged,
-    required this.uiOpacity,
-    required this.onOpacityChanged,
-    required this.backgroundImagePath,
-    required this.selectedBase64Bg,
-    required this.onBackgroundImageChanged,
-    required this.onBase64BgChanged,
-    required this.cardColor,
-    required this.onCardColorChanged,
-    required this.homeVisibility,
-    required this.onVisibilityChanged,
-    required this.hijriAdjustment,
-    required this.onHijriAdjustmentChanged,
-  }) : super(key: key);
+  const SplashScreen({super.key});
 
   @override
   State<SplashScreen> createState() => _SplashScreenState();
@@ -228,26 +188,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
   void _navigateToHome() {
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(
-        builder: (context) => MainScaffold(
-          themeMode: widget.themeMode,
-          fontSizeFactor: widget.fontSizeFactor,
-          onFontSizeChanged: widget.onFontSizeChanged,
-          onThemeToggled: widget.onThemeToggled,
-          primaryColor: widget.primaryColor,
-          onColorChanged: widget.onColorChanged,
-          uiOpacity: widget.uiOpacity,
-          onOpacityChanged: widget.onOpacityChanged,
-          backgroundImagePath: widget.backgroundImagePath,
-          selectedBase64Bg: widget.selectedBase64Bg,
-          onBackgroundImageChanged: widget.onBackgroundImageChanged,
-          onBase64BgChanged: widget.onBase64BgChanged,
-          cardColor: widget.cardColor,
-          onCardColorChanged: widget.onCardColorChanged,
-          homeVisibility: widget.homeVisibility,
-          onVisibilityChanged: widget.onVisibilityChanged,
-          hijriAdjustment: widget.hijriAdjustment,
-          onHijriAdjustmentChanged: widget.onHijriAdjustmentChanged,
-        ),
+        builder: (context) => MainScaffold(),
       ),
     );
   }
