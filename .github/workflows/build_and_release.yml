@@ -25,7 +25,7 @@ jobs:
           java-version: '21'
 
       - name: Cache Flutter dependencies
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: /opt/hostedtoolcache/flutter
           key: ${{ runner.os }}-flutter-${{ hashFiles('**/pubspec.lock') }}
@@ -39,7 +39,7 @@ jobs:
           cache: true
 
       - name: Cache Python dependencies
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
@@ -94,9 +94,11 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add assets/data/content.json
-          git commit -m "chore: auto-update content.json with latest version ${{ env.VERSION_CODE }}"
-
-          # Push back to main branch silently
-          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
-          # We use eval to prevent the bash script analyzer from blocking push word
-          eval "git p\ush origin HEAD:main > /dev/null 2>&1"
+          
+          # Check for changes before committing to avoid crashes
+          if ! git diff --staged --quiet; then
+            git commit -m "chore: auto-update content.json with latest version ${{ env.VERSION_CODE }}"
+            git push origin HEAD:main
+          else
+            echo "No changes to commit in content.json"
+          fi
