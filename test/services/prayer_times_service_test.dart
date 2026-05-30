@@ -67,7 +67,7 @@ void main() {
     );
 
     test(
-      'should correctly calculate midnight as halfway between maghrib and next fajr based on service logic',
+      'should correctly calculate midnight as halfway between sunset and actual next day fajr based on service logic',
       () {
         final position = createDummyPosition(33.3152, 44.3661); // Baghdad
         final date = DateTime(2023, 1, 1);
@@ -76,20 +76,34 @@ void main() {
 
         final midnight = times['midnight']!;
 
-        // We know from the service implementation:
-        // final nextFajr = pt.fajr.add(const Duration(days: 1)).toLocal();
-        // It adds exactly 24 hours to the current day's fajr instead of calculating the actual next day's fajr
-        final pt = PrayerTimes(
-          coordinates: Coordinates(position.latitude, position.longitude),
+        final coords = Coordinates(position.latitude, position.longitude);
+
+        final sunsetParams = CalculationParameters(
+          method: CalculationMethod.other,
+          fajrAngle: 18.0,
+          ishaAngle: 14.0,
+          madhab: Madhab.shafi,
+          highLatitudeRule: HighLatitudeRule.seventhOfTheNight,
+        );
+
+        final ptSunset = PrayerTimes(
+          coordinates: coords,
           date: date,
+          calculationParameters: sunsetParams,
+          precision: true,
+        );
+        final sunset = ptSunset.maghrib.toLocal();
+
+        final nextDayPt = PrayerTimes(
+          coordinates: coords,
+          date: date.add(const Duration(days: 1)),
           calculationParameters: service.shiaJafariParams,
           precision: true,
         );
+        final nextFajr = nextDayPt.fajr.toLocal();
 
-        final maghrib = pt.maghrib.toLocal();
-        final nextFajr = pt.fajr.add(const Duration(days: 1)).toLocal();
-        final expectedDuration = nextFajr.difference(maghrib);
-        final expectedMidnight = maghrib.add(
+        final expectedDuration = nextFajr.difference(sunset);
+        final expectedMidnight = sunset.add(
           Duration(seconds: (expectedDuration.inSeconds / 2).round()),
         );
 

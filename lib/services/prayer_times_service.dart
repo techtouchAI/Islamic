@@ -3,6 +3,9 @@ import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:adhan_dart/src/SolarTime.dart';
+import 'package:adhan_dart/src/TimeComponents.dart';
+import 'package:adhan_dart/src/DateUtils.dart';
 import 'prayer_alarm_service.dart';
 
 /// خدمة أوقات الصلاة - تتبع معايير هندسة الكود النظيف (Clean Architecture)
@@ -12,18 +15,17 @@ class PrayerTimesService {
   factory PrayerTimesService() => _instance;
   PrayerTimesService._internal();
 
-  /// إعدادات الحساب وفق المنهج الجعفري (مؤسسة لوا - قم)
-  /// يتم ضبط الزوايا بدقة: الفجر 16 درجة، العشاء 14 درجة، والمغرب 4 درجات.
+  /// إعدادات الحساب وفق المنهج الجعفري المعتمد (مثل تطبيق حقيبة المؤمن)
+  /// يتم ضبط الزوايا بدقة: الفجر 18 درجة، العشاء 14 درجة، والمغرب 4 درجات.
   CalculationParameters get shiaJafariParams {
-    final params = CalculationParameters(
-      method: CalculationMethod.tehran, // Tehran method is base for Jafari
-      fajrAngle: 16.0,
+    return CalculationParameters(
+      method: CalculationMethod.other, // Custom base to avoid overrides
+      fajrAngle: 18.0,
       ishaAngle: 14.0,
       maghribAngle: 4.0,
+      madhab: Madhab.shafi, // الظل الأول للعصر
+      highLatitudeRule: HighLatitudeRule.seventhOfTheNight,
     );
-    params.madhab = Madhab.shafi;
-    params.highLatitudeRule = HighLatitudeRule.seventhOfTheNight;
-    return params;
   }
 
   /// طلب الصلاحيات وجلب الموقع الجغرافي الحالي مع التخزين المؤقت
@@ -98,6 +100,7 @@ class PrayerTimesService {
     final coordinates = Coordinates(position.latitude, position.longitude);
     final calculationDate = date ?? DateTime.now();
 
+    // 1. حساب الأوقات الفعلية (الزوايا المعتمدة)
     final pt = PrayerTimes(
       coordinates: coordinates,
       date: calculationDate,
@@ -105,11 +108,28 @@ class PrayerTimesService {
       precision: true,
     );
 
-    // Midnight calculation: Sunset to Dawn
-    final maghrib = pt.maghrib.toLocal();
-    final nextFajr = pt.fajr.add(const Duration(days: 1)).toLocal();
-    final duration = nextFajr.difference(maghrib);
-    final midnight = maghrib.add(
+    // 2. حساب الغروب الفعلي باستخدام حسابات الوقت الشمسي المباشرة للحد من استهلاك الموارد
+    final solarTime = SolarTime(calculationDate, coordinates);
+    final sunsetUtc = TimeComponents(solarTime.sunset).utcDate(
+      calculationDate.year,
+      calculationDate.month,
+      calculationDate.day,
+    );
+    final sunset = roundedMinute(sunsetUtc, precision: true).toLocal();
+
+    // 3. حساب فجر اليوم التالي بدقة للتوقيت الشرعي لمنتصف الليل
+    final nextDayDate = calculationDate.add(const Duration(days: 1));
+    final nextDayPt = PrayerTimes(
+      coordinates: coordinates,
+      date: nextDayDate,
+      calculationParameters: shiaJafariParams,
+      precision: true,
+    );
+    final nextFajr = nextDayPt.fajr.toLocal();
+
+    // حساب منتصف الليل الشرعي: في المنتصف تماماً بين الغروب وفجر اليوم التالي
+    final duration = nextFajr.difference(sunset);
+    final midnight = sunset.add(
       Duration(seconds: (duration.inSeconds / 2).round()),
     );
 
