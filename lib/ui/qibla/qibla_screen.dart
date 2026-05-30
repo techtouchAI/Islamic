@@ -33,11 +33,21 @@ class _QiblaScreenState extends State<QiblaScreen> {
 
   Future<void> _initQibla() async {
     bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) return;
+    if (!serviceEnabled) {
+      _showLocationServiceDisabledDialog();
+      return;
+    }
     LocationPermission permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) return;
+      if (permission == LocationPermission.denied) {
+        _showPermissionDeniedDialog();
+        return;
+      }
+    }
+    if (permission == LocationPermission.deniedForever) {
+      _showPermissionDeniedDialog();
+      return;
     }
     Position position = await Geolocator.getCurrentPosition();
     Coordinates coords = Coordinates(position.latitude, position.longitude);
@@ -45,6 +55,54 @@ class _QiblaScreenState extends State<QiblaScreen> {
       _qiblaDirection = Qibla.qibla(coords);
       _hasLocation = true;
     });
+  }
+
+  void _showLocationServiceDisabledDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text("خدمة الموقع معطلة"),
+          content: Text("يرجى تفعيل خدمة الموقع لتحديد اتجاه القبلة."),
+          actions: <Widget>[
+            TextButton(
+              child: Text("حسناً"),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showPermissionDeniedDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text("صلاحية الموقع مطلوبة"),
+          content: Text("تطبيق الذاكرين يحتاج إلى صلاحية الوصول إلى الموقع لتحديد اتجاه القبلة. يرجى تفعيل الصلاحية من إعدادات التطبيق."),
+          actions: <Widget>[
+            TextButton(
+              child: Text("إلغاء"),
+              onPressed: () {
+                Navigator.of(context).pop();
+                Navigator.of(context).pop(); // Go back to the previous screen
+              },
+            ),
+            TextButton(
+              child: Text("فتح الإعدادات"),
+              onPressed: () {
+                Geolocator.openAppSettings();
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   String _getDirectionText(double degree) {
