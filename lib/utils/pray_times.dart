@@ -8,7 +8,7 @@ class PrayTimes {
   final double _numIterations = 1;
 
   // Calculation parameters for Shia Jafari
-  final double _fajrAngle = 18.0;
+  final double _fajrAngle = 16.0;
   final double _maghribAngle = 4.0;
   final double _ishaAngle = 14.0;
   final double _refraction = 0.833;
@@ -155,31 +155,7 @@ class PrayTimes {
 
     // add midnight time (Jafari method)
     // In Jafari method, Midnight is between Sunset and Fajr of next day
-    // We calculate next day's fajr
-
-    // Create a temporary clone for tomorrow's jDate
-    double originalJDate = _jDate;
-    _jDate += 1.0;
-
-    Map<String, double> tomorrowTimes = {
-      'fajr': 5,
-      'sunrise': 6,
-      'dhuhr': 12,
-      'asr': 13,
-      'sunset': 18,
-      'maghrib': 18,
-      'isha': 18
-    };
-    for (int i = 1; i <= _numIterations; i++) {
-      tomorrowTimes = _computePrayerTimes(tomorrowTimes);
-    }
-    tomorrowTimes = _adjustTimes(tomorrowTimes);
-    double tomorrowFajr = tomorrowTimes['fajr']!;
-
-    // Restore jDate
-    _jDate = originalJDate;
-
-    times['midnight'] = times['sunset']! + _timeDiff(times['sunset']!, tomorrowFajr + 24) / 2;
+    times['midnight'] = times['sunset']! + _timeDiff(times['sunset']!, times['fajr']! + 24) / 2;
 
     return times;
   }
@@ -191,7 +167,39 @@ class PrayTimes {
       newTimes[key] = value + _timeZone - _lng / 15;
     });
 
+    newTimes = _adjustHighLats(newTimes);
+
     return newTimes;
+  }
+
+  // adjust times for locations in higher latitudes
+  Map<String, double> _adjustHighLats(Map<String, double> times) {
+    double nightTime = _timeDiff(times['sunset']!, times['sunrise']!);
+
+    times['imsak'] = _adjustHLTime(times['imsak'] ?? times['fajr']!, times['sunrise']!, _fajrAngle, nightTime, 'ccw'); // fallback for imsak since it might not be in the map in this port
+    times['fajr'] = _adjustHLTime(times['fajr']!, times['sunrise']!, _fajrAngle, nightTime, 'ccw');
+    times['isha'] = _adjustHLTime(times['isha']!, times['sunset']!, _ishaAngle, nightTime, 'cw');
+    times['maghrib'] = _adjustHLTime(times['maghrib']!, times['sunset']!, _maghribAngle, nightTime, 'cw');
+
+    return times;
+  }
+
+  // adjust a time for higher latitudes
+  double _adjustHLTime(double time, double base, double angle, double night, String direction) {
+    double portion = _nightPortion(angle, night);
+    double timeDiff = (direction == 'ccw') ? _timeDiff(time, base) : _timeDiff(base, time);
+
+    if (time.isNaN || timeDiff > portion) {
+      time = base + (direction == 'ccw' ? -portion : portion);
+    }
+    return time;
+  }
+
+  // the night portion used for adjusting times in higher latitudes
+  double _nightPortion(double angle, double night) {
+    // NightMiddle method is default for Jafari
+    double portion = 1.0 / 2.0;
+    return portion * night;
   }
 
   // return sun angle for sunset/sunrise
@@ -223,13 +231,13 @@ class PrayTimes {
     }
 
     // The time could be > 24 if it's the next day (e.g. midnight or tomorrow fajr calculation)
-    double timeInHours = _DMath.fixHour(time + 0.5 / 60); // add 0.5 minutes to round
+    double timeInHours = _DMath.fixHour(time);
 
     int hours = timeInHours.floor();
-    int minutes = ((timeInHours - hours) * 60).floor();
+    int minutes = ((timeInHours - hours) * 60).round();
 
     // Add days if time crossed past midnight
-    int daysToAdd = ((time + 0.5 / 60) / 24).floor();
+    int daysToAdd = (time / 24).floor();
 
     return DateTime.utc(
       date.year,
