@@ -3,7 +3,7 @@
 ## Deduplication & Unification
 * `prayer_notification_service.dart` has been completely **deleted** to prevent scheduling overlaps and "dueling services."
 * `PrayerTimesService` (in `prayer_times_service.dart`) is now the **sole Singleton source of truth** for all calculating and scheduling logic.
-* The `adhan` package was removed from `pubspec.yaml` to avoid version conflicts with `adhan_dart`, which was kept due to its robustness and null safety.
+* The `adhan_dart` package was completely removed in favor of a custom native Dart `PrayTimes` implementation to accurately support Jafari criteria.
 
 ## Background Scheduling (Workmanager)
 * `flutter_local_notifications` 7-day limits are overcome using `workmanager`.

@@ -2,7 +2,6 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:adhan_dart/adhan_dart.dart';
 
 class QiblaScreen extends StatefulWidget {
   @override
@@ -50,11 +49,27 @@ class _QiblaScreenState extends State<QiblaScreen> {
       return;
     }
     Position position = await Geolocator.getCurrentPosition();
-    Coordinates coords = Coordinates(position.latitude, position.longitude);
     setState(() {
-      _qiblaDirection = Qibla.qibla(coords);
+      _qiblaDirection = _calculateQibla(position.latitude, position.longitude);
       _hasLocation = true;
     });
+  }
+
+  // Calculate Qibla direction locally using spherical trigonometry
+  double _calculateQibla(double lat, double lng) {
+    // Kaaba coordinates
+    const double kaabaLat = 21.422487;
+    const double kaabaLng = 39.826206;
+
+    final latRad = lat * (math.pi / 180.0);
+    final kaabaLatRad = kaabaLat * (math.pi / 180.0);
+    final lngDiffRad = (kaabaLng - lng) * (math.pi / 180.0);
+
+    final y = math.sin(lngDiffRad);
+    final x = math.cos(latRad) * math.tan(kaabaLatRad) - math.sin(latRad) * math.cos(lngDiffRad);
+
+    double qibla = math.atan2(y, x) * (180.0 / math.pi);
+    return (qibla + 360.0) % 360.0;
   }
 
   void _showLocationServiceDisabledDialog() {

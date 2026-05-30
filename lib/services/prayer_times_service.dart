@@ -1,11 +1,8 @@
-import 'package:adhan_dart/adhan_dart.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:adhan_dart/src/SolarTime.dart';
-import 'package:adhan_dart/src/TimeComponents.dart';
-import 'package:adhan_dart/src/DateUtils.dart';
+import '../utils/pray_times.dart';
 import 'prayer_alarm_service.dart';
 
 /// خدمة أوقات الصلاة - تتبع معايير هندسة الكود النظيف (Clean Architecture)
@@ -14,19 +11,6 @@ class PrayerTimesService {
   static final PrayerTimesService _instance = PrayerTimesService._internal();
   factory PrayerTimesService() => _instance;
   PrayerTimesService._internal();
-
-  /// إعدادات الحساب وفق المنهج الجعفري المعتمد (مثل تطبيق حقيبة المؤمن)
-  /// يتم ضبط الزوايا بدقة: الفجر 18 درجة، العشاء 14 درجة، والمغرب 4 درجات.
-  CalculationParameters get shiaJafariParams {
-    return CalculationParameters(
-      method: CalculationMethod.other, // Custom base to avoid overrides
-      fajrAngle: 18.0,
-      ishaAngle: 14.0,
-      maghribAngle: 4.0,
-      madhab: Madhab.shafi, // الظل الأول للعصر
-      highLatitudeRule: HighLatitudeRule.seventhOfTheNight,
-    );
-  }
 
   /// طلب الصلاحيات وجلب الموقع الجغرافي الحالي مع التخزين المؤقت
   Future<Position?> getCurrentLocation() async {
@@ -97,50 +81,31 @@ class PrayerTimesService {
     Position position, {
     DateTime? date,
   }) {
-    final coordinates = Coordinates(position.latitude, position.longitude);
     final calculationDate = date ?? DateTime.now();
 
-    // 1. حساب الأوقات الفعلية (الزوايا المعتمدة)
-    final pt = PrayerTimes(
-      coordinates: coordinates,
-      date: calculationDate,
-      calculationParameters: shiaJafariParams,
-      precision: true,
+    // Calculate the time zone offset in hours
+    final timeZoneOffset = calculationDate.timeZoneOffset.inMinutes / 60.0;
+
+    // Use our native PrayTimes algorithm configured with Jafari params
+    final prayTimes = PrayTimes();
+
+    final times = prayTimes.getTimes(
+      calculationDate,
+      position.latitude,
+      position.longitude,
+      timeZoneOffset,
+      elevation: position.altitude,
     );
 
-    // 2. حساب الغروب الفعلي باستخدام حسابات الوقت الشمسي المباشرة للحد من استهلاك الموارد
-    final solarTime = SolarTime(calculationDate, coordinates);
-    final sunsetUtc = TimeComponents(solarTime.sunset).utcDate(
-      calculationDate.year,
-      calculationDate.month,
-      calculationDate.day,
-    );
-    final sunset = roundedMinute(sunsetUtc, precision: true).toLocal();
-
-    // 3. حساب فجر اليوم التالي بدقة للتوقيت الشرعي لمنتصف الليل
-    final nextDayDate = calculationDate.add(const Duration(days: 1));
-    final nextDayPt = PrayerTimes(
-      coordinates: coordinates,
-      date: nextDayDate,
-      calculationParameters: shiaJafariParams,
-      precision: true,
-    );
-    final nextFajr = nextDayPt.fajr.toLocal();
-
-    // حساب منتصف الليل الشرعي: في المنتصف تماماً بين الغروب وفجر اليوم التالي
-    final duration = nextFajr.difference(sunset);
-    final midnight = sunset.add(
-      Duration(seconds: (duration.inSeconds / 2).round()),
-    );
-
+    // Convert exact UTC DateTime to local DateTime
     return {
-      'fajr': pt.fajr.toLocal(),
-      'sunrise': pt.sunrise.toLocal(),
-      'dhuhr': pt.dhuhr.toLocal(),
-      'asr': pt.asr.toLocal(),
-      'maghrib': pt.maghrib.toLocal(),
-      'isha': pt.isha.toLocal(),
-      'midnight': midnight,
+      'fajr': times['fajr']!.toLocal(),
+      'sunrise': times['sunrise']!.toLocal(),
+      'dhuhr': times['dhuhr']!.toLocal(),
+      'asr': times['asr']!.toLocal(),
+      'maghrib': times['maghrib']!.toLocal(),
+      'isha': times['isha']!.toLocal(),
+      'midnight': times['midnight']!.toLocal(),
     };
   }
 
