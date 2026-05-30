@@ -24,8 +24,63 @@ class DataManager {
     _normalizeDB(_db);
   }
 
-  static Map<String, dynamic> _decodeJson(String source) =>
-      json.decode(source) as Map<String, dynamic>;
+  static Map<String, dynamic> _decodeAndNormalizeJson(String source) {
+    final db = json.decode(source) as Map<String, dynamic>;
+    _normalizeDBLocal(db);
+    return db;
+  }
+
+  static void _normalizeDBLocal(Map<String, dynamic>? db) {
+    if (db == null) return;
+
+    void normalizeItem(Map item) {
+      if (item.containsKey('name') && !item.containsKey('title')) {
+        item['title'] = item['name'];
+        item['content'] = item['name'];
+      }
+      if (item['title'] != null) {
+        item['_normalized_title'] = item['title'].toString().normalizeArabic();
+      }
+      if (item['content'] != null) {
+        item['_normalized_content'] = item['content']
+            .toString()
+            .normalizeArabic();
+      }
+      if (item.containsKey('items') && item['items'] is List) {
+        for (var nestedItem in item['items']) {
+          if (nestedItem is Map) {
+            normalizeItem(nestedItem);
+          }
+        }
+      }
+    }
+
+    final content = db['content'];
+    if (content is Map) {
+      for (var section in content.values) {
+        if (section is List) {
+          for (var item in section) {
+            if (item is Map) normalizeItem(item);
+          }
+        }
+      }
+    }
+
+    final topLevelSections = [
+      'fatawa_categories',
+      'dreams_categories',
+      'prophets_stories',
+      'imam_ali',
+    ];
+    for (var sectionName in topLevelSections) {
+      final sectionList = db[sectionName];
+      if (sectionList is List) {
+        for (var item in sectionList) {
+          if (item is Map) normalizeItem(item);
+        }
+      }
+    }
+  }
 
   static Future<void> loadContent() async {
     try {
@@ -34,16 +89,15 @@ class DataManager {
       // 1. Try to load from local storage first
       if (await localFile.exists()) {
         final content = await localFile.readAsString(encoding: utf8);
-        _db = await compute(_decodeJson, content);
-        _normalizeDB(_db);
+        _db = await compute(_decodeAndNormalizeJson, content);
         debugPrint("DataManager: Loaded from local storage.");
       } else {
         // 2. Fallback to bundled assets
         final String response = await rootBundle.loadString(
           'assets/data/content.json',
         );
-        _db = await compute(_decodeJson, response);
-        _normalizeDB(_db);
+        _db = await compute(_decodeAndNormalizeJson, response);
+        rootBundle.evict('assets/data/content.json');
         debugPrint("DataManager: Loaded from bundled assets.");
       }
     } catch (e) {
@@ -52,7 +106,7 @@ class DataManager {
         'content': {},
         'sections': {},
         'fatawa_categories': [],
-        'dreams_categories': []
+        'dreams_categories': [],
       };
     }
   }
@@ -71,11 +125,10 @@ class DataManager {
           if (oldContent == content) return false;
         }
 
-        final newDb = await compute(_decodeJson, content);
+        final newDb = await compute(_decodeAndNormalizeJson, content);
         if (newDb is Map && newDb.containsKey('sections')) {
           await localFile.writeAsString(content, encoding: utf8);
           _db = Map<String, dynamic>.from(newDb);
-          _normalizeDB(_db);
           dbNotifier.value++;
           debugPrint("DataManager: Cloud sync successful.");
           return true;
@@ -211,11 +264,13 @@ class DataManager {
   }
 
   static String getIstikharaDua() {
-    return getSettings()['istikhara_dua'] as String? ?? "«اللَّهُمَّ إِنِّي تَفَأَّلْتُ بِكِتَابِكَ، وَتَوَكَّلْتُ عَلَيْكَ، فَأَرِنِي مِنْ كِتَابِكَ مَا هُوَ مَكْتُومٌ مِنْ سِرِّكَ الْمَكْنُونِ فِي غَيْبِكَ»";
+    return getSettings()['istikhara_dua'] as String? ??
+        "«اللَّهُمَّ إِنِّي تَفَأَّلْتُ بِكِتَابِكَ، وَتَوَكَّلْتُ عَلَيْكَ، فَأَرِنِي مِنْ كِتَابِكَ مَا هُوَ مَكْتُومٌ مِنْ سِرِّكَ الْمَكْنُونِ فِي غَيْبِكَ»";
   }
 
   static String getMainScreenDua() {
-    return getSettings()['main_screen_dua'] as String? ?? "اللَّهُمَّ صَلِّ عَلَى مُحَمَّدٍ وَعَلَى آلِ مُحَمَّدٍ";
+    return getSettings()['main_screen_dua'] as String? ??
+        "اللَّهُمَّ صَلِّ عَلَى مُحَمَّدٍ وَعَلَى آلِ مُحَمَّدٍ";
   }
 
   static List<dynamic> getDailyDuas() {
@@ -234,8 +289,9 @@ class DataManager {
         item['_normalized_title'] = item['title'].toString().normalizeArabic();
       }
       if (item['content'] != null) {
-        item['_normalized_content'] =
-            item['content'].toString().normalizeArabic();
+        item['_normalized_content'] = item['content']
+            .toString()
+            .normalizeArabic();
       }
       if (item.containsKey('items') && item['items'] is List) {
         for (var nestedItem in item['items']) {
@@ -261,7 +317,7 @@ class DataManager {
       'fatawa_categories',
       'dreams_categories',
       'prophets_stories',
-      'imam_ali'
+      'imam_ali',
     ];
     for (var sectionName in topLevelSections) {
       final sectionList = db[sectionName];

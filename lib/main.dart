@@ -39,6 +39,14 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'presentation/screens/istikhara_screen.dart';
 import 'package:provider/provider.dart';
+
+import 'dart:io';
+import 'package:package_info_plus/package_info_plus.dart';
+import 'package:dio/dio.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:open_file/open_file.dart';
+
 import 'providers/settings_provider.dart';
 
 class IslamicPatternPainter extends CustomPainter {
@@ -203,8 +211,9 @@ class _AlDhakereenAppState extends State<AlDhakereenApp> {
       debugShowCheckedModeBanner: false,
       builder: (context, child) => MediaQuery(
         data: MediaQuery.of(context).copyWith(
-          textScaler:
-              MediaQuery.of(context).textScaler, // Respects system font scaling
+          textScaler: MediaQuery.of(
+            context,
+          ).textScaler, // Respects system font scaling
         ),
         child: child!,
       ),
@@ -250,6 +259,149 @@ class MainScaffold extends StatefulWidget {
 }
 
 class _MainScaffoldState extends State<MainScaffold> {
+  double _downloadProgress = -1.0;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _runDeferredTasks();
+    });
+  }
+
+  Future<void> _runDeferredTasks() async {
+    // 1. Sync Cloud Data in background
+    DataManager.syncCloudData();
+    // 2. Initialize Search Engine in background
+    SearchEngine.instance.init();
+    // 3. Check for updates
+    _checkForUpdates();
+  }
+
+  Future<void> _checkForUpdates() async {
+    final settings = DataManager.getSettings();
+    final latestVersionCode = settings['latest_version_code'] as int? ?? 1;
+    final forceUpdate = settings['force_update'] as bool? ?? false;
+    final updateUrl = settings['update_url'] as String? ?? "";
+
+    try {
+      final PackageInfo info = await PackageInfo.fromPlatform();
+      final currentVersionCode = int.tryParse(info.buildNumber) ?? 1;
+
+      if (currentVersionCode < latestVersionCode && updateUrl.isNotEmpty) {
+        if (!mounted) return;
+
+        showDialog(
+          context: context,
+          barrierDismissible: !forceUpdate,
+          builder: (context) {
+            return StatefulBuilder(
+              builder: (context, setDialogState) {
+                return PopScope(
+                  canPop: !forceUpdate && _downloadProgress < 0,
+                  child: AlertDialog(
+                    title: const Text(
+                      'تحديث متوفر',
+                      textAlign: TextAlign.right,
+                    ),
+                    content: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Text(
+                          'نسخة جديدة من التطبيق متوفرة. يرجى التحديث للحصول على أفضل تجربة.',
+                          textAlign: TextAlign.right,
+                        ),
+                        if (_downloadProgress >= 0) ...[
+                          const SizedBox(height: 20),
+                          LinearProgressIndicator(value: _downloadProgress),
+                          const SizedBox(height: 10),
+                          Text(
+                            '${(_downloadProgress * 100).toStringAsFixed(0)}%',
+                          ),
+                        ],
+                      ],
+                    ),
+                    actions: [
+                      if (!forceUpdate && _downloadProgress < 0)
+                        TextButton(
+                          onPressed: () {
+                            Navigator.of(context).pop();
+                          },
+                          child: const Text('تخطي'),
+                        ),
+                      if (_downloadProgress < 0)
+                        ElevatedButton(
+                          onPressed: () async {
+                            await _downloadAndInstallApk(
+                              updateUrl,
+                              setDialogState,
+                            );
+                          },
+                          child: const Text('تحديث الآن'),
+                        ),
+                    ],
+                  ),
+                );
+              },
+            );
+          },
+        );
+      }
+    } catch (e) {
+      debugPrint("Update Check Error: $e");
+    }
+  }
+
+  Future<void> _downloadAndInstallApk(
+    String url,
+    StateSetter setDialogState,
+  ) async {
+    if (Platform.isAndroid) {
+      if (await Permission.storage.request().isDenied) {}
+      if (await Permission.requestInstallPackages.request().isDenied) {}
+    }
+
+    try {
+      final Directory tempDir = await getTemporaryDirectory();
+      final String savePath = '${tempDir.path}/app-update.apk';
+
+      final Dio dio = Dio();
+
+      setDialogState(() {
+        _downloadProgress = 0.0;
+      });
+
+      await dio.download(
+        url,
+        savePath,
+        onReceiveProgress: (received, total) {
+          if (total != -1) {
+            setDialogState(() {
+              _downloadProgress = received / total;
+            });
+          }
+        },
+      );
+
+      setDialogState(() {
+        _downloadProgress = -1.0;
+      });
+
+      final result = await OpenFile.open(savePath);
+      debugPrint("OpenFile result: ${result.message}");
+    } catch (e) {
+      debugPrint("Download/Install error: $e");
+      setDialogState(() {
+        _downloadProgress = -1.0;
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('فشل تحميل التحديث')));
+      }
+    }
+  }
+
   String _currentSection = 'home';
   final List<String> _history = ['home'];
 
@@ -274,108 +426,109 @@ class _MainScaffoldState extends State<MainScaffold> {
   Widget build(BuildContext context) {
     final bool isSubPage = _history.length > 1;
     return ValueListenableBuilder<int>(
-        valueListenable: DataManager.dbNotifier,
-        builder: (context, _, __) {
-          final settingsProvider = context.watch<SettingsProvider>();
-          return PopScope(
-            canPop: !isSubPage,
-            onPopInvokedWithResult: (didPop, result) {
-              if (didPop) return;
-              _onBack();
-            },
-            child: Scaffold(
-              drawer: AppDrawer(
-                currentSection: _currentSection,
-                onNavigate: (section) {
-                  Navigator.pop(context);
-                  _navigateTo(section);
-                },
-              ),
-              appBar: AppBar(
-                title: Text(
-                  _getAppBarTitle(_currentSection),
-                  style: const TextStyle(
-                      fontWeight: FontWeight.bold, fontSize: 20),
-                ),
-                centerTitle: true,
-                elevation: 0,
-                backgroundColor: Theme.of(
-                  context,
-                )
-                    .appBarTheme
-                    .backgroundColor
-                    ?.withValues(alpha: settingsProvider.uiOpacity),
-                leading: Builder(
-                  builder: (context) => IconButton(
-                    icon: const Icon(Icons.notes),
-                    onPressed: () => Scaffold.of(context).openDrawer(),
-                    tooltip: 'القائمة',
-                  ),
-                ),
-                actions: [
-                  IconButton(
-                    icon: const Icon(Icons.search),
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => SearchScreen(
-                              fontSizeFactor: settingsProvider.fontSizeFactor),
-                        ),
-                      );
-                    },
-                    tooltip: 'بحث شامل',
-                  ),
-                  if (isSubPage)
-                    IconButton(
-                      icon: const Icon(Icons.arrow_forward_ios),
-                      onPressed: _onBack,
-                      tooltip: 'رجوع',
-                    ),
-                  if (!isSubPage) const SizedBox(width: 4),
-                ],
-              ),
-              body: Stack(
-                children: [
-                  if (_currentSection == 'home') ...[
-                    if (settingsProvider.backgroundImagePath != null)
-                      Positioned.fill(
-                        child: Image.file(
-                          File(settingsProvider.backgroundImagePath!),
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                    if (settingsProvider.backgroundImagePath == null)
-                      Positioned.fill(
-                        child: buildImage(
-                          settingsProvider.selectedBase64Bg ??
-                              DataManager.getSettings()['custom_bg_base64']?.toString() ??
-                              DataManager.getSettings()['bg_image']?.toString(),
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                  ],
-                  Positioned.fill(
-                    child: Opacity(
-                      opacity: 0.03,
-                      child: CustomPaint(
-                        painter: IslamicPatternPainter(
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
-                      ),
-                    ),
-                  ),
-                  SafeArea(
-                    child: AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 400),
-                      child: _buildBody(context),
-                    ),
-                  ),
-                ],
-              ),
+      valueListenable: DataManager.dbNotifier,
+      builder: (context, _, __) {
+        final settingsProvider = context.watch<SettingsProvider>();
+        return PopScope(
+          canPop: !isSubPage,
+          onPopInvokedWithResult: (didPop, result) {
+            if (didPop) return;
+            _onBack();
+          },
+          child: Scaffold(
+            drawer: AppDrawer(
+              currentSection: _currentSection,
+              onNavigate: (section) {
+                Navigator.pop(context);
+                _navigateTo(section);
+              },
             ),
-          );
-        });
+            appBar: AppBar(
+              title: Text(
+                _getAppBarTitle(_currentSection),
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 20,
+                ),
+              ),
+              centerTitle: true,
+              elevation: 0,
+              backgroundColor: Theme.of(context).appBarTheme.backgroundColor
+                  ?.withValues(alpha: settingsProvider.uiOpacity),
+              leading: Builder(
+                builder: (context) => IconButton(
+                  icon: const Icon(Icons.notes),
+                  onPressed: () => Scaffold.of(context).openDrawer(),
+                  tooltip: 'القائمة',
+                ),
+              ),
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.search),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => SearchScreen(
+                          fontSizeFactor: settingsProvider.fontSizeFactor,
+                        ),
+                      ),
+                    );
+                  },
+                  tooltip: 'بحث شامل',
+                ),
+                if (isSubPage)
+                  IconButton(
+                    icon: const Icon(Icons.arrow_forward_ios),
+                    onPressed: _onBack,
+                    tooltip: 'رجوع',
+                  ),
+                if (!isSubPage) const SizedBox(width: 4),
+              ],
+            ),
+            body: Stack(
+              children: [
+                if (_currentSection == 'home') ...[
+                  if (settingsProvider.backgroundImagePath != null)
+                    Positioned.fill(
+                      child: Image.file(
+                        File(settingsProvider.backgroundImagePath!),
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  if (settingsProvider.backgroundImagePath == null)
+                    Positioned.fill(
+                      child: buildImage(
+                        settingsProvider.selectedBase64Bg ??
+                            DataManager.getSettings()['custom_bg_base64']
+                                ?.toString() ??
+                            DataManager.getSettings()['bg_image']?.toString(),
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                ],
+                Positioned.fill(
+                  child: Opacity(
+                    opacity: 0.03,
+                    child: CustomPaint(
+                      painter: IslamicPatternPainter(
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                    ),
+                  ),
+                ),
+                SafeArea(
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 400),
+                    child: _buildBody(context),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   Widget _buildBody(BuildContext context) {
@@ -387,9 +540,7 @@ class _MainScaffoldState extends State<MainScaffold> {
           onPrayerCardTap: () => _navigateTo('prayer_times'),
         );
       case 'settings':
-        return const SettingsSection(
-          key: ValueKey('settings'),
-        );
+        return const SettingsSection(key: ValueKey('settings'));
 
       case 'favorites':
         return FavoritesSection(
@@ -449,8 +600,9 @@ class _MainScaffoldState extends State<MainScaffold> {
         return TabbedSection(
           key: const ValueKey('imam_ali'),
           tabs: imamAliCats.map((c) => c['title'].toString()).toList(),
-          sectionKeys:
-              imamAliCats.map((c) => 'imam_ali_cat_${c['id']}').toList(),
+          sectionKeys: imamAliCats
+              .map((c) => 'imam_ali_cat_${c['id']}')
+              .toList(),
           fontSizeFactor: settingsProvider.fontSizeFactor,
           uiOpacity: settingsProvider.uiOpacity,
         );
@@ -513,4 +665,3 @@ class _MainScaffoldState extends State<MainScaffold> {
     return _getSectionTitle(section);
   }
 }
-
