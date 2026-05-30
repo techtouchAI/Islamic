@@ -89,3 +89,6 @@ flutter:
     - family: IranNastaliq
       fonts:
         - asset: assets/font/IranNastaliq.ttf
+    - family: UthmanicHafs
+      fonts:
+        - asset: assets/font/UthmanicHafs1Ver08.ttf
