@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
 
 class HtmlContentRenderer extends StatefulWidget {
   final String content;
@@ -70,9 +71,10 @@ class _HtmlContentRendererState extends State<HtmlContentRenderer> {
       }
 
       final words = paragraph.split(RegExp(r'\s+'));
-      final List<Widget> wordWidgets = [];
+      final List<InlineSpan> spans = [];
 
-      for (final word in words) {
+      for (int i = 0; i < words.length; i++) {
+        final word = words[i];
         if (word.isEmpty) continue;
 
         // Parse styles inside the word
@@ -93,8 +95,6 @@ class _HtmlContentRendererState extends State<HtmlContentRenderer> {
 
         if (displayText.isEmpty) continue;
 
-        final currentWordIndex = wordIndex++;
-
         final currentHtmlStyle = TextStyle(
           fontWeight: isBold ? FontWeight.bold : baseStyle.fontWeight,
           color: currentColor ?? baseStyle.color,
@@ -103,41 +103,56 @@ class _HtmlContentRendererState extends State<HtmlContentRenderer> {
           height: baseStyle.height,
         );
 
-        wordWidgets.add(
-          GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: () => widget.onParagraphTapped?.call(currentWordIndex),
-            child: Stack(
-              clipBehavior: Clip.none,
-              alignment: Alignment.center,
-              children: [
-                Text(displayText, style: currentHtmlStyle),
-                if (widget.bookmarkedIndex?.toString() ==
-                    currentWordIndex.toString())
-                  const Positioned(
-                    top: -10,
-                    right: 0,
-                    child: Icon(Icons.star, color: Colors.green, size: 12),
-                  ),
-              ],
-            ),
+        final currentWordIndex = wordIndex++;
+        final isBookmarked =
+            widget.bookmarkedIndex?.toString() == currentWordIndex.toString();
+
+        if (i < words.length - 1) {
+          displayText += " ";
+        }
+
+        spans.add(
+          TextSpan(
+            text: displayText,
+            style: currentHtmlStyle,
+            recognizer: TapGestureRecognizer()
+              ..onTap = () => widget.onParagraphTapped?.call(currentWordIndex),
           ),
         );
+
+        if (isBookmarked) {
+          spans.add(
+            WidgetSpan(
+              alignment: PlaceholderAlignment.middle,
+              child: Stack(
+                clipBehavior: Clip.none,
+                alignment: Alignment.center,
+                children: [
+                  const SizedBox(width: 12, height: 12),
+                  Positioned(
+                    top: -10,
+                    right: 0,
+                    child: const Icon(Icons.star, color: Colors.green, size: 12),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
       }
 
-      if (wordWidgets.isNotEmpty) {
+      if (spans.isNotEmpty) {
         paragraphWidgets.add(
           Container(
             width: double.infinity,
             padding: const EdgeInsets.only(bottom: 8.0),
-            child: Wrap(
+            child: RichText(
               textDirection: TextDirection.rtl,
-              spacing: 4.0,
-              runSpacing: 4.0,
-              alignment: textAlign == TextAlign.center
-                  ? WrapAlignment.center
-                  : WrapAlignment.start,
-              children: wordWidgets,
+              textAlign: textAlign,
+              text: TextSpan(
+                style: baseStyle,
+                children: spans,
+              ),
             ),
           ),
         );

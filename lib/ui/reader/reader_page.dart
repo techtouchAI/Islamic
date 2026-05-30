@@ -289,7 +289,7 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
                                       child: Text.rich(
                                         TextSpan(
                                           style: TextStyle(
-                                            fontFamily: 'me_quran',
+                                            fontFamily: 'UthmanicHafs',
                                             fontSize: 32 * _factor,
                                             height: 1.8,
                                             color: dynamicTextColor,
@@ -307,7 +307,7 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
                                                     Text(
                                                       '﴿$arabicIndex﴾',
                                                       style: TextStyle(
-                                                        fontFamily: 'me_quran',
+                                                        fontFamily: 'UthmanicHafs',
                                                         color: _bookmarkedLineIndex
                                                                     ?.toString() ==
                                                                 ayahIndex
@@ -394,7 +394,7 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
                                         final baseStyle =
                                             widget.isImamAli || widget.isQuran
                                                 ? TextStyle(
-                                                    fontFamily: 'me_quran',
+                                                    fontFamily: widget.isQuran ? 'UthmanicHafs' : 'me_quran',
                                                     fontSize: 26 * _factor,
                                                     height: 1.8,
                                                     color: dynamicTextColor,
