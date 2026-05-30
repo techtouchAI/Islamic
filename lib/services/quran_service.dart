@@ -27,6 +27,7 @@ class QuranService {
           data.lengthInBytes,
         );
         await File(path).writeAsBytes(bytes);
+        rootBundle.evict("assets/data/quran_db.db");
       }
       _db = await openDatabase(path, readOnly: true);
     } catch (e) {
@@ -99,16 +100,21 @@ class QuranService {
     }
   }
 
-  static Future<List<Map<String, dynamic>>> getVersesByPage(int pageNumber) async {
+  static Future<List<Map<String, dynamic>>> getVersesByPage(
+    int pageNumber,
+  ) async {
     if (_db == null) return [];
     try {
-      final result = await _db!.rawQuery('''
+      final result = await _db!.rawQuery(
+        '''
         SELECT a.ar_text, a.anum, s.name AS surah_name
         FROM ayah a
         INNER JOIN surah s ON a.sid = s.id
         WHERE a.ayah_page_number = ?
         ORDER BY a.id ASC
-      ''', [pageNumber]);
+      ''',
+        [pageNumber],
+      );
       return result;
     } catch (e) {
       debugPrint("QuranService getVersesByPage Error: $e");
@@ -126,12 +132,16 @@ class QuranService {
         JOIN surah s ON a.sid = s.id
       ''');
 
-      return result.map((row) => {
-        'ayah_text': row['text']?.toString() ?? '',
-        'surah_name': row['surah_name']?.toString() ?? '',
-        'ayah_number': row['anum'],
-        'surah_number': row['sid'],
-      }).toList();
+      return result
+          .map(
+            (row) => {
+              'ayah_text': row['text']?.toString() ?? '',
+              'surah_name': row['surah_name']?.toString() ?? '',
+              'ayah_number': row['anum'],
+              'surah_number': row['sid'],
+            },
+          )
+          .toList();
     } catch (e) {
       debugPrint("QuranService getAllVerses Error: \$e");
       return [];
