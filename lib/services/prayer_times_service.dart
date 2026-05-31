@@ -109,15 +109,12 @@ class PrayerTimesService with WidgetsBindingObserver {
     // نستخدم 0 كفارق زمني للحصول على التوقيت العالمي الموحد (UTC)
     const timeZoneOffset = 0.0;
 
-    final smoothedLat = double.parse(position.latitude.toStringAsFixed(2));
-    final smoothedLng = double.parse(position.longitude.toStringAsFixed(2));
-
     final times = _engine.getTimes(
       calculationDate,
-      smoothedLat,
-      smoothedLng,
+      position.latitude,
+      position.longitude,
       timeZoneOffset,
-      elevation: position.altitude,
+      elevation: 0.0,
     );
 
     // الأوقات المستلمة من المحرك هي بالفعل UTC
