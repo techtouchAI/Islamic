@@ -40,7 +40,7 @@ abstract class PrayerTimesEngine {
 /// Adapted for clean architecture in Dart with Jafari parameters.
 class PrayTimes implements PrayerTimesEngine {
   // Constants for calculation
-  final double _numIterations = 1;
+  final double _numIterations = 4;
 
   // Calculation parameters
   final PrayerCalculationParameters _params;
@@ -189,8 +189,8 @@ class PrayTimes implements PrayerTimesEngine {
     times = _adjustTimes(times);
 
     // add midnight time (Jafari method)
-    // In Jafari method, Midnight is between Sunset and Fajr of next day
-    times['midnight'] = times['sunset']! + _timeDiff(times['sunset']!, times['fajr']! + 24) / 2;
+    // For Sayyid Sistani, Midnight is halfway between Sunset and Sunrise of the next day
+    times['midnight'] = times['sunset']! + _timeDiff(times['sunset']!, times['sunrise']! + 24) / 2;
 
     return times;
   }
@@ -269,7 +269,7 @@ class PrayTimes implements PrayerTimesEngine {
     double timeInHours = _DMath.fixHour(time);
 
     int hours = timeInHours.floor();
-    int minutes = ((timeInHours - hours) * 60).round();
+    int minutes = ((timeInHours - hours) * 60 + 0.5).floor();
 
     // Add days if time crossed past midnight
     int daysToAdd = (time / 24).floor();
