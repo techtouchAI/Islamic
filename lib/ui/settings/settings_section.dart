@@ -209,10 +209,11 @@ class SettingsSection extends StatelessWidget {
     final settingsProvider = context.watch<SettingsProvider>();
     final gallery =
         (DataManager.getSettings()['bg_gallery'] as List<dynamic>? ?? []);
-    if (gallery.isEmpty)
+    if (gallery.isEmpty) {
       return const Center(
         child: Text('المعرض فارغ', style: TextStyle(fontSize: 12)),
       );
+    }
     return ListView.builder(
       scrollDirection: Axis.horizontal,
       itemCount: gallery.length,

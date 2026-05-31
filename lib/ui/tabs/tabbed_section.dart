@@ -1,35 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_linkify/flutter_linkify.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:intl/intl.dart' as intl;
-import 'package:intl/date_symbol_data_local.dart';
-import 'dart:async';
-import 'dart:math';
-import 'package:share_plus/share_plus.dart';
-import 'package:flutter/services.dart';
-import 'package:url_launcher/url_launcher.dart';
-import 'package:hijri/hijri_calendar.dart';
-import 'package:geolocator/geolocator.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:image_picker/image_picker.dart';
-import 'dart:io';
-
 import '../../data/data_manager.dart';
-import '../../utils/string_extensions.dart';
-import '../../services/prayer_times_service.dart';
-import '../../services/quran_service.dart';
-import '../../services/favorites_service.dart';
-import '../../models/favorite_item.dart';
-import '../../sections/html_content_renderer.dart';
-import '../../ui/calendar/hijri_calendar_screen.dart';
-import '../../ui/qibla/qibla_screen.dart';
-import '../../presentation/screens/istikhara_screen.dart';
-import '../../main.dart'; // For AlDhakereenApp globals
-
-import '../widgets/app_drawer.dart'; // For _CountBadge
+import '../widgets/app_drawer.dart'; // For CountBadge
 import '../dynamic_list/dynamic_list_section.dart'; // For DynamicListSection
-
-
 
 class TabbedSection extends StatelessWidget {
   final List<String> tabs;

@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:hijri/hijri_calendar.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -6,7 +5,6 @@ import 'package:intl/date_symbol_data_local.dart';
 import '../data/data_manager.dart';
 import '../services/quran_service.dart';
 import '../main.dart';
-// To access MainScaffold or replace later
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -17,7 +15,6 @@ class SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<SplashScreen>
     with SingleTickerProviderStateMixin {
-  double _downloadProgress = -1.0;
   late AnimationController _fadeController;
 
   @override
