@@ -20,7 +20,6 @@ class PrayerTimesService with WidgetsBindingObserver {
   }
 
   void _initLifecycleObserver() {
-    // Ensure bindings are initialized before adding observer to avoid null exceptions
     WidgetsFlutterBinding.ensureInitialized();
     WidgetsBinding.instance.addObserver(this);
   }
@@ -29,14 +28,12 @@ class PrayerTimesService with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
     if (state == AppLifecycleState.resumed) {
-      // Silent refresh when user returns to app to handle potential TZ/DST changes dynamically
       forceReschedule().catchError((e) {
         debugPrint("Silent refresh failed on resume: $e");
       });
     }
   }
 
-  /// Dependency Injection support for testing or specific engines
   void setEngine(PrayerTimesEngine engine) {
     _engine = engine;
   }
@@ -71,7 +68,6 @@ class PrayerTimesService with WidgetsBindingObserver {
       debugPrint("خطأ في جلب الموقع: $e");
     }
 
-    // Fallback 1: Cache
     final prefs = await SharedPreferences.getInstance();
     final lat = prefs.getDouble('cached_lat');
     final lon = prefs.getDouble('cached_lon');
@@ -90,7 +86,6 @@ class PrayerTimesService with WidgetsBindingObserver {
       );
     }
 
-    // Fallback 2: Hillah
     return Position(
       latitude: 32.4682,
       longitude: 44.4361,
@@ -105,18 +100,15 @@ class PrayerTimesService with WidgetsBindingObserver {
     );
   }
 
-  /// حساب أوقات الصلاة ليوم معين وموقع معين مع التحويل الصارم للتوقيت المحلي
+  /// حساب أوقات الصلاة - تستخدم UTC لضمان الثبات عبر المناطق الزمنية
   Map<String, DateTime> calculatePrayerTimes(
     Position position, {
     DateTime? date,
   }) {
     final calculationDate = date ?? DateTime.now();
+    // نستخدم 0 كفارق زمني للحصول على التوقيت العالمي الموحد (UTC)
+    const timeZoneOffset = 0.0;
 
-    // Calculate the time zone offset in hours
-    final timeZoneOffset = calculationDate.timeZoneOffset.inMinutes / 60.0;
-
-    // GPS Debouncing / Smoothing
-    // Rounding to 2 decimal places to prevent dancing seconds/minutes on slight movement (accuracy ~1.1km)
     final smoothedLat = double.parse(position.latitude.toStringAsFixed(2));
     final smoothedLng = double.parse(position.longitude.toStringAsFixed(2));
 
@@ -128,56 +120,113 @@ class PrayerTimesService with WidgetsBindingObserver {
       elevation: position.altitude,
     );
 
-    // Convert exact UTC DateTime to local DateTime
+    // الأوقات المستلمة من المحرك هي بالفعل UTC
     return {
-      'fajr': times['fajr']!.toLocal(),
-      'sunrise': times['sunrise']!.toLocal(),
-      'dhuhr': times['dhuhr']!.toLocal(),
-      'asr': times['asr']!.toLocal(),
-      'maghrib': times['maghrib']!.toLocal(),
-      'isha': times['isha']!.toLocal(),
-      'midnight': times['midnight']!.toLocal(),
+      'fajr': times['fajr']!,
+      'sunrise': times['sunrise']!,
+      'dhuhr': times['dhuhr']!,
+      'asr': times['asr']!,
+      'maghrib': times['maghrib']!,
+      'isha': times['isha']!,
+      'midnight': times['midnight']!,
     };
   }
 
-  /// Background task scheduler
+  /// طبقة التحقق لمنع تداخل أوقات الصلاة عند التعديل اليدوي
+  int validateOffset(String prayerKey, int requestedOffsetMinutes, Map<String, DateTime> baseTimes) {
+    if (!baseTimes.containsKey(prayerKey)) return requestedOffsetMinutes;
+
+    final List<String> prayerOrder = ['fajr', 'sunrise', 'dhuhr', 'asr', 'maghrib', 'isha'];
+    final int currentIndex = prayerOrder.indexOf(prayerKey);
+    if (currentIndex == -1) return requestedOffsetMinutes;
+
+    final DateTime currentBase = baseTimes[prayerKey]!;
+    final DateTime requestedTime = currentBase.add(Duration(minutes: requestedOffsetMinutes));
+
+    // التحقق من الصلاة السابقة (يجب أن يكون الوقت المطلوب بعدها)
+    if (currentIndex > 0) {
+      final String prevKey = prayerOrder[currentIndex - 1];
+      final DateTime prevTime = baseTimes[prevKey]!;
+      if (requestedTime.isBefore(prevTime) || requestedTime.isAtSameMomentAs(prevTime)) {
+        // إذا كان التعديل يجعل الوقت يسبق الصلاة السابقة، نعيد أقصى إزاحة ممكنة (قبل دقيقة واحدة)
+        return prevTime.difference(currentBase).inMinutes + 1;
+      }
+    }
+
+    // التحقق من الصلاة التالية (يجب أن يكون الوقت المطلوب قبلها)
+    if (currentIndex < prayerOrder.length - 1) {
+      final String nextKey = prayerOrder[currentIndex + 1];
+      final DateTime nextTime = baseTimes[nextKey]!;
+      if (requestedTime.isAfter(nextTime) || requestedTime.isAtSameMomentAs(nextTime)) {
+        // إذا كان التعديل يجعل الوقت يتجاوز الصلاة التالية، نعيد أقصى إزاحة ممكنة (بعد دقيقة واحدة)
+        return nextTime.difference(currentBase).inMinutes - 1;
+      }
+    }
+
+    return requestedOffsetMinutes;
+  }
+
+  /// الجدولة الذكية (Smart Rescheduling) لصلاة محددة
+  Future<void> rescheduleSinglePrayer(String prayerKey, Position position) async {
+    final prefs = await SharedPreferences.getInstance();
+    final int offset = prefs.getInt('adj_$prayerKey') ?? 0;
+    final bool isEnabled = prefs.getBool('adhan_$prayerKey') ?? true;
+
+    final now = DateTime.now();
+    for (int i = 0; i < 7; i++) {
+      final date = now.add(Duration(days: i));
+      final baseTimes = calculatePrayerTimes(position, date: date);
+
+      final int validatedOffset = validateOffset(prayerKey, offset, baseTimes);
+      final DateTime time = baseTimes[prayerKey]!.add(Duration(minutes: validatedOffset));
+      final String name = _getPrayerNameAr(prayerKey);
+
+      final int id = i * 10 + _getPrayerId(prayerKey);
+
+      // إلغاء التنبيه القديم قبل حجز الجديد
+      await PrayerAlarmService.cancelPrayer(id);
+
+      if (isEnabled && time.isAfter(DateTime.now())) {
+        await _scheduleSingleNotification(id, name, time, isEnabled, prayerKey);
+      }
+    }
+  }
+
   Future<void> scheduleAdhanNotificationsBackground() async {
     try {
       final pos = await getCurrentLocation();
       if (pos == null) return;
-
-      final prefs = await SharedPreferences.getInstance();
-
-      final enabledPrayers = {
-        'fajr': prefs.getBool('adhan_fajr') ?? true,
-        'dhuhr': prefs.getBool('adhan_dhuhr') ?? true,
-        'asr': prefs.getBool('adhan_asr') ?? true,
-        'maghrib': prefs.getBool('adhan_maghrib') ?? true,
-        'isha': prefs.getBool('adhan_isha') ?? true,
-      };
-
-      final offsets = {
-        'fajr': prefs.getInt('adj_fajr') ?? 0,
-        'dhuhr': prefs.getInt('adj_dhuhr') ?? 0,
-        'asr': prefs.getInt('adj_asr') ?? 0,
-        'maghrib': prefs.getInt('adj_maghrib') ?? 0,
-        'isha': prefs.getInt('adj_isha') ?? 0,
-      };
-
-      await scheduleAdhanNotifications(pos, enabledPrayers, offsets);
-
-      await prefs.setString('last_bg_sync', DateTime.now().toIso8601String());
+      await forceReschedule();
     } catch (e) {
       debugPrint("Background scheduling failed: $e");
-      rethrow;
     }
   }
 
   Future<void> forceReschedule() async {
-    await scheduleAdhanNotificationsBackground();
+    final pos = await getCurrentLocation();
+    if (pos == null) return;
+
+    final prefs = await SharedPreferences.getInstance();
+    final enabledPrayers = {
+      'fajr': prefs.getBool('adhan_fajr') ?? true,
+      'dhuhr': prefs.getBool('adhan_dhuhr') ?? true,
+      'asr': prefs.getBool('adhan_asr') ?? true,
+      'maghrib': prefs.getBool('adhan_maghrib') ?? true,
+      'isha': prefs.getBool('adhan_isha') ?? true,
+    };
+
+    final offsets = {
+      'fajr': prefs.getInt('adj_fajr') ?? 0,
+      'dhuhr': prefs.getInt('adj_dhuhr') ?? 0,
+      'asr': prefs.getInt('adj_asr') ?? 0,
+      'maghrib': prefs.getInt('adj_maghrib') ?? 0,
+      'isha': prefs.getInt('adj_isha') ?? 0,
+    };
+
+    await scheduleAdhanNotifications(pos, enabledPrayers, offsets);
+    await prefs.setString('last_bg_sync', DateTime.now().toIso8601String());
   }
 
-  /// جدولة التنبيهات لمدة 7 أيام قادمة
   Future<void> scheduleAdhanNotifications(
     Position position,
     Map<String, bool> enabledPrayers,
@@ -190,11 +239,15 @@ class PrayerTimesService with WidgetsBindingObserver {
     final now = DateTime.now();
     for (int i = 0; i < 7; i++) {
       final date = now.add(Duration(days: i));
-      final times = calculatePrayerTimes(position, date: date);
+      final baseTimes = calculatePrayerTimes(position, date: date);
 
-      times.forEach((key, time) {
-        final adjustedTime = time.add(Duration(minutes: offsets[key] ?? 0));
+      baseTimes.forEach((key, time) {
+        if (_getPrayerId(key) == 0) return; // تخطي الأوقات غير المخصصة للأذان مثل الشروق
+
+        final int validatedOffset = validateOffset(key, offsets[key] ?? 0, baseTimes);
+        final adjustedTime = time.add(Duration(minutes: validatedOffset));
         final name = _getPrayerNameAr(key);
+
         _scheduleSingleNotification(
           i * 10 + _getPrayerId(key),
           name,
@@ -208,35 +261,23 @@ class PrayerTimesService with WidgetsBindingObserver {
 
   String _getPrayerNameAr(String key) {
     switch (key) {
-      case 'fajr':
-        return "الفجر";
-      case 'dhuhr':
-        return "الظهر";
-      case 'asr':
-        return "العصر";
-      case 'maghrib':
-        return "المغرب";
-      case 'isha':
-        return "العشاء";
-      default:
-        return "";
+      case 'fajr': return "الفجر";
+      case 'dhuhr': return "الظهر";
+      case 'asr': return "العصر";
+      case 'maghrib': return "المغرب";
+      case 'isha': return "العشاء";
+      default: return "";
     }
   }
 
   int _getPrayerId(String key) {
     switch (key) {
-      case 'fajr':
-        return 1;
-      case 'dhuhr':
-        return 2;
-      case 'asr':
-        return 3;
-      case 'maghrib':
-        return 4;
-      case 'isha':
-        return 5;
-      default:
-        return 0;
+      case 'fajr': return 1;
+      case 'dhuhr': return 2;
+      case 'asr': return 3;
+      case 'maghrib': return 4;
+      case 'isha': return 5;
+      default: return 0;
     }
   }
 
@@ -252,6 +293,14 @@ class PrayerTimesService with WidgetsBindingObserver {
     final bool isFullScreen = prefs.getBool('fullscreen_$key') ?? false;
     final double volume = prefs.getDouble('adhan_volume') ?? 1.0;
     final int preAlert = prefs.getInt('adhan_pre_alert') ?? 0;
-    await PrayerAlarmService.schedulePrayer(id, time, name, fullScreen: isFullScreen, volume: volume, preAlertMinutes: preAlert);
+
+    await PrayerAlarmService.schedulePrayer(
+      id,
+      time,
+      name,
+      fullScreen: isFullScreen,
+      volume: volume,
+      preAlertMinutes: preAlert
+    );
   }
 }

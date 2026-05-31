@@ -179,13 +179,14 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
     if (man == null || !man.contains(':')) return calc;
     try {
       final parts = man.split(':');
-      return DateTime(
+      final dt = DateTime(
         calc.year,
         calc.month,
         calc.day,
         int.parse(parts[0]),
         int.parse(parts[1]),
       );
+      return calc.isUtc ? dt.toUtc() : dt;
     } catch (e) {
       return calc;
     }
@@ -330,7 +331,26 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
                       setState(() => _enabledPrayers[k] = v);
                       final prefs = await SharedPreferences.getInstance();
                       await prefs.setBool('adhan_$k', v);
-                      _getLocationAndPrayers();
+
+                      Position pos;
+                      if (_currentPosition != null) {
+                        pos = _currentPosition!;
+                      } else {
+                        final coords = iraqProvinces[_selectedProvince]!;
+                        pos = Position(
+                          latitude: coords[0],
+                          longitude: coords[1],
+                          timestamp: DateTime.now(),
+                          accuracy: 0,
+                          altitude: 0,
+                          heading: 0,
+                          speed: 0,
+                          speedAccuracy: 0,
+                          altitudeAccuracy: 0,
+                          headingAccuracy: 0,
+                        );
+                      }
+                      await _prayerService.rescheduleSinglePrayer(k, pos);
                     },
                   ),
                   Padding(
@@ -345,6 +365,26 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
                               final prefs =
                                   await SharedPreferences.getInstance();
                               await prefs.setBool('fullscreen_$k', false);
+
+                              Position pos;
+                              if (_currentPosition != null) {
+                                pos = _currentPosition!;
+                              } else {
+                                final coords = iraqProvinces[_selectedProvince]!;
+                                pos = Position(
+                                  latitude: coords[0],
+                                  longitude: coords[1],
+                                  timestamp: DateTime.now(),
+                                  accuracy: 0,
+                                  altitude: 0,
+                                  heading: 0,
+                                  speed: 0,
+                                  speedAccuracy: 0,
+                                  altitudeAccuracy: 0,
+                                  headingAccuracy: 0,
+                                );
+                              }
+                              await _prayerService.rescheduleSinglePrayer(k, pos);
                             },
                             child: Card(
                               color: (_fullScreenPrayers[k] ?? false)
@@ -389,6 +429,26 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
                               final prefs =
                                   await SharedPreferences.getInstance();
                               await prefs.setBool('fullscreen_$k', true);
+
+                              Position pos;
+                              if (_currentPosition != null) {
+                                pos = _currentPosition!;
+                              } else {
+                                final coords = iraqProvinces[_selectedProvince]!;
+                                pos = Position(
+                                  latitude: coords[0],
+                                  longitude: coords[1],
+                                  timestamp: DateTime.now(),
+                                  accuracy: 0,
+                                  altitude: 0,
+                                  heading: 0,
+                                  speed: 0,
+                                  speedAccuracy: 0,
+                                  altitudeAccuracy: 0,
+                                  headingAccuracy: 0,
+                                );
+                              }
+                              await _prayerService.rescheduleSinglePrayer(k, pos);
                             },
                             child: Card(
                               color: (_fullScreenPrayers[k] ?? false)
@@ -517,9 +577,10 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
     );
   }
 
-  Widget _buildPrayerCard(String label, DateTime? originalTime, String key) {
-    if (originalTime == null) return const SizedBox();
-    final adjTime = originalTime.add(
+  Widget _buildPrayerCard(String label, DateTime? utcTime, String key) {
+    if (utcTime == null) return const SizedBox();
+    final localTime = utcTime.toLocal();
+    final adjTime = localTime.add(
       Duration(minutes: _manualAdjustments[key] ?? 0),
     );
     return Card(
@@ -560,27 +621,54 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
             initialTime: TimeOfDay.fromDateTime(adjTime),
           );
           if (picked != null) {
-            final pickedDateTime = DateTime(
-              originalTime.year,
-              originalTime.month,
-              originalTime.day,
+            final pickedDateTimeLocal = DateTime(
+              localTime.year,
+              localTime.month,
+              localTime.day,
               picked.hour,
               picked.minute,
             );
-            final originalDateBase = DateTime(
-              originalTime.year,
-              originalTime.month,
-              originalTime.day,
-              originalTime.hour,
-              originalTime.minute,
-            );
-            final diff = pickedDateTime.difference(originalDateBase).inMinutes;
+            final diff = pickedDateTimeLocal.difference(localTime).inMinutes;
+
+            // التحقق من الإزاحة الجديدة لضمان عدم التداخل
+            final validatedDiff =
+                _prayerService.validateOffset(key, diff, _prayerTimes!);
+
             setState(() {
-              _manualAdjustments[key] = diff;
+              _manualAdjustments[key] = validatedDiff;
             });
             final prefs = await SharedPreferences.getInstance();
-            await prefs.setInt('adj_$key', diff);
-            _getLocationAndPrayers();
+            await prefs.setInt('adj_$key', validatedDiff);
+
+            // إعادة جدولة ذكية لهذه الصلاة فقط لتقليل الاستهلاك
+            Position pos;
+            if (_currentPosition != null) {
+              pos = _currentPosition!;
+            } else {
+              final coords = iraqProvinces[_selectedProvince]!;
+              pos = Position(
+                latitude: coords[0],
+                longitude: coords[1],
+                timestamp: DateTime.now(),
+                accuracy: 0,
+                altitude: 0,
+                heading: 0,
+                speed: 0,
+                speedAccuracy: 0,
+                altitudeAccuracy: 0,
+                headingAccuracy: 0,
+              );
+            }
+            await _prayerService.rescheduleSinglePrayer(key, pos);
+
+            if (validatedDiff != diff) {
+              if (!mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                    content: Text(
+                        'تم ضبط الوقت لأقرب قيمة مسموح بها لمنع التداخل مع الصلاة المجاورة')),
+              );
+            }
           }
         },
       ),
