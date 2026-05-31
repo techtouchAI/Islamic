@@ -114,7 +114,9 @@ class DataManager {
   static Future<bool> syncCloudData({http.Client? client}) async {
     try {
       client = client ?? httpClient ?? http.Client();
-      final response = await client.get(Uri.parse(_repoUrl));
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final url = Uri.parse("$_repoUrl?t=$timestamp");
+      final response = await client.get(url).timeout(const Duration(seconds: 15));
       if (response.statusCode == 200) {
         final content = utf8.decode(response.bodyBytes);
 
