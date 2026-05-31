@@ -199,6 +199,8 @@ class AlDhakereenApp extends StatefulWidget {
   State<AlDhakereenApp> createState() => _AlDhakereenAppState();
 }
 
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
 class _AlDhakereenAppState extends State<AlDhakereenApp> {
   @override
   Widget build(BuildContext context) {
@@ -207,6 +209,7 @@ class _AlDhakereenAppState extends State<AlDhakereenApp> {
       return const Center(child: CircularProgressIndicator());
 
     return MaterialApp(
+      navigatorKey: navigatorKey,
       title: 'الذاكرين',
       debugShowCheckedModeBanner: false,
       builder: (context, child) => MediaQuery(
@@ -259,8 +262,6 @@ class MainScaffold extends StatefulWidget {
 }
 
 class _MainScaffoldState extends State<MainScaffold> {
-  double _downloadProgress = -1.0;
-
   @override
   void initState() {
     super.initState();
@@ -273,108 +274,148 @@ class _MainScaffoldState extends State<MainScaffold> {
     // 1. Initialize Search Engine in background
     SearchEngine.instance.init();
 
-    // 2. Sync Cloud Data in background, then check for updates
-    await DataManager.syncCloudData();
-
-    // 3. Check for updates
-    if (mounted) {
-      _checkForUpdates();
-    }
+    // 2. Trigger async data sync and set up a reactive listener for updates.
+    _setupUpdateListener();
   }
 
-  Future<void> _checkForUpdates() async {
+  void _setupUpdateListener() {
+    bool hasCheckedForUpdates = false;
+
+    void triggerUpdateCheck() {
+      if (!hasCheckedForUpdates) {
+        hasCheckedForUpdates = true;
+        _checkForUpdatesSafe();
+      }
+    }
+
+    // Sync cloud data asynchronously
+    DataManager.syncCloudData().then((didUpdate) {
+      // Whether sync was successful, identical to local cache, or failed internally,
+      // trigger the update check once it concludes.
+      triggerUpdateCheck();
+    }).catchError((e) {
+      debugPrint("Cloud sync failed during deferred tasks: $e");
+      // Even if the outer future throws (unlikely due to internal try/catch), attempt update check on the local cache just in case.
+      triggerUpdateCheck();
+      return false;
+    });
+  }
+
+  Future<void> _checkForUpdatesSafe() async {
     final settings = DataManager.getSettings();
-    final latestVersionCode = int.tryParse(settings['latest_version_code']?.toString() ?? '1') ?? 1;
+
+    // Robustly parse version code to prevent NumberFormatException/Silent fails
+    final String remoteVersionStr = settings['latest_version_code']?.toString() ?? '';
+    final int latestVersionCode = int.tryParse(remoteVersionStr) ?? -1;
+
+    if (latestVersionCode == -1) {
+      debugPrint("OTA ERROR: Invalid 'latest_version_code' in JSON. Expecting integer, got: '$remoteVersionStr'");
+      return;
+    }
+
     final forceUpdate = settings['force_update'] == true;
     final updateUrl = settings['update_url']?.toString() ?? "";
+
+    if (updateUrl.isEmpty) {
+      debugPrint("OTA: 'update_url' is empty. Skipping update check.");
+      return;
+    }
 
     try {
       final PackageInfo info = await PackageInfo.fromPlatform();
       final currentVersionCode = int.tryParse(info.buildNumber) ?? 1;
 
-      if (currentVersionCode < latestVersionCode && updateUrl.isNotEmpty) {
-        if (!mounted) return;
+      if (currentVersionCode < latestVersionCode) {
+        _showUpdateDialog(forceUpdate, updateUrl);
+      }
+    } catch (e) {
+      debugPrint("OTA ERROR: Update Check Exception: $e");
+    }
+  }
 
-        showDialog(
-          context: context,
-          barrierDismissible: !forceUpdate,
-          builder: (context) {
-            return StatefulBuilder(
-              builder: (context, setDialogState) {
-                return PopScope(
-                  canPop: !forceUpdate && _downloadProgress < 0,
-                  child: AlertDialog(
-                    title: const Text(
-                      'تحديث متوفر',
+  void _showUpdateDialog(bool forceUpdate, String updateUrl) {
+    // Always use the safe navigatorKey context to ensure the dialog displays on top regardless of MainScaffold state.
+    final context = navigatorKey.currentContext;
+    if (context == null) return;
+
+    double downloadProgress = -1.0;
+
+    showDialog(
+      context: context,
+      barrierDismissible: !forceUpdate,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return PopScope(
+              canPop: !forceUpdate && downloadProgress < 0,
+              child: AlertDialog(
+                title: const Text(
+                  'تحديث متوفر',
+                  textAlign: TextAlign.right,
+                ),
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text(
+                      'نسخة جديدة من التطبيق متوفرة. يرجى التحديث للحصول على أفضل تجربة.',
                       textAlign: TextAlign.right,
                     ),
-                    content: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Text(
-                          'نسخة جديدة من التطبيق متوفرة. يرجى التحديث للحصول على أفضل تجربة.',
-                          textAlign: TextAlign.right,
-                        ),
-                        if (_downloadProgress >= 0) ...[
-                          const SizedBox(height: 20),
-                          LinearProgressIndicator(value: _downloadProgress),
-                          const SizedBox(height: 10),
-                          Text(
-                            '${(_downloadProgress * 100).toStringAsFixed(0)}%',
-                          ),
-                        ],
-                      ],
-                    ),
-                    actions: [
-                      if (!forceUpdate && _downloadProgress < 0)
-                        TextButton(
-                          onPressed: () {
-                            Navigator.of(context).pop();
-                          },
-                          child: const Text('تخطي'),
-                        ),
-                      if (_downloadProgress < 0)
-                        ElevatedButton(
-                          onPressed: () async {
-                            await _downloadAndInstallApk(
-                              updateUrl,
-                              setDialogState,
-                            );
-                          },
-                          child: const Text('تحديث الآن'),
-                        ),
+                    if (downloadProgress >= 0) ...[
+                      const SizedBox(height: 20),
+                      LinearProgressIndicator(value: downloadProgress),
+                      const SizedBox(height: 10),
+                      Text('${(downloadProgress * 100).toStringAsFixed(0)}%'),
                     ],
-                  ),
-                );
-              },
+                  ],
+                ),
+                actions: [
+                  if (!forceUpdate && downloadProgress < 0)
+                    TextButton(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                      },
+                      child: const Text('تخطي'),
+                    ),
+                  if (downloadProgress < 0)
+                    ElevatedButton(
+                      onPressed: () async {
+                        await _downloadAndInstallApk(
+                          updateUrl,
+                          setDialogState,
+                          (progress) => setDialogState(() => downloadProgress = progress),
+                          dialogContext,
+                        );
+                      },
+                      child: const Text('تحديث الآن'),
+                    ),
+                ],
+              ),
             );
           },
         );
-      }
-    } catch (e) {
-      debugPrint("Update Check Error: $e");
-    }
+      },
+    );
   }
 
   Future<void> _downloadAndInstallApk(
     String url,
     StateSetter setDialogState,
+    Function(double) updateProgress,
+    BuildContext dialogContext,
   ) async {
     if (Platform.isAndroid) {
       var installStatus = await Permission.requestInstallPackages.status;
       if (!installStatus.isGranted) {
         installStatus = await Permission.requestInstallPackages.request();
         if (!installStatus.isGranted) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text(
-                  'يجب منح صلاحية تثبيت التطبيقات لتتمكن من تحديث التطبيق',
-                  textAlign: TextAlign.center,
-                ),
+          ScaffoldMessenger.of(dialogContext).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'يجب منح صلاحية تثبيت التطبيقات لتتمكن من تحديث التطبيق',
+                textAlign: TextAlign.center,
               ),
-            );
-          }
+            ),
+          );
           return;
         }
       }
@@ -385,39 +426,28 @@ class _MainScaffoldState extends State<MainScaffold> {
       final String savePath = '${tempDir.path}/app-update.apk';
 
       final Dio dio = Dio();
-
-      setDialogState(() {
-        _downloadProgress = 0.0;
-      });
+      updateProgress(0.0);
 
       await dio.download(
         url,
         savePath,
         onReceiveProgress: (received, total) {
           if (total != -1) {
-            setDialogState(() {
-              _downloadProgress = received / total;
-            });
+            updateProgress(received / total);
           }
         },
       );
 
-      setDialogState(() {
-        _downloadProgress = -1.0;
-      });
+      updateProgress(-1.0);
 
       final result = await OpenFile.open(savePath);
       debugPrint("OpenFile result: ${result.message}");
     } catch (e) {
       debugPrint("Download/Install error: $e");
-      setDialogState(() {
-        _downloadProgress = -1.0;
-      });
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('فشل تحميل التحديث')));
-      }
+      updateProgress(-1.0);
+      ScaffoldMessenger.of(dialogContext).showSnackBar(
+        const SnackBar(content: Text('فشل تحميل التحديث')),
+      );
     }
   }
 
