@@ -270,19 +270,23 @@ class _MainScaffoldState extends State<MainScaffold> {
   }
 
   Future<void> _runDeferredTasks() async {
-    // 1. Sync Cloud Data in background
-    DataManager.syncCloudData();
-    // 2. Initialize Search Engine in background
+    // 1. Initialize Search Engine in background
     SearchEngine.instance.init();
+
+    // 2. Sync Cloud Data in background, then check for updates
+    await DataManager.syncCloudData();
+
     // 3. Check for updates
-    _checkForUpdates();
+    if (mounted) {
+      _checkForUpdates();
+    }
   }
 
   Future<void> _checkForUpdates() async {
     final settings = DataManager.getSettings();
-    final latestVersionCode = settings['latest_version_code'] as int? ?? 1;
-    final forceUpdate = settings['force_update'] as bool? ?? false;
-    final updateUrl = settings['update_url'] as String? ?? "";
+    final latestVersionCode = int.tryParse(settings['latest_version_code']?.toString() ?? '1') ?? 1;
+    final forceUpdate = settings['force_update'] == true;
+    final updateUrl = settings['update_url']?.toString() ?? "";
 
     try {
       final PackageInfo info = await PackageInfo.fromPlatform();
@@ -357,8 +361,23 @@ class _MainScaffoldState extends State<MainScaffold> {
     StateSetter setDialogState,
   ) async {
     if (Platform.isAndroid) {
-      if (await Permission.storage.request().isDenied) {}
-      if (await Permission.requestInstallPackages.request().isDenied) {}
+      var installStatus = await Permission.requestInstallPackages.status;
+      if (!installStatus.isGranted) {
+        installStatus = await Permission.requestInstallPackages.request();
+        if (!installStatus.isGranted) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text(
+                  'يجب منح صلاحية تثبيت التطبيقات لتتمكن من تحديث التطبيق',
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            );
+          }
+          return;
+        }
+      }
     }
 
     try {
