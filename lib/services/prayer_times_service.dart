@@ -1,3 +1,4 @@
+import 'package:flutter/widgets.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter/foundation.dart';
@@ -7,10 +8,38 @@ import 'prayer_alarm_service.dart';
 
 /// خدمة أوقات الصلاة - تتبع معايير هندسة الكود النظيف (Clean Architecture)
 /// تقوم بحساب الأوقات ديناميكياً بناءً على الموقع الجغرافي للمستخدم.
-class PrayerTimesService {
+class PrayerTimesService with WidgetsBindingObserver {
   static final PrayerTimesService _instance = PrayerTimesService._internal();
   factory PrayerTimesService() => _instance;
-  PrayerTimesService._internal();
+
+  late PrayerTimesEngine _engine;
+
+  PrayerTimesService._internal() {
+    _engine = PrayTimes(PrayerCalculationParameters.jafari);
+    _initLifecycleObserver();
+  }
+
+  void _initLifecycleObserver() {
+    // Ensure bindings are initialized before adding observer to avoid null exceptions
+    WidgetsFlutterBinding.ensureInitialized();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    if (state == AppLifecycleState.resumed) {
+      // Silent refresh when user returns to app to handle potential TZ/DST changes dynamically
+      forceReschedule().catchError((e) {
+        debugPrint("Silent refresh failed on resume: $e");
+      });
+    }
+  }
+
+  /// Dependency Injection support for testing or specific engines
+  void setEngine(PrayerTimesEngine engine) {
+    _engine = engine;
+  }
 
   /// طلب الصلاحيات وجلب الموقع الجغرافي الحالي مع التخزين المؤقت
   Future<Position?> getCurrentLocation() async {
@@ -86,13 +115,15 @@ class PrayerTimesService {
     // Calculate the time zone offset in hours
     final timeZoneOffset = calculationDate.timeZoneOffset.inMinutes / 60.0;
 
-    // Use our native PrayTimes algorithm configured with Jafari params
-    final prayTimes = PrayTimes();
+    // GPS Debouncing / Smoothing
+    // Rounding to 2 decimal places to prevent dancing seconds/minutes on slight movement (accuracy ~1.1km)
+    final smoothedLat = double.parse(position.latitude.toStringAsFixed(2));
+    final smoothedLng = double.parse(position.longitude.toStringAsFixed(2));
 
-    final times = prayTimes.getTimes(
+    final times = _engine.getTimes(
       calculationDate,
-      position.latitude,
-      position.longitude,
+      smoothedLat,
+      smoothedLng,
       timeZoneOffset,
       elevation: position.altitude,
     );

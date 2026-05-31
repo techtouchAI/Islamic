@@ -1,17 +1,49 @@
 import 'dart:math' as math;
 
+/// Configuration object for prayer calculation parameters to avoid hardcoding.
+class PrayerCalculationParameters {
+  final double fajrAngle;
+  final double maghribAngle;
+  final double ishaAngle;
+  final double refraction;
+
+  const PrayerCalculationParameters({
+    required this.fajrAngle,
+    required this.maghribAngle,
+    required this.ishaAngle,
+    required this.refraction,
+  });
+
+  /// Predefined Shia Jafari calculation parameters
+  static const jafari = PrayerCalculationParameters(
+    fajrAngle: 16.0,
+    maghribAngle: 4.0,
+    ishaAngle: 14.0,
+    refraction: 0.833,
+  );
+}
+
+/// Abstract interface for Prayer Times Engine
+abstract class PrayerTimesEngine {
+  Map<String, DateTime> getTimes(
+    DateTime date,
+    double lat,
+    double lng,
+    double timeZone, {
+    double elevation = 0,
+  });
+}
+
+
 /// Implementation of PrayTimes astronomical algorithms.
 /// Based on PrayTimes.org JS library (v2.5) by Hamid Zarrabi-Zadeh.
 /// Adapted for clean architecture in Dart with Jafari parameters.
-class PrayTimes {
+class PrayTimes implements PrayerTimesEngine {
   // Constants for calculation
   final double _numIterations = 1;
 
-  // Calculation parameters for Shia Jafari
-  final double _fajrAngle = 16.0;
-  final double _maghribAngle = 4.0;
-  final double _ishaAngle = 14.0;
-  final double _refraction = 0.833;
+  // Calculation parameters
+  final PrayerCalculationParameters _params;
 
   // Coordinate and timezone info
   late double _lat;
@@ -20,10 +52,11 @@ class PrayTimes {
   late double _timeZone;
   late double _jDate;
 
-  PrayTimes();
+  PrayTimes([PrayerCalculationParameters? params]) : _params = params ?? PrayerCalculationParameters.jafari;
 
   /// Calculate prayer times for a given date, coordinates, and timezone.
   /// returns a Map of string to DateTime
+  @override
   Map<String, DateTime> getTimes(
       DateTime date, double lat, double lng, double timeZone, {double elevation = 0}) {
     _lat = lat;
@@ -61,9 +94,11 @@ class PrayTimes {
     double decl = _sunPosition(_jDate + time).declination;
     double noon = _midDay(time);
 
+    double denominator = _DMath.cos(decl) * _DMath.cos(_lat);
+    if (denominator == 0) denominator = 0.00001; // zero-division safeguard
+
     double t = 1 / 15 * _DMath.arccos(
-        (-_DMath.sin(angle) - _DMath.sin(decl) * _DMath.sin(_lat)) /
-        (_DMath.cos(decl) * _DMath.cos(_lat)));
+        (-_DMath.sin(angle) - _DMath.sin(decl) * _DMath.sin(_lat)) / denominator);
 
     return noon + (direction == 'ccw' ? -t : t);
   }
@@ -114,13 +149,13 @@ class PrayTimes {
   Map<String, double> _computePrayerTimes(Map<String, double> times) {
     times = _dayPortion(times);
 
-    double fajr = _sunAngleTime(_fajrAngle, times['fajr']!, 'ccw');
+    double fajr = _sunAngleTime(_params.fajrAngle, times['fajr']!, 'ccw');
     double sunrise = _sunAngleTime(_riseSetAngle(), times['sunrise']!, 'ccw');
     double dhuhr = _midDay(times['dhuhr']!);
     double asr = _asrTime(1, times['asr']!); // Standard factor = 1
     double sunset = _sunAngleTime(_riseSetAngle(), times['sunset']!, 'cw');
-    double maghrib = _sunAngleTime(_maghribAngle, times['maghrib']!, 'cw');
-    double isha = _sunAngleTime(_ishaAngle, times['isha']!, 'cw');
+    double maghrib = _sunAngleTime(_params.maghribAngle, times['maghrib']!, 'cw');
+    double isha = _sunAngleTime(_params.ishaAngle, times['isha']!, 'cw');
 
     return {
       'fajr': fajr,
@@ -176,10 +211,10 @@ class PrayTimes {
   Map<String, double> _adjustHighLats(Map<String, double> times) {
     double nightTime = _timeDiff(times['sunset']!, times['sunrise']!);
 
-    times['imsak'] = _adjustHLTime(times['imsak'] ?? times['fajr']!, times['sunrise']!, _fajrAngle, nightTime, 'ccw'); // fallback for imsak since it might not be in the map in this port
-    times['fajr'] = _adjustHLTime(times['fajr']!, times['sunrise']!, _fajrAngle, nightTime, 'ccw');
-    times['isha'] = _adjustHLTime(times['isha']!, times['sunset']!, _ishaAngle, nightTime, 'cw');
-    times['maghrib'] = _adjustHLTime(times['maghrib']!, times['sunset']!, _maghribAngle, nightTime, 'cw');
+    times['imsak'] = _adjustHLTime(times['imsak'] ?? times['fajr']!, times['sunrise']!, _params.fajrAngle, nightTime, 'ccw'); // fallback for imsak since it might not be in the map in this port
+    times['fajr'] = _adjustHLTime(times['fajr']!, times['sunrise']!, _params.fajrAngle, nightTime, 'ccw');
+    times['isha'] = _adjustHLTime(times['isha']!, times['sunset']!, _params.ishaAngle, nightTime, 'cw');
+    times['maghrib'] = _adjustHLTime(times['maghrib']!, times['sunset']!, _params.maghribAngle, nightTime, 'cw');
 
     return times;
   }
@@ -205,7 +240,7 @@ class PrayTimes {
   // return sun angle for sunset/sunrise
   double _riseSetAngle() {
     double angle = 0.0347 * math.sqrt(_elv); // an approximation
-    return _refraction + angle;
+    return _params.refraction + angle;
   }
 
   // convert hours to day portions
@@ -263,8 +298,8 @@ class _DMath {
   static double cos(double d) => math.cos(dtr(d));
   static double tan(double d) => math.tan(dtr(d));
 
-  static double arcsin(double d) => rtd(math.asin(d));
-  static double arccos(double d) => rtd(math.acos(d));
+  static double arcsin(double d) => rtd(math.asin(d.clamp(-1.0, 1.0)));
+  static double arccos(double d) => rtd(math.acos(d.clamp(-1.0, 1.0)));
   static double arctan(double d) => rtd(math.atan(d));
 
   static double arccot(double x) => rtd(math.atan(1 / x));
