@@ -131,35 +131,7 @@ class PrayerTimesService with WidgetsBindingObserver {
 
   /// طبقة التحقق لمنع تداخل أوقات الصلاة عند التعديل اليدوي
   int validateOffset(String prayerKey, int requestedOffsetMinutes, Map<String, DateTime> baseTimes) {
-    if (!baseTimes.containsKey(prayerKey)) return requestedOffsetMinutes;
-
-    final List<String> prayerOrder = ['fajr', 'sunrise', 'dhuhr', 'asr', 'maghrib', 'isha'];
-    final int currentIndex = prayerOrder.indexOf(prayerKey);
-    if (currentIndex == -1) return requestedOffsetMinutes;
-
-    final DateTime currentBase = baseTimes[prayerKey]!;
-    final DateTime requestedTime = currentBase.add(Duration(minutes: requestedOffsetMinutes));
-
-    // التحقق من الصلاة السابقة (يجب أن يكون الوقت المطلوب بعدها)
-    if (currentIndex > 0) {
-      final String prevKey = prayerOrder[currentIndex - 1];
-      final DateTime prevTime = baseTimes[prevKey]!;
-      if (requestedTime.isBefore(prevTime) || requestedTime.isAtSameMomentAs(prevTime)) {
-        // إذا كان التعديل يجعل الوقت يسبق الصلاة السابقة، نعيد أقصى إزاحة ممكنة (قبل دقيقة واحدة)
-        return prevTime.difference(currentBase).inMinutes + 1;
-      }
-    }
-
-    // التحقق من الصلاة التالية (يجب أن يكون الوقت المطلوب قبلها)
-    if (currentIndex < prayerOrder.length - 1) {
-      final String nextKey = prayerOrder[currentIndex + 1];
-      final DateTime nextTime = baseTimes[nextKey]!;
-      if (requestedTime.isAfter(nextTime) || requestedTime.isAtSameMomentAs(nextTime)) {
-        // إذا كان التعديل يجعل الوقت يتجاوز الصلاة التالية، نعيد أقصى إزاحة ممكنة (بعد دقيقة واحدة)
-        return nextTime.difference(currentBase).inMinutes - 1;
-      }
-    }
-
+    // تم إلغاء القيود بناءً على طلب المستخدم ليكون التعديل حراً بالكامل
     return requestedOffsetMinutes;
   }
 
