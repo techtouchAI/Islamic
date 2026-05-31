@@ -1,31 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_linkify/flutter_linkify.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:intl/intl.dart' as intl;
-import 'package:intl/date_symbol_data_local.dart';
-import 'dart:async';
 import 'dart:math';
 import 'package:share_plus/share_plus.dart';
 import 'package:flutter/services.dart';
-import 'package:url_launcher/url_launcher.dart';
-import 'package:hijri/hijri_calendar.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:image_picker/image_picker.dart';
-import 'dart:io';
 
-import '../../data/data_manager.dart';
-import '../../utils/string_extensions.dart';
-import '../../services/prayer_times_service.dart';
-import '../../services/quran_service.dart';
-import '../../services/favorites_service.dart';
-import '../../models/favorite_item.dart';
 import '../../sections/html_content_renderer.dart';
-import '../../ui/calendar/hijri_calendar_screen.dart';
-import '../../ui/qibla/qibla_screen.dart';
-import '../../presentation/screens/istikhara_screen.dart';
-import '../../main.dart'; // For AlDhakereenApp globals
-
 
 class SurahHeader extends StatelessWidget {
   final String title;
@@ -109,18 +88,21 @@ class ReaderPage extends StatefulWidget {
 }
 
 class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
-
-  Color _parseColor(String colorStr) {
-    if (colorStr.startsWith('#')) {
-      return Color(int.parse(colorStr.substring(1), radix: 16) + 0xFF000000);
-    }
-    return Colors.black; // default
-  }
-
   late double _factor;
   Color? _customBgColor;
   int? _bookmarkedLineIndex;
   static final _trailingNumbersRegex = RegExp(r'[\s\xa0]*[0-9٠-٩]+$');
+
+  Color _parseColor(String colorStr) {
+    if (colorStr.startsWith('#')) {
+      try {
+        return Color(int.parse(colorStr.substring(1), radix: 16) + 0xFF000000);
+      } catch (e) {
+        return Colors.black;
+      }
+    }
+    return Colors.black; // default
+  }
 
   String _convertToArabicNumber(String number) {
     const english = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
@@ -142,11 +124,6 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
         _bookmarkedLineIndex = prefs.getInt('bookmark_line_${widget.title}');
       });
     });
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
   }
 
   @override
@@ -374,11 +351,7 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
                                           height: 2.2,
                                           fontWeight: FontWeight.bold,
                                           color: widget.titleColor != null
-                                              ? _parseColor(
-                                                      widget.titleColor!) ??
-                                                  Theme.of(context)
-                                                      .colorScheme
-                                                      .primary
+                                              ? _parseColor(widget.titleColor!)
                                               : dynamicTextColor,
                                         ),
                                       ),
@@ -407,37 +380,27 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
                                                   );
 
                                         String cleanContent = widget.content;
-                                        if (cleanContent.length <= 10000) {
+                                        cleanContent = cleanContent
+                                            .replaceAll('### ', '');
+                                        if (cleanContent
+                                            .trim()
+                                            .toLowerCase()
+                                            .startsWith('html')) {
                                           cleanContent = cleanContent
-                                              .replaceAll('### ', '');
-                                          if (cleanContent
                                               .trim()
-                                              .toLowerCase()
-                                              .startsWith('html')) {
-                                            cleanContent = cleanContent
-                                                .trim()
-                                                .substring(4)
-                                                .trim();
-                                          }
-                                          cleanContent = cleanContent
-                                              .replaceAll('\uFDFA',
-                                                  '(صلى الله عليه وآله)')
-                                              .replaceAll(
-                                                  '\uFDFB', '(جل جلاله)')
-                                              .replaceAll('!', '(عليه السلام)');
-                                          cleanContent = cleanContent
-                                              .replaceAll(
-                                                  RegExp(
-                                                      r'<html>|<html|\bhtml\b',
-                                                      caseSensitive: false),
-                                                  '')
+                                              .substring(4)
                                               .trim();
                                         }
-
                                         cleanContent = cleanContent
-                                            .trim()
+                                            .replaceAll('\uFDFA',
+                                                '(صلى الله عليه وآله)')
                                             .replaceAll(
-                                                RegExp(r'<html>|<html|^html\b',
+                                                '\uFDFB', '(جل جلاله)')
+                                            .replaceAll('!', '(عليه السلام)');
+                                        cleanContent = cleanContent
+                                            .replaceAll(
+                                                RegExp(
+                                                    r'<html>|<html|\bhtml\b',
                                                     caseSensitive: false),
                                                 '')
                                             .trim();
@@ -452,11 +415,6 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
                                             final prefs =
                                                 await SharedPreferences
                                                     .getInstance();
-                                            await prefs.setInt(
-                                                'bookmark_line_${widget.title}',
-                                                index);
-                                            debugPrint(
-                                                'Parent: State updated to index $index');
                                             setState(() {
                                               if (_bookmarkedLineIndex
                                                       ?.toString() ==
