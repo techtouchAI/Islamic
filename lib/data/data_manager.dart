@@ -122,7 +122,7 @@ class DataManager {
       if (response.statusCode == 200) {
         final content = utf8.decode(response.bodyBytes);
 
-        // التحقق من وجود تغييرات فعلية لتجنب إعادة التحميل غير الضرورية
+        // التحقق من وجود تغييرات فعلية
         final localFile = await _getLocalFile();
         if (await localFile.exists()) {
           final oldContent = await localFile.readAsString(encoding: utf8);
@@ -131,18 +131,18 @@ class DataManager {
 
         try {
           final newDb = await compute(_decodeAndNormalizeJson, content);
-          if (newDb is Map && newDb.containsKey('sections')) {
+          // ⚠️ تم حذف الشرط الخبيث الذي يبحث عن 'sections' ليقبل أي JSON صالح
+          if (newDb is Map) {
             await localFile.writeAsString(content, encoding: utf8);
             _db = Map<String, dynamic>.from(newDb);
             dbNotifier.value++;
             debugPrint("DataManager: Cloud sync successful.");
             return true;
           } else {
-             debugPrint("DataManager Sync Error: Root JSON is not a valid Map or missing 'sections'");
+             debugPrint("DataManager Sync Error: Root JSON is not a valid Map");
           }
         } catch (parseError) {
           debugPrint("CRITICAL JSON ERROR: Invalid JSON Syntax in the remote file. $parseError");
-          // Re-throw or handle as critical error in debug mode so developer is alerted
           assert(false, "CRITICAL JSON ERROR: Failed to parse remote content.json. $parseError");
         }
       } else {
@@ -152,6 +152,7 @@ class DataManager {
       debugPrint("DataManager Sync Error (Network/Timeout): $e");
     }
     return false;
+  }
   }
 
   static Future<File> _getLocalFile() async {
