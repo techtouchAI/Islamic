@@ -417,19 +417,8 @@ class _MainScaffoldState extends State<MainScaffold> {
         );
       },
     );
-  }
-
-                      child: const Text('تحديث الآن'),
-                    ),
-                ],
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
-
+    }
+                      
   String _currentSection = 'home';
   final List<String> _history = ['home'];
 
