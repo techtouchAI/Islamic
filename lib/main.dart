@@ -334,67 +334,73 @@ class _MainScaffoldState extends State<MainScaffold> {
   }
 
   void _showUpdateDialog(bool forceUpdate, String updateUrl) {
-    // Always use the safe navigatorKey context to ensure the dialog displays on top regardless of MainScaffold state.
-    final context = navigatorKey.currentContext;
-    if (context == null) return;
+    // Add a slight delay to ensure the UI is fully mounted before showing the dialog,
+    // otherwise navigatorKey.currentContext might be null causing a silent failure.
+    Future.delayed(const Duration(milliseconds: 500), () {
+      final context = navigatorKey.currentContext;
+      if (context == null) {
+        debugPrint("OTA ERROR: Context is still null, cannot show dialog.");
+        return;
+      }
 
-    double downloadProgress = -1.0;
+      double downloadProgress = -1.0;
 
-    showDialog(
-      context: context,
-      barrierDismissible: !forceUpdate,
-      builder: (dialogContext) {
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            return PopScope(
-              canPop: !forceUpdate && downloadProgress < 0,
-              child: AlertDialog(
-                title: const Text(
-                  'تحديث متوفر',
-                  textAlign: TextAlign.right,
-                ),
-                content: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Text(
-                      'نسخة جديدة من التطبيق متوفرة. يرجى التحديث للحصول على أفضل تجربة.',
-                      textAlign: TextAlign.right,
-                    ),
-                    if (downloadProgress >= 0) ...[
-                      const SizedBox(height: 20),
-                      LinearProgressIndicator(value: downloadProgress),
-                      const SizedBox(height: 10),
-                      Text('${(downloadProgress * 100).toStringAsFixed(0)}%'),
+      showDialog(
+        context: context,
+        barrierDismissible: !forceUpdate,
+        builder: (dialogContext) {
+          return StatefulBuilder(
+            builder: (context, setDialogState) {
+              return PopScope(
+                canPop: !forceUpdate && downloadProgress < 0,
+                child: AlertDialog(
+                  title: const Text(
+                    'تحديث متوفر',
+                    textAlign: TextAlign.right,
+                  ),
+                  content: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text(
+                        'نسخة جديدة من التطبيق متوفرة. يرجى التحديث للحصول على أفضل تجربة.',
+                        textAlign: TextAlign.right,
+                      ),
+                      if (downloadProgress >= 0) ...[
+                        const SizedBox(height: 20),
+                        LinearProgressIndicator(value: downloadProgress),
+                        const SizedBox(height: 10),
+                        Text('${(downloadProgress * 100).toStringAsFixed(0)}%'),
+                      ],
                     ],
+                  ),
+                  actions: [
+                    if (!forceUpdate && downloadProgress < 0)
+                      TextButton(
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                        },
+                        child: const Text('تخطي'),
+                      ),
+                    if (downloadProgress < 0)
+                      ElevatedButton(
+                        onPressed: () async {
+                          await _downloadAndInstallApk(
+                            updateUrl,
+                            setDialogState,
+                            (progress) => setDialogState(() => downloadProgress = progress),
+                            dialogContext,
+                          );
+                        },
+                        child: const Text('تحديث الآن'),
+                      ),
                   ],
                 ),
-                actions: [
-                  if (!forceUpdate && downloadProgress < 0)
-                    TextButton(
-                      onPressed: () {
-                        Navigator.of(context).pop();
-                      },
-                      child: const Text('تخطي'),
-                    ),
-                  if (downloadProgress < 0)
-                    ElevatedButton(
-                      onPressed: () async {
-                        await _downloadAndInstallApk(
-                          updateUrl,
-                          setDialogState,
-                          (progress) => setDialogState(() => downloadProgress = progress),
-                          dialogContext,
-                        );
-                      },
-                      child: const Text('تحديث الآن'),
-                    ),
-                ],
-              ),
-            );
-          },
-        );
-      },
-    );
+              );
+            },
+          );
+        },
+      );
+    });
   }
 
   Future<void> _downloadAndInstallApk(
