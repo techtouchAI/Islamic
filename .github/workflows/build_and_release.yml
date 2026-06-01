@@ -27,18 +27,6 @@ jobs:
           echo "VERSION_NAME=$VERSION_NAME" >> $GITHUB_ENV
           echo "VERSION_CODE=$VERSION_CODE" >> $GITHUB_ENV
 
-      - name: Update content.json BEFORE build
-        run: |
-          # Fetch the direct download URL for the uploaded APK
-          DOWNLOAD_URL="https://github.com/${{ github.repository }}/releases/download/v${{ env.VERSION_NAME }}-${{ env.VERSION_CODE }}/app-release.apk"
-
-          # Use jq to update the JSON
-          jq --arg vc "${{ env.VERSION_CODE }}" --arg url "$DOWNLOAD_URL" \
-            '.settings.latest_version_code = ($vc | tonumber) | .settings.update_url = $url | .settings.force_update = true' \
-            assets/data/content.json > assets/data/content_tmp.json
-
-          mv assets/data/content_tmp.json assets/data/content.json
-
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
@@ -81,6 +69,27 @@ jobs:
         env:
           KEYSTORE_STOREPASS: ${{ secrets.KEYSTORE_STOREPASS }}
           KEYSTORE_KEYPASS: ${{ secrets.KEYSTORE_KEYPASS }}
+
+      # التعديل الجوهري هنا: حساب البصمة وتحديث الملف بعد بناء الـ APK
+      - name: Calculate Checksum and Update content.json
+        run: |
+          APK_PATH="build/app/outputs/flutter-apk/app-release.apk"
+          
+          # استخراج بصمة الأمان SHA-256
+          CHECKSUM=$(sha256sum $APK_PATH | awk '{print $1}')
+          
+          # بناء رابط التحميل المباشر
+          DOWNLOAD_URL="https://github.com/${{ github.repository }}/releases/download/v${{ env.VERSION_NAME }}-${{ env.VERSION_CODE }}/app-release.apk"
+
+          # تحديث الملف مع إضافة الحقول الجديدة (checksum و release_notes)
+          jq --arg vc "${{ env.VERSION_CODE }}" \
+             --arg url "$DOWNLOAD_URL" \
+             --arg chk "$CHECKSUM" \
+             --arg rn "نسخة جديدة من التطبيق متوفرة. يرجى التحديث للحصول على أفضل تجربة." \
+            '.settings.latest_version_code = ($vc | tonumber) | .settings.update_url = $url | .settings.checksum = $chk | .settings.release_notes = $rn | .settings.force_update = true' \
+            assets/data/content.json > assets/data/content_tmp.json
+
+          mv assets/data/content_tmp.json assets/data/content.json
 
       - name: Create Release and Upload APK
         id: create_release
