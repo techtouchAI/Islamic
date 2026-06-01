@@ -290,33 +290,39 @@ class _MainScaffoldState extends State<MainScaffold> {
     }
 
     // Sync cloud data asynchronously
-    DataManager.syncCloudData().then((didUpdate) {
-      // Whether sync was successful, identical to local cache, or failed internally,
-      // trigger the update check once it concludes.
-      triggerUpdateCheck();
-    }).catchError((e) {
-      debugPrint("Cloud sync failed during deferred tasks: $e");
-      // Even if the outer future throws (unlikely due to internal try/catch), attempt update check on the local cache just in case.
-      triggerUpdateCheck();
-      return false;
-    });
+    DataManager.syncCloudData()
+        .then((didUpdate) {
+          // Whether sync was successful, identical to local cache, or failed internally,
+          // trigger the update check once it concludes.
+          triggerUpdateCheck();
+        })
+        .catchError((e) {
+          debugPrint("Cloud sync failed during deferred tasks: $e");
+          // Even if the outer future throws (unlikely due to internal try/catch), attempt update check on the local cache just in case.
+          triggerUpdateCheck();
+          return false;
+        });
   }
 
   Future<void> _checkForUpdatesSafe() async {
     final settings = DataManager.getSettings();
 
     // Robustly parse version code to prevent NumberFormatException/Silent fails
-    final String remoteVersionStr = settings['latest_version_code']?.toString() ?? '';
+    final String remoteVersionStr =
+        settings['latest_version_code']?.toString() ?? '';
     final int latestVersionCode = int.tryParse(remoteVersionStr) ?? -1;
 
     if (latestVersionCode == -1) {
-      debugPrint("OTA ERROR: Invalid 'latest_version_code' in JSON. Expecting integer, got: '$remoteVersionStr'");
+      debugPrint(
+        "OTA ERROR: Invalid 'latest_version_code' in JSON. Expecting integer, got: '$remoteVersionStr'",
+      );
       return;
     }
 
     final forceUpdate = settings['force_update'] == true;
     final updateUrl = settings['update_url']?.toString() ?? "";
-    final releaseNotes = settings['release_notes']?.toString() ??
+    final releaseNotes =
+        settings['release_notes']?.toString() ??
         'نسخة جديدة من التطبيق متوفرة. يرجى التحديث للحصول على أفضل تجربة.';
     final checksum = settings['checksum']?.toString();
 
@@ -337,77 +343,83 @@ class _MainScaffoldState extends State<MainScaffold> {
     }
   }
 
-  void _showUpdateDialog(bool forceUpdate, String updateUrl, String releaseNotes, String? checksum) {
-    // إصلاح مشكلة دورة حياة الواجهة (Band-aid UI Fix)
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final context = navigatorKey.currentContext;
-      if (context == null) {
-        debugPrint("OTA ERROR: Context is still null, cannot show dialog.");
-        return;
-      }
+  void _showUpdateDialog(
+    bool forceUpdate,
+    String updateUrl,
+    String releaseNotes,
+    String? checksum,
+  ) {
+    if (!mounted) return;
 
-      showDialog(
-        context: context,
-        barrierDismissible: !forceUpdate,
-        builder: (dialogContext) {
-          return ValueListenableBuilder<double>(
-            valueListenable: OTAService.instance.downloadProgress,
-            builder: (context, downloadProgress, child) {
-              final isDownloading = downloadProgress >= 0;
+    final context = navigatorKey.currentContext;
+    if (context == null) {
+      debugPrint("OTA ERROR: Context is still null, cannot show dialog.");
+      return;
+    }
 
-              return PopScope(
-                canPop: !forceUpdate && !isDownloading,
-                child: AlertDialog(
-                  title: const Text(
-                    'تحديث متوفر',
-                    textAlign: TextAlign.right,
-                  ),
-                  content: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        releaseNotes, // تفعيل ديناميكية ملاحظات الإصدار (Release Notes)
-                        textAlign: TextAlign.right,
-                      ),
-                      if (isDownloading) ...[
-                        const SizedBox(height: 20),
-                        LinearProgressIndicator(value: downloadProgress),
-                        const SizedBox(height: 10),
-                        Text('${(downloadProgress * 100).toStringAsFixed(0)}%'),
-                      ],
+    showDialog(
+      context: context,
+      barrierDismissible: !forceUpdate,
+      builder: (dialogContext) {
+        return ValueListenableBuilder<double>(
+          valueListenable: OTAService.instance.downloadProgress,
+          builder: (context, downloadProgress, child) {
+            final isDownloading = downloadProgress >= 0;
+
+            return PopScope(
+              canPop: !forceUpdate && !isDownloading,
+              child: AlertDialog(
+                title: const Text('تحديث متوفر', textAlign: TextAlign.right),
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      releaseNotes, // تفعيل ديناميكية ملاحظات الإصدار (Release Notes)
+                      textAlign: TextAlign.right,
+                    ),
+                    if (isDownloading) ...[
+                      const SizedBox(height: 20),
+                      LinearProgressIndicator(value: downloadProgress),
+                      const SizedBox(height: 10),
+                      Text('${(downloadProgress * 100).toStringAsFixed(0)}%'),
                     ],
-                  ),
-                  actions: [
-                    if (!forceUpdate && !isDownloading)
-                      TextButton(
-                        onPressed: () {
-                          Navigator.of(context).pop();
-                        },
-                        child: const Text('تخطي'),
-                      ),
-                    if (!isDownloading)
-                      ElevatedButton(
-                        onPressed: () {
-                          OTAService.instance.downloadAndInstallApk(
-                            updateUrl,
-                            checksum,
-                            onError: (errorMessage) {
-                              ScaffoldMessenger.of(dialogContext).showSnackBar(
-                                SnackBar(content: Text(errorMessage, textAlign: TextAlign.center,)),
-                              );
-                            },
-                          );
-                        },
-                        child: const Text('تحديث الآن'),
-                      ),
                   ],
                 ),
-              );
-            },
-          );
-        },
-      );
-    });
+                actions: [
+                  if (!forceUpdate && !isDownloading)
+                    TextButton(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                      },
+                      child: const Text('تخطي'),
+                    ),
+                  if (!isDownloading)
+                    ElevatedButton(
+                      onPressed: () {
+                        OTAService.instance.downloadAndInstallApk(
+                          updateUrl,
+                          checksum,
+                          onError: (errorMessage) {
+                            ScaffoldMessenger.of(dialogContext).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  errorMessage,
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
+                            );
+                          },
+                        );
+                      },
+                      child: const Text('تحديث الآن'),
+                    ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
   }
 
   String _currentSection = 'home';
