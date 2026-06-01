@@ -121,8 +121,8 @@ class PrayTimes implements PrayerTimesEngine {
     // double R = 1.00014 - 0.01671 * _DMath.cos(g) - 0.00014 * _DMath.cos(2 * g);
     double e = 23.439 - 0.00000036 * D;
 
-    double RA = _DMath.arctan2(_DMath.cos(e) * _DMath.sin(L), _DMath.cos(L)) / 15;
-    double eqt = q / 15 - _DMath.fixHour(RA);
+    double ra = _DMath.arctan2(_DMath.cos(e) * _DMath.sin(L), _DMath.cos(L)) / 15;
+    double eqt = q / 15 - _DMath.fixHour(ra);
     double decl = _DMath.arcsin(_DMath.sin(e) * _DMath.sin(L));
 
     return _SunPosition(declination: decl, equation: eqt);
@@ -138,9 +138,9 @@ class PrayTimes implements PrayerTimesEngine {
     int A = (year / 100).floor();
     int B = 2 - A + (A / 4).floor();
 
-    double JD = (365.25 * (year + 4716)).floor() +
+    double jd = (365.25 * (year + 4716)).floor() +
         (30.6001 * (month + 1)).floor() + day + B - 1524.5;
-    return JD;
+    return jd;
   }
 
   //---------------------- Compute Prayer Times -----------------------
@@ -300,7 +300,6 @@ class _DMath {
 
   static double arcsin(double d) => rtd(math.asin(d.clamp(-1.0, 1.0)));
   static double arccos(double d) => rtd(math.acos(d.clamp(-1.0, 1.0)));
-  static double arctan(double d) => rtd(math.atan(d));
 
   static double arccot(double x) => rtd(math.atan(1 / x));
   static double arctan2(double y, double x) => rtd(math.atan2(y, x));
