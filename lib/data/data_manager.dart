@@ -152,8 +152,7 @@ class DataManager {
       debugPrint("DataManager Sync Error (Network/Timeout): $e");
     }
     return false;
-  }
-  }
+
 
   static Future<File> _getLocalFile() async {
     if (getLocalFileOverride != null) {
