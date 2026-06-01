@@ -343,7 +343,7 @@ class _MainScaffoldState extends State<MainScaffold> {
     }
   }
 
-  void _showUpdateDialog(
+    void _showUpdateDialog(
     bool forceUpdate,
     String updateUrl,
     String releaseNotes,
@@ -351,16 +351,13 @@ class _MainScaffoldState extends State<MainScaffold> {
   ) {
     if (!mounted) return;
 
-    final context = navigatorKey.currentContext;
-    if (context == null) {
-      debugPrint("OTA ERROR: Context is still null, cannot show dialog.");
-      return;
-    }
+    // ⚠️ تم التخلي عن navigatorKey واستخدام سياق الواجهة الحالي والمضمون
+    final BuildContext dialogContext = this.context;
 
     showDialog(
-      context: context,
+      context: dialogContext,
       barrierDismissible: !forceUpdate,
-      builder: (dialogContext) {
+      builder: (contextBuilder) {
         return ValueListenableBuilder<double>(
           valueListenable: OTAService.instance.downloadProgress,
           builder: (context, downloadProgress, child) {
@@ -374,7 +371,7 @@ class _MainScaffoldState extends State<MainScaffold> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      releaseNotes, // تفعيل ديناميكية ملاحظات الإصدار (Release Notes)
+                      releaseNotes,
                       textAlign: TextAlign.right,
                     ),
                     if (isDownloading) ...[
@@ -400,7 +397,7 @@ class _MainScaffoldState extends State<MainScaffold> {
                           updateUrl,
                           checksum,
                           onError: (errorMessage) {
-                            ScaffoldMessenger.of(dialogContext).showSnackBar(
+                            ScaffoldMessenger.of(contextBuilder).showSnackBar(
                               SnackBar(
                                 content: Text(
                                   errorMessage,
@@ -411,6 +408,17 @@ class _MainScaffoldState extends State<MainScaffold> {
                           },
                         );
                       },
+                      child: const Text('تحديث الآن'),
+                    ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
                       child: const Text('تحديث الآن'),
                     ),
                 ],
