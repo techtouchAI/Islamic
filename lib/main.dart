@@ -274,31 +274,8 @@ class _MainScaffoldState extends State<MainScaffold> {
     // 1. Initialize Search Engine in background
     SearchEngine.instance.init();
 
-    // 2. Trigger async data sync and set up a reactive listener for updates.
-    _setupUpdateListener();
-  }
-
-  void _setupUpdateListener() {
-    bool hasCheckedForUpdates = false;
-
-    void triggerUpdateCheck() {
-      if (!hasCheckedForUpdates) {
-        hasCheckedForUpdates = true;
-        _checkForUpdatesSafe();
-      }
-    }
-
-    // Sync cloud data asynchronously
-    DataManager.syncCloudData().then((didUpdate) {
-      // Whether sync was successful, identical to local cache, or failed internally,
-      // trigger the update check once it concludes.
-      triggerUpdateCheck();
-    }).catchError((e) {
-      debugPrint("Cloud sync failed during deferred tasks: $e");
-      // Even if the outer future throws (unlikely due to internal try/catch), attempt update check on the local cache just in case.
-      triggerUpdateCheck();
-      return false;
-    });
+    // 2. Data sync already completed in SplashScreen, check for updates immediately
+    _checkForUpdatesSafe();
   }
 
   Future<void> _checkForUpdatesSafe() async {

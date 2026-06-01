@@ -39,7 +39,13 @@ class _SplashScreenState extends State<SplashScreen>
     try {
       await initializeDateFormatting('ar_SA', null);
       HijriCalendar.setLocal('ar');
+
+      // Load local content first
       await DataManager.loadContent();
+
+      // Immediately check for updates in the splash screen before the app operations start
+      await DataManager.syncCloudData();
+
       await QuranService.initDB();
 
       if (!mounted) return;
