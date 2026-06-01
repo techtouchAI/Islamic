@@ -43,9 +43,6 @@ class _SplashScreenState extends State<SplashScreen>
       // Load local content first
       await DataManager.loadContent();
 
-      // Await cloud sync for OTA updates before proceeding
-      await DataManager.syncCloudData();
-
       await QuranService.initDB();
 
       if (!mounted) return;
