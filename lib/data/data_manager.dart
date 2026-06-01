@@ -141,8 +141,9 @@ class DataManager {
              debugPrint("DataManager Sync Error: Root JSON is not a valid Map or missing 'sections'");
           }
         } catch (parseError) {
-          debugPrint("DataManager Critical Sync Error: Invalid JSON Syntax in the remote file. $parseError");
-          // Optionally report to Crashlytics here.
+          debugPrint("CRITICAL JSON ERROR: Invalid JSON Syntax in the remote file. $parseError");
+          // Re-throw or handle as critical error in debug mode so developer is alerted
+          assert(false, "CRITICAL JSON ERROR: Failed to parse remote content.json. $parseError");
         }
       } else {
         debugPrint("DataManager Sync Error: HTTP Status ${response.statusCode}");

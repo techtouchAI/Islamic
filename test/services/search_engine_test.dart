@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import '../../lib/services/search_engine.dart';
+import 'package:aldhakereen/services/search_engine.dart';
 
 void main() {
   group('SearchEngine Core Logic Tests', () {
