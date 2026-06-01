@@ -48,6 +48,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:open_file/open_file.dart';
 
 import 'providers/settings_provider.dart';
+import 'services/ota_service.dart';
 
 class IslamicPatternPainter extends CustomPainter {
   final Color color;
@@ -315,6 +316,9 @@ class _MainScaffoldState extends State<MainScaffold> {
 
     final forceUpdate = settings['force_update'] == true;
     final updateUrl = settings['update_url']?.toString() ?? "";
+    final releaseNotes = settings['release_notes']?.toString() ??
+        'نسخة جديدة من التطبيق متوفرة. يرجى التحديث للحصول على أفضل تجربة.';
+    final checksum = settings['checksum']?.toString();
 
     if (updateUrl.isEmpty) {
       debugPrint("OTA: 'update_url' is empty. Skipping update check.");
@@ -326,33 +330,33 @@ class _MainScaffoldState extends State<MainScaffold> {
       final currentVersionCode = int.tryParse(info.buildNumber) ?? 1;
 
       if (currentVersionCode < latestVersionCode) {
-        _showUpdateDialog(forceUpdate, updateUrl);
+        _showUpdateDialog(forceUpdate, updateUrl, releaseNotes, checksum);
       }
     } catch (e) {
       debugPrint("OTA ERROR: Update Check Exception: $e");
     }
   }
 
-  void _showUpdateDialog(bool forceUpdate, String updateUrl) {
-    // Add a slight delay to ensure the UI is fully mounted before showing the dialog,
-    // otherwise navigatorKey.currentContext might be null causing a silent failure.
-    Future.delayed(const Duration(milliseconds: 500), () {
+  void _showUpdateDialog(bool forceUpdate, String updateUrl, String releaseNotes, String? checksum) {
+    // إصلاح مشكلة دورة حياة الواجهة (Band-aid UI Fix)
+    WidgetsBinding.instance.addPostFrameCallback((_) {
       final context = navigatorKey.currentContext;
       if (context == null) {
         debugPrint("OTA ERROR: Context is still null, cannot show dialog.");
         return;
       }
 
-      double downloadProgress = -1.0;
-
       showDialog(
         context: context,
         barrierDismissible: !forceUpdate,
         builder: (dialogContext) {
-          return StatefulBuilder(
-            builder: (context, setDialogState) {
+          return ValueListenableBuilder<double>(
+            valueListenable: OTAService.instance.downloadProgress,
+            builder: (context, downloadProgress, child) {
+              final isDownloading = downloadProgress >= 0;
+
               return PopScope(
-                canPop: !forceUpdate && downloadProgress < 0,
+                canPop: !forceUpdate && !isDownloading,
                 child: AlertDialog(
                   title: const Text(
                     'تحديث متوفر',
@@ -361,11 +365,11 @@ class _MainScaffoldState extends State<MainScaffold> {
                   content: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Text(
-                        'نسخة جديدة من التطبيق متوفرة. يرجى التحديث للحصول على أفضل تجربة.',
+                      Text(
+                        releaseNotes, // تفعيل ديناميكية ملاحظات الإصدار (Release Notes)
                         textAlign: TextAlign.right,
                       ),
-                      if (downloadProgress >= 0) ...[
+                      if (isDownloading) ...[
                         const SizedBox(height: 20),
                         LinearProgressIndicator(value: downloadProgress),
                         const SizedBox(height: 10),
@@ -374,21 +378,24 @@ class _MainScaffoldState extends State<MainScaffold> {
                     ],
                   ),
                   actions: [
-                    if (!forceUpdate && downloadProgress < 0)
+                    if (!forceUpdate && !isDownloading)
                       TextButton(
                         onPressed: () {
                           Navigator.of(context).pop();
                         },
                         child: const Text('تخطي'),
                       ),
-                    if (downloadProgress < 0)
+                    if (!isDownloading)
                       ElevatedButton(
-                        onPressed: () async {
-                          await _downloadAndInstallApk(
+                        onPressed: () {
+                          OTAService.instance.downloadAndInstallApk(
                             updateUrl,
-                            setDialogState,
-                            (progress) => setDialogState(() => downloadProgress = progress),
-                            dialogContext,
+                            checksum,
+                            onError: (errorMessage) {
+                              ScaffoldMessenger.of(dialogContext).showSnackBar(
+                                SnackBar(content: Text(errorMessage, textAlign: TextAlign.center,)),
+                              );
+                            },
                           );
                         },
                         child: const Text('تحديث الآن'),
@@ -401,60 +408,6 @@ class _MainScaffoldState extends State<MainScaffold> {
         },
       );
     });
-  }
-
-  Future<void> _downloadAndInstallApk(
-    String url,
-    StateSetter setDialogState,
-    Function(double) updateProgress,
-    BuildContext dialogContext,
-  ) async {
-    if (Platform.isAndroid) {
-      var installStatus = await Permission.requestInstallPackages.status;
-      if (!installStatus.isGranted) {
-        installStatus = await Permission.requestInstallPackages.request();
-        if (!installStatus.isGranted) {
-          ScaffoldMessenger.of(dialogContext).showSnackBar(
-            const SnackBar(
-              content: Text(
-                'يجب منح صلاحية تثبيت التطبيقات لتتمكن من تحديث التطبيق',
-                textAlign: TextAlign.center,
-              ),
-            ),
-          );
-          return;
-        }
-      }
-    }
-
-    try {
-      final Directory tempDir = await getTemporaryDirectory();
-      final String savePath = '${tempDir.path}/app-update.apk';
-
-      final Dio dio = Dio();
-      updateProgress(0.0);
-
-      await dio.download(
-        url,
-        savePath,
-        onReceiveProgress: (received, total) {
-          if (total != -1) {
-            updateProgress(received / total);
-          }
-        },
-      );
-
-      updateProgress(-1.0);
-
-      final result = await OpenFile.open(savePath);
-      debugPrint("OpenFile result: ${result.message}");
-    } catch (e) {
-      debugPrint("Download/Install error: $e");
-      updateProgress(-1.0);
-      ScaffoldMessenger.of(dialogContext).showSnackBar(
-        const SnackBar(content: Text('فشل تحميل التحديث')),
-      );
-    }
   }
 
   String _currentSection = 'home';
