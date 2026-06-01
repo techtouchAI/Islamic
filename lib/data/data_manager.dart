@@ -114,8 +114,10 @@ class DataManager {
   static Future<bool> syncCloudData({http.Client? client}) async {
     try {
       client = client ?? httpClient ?? http.Client();
-      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      // Add random component to fully bypass strict CDN caches
+      final timestamp = DateTime.now().millisecondsSinceEpoch.toString() + '_' + DateTime.now().microsecondsSinceEpoch.toString();
       final url = Uri.parse("$_repoUrl?t=$timestamp");
+
       final response = await client.get(url).timeout(const Duration(seconds: 15));
       if (response.statusCode == 200) {
         final content = utf8.decode(response.bodyBytes);
@@ -127,17 +129,26 @@ class DataManager {
           if (oldContent == content) return false;
         }
 
-        final newDb = await compute(_decodeAndNormalizeJson, content);
-        if (newDb is Map && newDb.containsKey('sections')) {
-          await localFile.writeAsString(content, encoding: utf8);
-          _db = Map<String, dynamic>.from(newDb);
-          dbNotifier.value++;
-          debugPrint("DataManager: Cloud sync successful.");
-          return true;
+        try {
+          final newDb = await compute(_decodeAndNormalizeJson, content);
+          if (newDb is Map && newDb.containsKey('sections')) {
+            await localFile.writeAsString(content, encoding: utf8);
+            _db = Map<String, dynamic>.from(newDb);
+            dbNotifier.value++;
+            debugPrint("DataManager: Cloud sync successful.");
+            return true;
+          } else {
+             debugPrint("DataManager Sync Error: Root JSON is not a valid Map or missing 'sections'");
+          }
+        } catch (parseError) {
+          debugPrint("DataManager Critical Sync Error: Invalid JSON Syntax in the remote file. $parseError");
+          // Optionally report to Crashlytics here.
         }
+      } else {
+        debugPrint("DataManager Sync Error: HTTP Status ${response.statusCode}");
       }
     } catch (e) {
-      debugPrint("DataManager Sync Error: $e");
+      debugPrint("DataManager Sync Error (Network/Timeout): $e");
     }
     return false;
   }
