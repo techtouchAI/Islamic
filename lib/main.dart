@@ -305,8 +305,18 @@ class _MainScaffoldState extends State<MainScaffold> {
   }
 
   Future<void> _checkForUpdatesSafe() async {
+    final ctx = navigatorKey.currentContext;
     try {
       debugPrint("Attempting to reach GitHub API...");
+      if (ctx != null && ctx.mounted) {
+        ScaffoldMessenger.of(ctx).showSnackBar(
+          const SnackBar(
+            content: Text('جاري الاتصال بسيرفر GitHub...'),
+            duration: Duration(seconds: 1),
+          ),
+        );
+      }
+
       final response = await Dio().get(
         'https://api.github.com/repos/techtouchAI/Islamic/releases/latest',
       );
@@ -326,10 +336,15 @@ class _MainScaffoldState extends State<MainScaffold> {
 
         if (latestVersionCode == null) {
           debugPrint("Error parsing tag: $tagName");
-          debugPrint(
-            "OTA ERROR: Could not parse build number from tag_name: '$tagName'",
+          throw Exception("Could not parse build number from tag_name: '$tagName'");
+        }
+
+        if (ctx != null && ctx.mounted) {
+          ScaffoldMessenger.of(ctx).showSnackBar(
+            SnackBar(
+              content: Text('نجح الاتصال. الإصدار السحابي المكتشف: $latestVersionCode'),
+            ),
           );
-          return;
         }
 
         final releaseNotes =
@@ -346,7 +361,7 @@ class _MainScaffoldState extends State<MainScaffold> {
           debugPrint(
             "OTA: 'browser_download_url' is empty. Skipping update check.",
           );
-          return;
+          throw Exception("browser_download_url is empty");
         }
 
         final PackageInfo info = await PackageInfo.fromPlatform();
@@ -360,9 +375,18 @@ class _MainScaffoldState extends State<MainScaffold> {
         debugPrint(
           "OTA ERROR: Failed to fetch latest release. Status code: ${response.statusCode}",
         );
+        throw Exception("Failed to fetch latest release. Status code: ${response.statusCode}");
       }
     } catch (e) {
       debugPrint("OTA ERROR: Update Check Exception: $e");
+      if (ctx != null && ctx.mounted) {
+        ScaffoldMessenger.of(ctx).showSnackBar(
+          SnackBar(
+            content: Text(e.toString()),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
