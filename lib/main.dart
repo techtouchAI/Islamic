@@ -306,11 +306,13 @@ class _MainScaffoldState extends State<MainScaffold> {
 
   Future<void> _checkForUpdatesSafe() async {
     try {
+      debugPrint("Attempting to reach GitHub API...");
       final response = await Dio().get(
         'https://api.github.com/repos/techtouchAI/Islamic/releases/latest',
       );
 
       if (response.statusCode == 200) {
+        debugPrint("API Response: ${response.data}");
         final data = response.data;
 
         final String tagName = data['tag_name']?.toString() ?? '';
@@ -323,6 +325,7 @@ class _MainScaffoldState extends State<MainScaffold> {
         }
 
         if (latestVersionCode == null) {
+          debugPrint("Error parsing tag: $tagName");
           debugPrint(
             "OTA ERROR: Could not parse build number from tag_name: '$tagName'",
           );
