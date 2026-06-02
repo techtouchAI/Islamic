@@ -305,26 +305,24 @@ class _MainScaffoldState extends State<MainScaffold> {
   }
 
   Future<void> _checkForUpdatesSafe() async {
-    final ctx = navigatorKey.currentContext;
+    if (!mounted) return;
+
     try {
-      debugPrint("Attempting to reach GitHub API...");
-      if (ctx != null && ctx.mounted) {
-        ScaffoldMessenger.of(ctx).showSnackBar(
-          const SnackBar(
-            content: Text('جاري الاتصال بسيرفر GitHub...'),
-            duration: Duration(seconds: 1),
-          ),
-        );
-      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('جاري الاتصال بسيرفر GitHub...'),
+          duration: Duration(seconds: 1),
+        ),
+      );
 
       final response = await Dio().get(
         'https://api.github.com/repos/techtouchAI/Islamic/releases/latest',
       );
 
-      if (response.statusCode == 200) {
-        debugPrint("API Response: ${response.data}");
-        final data = response.data;
+      if (!mounted) return;
 
+      if (response.statusCode == 200) {
+        final data = response.data;
         final String tagName = data['tag_name']?.toString() ?? '';
         int? latestVersionCode;
 
@@ -335,22 +333,18 @@ class _MainScaffoldState extends State<MainScaffold> {
         }
 
         if (latestVersionCode == null) {
-          debugPrint("Error parsing tag: $tagName");
-          throw Exception("Could not parse build number from tag_name: '$tagName'");
+          throw Exception("لم أتمكن من قراءة رقم الإصدار من: '$tagName'");
         }
 
-        if (ctx != null && ctx.mounted) {
-          ScaffoldMessenger.of(ctx).showSnackBar(
-            SnackBar(
-              content: Text('نجح الاتصال. الإصدار السحابي المكتشف: $latestVersionCode'),
-            ),
-          );
-        }
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('نجح الاتصال. الإصدار السحابي هو: $latestVersionCode'),
+            duration: const Duration(seconds: 2),
+            backgroundColor: Colors.green,
+          ),
+        );
 
-        final releaseNotes =
-            data['body']?.toString() ??
-            'نسخة جديدة من التطبيق متوفرة. يرجى التحديث للحصول على أفضل تجربة.';
-
+        final releaseNotes = data['body']?.toString() ?? 'نسخة جديدة متوفرة.';
         String updateUrl = '';
         final assets = data['assets'];
         if (assets != null && assets is List && assets.isNotEmpty) {
@@ -358,35 +352,27 @@ class _MainScaffoldState extends State<MainScaffold> {
         }
 
         if (updateUrl.isEmpty) {
-          debugPrint(
-            "OTA: 'browser_download_url' is empty. Skipping update check.",
-          );
-          throw Exception("browser_download_url is empty");
+          throw Exception("رابط التحميل (APK) غير موجود في جيت هاب");
         }
 
         final PackageInfo info = await PackageInfo.fromPlatform();
         final currentVersionCode = int.tryParse(info.buildNumber) ?? 1;
 
         if (currentVersionCode < latestVersionCode) {
-          if (!mounted) return;
           _showUpdateDialog(false, updateUrl, releaseNotes, null);
         }
       } else {
-        debugPrint(
-          "OTA ERROR: Failed to fetch latest release. Status code: ${response.statusCode}",
-        );
-        throw Exception("Failed to fetch latest release. Status code: ${response.statusCode}");
+        throw Exception("فشل الاتصال، رمز الخطأ: ${response.statusCode}");
       }
     } catch (e) {
-      debugPrint("OTA ERROR: Update Check Exception: $e");
-      if (ctx != null && ctx.mounted) {
-        ScaffoldMessenger.of(ctx).showSnackBar(
-          SnackBar(
-            content: Text(e.toString()),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('خطأ في التحديث: ${e.toString()}'),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 4),
+        ),
+      );
     }
   }
 
