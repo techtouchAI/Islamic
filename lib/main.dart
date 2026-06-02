@@ -305,45 +305,65 @@ class _MainScaffoldState extends State<MainScaffold> {
   }
 
   Future<void> _checkForUpdatesSafe() async {
-    final settings = DataManager.getSettings();
-
-    // Robustly parse version code to prevent NumberFormatException/Silent fails
-    final String remoteVersionStr =
-        settings['latest_version_code']?.toString() ?? '';
-    final int latestVersionCode = int.tryParse(remoteVersionStr) ?? -1;
-
-    if (latestVersionCode == -1) {
-      debugPrint(
-        "OTA ERROR: Invalid 'latest_version_code' in JSON. Expecting integer, got: '$remoteVersionStr'",
-      );
-      return;
-    }
-
-    final forceUpdate = settings['force_update'] == true;
-    final updateUrl = settings['update_url']?.toString() ?? "";
-    final releaseNotes =
-        settings['release_notes']?.toString() ??
-        'نسخة جديدة من التطبيق متوفرة. يرجى التحديث للحصول على أفضل تجربة.';
-    final checksum = settings['checksum']?.toString();
-
-    if (updateUrl.isEmpty) {
-      debugPrint("OTA: 'update_url' is empty. Skipping update check.");
-      return;
-    }
-
     try {
-      final PackageInfo info = await PackageInfo.fromPlatform();
-      final currentVersionCode = int.tryParse(info.buildNumber) ?? 1;
+      final response = await Dio().get(
+        'https://api.github.com/repos/techtouchAI/Islamic/releases/latest',
+      );
 
-      if (currentVersionCode < latestVersionCode) {
-        _showUpdateDialog(forceUpdate, updateUrl, releaseNotes, checksum);
+      if (response.statusCode == 200) {
+        final data = response.data;
+
+        final String tagName = data['tag_name']?.toString() ?? '';
+        int? latestVersionCode;
+
+        if (tagName.contains('-')) {
+          latestVersionCode = int.tryParse(tagName.split('-').last);
+        } else if (tagName.contains('+')) {
+          latestVersionCode = int.tryParse(tagName.split('+').last);
+        }
+
+        if (latestVersionCode == null) {
+          debugPrint(
+            "OTA ERROR: Could not parse build number from tag_name: '$tagName'",
+          );
+          return;
+        }
+
+        final releaseNotes =
+            data['body']?.toString() ??
+            'نسخة جديدة من التطبيق متوفرة. يرجى التحديث للحصول على أفضل تجربة.';
+
+        String updateUrl = '';
+        final assets = data['assets'];
+        if (assets != null && assets is List && assets.isNotEmpty) {
+          updateUrl = assets[0]['browser_download_url']?.toString() ?? '';
+        }
+
+        if (updateUrl.isEmpty) {
+          debugPrint(
+            "OTA: 'browser_download_url' is empty. Skipping update check.",
+          );
+          return;
+        }
+
+        final PackageInfo info = await PackageInfo.fromPlatform();
+        final currentVersionCode = int.tryParse(info.buildNumber) ?? 1;
+
+        if (currentVersionCode < latestVersionCode) {
+          if (!mounted) return;
+          _showUpdateDialog(false, updateUrl, releaseNotes, null);
+        }
+      } else {
+        debugPrint(
+          "OTA ERROR: Failed to fetch latest release. Status code: ${response.statusCode}",
+        );
       }
     } catch (e) {
       debugPrint("OTA ERROR: Update Check Exception: $e");
     }
   }
 
-    void _showUpdateDialog(
+  void _showUpdateDialog(
     bool forceUpdate,
     String updateUrl,
     String releaseNotes,
@@ -370,10 +390,7 @@ class _MainScaffoldState extends State<MainScaffold> {
                 content: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(
-                      releaseNotes,
-                      textAlign: TextAlign.right,
-                    ),
+                    Text(releaseNotes, textAlign: TextAlign.right),
                     if (isDownloading) ...[
                       const SizedBox(height: 20),
                       LinearProgressIndicator(value: downloadProgress),
@@ -417,8 +434,8 @@ class _MainScaffoldState extends State<MainScaffold> {
         );
       },
     );
-    }
-                      
+  }
+
   String _currentSection = 'home';
   final List<String> _history = ['home'];
 
