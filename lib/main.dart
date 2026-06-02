@@ -290,27 +290,27 @@ class _MainScaffoldState extends State<MainScaffold> {
     }
 
     // Sync cloud data asynchronously
-    DataManager.syncCloudData()
-        .then((didUpdate) {
-          // Whether sync was successful, identical to local cache, or failed internally,
-          // trigger the update check once it concludes.
-          triggerUpdateCheck();
-        })
-        .catchError((e) {
-          debugPrint("Cloud sync failed during deferred tasks: $e");
-          // Even if the outer future throws (unlikely due to internal try/catch), attempt update check on the local cache just in case.
-          triggerUpdateCheck();
-          return false;
-        });
+    DataManager.syncCloudData().then((didUpdate) {
+      // Whether sync was successful, identical to local cache, or failed internally,
+      // trigger the update check once it concludes.
+      triggerUpdateCheck();
+    }).catchError((e) {
+      debugPrint("Cloud sync failed during deferred tasks: $e");
+      // Even if the outer future throws (unlikely due to internal try/catch), attempt update check on the local cache just in case.
+      triggerUpdateCheck();
+      return false;
+    });
   }
 
   Future<void> _checkForUpdatesSafe() async {
     try {
+      debugPrint("Attempting to reach GitHub API...");
       final response = await Dio().get(
         'https://api.github.com/repos/techtouchAI/Islamic/releases/latest',
       );
 
       if (response.statusCode == 200) {
+        debugPrint("API Response: ${response.data}");
         final data = response.data;
 
         final String tagName = data['tag_name']?.toString() ?? '';
@@ -323,14 +323,11 @@ class _MainScaffoldState extends State<MainScaffold> {
         }
 
         if (latestVersionCode == null) {
-          debugPrint(
-            "OTA ERROR: Could not parse build number from tag_name: '$tagName'",
-          );
+          debugPrint("Error parsing tag: $tagName");
           return;
         }
 
-        final releaseNotes =
-            data['body']?.toString() ??
+        final releaseNotes = data['body']?.toString() ??
             'نسخة جديدة من التطبيق متوفرة. يرجى التحديث للحصول على أفضل تجربة.';
 
         String updateUrl = '';
@@ -487,7 +484,9 @@ class _MainScaffoldState extends State<MainScaffold> {
               ),
               centerTitle: true,
               elevation: 0,
-              backgroundColor: Theme.of(context).appBarTheme.backgroundColor
+              backgroundColor: Theme.of(context)
+                  .appBarTheme
+                  .backgroundColor
                   ?.withValues(alpha: settingsProvider.uiOpacity),
               leading: Builder(
                 builder: (context) => IconButton(
@@ -634,9 +633,8 @@ class _MainScaffoldState extends State<MainScaffold> {
         return TabbedSection(
           key: const ValueKey('imam_ali'),
           tabs: imamAliCats.map((c) => c['title'].toString()).toList(),
-          sectionKeys: imamAliCats
-              .map((c) => 'imam_ali_cat_${c['id']}')
-              .toList(),
+          sectionKeys:
+              imamAliCats.map((c) => 'imam_ali_cat_${c['id']}').toList(),
           fontSizeFactor: settingsProvider.fontSizeFactor,
           uiOpacity: settingsProvider.uiOpacity,
         );
