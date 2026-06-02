@@ -308,12 +308,7 @@ class _MainScaffoldState extends State<MainScaffold> {
     if (!mounted) return;
 
     try {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('جاري الاتصال بسيرفر GitHub...'),
-          duration: Duration(seconds: 1),
-        ),
-      );
+      debugPrint("Attempting to reach GitHub API...");
 
       final response = await Dio().get(
         'https://api.github.com/repos/techtouchAI/Islamic/releases/latest',
@@ -336,15 +331,19 @@ class _MainScaffoldState extends State<MainScaffold> {
           throw Exception("لم أتمكن من قراءة رقم الإصدار من: '$tagName'");
         }
 
+        final PackageInfo info = await PackageInfo.fromPlatform();
+        final currentVersionCode = int.tryParse(info.buildNumber) ?? 1;
+
+        // ⚠️ تعديل الإشعار الأخضر ليطبع رقم جهازك الحالي ورقم السيرفر معاً للفحص القاطع
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('نجح الاتصال. الإصدار السحابي هو: $latestVersionCode'),
-            duration: const Duration(seconds: 2),
+            content: Text('نجح الاتصال. جهازي: $currentVersionCode | السيرفر: $latestVersionCode'),
+            duration: const Duration(seconds: 4),
             backgroundColor: Colors.green,
           ),
         );
 
-        final releaseNotes = data['body']?.toString() ?? 'نسخة جديدة متوفرة.';
+        final releaseNotes = data['body']?.toString() ?? 'نسخة جديدة من التطبيق متوفرة. يرجى التحديث للحصول على أفضل تجربة.';
         String updateUrl = '';
         final assets = data['assets'];
         if (assets != null && assets is List && assets.isNotEmpty) {
@@ -355,9 +354,7 @@ class _MainScaffoldState extends State<MainScaffold> {
           throw Exception("رابط التحميل (APK) غير موجود في جيت هاب");
         }
 
-        final PackageInfo info = await PackageInfo.fromPlatform();
-        final currentVersionCode = int.tryParse(info.buildNumber) ?? 1;
-
+        // التحقق من الشرط الرياضي وإظهار النافذة
         if (currentVersionCode < latestVersionCode) {
           _showUpdateDialog(false, updateUrl, releaseNotes, null);
         }
@@ -376,26 +373,18 @@ class _MainScaffoldState extends State<MainScaffold> {
     }
   }
 
-  void _showUpdateDialog(
-    bool forceUpdate,
-    String updateUrl,
-    String releaseNotes,
-    String? checksum,
-  ) {
-    if (!mounted) return;
-
-    // ⚠️ تم التخلي عن navigatorKey واستخدام سياق الواجهة الحالي والمضمون
-    final BuildContext dialogContext = this.context;
+  void _showUpdateDialog(bool forceUpdate, String updateUrl, String releaseNotes, String? checksum) {
+    final rootContext = navigatorKey.currentContext;
+    if (rootContext == null) return;
 
     showDialog(
-      context: dialogContext,
+      context: rootContext,
       barrierDismissible: !forceUpdate,
       builder: (contextBuilder) {
         return ValueListenableBuilder<double>(
           valueListenable: OTAService.instance.downloadProgress,
           builder: (context, downloadProgress, child) {
             final isDownloading = downloadProgress >= 0;
-
             return PopScope(
               canPop: !forceUpdate && !isDownloading,
               child: AlertDialog(
@@ -415,9 +404,7 @@ class _MainScaffoldState extends State<MainScaffold> {
                 actions: [
                   if (!forceUpdate && !isDownloading)
                     TextButton(
-                      onPressed: () {
-                        Navigator.of(context).pop();
-                      },
+                      onPressed: () => Navigator.of(context).pop(),
                       child: const Text('تخطي'),
                     ),
                   if (!isDownloading)
@@ -428,12 +415,7 @@ class _MainScaffoldState extends State<MainScaffold> {
                           checksum,
                           onError: (errorMessage) {
                             ScaffoldMessenger.of(contextBuilder).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  errorMessage,
-                                  textAlign: TextAlign.center,
-                                ),
-                              ),
+                              SnackBar(content: Text(errorMessage, textAlign: TextAlign.center)),
                             );
                           },
                         );
