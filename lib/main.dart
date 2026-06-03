@@ -308,8 +308,6 @@ class _MainScaffoldState extends State<MainScaffold> {
     if (!mounted) return;
 
     try {
-      debugPrint("Attempting to reach GitHub API...");
-
       final response = await Dio().get(
         'https://api.github.com/repos/techtouchAI/Islamic/releases/latest',
       );
@@ -334,16 +332,7 @@ class _MainScaffoldState extends State<MainScaffold> {
         final PackageInfo info = await PackageInfo.fromPlatform();
         final currentVersionCode = int.tryParse(info.buildNumber) ?? 1;
 
-        // ⚠️ تعديل الإشعار الأخضر ليطبع رقم جهازك الحالي ورقم السيرفر معاً للفحص القاطع
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('نجح الاتصال. جهازي: $currentVersionCode | السيرفر: $latestVersionCode'),
-            duration: const Duration(seconds: 4),
-            backgroundColor: Colors.green,
-          ),
-        );
-
-        final releaseNotes = data['body']?.toString() ?? 'نسخة جديدة من التطبيق متوفرة. يرجى التحديث للحصول على أفضل تجربة.';
+        final String releaseNotes = '✨ يتوفر الآن تحديث جديد للتطبيق!\n\nقمنا بإضافة تحسينات وإصلاحات جديدة لضمان أفضل تجربة لك. يرجى التحديث الآن.';
         String updateUrl = '';
         final assets = data['assets'];
         if (assets != null && assets is List && assets.isNotEmpty) {
