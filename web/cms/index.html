@@ -901,10 +901,10 @@
           try {
             const data = JSON.parse(e.target.result);
             if (Array.isArray(data)) {
-              db.content[activeView] = [
-                ...(db.content[activeView] || []),
-                ...data,
-              ];
+              const contentKey = activeSubView || activeView;
+              let currentList = getListData(contentKey) || [];
+              currentList = [...currentList, ...data];
+              setListData(contentKey, currentList);
               renderItems();
               importModal.hide();
               alert("تم استيراد " + data.length + " عنصر بنجاح.");
@@ -945,14 +945,14 @@
           let count = 0;
           data.forEach((item) => {
             const sec = item.section;
-            if (db.content[sec]) {
-              db.content[sec].push({
-                id: Date.now() + Math.random(),
-                title: item.title,
-                content: item.content,
-              });
-              count++;
-            }
+            let list = getListData(sec) || [];
+            list.push({
+              id: Date.now() + Math.random(),
+              title: item.title,
+              content: item.content,
+            });
+            setListData(sec, list);
+            count++;
           });
           alert("تم استيراد وتوزيع " + count + " عنصر بنجاح.");
           document.getElementById("u-batch-text").value = "";
@@ -1515,7 +1515,7 @@
 
       window.updateDevImage = function(val) {
           db.about.developer_image = val;
-          renderUI();
+          loadView('about');
       };
 
       window.handleDevImageUpload = function(input) {
@@ -1523,7 +1523,7 @@
               var reader = new FileReader();
               reader.onload = function(e) {
                   db.about.developer_image = e.target.result;
-                  renderUI();
+                  loadView('about');
               }
               reader.readAsDataURL(input.files[0]);
           }
@@ -1561,12 +1561,12 @@
       window.addSocialMedia = function() {
           if (!db.about.social_media) db.about.social_media = [];
           db.about.social_media.push({ icon: 'facebook', url: '' });
-          renderUI();
+          loadView('about');
       };
 
       window.removeSocialMedia = function(idx) {
           db.about.social_media.splice(idx, 1);
-          renderUI();
+          loadView('about');
       };
 </script>
   </body>
