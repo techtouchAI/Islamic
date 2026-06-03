@@ -1,7 +1,7 @@
 name: aldhakereen
 description: "A professional Islamic application."
 publish_to: 'none'
-version: 1.0.33+665
+version: 1.0.36+666
 
 environment:
   sdk: '>=3.4.0 <4.0.0'
