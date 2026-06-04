@@ -149,6 +149,7 @@ class _HomeSectionState extends State<HomeSection> {
     final sections = DataManager.getSections();
     items = {};
     sections.forEach((key, value) {
+      if (key == 'mafatih') return; // Hide Mafatih from Home Screen
       if (settingsProvider.homeVisibility[key] ?? true) {
         String fetchKey = key;
         if (key == 'visits') fetchKey = 'visits_general';

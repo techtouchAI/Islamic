@@ -3,6 +3,9 @@ import '../../services/mafatih_service.dart';
 import '../../models/mafatih_category.dart';
 import '../../models/mafatih_article.dart';
 import '../reader/reader_page.dart';
+import '../widgets/app_drawer.dart'; // For CountBadge
+import '../../services/favorites_service.dart'; // For Favorites
+import '../../models/favorite_item.dart';
 
 class MafatihSection extends StatefulWidget {
   final double fontSizeFactor;
@@ -76,7 +79,22 @@ class _MafatihSectionState extends State<MafatihSection> {
                   labelColor: Theme.of(context).colorScheme.primary,
                   unselectedLabelColor: isDark ? Colors.white70 : Colors.black54,
                   tabs: categories.map((cat) {
-                    return Tab(text: cat.title);
+                    return Tab(
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(cat.title),
+                          const SizedBox(width: 12),
+                          FutureBuilder<int>(
+                            future: MafatihService.getArticlesCount(cat.id),
+                            builder: (context, snapshot) {
+                              if (!snapshot.hasData) return const SizedBox();
+                              return CountBadge(count: snapshot.data!);
+                            },
+                          ),
+                        ],
+                      ),
+                    );
                   }).toList(),
                 ),
               ),
@@ -189,10 +207,23 @@ class _MafatihCategoryListState extends State<_MafatihCategoryList> {
                         color: Theme.of(context).colorScheme.primary,
                       ),
                     ),
-                    trailing: Icon(
-                      Icons.folder_open,
-                      size: 20,
-                      color: Theme.of(context).colorScheme.primary,
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          FutureBuilder<int>(
+                            future: MafatihService.getArticlesCount(subCat.id),
+                            builder: (context, snapshot) {
+                              if (!snapshot.hasData) return const SizedBox();
+                              return CountBadge(count: snapshot.data!);
+                            },
+                          ),
+                          const SizedBox(width: 8),
+                          Icon(
+                            Icons.folder_open,
+                            size: 20,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                        ],
                     ),
                     onTap: () {
                       Navigator.push(
@@ -266,10 +297,50 @@ class _MafatihCategoryListState extends State<_MafatihCategoryList> {
                           color: Theme.of(context).colorScheme.primary,
                         ),
                       ),
-                      trailing: Icon(
-                        Icons.arrow_forward_ios,
-                        size: 16,
-                        color: Theme.of(context).colorScheme.primary,
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Builder(builder: (context) {
+                            final itemId = article.id.toString();
+                            return ValueListenableBuilder<List<FavoriteItem>>(
+                              valueListenable:
+                                  FavoritesService.instance.favoritesNotifier,
+                              builder: (context, favorites, _) {
+                                final isFav = FavoritesService.instance
+                                    .isFavorite(itemId);
+                                return IconButton(
+                                  icon: Icon(
+                                    isFav
+                                        ? Icons.favorite
+                                        : Icons.favorite_border,
+                                    color: isFav
+                                        ? Colors.red
+                                        : Theme.of(context)
+                                            .colorScheme
+                                            .primary,
+                                  ),
+                                  onPressed: () {
+                                    final item = FavoriteItem(
+                                      id: itemId,
+                                      title: title,
+                                      content: text,
+                                      sourceSection: 'mafatih',
+                                      timestamp: DateTime.now(),
+                                      isCustom: false,
+                                    );
+                                    FavoritesService.instance
+                                        .toggleFavorite(item);
+                                  },
+                                );
+                              },
+                            );
+                          }),
+                          Icon(
+                            Icons.arrow_forward_ios,
+                            size: 16,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                        ],
                       ),
                       onTap: () {
                         Navigator.push(

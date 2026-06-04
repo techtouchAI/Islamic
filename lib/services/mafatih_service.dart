@@ -80,6 +80,28 @@ class MafatihService {
     }
   }
 
+  static Future<int> getArticlesCount(int categoryId) async {
+    try {
+      if (kIsWeb || _db == null) {
+        return 0;
+      }
+      final String idStr = categoryId.toString();
+      final count = Sqflite.firstIntValue(await _db!.rawQuery(
+        'SELECT COUNT(*) FROM articles WHERE group_id = ? OR group_id LIKE ? OR group_id LIKE ? OR group_id LIKE ?',
+        [
+          idStr,
+          '$idStr@@%',
+          '%@@$idStr',
+          '%@@$idStr@@%',
+        ],
+      ));
+      return count ?? 0;
+    } catch (e) {
+      debugPrint("MafatihService getArticlesCount Error: $e");
+      return 0;
+    }
+  }
+
   static Future<List<MafatihArticle>> getArticles(int categoryId) async {
     try {
       if (kIsWeb || _db == null) {
