@@ -142,15 +142,17 @@ class AppDrawer extends StatelessWidget {
   ) {
     final bool active = currentSection == id;
     int count = 0;
-    if (id == 'fatawa' || id == 'imam_ali' || id == 'dreams') {
-      final cats = DataManager.getItems(id);
-      for (var cat in cats) {
-        count += DataManager.getItems(
-          '${id}_cat_${cat["id"]?.toString()}',
-        ).length;
+    if (id != 'mafatih') {
+      if (id == 'fatawa' || id == 'imam_ali' || id == 'dreams') {
+        final cats = DataManager.getItems(id);
+        for (var cat in cats) {
+          count += DataManager.getItems(
+            '${id}_cat_${cat["id"]?.toString()}',
+          ).length;
+        }
+      } else {
+        count = DataManager.getItems(id).length;
       }
-    } else {
-      count = DataManager.getItems(id).length;
     }
 
     return ListTile(

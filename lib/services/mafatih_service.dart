@@ -1,10 +1,12 @@
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/material.dart';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import '../models/mafatih_category.dart';
 import '../models/mafatih_article.dart';
+import '../main.dart'; // To access navigatorKey
 
 class MafatihService {
   static Database? _db;
@@ -31,7 +33,19 @@ class MafatihService {
       _db = await openDatabase(path, readOnly: true);
     } catch (e) {
       debugPrint("MafatihService Init Error: $e");
+      _showError("حدث خطأ أثناء تهيئة مفاتيح الجنان: ${e.toString()}");
     }
+  }
+
+  static void _showError(String message) {
+    final context = navigatorKey.currentContext;
+    if (context == null) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+      ),
+    );
   }
 
   static Future<List<MafatihCategory>> getCategories() async {
@@ -43,6 +57,7 @@ class MafatihService {
       return maps.map((m) => MafatihCategory.fromMap(m)).toList();
     } catch (e) {
       debugPrint("MafatihService getCategories Error: $e");
+      _showError("حدث خطأ أثناء جلب الفئات: ${e.toString()}");
       return [];
     }
   }
@@ -67,6 +82,7 @@ class MafatihService {
       return maps.map((m) => MafatihArticle.fromMap(m)).toList();
     } catch (e) {
       debugPrint("MafatihService getArticles Error: $e");
+      _showError("حدث خطأ أثناء جلب المقالات: ${e.toString()}");
       return [];
     }
   }
