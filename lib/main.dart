@@ -31,6 +31,7 @@ import 'ui/dynamic_list/dynamic_list_section.dart';
 import 'ui/reader/reader_page.dart';
 import 'ui/settings/settings_section.dart';
 import 'ui/prayer_times/prayer_times_section.dart';
+import 'ui/mafatih/mafatih_section.dart';
 
 import 'dart:math';
 import 'dart:typed_data';
@@ -552,6 +553,12 @@ class _MainScaffoldState extends State<MainScaffold> {
   Widget _buildBody(BuildContext context) {
     final settingsProvider = context.watch<SettingsProvider>();
     switch (_currentSection) {
+      case 'mafatih':
+        return MafatihSection(
+          key: const ValueKey('mafatih'),
+          fontSizeFactor: settingsProvider.fontSizeFactor,
+          uiOpacity: settingsProvider.uiOpacity,
+        );
       case 'home':
         return HomeSection(
           key: const ValueKey('home'),
