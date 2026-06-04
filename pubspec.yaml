@@ -69,6 +69,7 @@ flutter:
     - assets/audio/adhan.mp3
     - assets/audio/azan5.mp3
     - assets/data/quran_db.db
+    - assets/data/maftiha.ar2.db
 
   fonts:
     - family: me_quran
