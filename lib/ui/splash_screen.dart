@@ -4,6 +4,7 @@ import 'package:intl/date_symbol_data_local.dart';
 
 import '../data/data_manager.dart';
 import '../services/quran_service.dart';
+import '../services/mafatih_service.dart';
 import '../main.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -44,6 +45,7 @@ class _SplashScreenState extends State<SplashScreen>
       await DataManager.loadContent();
 
       await QuranService.initDB();
+      await MafatihService.initDB();
 
       if (!mounted) return;
       _navigateToHome();
