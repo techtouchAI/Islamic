@@ -62,6 +62,24 @@ class MafatihService {
     }
   }
 
+  static Future<List<MafatihCategory>> getSubCategories(int parentId) async {
+    try {
+      if (kIsWeb || _db == null) {
+        return [];
+      }
+      final maps = await _db!.query(
+        'categories',
+        where: 'parent_id = ?',
+        whereArgs: [parentId],
+      );
+      return maps.map((m) => MafatihCategory.fromMap(m)).toList();
+    } catch (e) {
+      debugPrint("MafatihService getSubCategories Error: $e");
+      _showError("حدث خطأ أثناء جلب الأقسام الفرعية: ${e.toString()}");
+      return [];
+    }
+  }
+
   static Future<List<MafatihArticle>> getArticles(int categoryId) async {
     try {
       if (kIsWeb || _db == null) {
