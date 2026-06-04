@@ -115,89 +115,217 @@ class _MafatihCategoryList extends StatefulWidget {
 }
 
 class _MafatihCategoryListState extends State<_MafatihCategoryList> {
+  Future<List<MafatihCategory>>? _subCategoriesFuture;
   Future<List<MafatihArticle>>? _articlesFuture;
+  bool _hasSubCategories = false;
 
   @override
   void initState() {
     super.initState();
-    _articlesFuture = MafatihService.getArticles(widget.categoryId);
+    _loadData();
+  }
+
+  void _loadData() async {
+    _subCategoriesFuture = MafatihService.getSubCategories(widget.categoryId);
+    final subCats = await _subCategoriesFuture;
+    if (mounted) {
+      if (subCats != null && subCats.isNotEmpty) {
+        setState(() {
+          _hasSubCategories = true;
+        });
+      } else {
+        setState(() {
+          _hasSubCategories = false;
+          _articlesFuture = MafatihService.getArticles(widget.categoryId);
+        });
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<List<MafatihArticle>>(
-      future: _articlesFuture,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
+    if (_subCategoriesFuture == null) {
+       return const Center(child: CircularProgressIndicator());
+    }
+
+    return FutureBuilder<List<MafatihCategory>>(
+      future: _subCategoriesFuture,
+      builder: (context, subCatSnapshot) {
+        if (subCatSnapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         }
-        if (snapshot.hasError) {
-          return Center(
-            child: Text('خطأ: ${snapshot.error}'),
-          );
-        }
-        if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          return const Center(child: Text('لا توجد نصوص في هذا القسم'));
-        }
 
-        final articles = snapshot.data!;
-        return ListView.builder(
-          physics: const BouncingScrollPhysics(),
-          itemCount: articles.length,
-          padding: const EdgeInsets.only(bottom: 20),
-          itemBuilder: (context, index) {
-            final article = articles[index];
-            final title = article.title;
-            final text = article.text;
-
-            return Card(
-              color: Theme.of(context)
-                  .cardColor
-                  .withValues(alpha: widget.uiOpacity),
-              margin: const EdgeInsets.symmetric(
-                horizontal: 16.0,
-                vertical: 8.0,
-              ),
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(15),
-                side: BorderSide(
-                  color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
-                ),
-              ),
-              child: ListTile(
-                contentPadding: const EdgeInsets.all(16),
-                title: Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 18 * widget.fontSizeFactor,
-                    fontWeight: FontWeight.bold,
-                    fontFamily: 'amiri',
-                    color: Theme.of(context).colorScheme.primary,
+        if (_hasSubCategories) {
+           final subCategories = subCatSnapshot.data!;
+           return ListView.builder(
+              physics: const BouncingScrollPhysics(),
+              itemCount: subCategories.length,
+              padding: const EdgeInsets.only(bottom: 20),
+              itemBuilder: (context, index) {
+                final subCat = subCategories[index];
+                return Card(
+                  color: Theme.of(context)
+                      .cardColor
+                      .withValues(alpha: widget.uiOpacity),
+                  margin: const EdgeInsets.symmetric(
+                    horizontal: 16.0,
+                    vertical: 8.0,
                   ),
-                ),
-                trailing: Icon(
-                  Icons.arrow_forward_ios,
-                  size: 16,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => ReaderPage(
-                        title: title,
-                        content: text,
-                        fontSizeFactor: widget.fontSizeFactor,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(15),
+                    side: BorderSide(
+                      color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                    ),
+                  ),
+                  child: ListTile(
+                    contentPadding: const EdgeInsets.all(16),
+                    title: Text(
+                      subCat.title,
+                      style: TextStyle(
+                        fontSize: 18 * widget.fontSizeFactor,
+                        fontWeight: FontWeight.bold,
+                        fontFamily: 'amiri',
+                        color: Theme.of(context).colorScheme.primary,
                       ),
+                    ),
+                    trailing: Icon(
+                      Icons.folder_open,
+                      size: 20,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => MafatihSubCategoryScreen(
+                            categoryId: subCat.id,
+                            categoryTitle: subCat.title,
+                            fontSizeFactor: widget.fontSizeFactor,
+                            uiOpacity: widget.uiOpacity,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                );
+              },
+           );
+        } else {
+           if (_articlesFuture == null) {
+              return const Center(child: CircularProgressIndicator());
+           }
+           return FutureBuilder<List<MafatihArticle>>(
+            future: _articlesFuture,
+            builder: (context, articleSnapshot) {
+              if (articleSnapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              if (articleSnapshot.hasError) {
+                return Center(
+                  child: Text('خطأ: ${articleSnapshot.error}'),
+                );
+              }
+              if (!articleSnapshot.hasData || articleSnapshot.data!.isEmpty) {
+                return const Center(child: Text('لا توجد نصوص في هذا القسم'));
+              }
+
+              final articles = articleSnapshot.data!;
+              return ListView.builder(
+                physics: const BouncingScrollPhysics(),
+                itemCount: articles.length,
+                padding: const EdgeInsets.only(bottom: 20),
+                itemBuilder: (context, index) {
+                  final article = articles[index];
+                  final title = article.title;
+                  final text = article.text;
+
+                  return Card(
+                    color: Theme.of(context)
+                        .cardColor
+                        .withValues(alpha: widget.uiOpacity),
+                    margin: const EdgeInsets.symmetric(
+                      horizontal: 16.0,
+                      vertical: 8.0,
+                    ),
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(15),
+                      side: BorderSide(
+                        color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                      ),
+                    ),
+                    child: ListTile(
+                      contentPadding: const EdgeInsets.all(16),
+                      title: Text(
+                        title,
+                        style: TextStyle(
+                          fontSize: 18 * widget.fontSizeFactor,
+                          fontWeight: FontWeight.bold,
+                          fontFamily: 'amiri',
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                      ),
+                      trailing: Icon(
+                        Icons.arrow_forward_ios,
+                        size: 16,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ReaderPage(
+                              title: title,
+                              content: text,
+                              fontSizeFactor: widget.fontSizeFactor,
+                            ),
+                          ),
+                        );
+                      },
                     ),
                   );
                 },
-              ),
-            );
-          },
-        );
+              );
+            },
+          );
+        }
       },
+    );
+  }
+}
+
+class MafatihSubCategoryScreen extends StatelessWidget {
+  final int categoryId;
+  final String categoryTitle;
+  final double fontSizeFactor;
+  final double uiOpacity;
+
+  const MafatihSubCategoryScreen({
+    super.key,
+    required this.categoryId,
+    required this.categoryTitle,
+    required this.fontSizeFactor,
+    required this.uiOpacity,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          categoryTitle,
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
+        centerTitle: true,
+      ),
+      body: SafeArea(
+         child: _MafatihCategoryList(
+            categoryId: categoryId,
+            fontSizeFactor: fontSizeFactor,
+            uiOpacity: uiOpacity,
+         ),
+      ),
     );
   }
 }
