@@ -86,7 +86,7 @@ class _MafatihSectionState extends State<MafatihSection> {
                           Text(cat.title),
                           const SizedBox(width: 12),
                           FutureBuilder<int>(
-                            future: MafatihService.getArticlesCount(cat.id),
+                            future: MafatihService.getCategoryArticlesCount(cat.id),
                             builder: (context, snapshot) {
                               if (!snapshot.hasData) return const SizedBox();
                               return CountBadge(count: snapshot.data!);
@@ -211,7 +211,7 @@ class _MafatihCategoryListState extends State<_MafatihCategoryList> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           FutureBuilder<int>(
-                            future: MafatihService.getArticlesCount(subCat.id),
+                            future: MafatihService.getCategoryArticlesCount(subCat.id),
                             builder: (context, snapshot) {
                               if (!snapshot.hasData) return const SizedBox();
                               return CountBadge(count: snapshot.data!);

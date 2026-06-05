@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../data/data_manager.dart';
+import '../../services/mafatih_service.dart';
 import '../../ui/calendar/hijri_calendar_screen.dart';
 import '../../ui/qibla/qibla_screen.dart';
 import '../../presentation/screens/istikhara_screen.dart';
@@ -142,6 +143,8 @@ class AppDrawer extends StatelessWidget {
   ) {
     final bool active = currentSection == id;
     int count = 0;
+    Widget? trailingWidget;
+
     if (id != 'mafatih') {
       if (id == 'fatawa' || id == 'imam_ali' || id == 'dreams') {
         final cats = DataManager.getItems(id);
@@ -153,6 +156,17 @@ class AppDrawer extends StatelessWidget {
       } else {
         count = DataManager.getItems(id).length;
       }
+      trailingWidget = count > 0 ? CountBadge(count: count) : null;
+    } else {
+      trailingWidget = FutureBuilder<int>(
+        future: MafatihService.getTotalArticlesCount(),
+        builder: (context, snapshot) {
+          if (snapshot.hasData && snapshot.data! > 0) {
+            return CountBadge(count: snapshot.data!);
+          }
+          return const SizedBox();
+        },
+      );
     }
 
     return ListTile(
@@ -167,7 +181,7 @@ class AppDrawer extends StatelessWidget {
           fontSize: 16,
         ),
       ),
-      trailing: count > 0 ? CountBadge(count: count) : null,
+      trailing: trailingWidget,
       selected: active,
       selectedTileColor: Theme.of(
         context,
