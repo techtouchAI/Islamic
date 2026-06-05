@@ -237,7 +237,9 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
                   style: TextStyle(
                     fontFamily: 'me_quran',
                     color: Colors.white,
-                    fontSize: 16,
+                    fontSize: 14,
+                    height: 1.3,
+                    wordSpacing: 1.5,
                     fontWeight: isImportant ? FontWeight.bold : FontWeight.normal,
                   ),
                 ),
@@ -249,7 +251,9 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
                       style: const TextStyle(
                         fontFamily: 'Cairo',
                         color: Colors.white70,
-                        fontSize: 12,
+                        fontSize: 11,
+                        height: 1.3,
+                        wordSpacing: 1.5,
                       ),
                     ),
                   ),
@@ -322,7 +326,7 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
 
         final screenWidth = MediaQuery.of(context).size.width;
         final cellWidth = (screenWidth - 32) / 7;
-        final cellHeight = cellWidth * 1.1;
+        final cellHeight = cellWidth * 0.9;
         final totalCells = leadingEmptyCells + daysInMonth;
         final rowsCount = (totalCells / 7).ceil();
         final gridHeight = rowsCount * cellHeight;
@@ -330,32 +334,7 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
         return SingleChildScrollView(
           child: Column(
             children: [
-              Container(
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      '${_getHijriMonthName(monthHijri.hMonth)} ${monthHijri.hYear}',
-                      style: const TextStyle(
-                        fontFamily: 'Cairo',
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      _getGregorianMonthName(firstDayGregorian.month),
-                      style: const TextStyle(
-                        fontFamily: 'Cairo',
-                        fontSize: 16,
-                        color: Colors.amber,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Row(
@@ -548,6 +527,7 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
 
           // Calendar Grid
           Expanded(
+            flex: 2,
             child: PageView.builder(
               controller: _pageController,
               onPageChanged: (page) {
@@ -562,6 +542,11 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
           ),
 
           // Bottom Section (Selected or Upcoming)
+          Expanded(
+            flex: 3,
+            child: SingleChildScrollView(
+              child: Column(
+                children: [
           if (_selectedDayData != null && (_selectedDayData!.events.isNotEmpty || _selectedDayData!.astronomicalEvents.isNotEmpty))
             _buildIslamicCard(
               title: 'أحداث يوم $_selectedDay ${_getHijriMonthName(_displayedHijri.hMonth)}',
@@ -597,8 +582,11 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
                   _buildEventItem(upcomingInfo.astroEvent!.title, upcomingInfo.astroEvent!.description, false, true),
               ],
             ),
-
-          const SizedBox(height: 12),
+                  const SizedBox(height: 12),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );
