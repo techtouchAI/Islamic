@@ -18,13 +18,13 @@ class HijriCalendarScreen extends StatefulWidget {
 class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
   static const int _initialPage = 1000;
   static const List<String> _weekDays = [
-    'السبت',
-    'الأحد',
     'الإثنين',
     'الثلاثاء',
     'الأربعاء',
     'الخميس',
     'الجمعة',
+    'السبت',
+    'الأحد',
   ];
 
   HijriCalendar? _todayHijri;
@@ -32,7 +32,7 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
   PageController? _pageController;
 
   int? _selectedDay;
-  List<CalendarEvent> _selectedDayEvents = [];
+  HijriDayData? _selectedDayData;
 
   @override
   void initState() {
@@ -51,7 +51,7 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
       setState(() {
         _displayedHijri = _todayHijri!;
         _selectedDay = null;
-        _selectedDayEvents = [];
+        _selectedDayData = null;
       });
       _pageController!.animateToPage(
         _initialPage,
@@ -84,203 +84,243 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
     return temp;
   }
 
-  bool _hasEvent(int day, int month) {
-    return CalendarRepository.getEventsForDay(_displayedHijri.hYear, month, day).isNotEmpty;
-  }
-
-  List<CalendarEvent> _getEventsForDay(int day, int month) {
-    return CalendarRepository.getEventsForDay(_displayedHijri.hYear, month, day);
-  }
-
-  CalendarEvent? _getNextEvent() {
-    if (_todayHijri == null) return null;
-
-    for (int m = _todayHijri!.hMonth; m <= 12; m++) {
-      int startDay = (m == _todayHijri!.hMonth) ? _todayHijri!.hDay + 1 : 1;
-      for (int d = startDay; d <= 30; d++) {
-        var events = CalendarRepository.getEventsForDay(_todayHijri!.hYear, m, d);
-        if (events.isNotEmpty) return events.first;
-      }
-    }
-
-    for (int m = 1; m <= 12; m++) {
-      for (int d = 1; d <= 30; d++) {
-        var events = CalendarRepository.getEventsForDay(_todayHijri!.hYear + 1, m, d);
-        if (events.isNotEmpty) return events.first;
-      }
-    }
-
-    return null;
-  }
-
   Widget _buildCalendarGridForPage(BuildContext context, int pageIndex) {
     final HijriCalendar monthHijri = _getHijriMonthForPage(pageIndex);
-    final int daysInMonth = monthHijri.getDaysInMonth(monthHijri.hYear, monthHijri.hMonth);
 
-    DateTime firstDayGregorian;
-    try {
-      final firstDayTemp = HijriCalendar()
-        ..hYear = monthHijri.hYear
-        ..hMonth = monthHijri.hMonth
-        ..hDay = 1;
-      firstDayGregorian = firstDayTemp.hijriToGregorian(
-        firstDayTemp.hYear,
-        firstDayTemp.hMonth,
-        firstDayTemp.hDay,
-      );
-    } catch (e) {
-      firstDayGregorian = DateTime.now();
-    }
+    return FutureBuilder<HijriMonthData?>(
+      future: CalendarRepository.getMonthDataAsync(monthHijri.hYear, monthHijri.hMonth),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator(color: Colors.teal));
+        }
 
-    int startWeekday = firstDayGregorian.weekday;
-    int leadingEmptyCells = (startWeekday + 1) % 7;
-
-    final screenWidth = MediaQuery.of(context).size.width;
-    final cellWidth = (screenWidth - 32) / 7;
-    final cellHeight = cellWidth * 1.1;
-    final totalCells = leadingEmptyCells + daysInMonth;
-    final rowsCount = (totalCells / 7).ceil();
-    final gridHeight = rowsCount * cellHeight;
-
-    return SingleChildScrollView(
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            child: Row(
+        if (snapshot.hasError || !snapshot.hasData || snapshot.data == null) {
+          return Center(
+            child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
+                const Icon(Icons.error_outline, color: Colors.amber, size: 50),
+                const SizedBox(height: 16),
                 Text(
-                  '${monthHijri.longMonthName} ${monthHijri.hYear}',
-                  style: const TextStyle(
-                    fontFamily: 'Cairo',
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
+                  'لا توجد بيانات متاحة لشهر ${monthHijri.longMonthName}',
+                  style: const TextStyle(color: Colors.white, fontFamily: 'Cairo', fontSize: 18),
                 ),
-                const SizedBox(width: 8),
-                Text(
-                  _getGregorianMonthName(firstDayGregorian.month),
-                  style: const TextStyle(
-                    fontFamily: 'Cairo',
-                    fontSize: 16,
-                    color: Colors.amber,
-                  ),
-                ),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: () {
+                    setState(() {});
+                  },
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.teal),
+                  child: const Text('إعادة المحاولة', style: TextStyle(fontFamily: 'Cairo')),
+                )
               ],
             ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: _weekDays.map((day) => Expanded(
-                child: Center(
-                  child: Text(
-                    day,
-                    style: const TextStyle(
-                      fontFamily: 'Cairo',
-                      fontSize: 12,
-                      color: Colors.grey,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-              )).toList(),
-            ),
-          ),
-          const SizedBox(height: 8),
-          SizedBox(
-            height: gridHeight,
-            child: GridView.count(
-              crossAxisCount: 7,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              children: List.generate(leadingEmptyCells + daysInMonth, (index) {
-                if (index < leadingEmptyCells) {
-                  return const SizedBox.shrink();
-                }
+          );
+        }
 
-                final int hDay = index - leadingEmptyCells + 1;
-                final bool isToday = _todayHijri != null &&
-                    hDay == _todayHijri!.hDay &&
-                    monthHijri.hMonth == _todayHijri!.hMonth &&
-                    monthHijri.hYear == _todayHijri!.hYear;
+        final monthData = snapshot.data!;
+        final int daysInMonth = monthData.totalDays;
 
-                final bool hasEvent = _hasEvent(hDay, monthHijri.hMonth);
-                final bool isSelected = _selectedDay == hDay &&
-                    _displayedHijri.hMonth == monthHijri.hMonth &&
-                    _displayedHijri.hYear == monthHijri.hYear;
+        DateTime firstDayGregorian;
+        try {
+          firstDayGregorian = DateTime.parse(monthData.expectedGregorianStart);
+        } catch (e) {
+          try {
+            final firstDayTemp = HijriCalendar()
+              ..hYear = monthHijri.hYear
+              ..hMonth = monthHijri.hMonth
+              ..hDay = 1;
+            firstDayGregorian = firstDayTemp.hijriToGregorian(
+              firstDayTemp.hYear,
+              firstDayTemp.hMonth,
+              firstDayTemp.hDay,
+            );
+          } catch (e2) {
+            firstDayGregorian = DateTime.now();
+          }
+        }
 
-                return InkWell(
-                  onTap: () {
-                    setState(() {
-                      _selectedDay = hDay;
-                      _selectedDayEvents = _getEventsForDay(hDay, monthHijri.hMonth);
-                      _displayedHijri = monthHijri;
-                    });
-                  },
-                  child: Container(
-                    margin: const EdgeInsets.all(2),
-                    decoration: BoxDecoration(
-                      color: isToday
-                          ? (hasEvent ? Colors.teal.shade700 : Colors.teal)
-                          : null,
-                      shape: isToday ? BoxShape.circle : BoxShape.rectangle,
-                      borderRadius: isToday ? null : BorderRadius.circular(8),
-                      border: Border.all(
-                        color: isToday && hasEvent
-                            ? Colors.amber
-                            : (isSelected
-                                ? Colors.green
-                                : (hasEvent ? Colors.amber : Colors.transparent)),
-                        width: isToday && hasEvent
-                            ? 2.0
-                            : (isSelected ? 2.0 : (hasEvent ? 1.5 : 0.0)),
+        // Adjust for week starting on Monday (1 = Monday, 7 = Sunday)
+        int startWeekday = firstDayGregorian.weekday;
+        int leadingEmptyCells = startWeekday - 1;
+
+        final screenWidth = MediaQuery.of(context).size.width;
+        final cellWidth = (screenWidth - 32) / 7;
+        final cellHeight = cellWidth * 1.1;
+        final totalCells = leadingEmptyCells + daysInMonth;
+        final rowsCount = (totalCells / 7).ceil();
+        final gridHeight = rowsCount * cellHeight;
+
+        return SingleChildScrollView(
+          child: Column(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      '${monthHijri.longMonthName} ${monthHijri.hYear}',
+                      style: const TextStyle(
+                        fontFamily: 'Cairo',
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
                       ),
                     ),
-                    alignment: Alignment.center,
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        Text(
-                          '$hDay',
-                          style: TextStyle(
-                            fontFamily: 'Cairo',
-                            fontSize: 18,
-                            fontWeight: isToday ? FontWeight.bold : FontWeight.normal,
-                            color: isToday
-                                ? (hasEvent ? Colors.amber.shade200 : Colors.white)
-                                : (hasEvent ? Colors.amber.shade300 : Colors.white70),
+                    const SizedBox(width: 8),
+                    Text(
+                      _getGregorianMonthName(firstDayGregorian.month),
+                      style: const TextStyle(
+                        fontFamily: 'Cairo',
+                        fontSize: 16,
+                        color: Colors.amber,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: _weekDays.map((day) => Expanded(
+                    child: Center(
+                      child: Text(
+                        day,
+                        style: const TextStyle(
+                          fontFamily: 'Cairo',
+                          fontSize: 12,
+                          color: Colors.grey,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  )).toList(),
+                ),
+              ),
+              const SizedBox(height: 8),
+              SizedBox(
+                height: gridHeight,
+                child: GridView.count(
+                  crossAxisCount: 7,
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  children: List.generate(leadingEmptyCells + daysInMonth, (index) {
+                    if (index < leadingEmptyCells) {
+                      return const SizedBox.shrink();
+                    }
+
+                    final int hDay = index - leadingEmptyCells + 1;
+                    final bool isToday = _todayHijri != null &&
+                        hDay == _todayHijri!.hDay &&
+                        monthHijri.hMonth == _todayHijri!.hMonth &&
+                        monthHijri.hYear == _todayHijri!.hYear;
+
+                    HijriDayData? dayData;
+                    for (var d in monthData.days) {
+                      if (d.day == hDay) {
+                        dayData = d;
+                        break;
+                      }
+                    }
+
+                    final bool hasEvent = dayData != null && (dayData.events.isNotEmpty || dayData.astronomicalEvents.isNotEmpty);
+                    final bool isSelected = _selectedDay == hDay &&
+                        _displayedHijri.hMonth == monthHijri.hMonth &&
+                        _displayedHijri.hYear == monthHijri.hYear;
+
+                    return InkWell(
+                      onTap: () {
+                        setState(() {
+                          _selectedDay = hDay;
+                          _selectedDayData = dayData;
+                          _displayedHijri = monthHijri;
+                        });
+                      },
+                      child: Container(
+                        margin: const EdgeInsets.all(2),
+                        decoration: BoxDecoration(
+                          color: isToday
+                              ? (hasEvent ? Colors.teal.shade700 : Colors.teal)
+                              : null,
+                          shape: isToday ? BoxShape.circle : BoxShape.rectangle,
+                          borderRadius: isToday ? null : BorderRadius.circular(8),
+                          border: Border.all(
+                            color: isToday && hasEvent
+                                ? Colors.amber
+                                : (isSelected
+                                    ? Colors.green
+                                    : (hasEvent ? Colors.amber : Colors.transparent)),
+                            width: isToday && hasEvent
+                                ? 2.0
+                                : (isSelected ? 2.0 : (hasEvent ? 1.5 : 0.0)),
                           ),
                         ),
-                        if (isToday && hasEvent)
-                          Positioned(
-                            bottom: 2,
-                            child: Container(
-                              width: 4,
-                              height: 4,
-                              decoration: const BoxDecoration(
-                                color: Colors.amber,
-                                shape: BoxShape.circle,
+                        alignment: Alignment.center,
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            Text(
+                              '$hDay',
+                              style: TextStyle(
+                                fontFamily: 'Cairo',
+                                fontSize: 18,
+                                fontWeight: isToday ? FontWeight.bold : FontWeight.normal,
+                                color: isToday
+                                    ? (hasEvent ? Colors.amber.shade200 : Colors.white)
+                                    : (hasEvent ? Colors.amber.shade300 : Colors.white70),
                               ),
                             ),
-                          ),
-                      ],
-                    ),
-                  ),
-                );
-              }),
-            ),
+                            if (hasEvent)
+                              Positioned(
+                                bottom: 2,
+                                child: Container(
+                                  width: 6,
+                                  height: 6,
+                                  decoration: BoxDecoration(
+                                    color: isToday ? Colors.amber : Colors.amber.shade400,
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }),
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
           ),
-          const SizedBox(height: 16),
-        ],
-      ),
+        );
+      }
     );
   }
 
-  Widget _buildEventsCard(String title, List<CalendarEvent> events) {
+  Widget _buildCombinedEventsCard() {
+    if (_selectedDayData == null || (_selectedDayData!.events.isEmpty && _selectedDayData!.astronomicalEvents.isEmpty)) {
+      return Card(
+        color: const Color(0xFF2A2A2A),
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        child: const Padding(
+          padding: EdgeInsets.all(16),
+          child: Center(
+            child: Text(
+              'لا توجد مناسبات لهذا اليوم',
+              style: TextStyle(
+                fontFamily: 'me_quran',
+                color: Colors.white54,
+                fontSize: 16,
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
     return Card(
       color: const Color(0xFF2A2A2A),
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -290,35 +330,110 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              title,
-              style: const TextStyle(
+            const Text(
+              'أحداث هذا اليوم',
+              style: TextStyle(
                 fontFamily: 'me_quran',
                 color: Colors.tealAccent,
-                fontSize: 16,
+                fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),
             ),
-            ...events.map((event) => Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Icon(Icons.circle, color: Colors.tealAccent, size: 8),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      event.title,
-                      style: const TextStyle(
-                        fontFamily: 'me_quran',
-                        color: Colors.white,
-                        fontSize: 15,
+            const SizedBox(height: 12),
+
+            if (_selectedDayData!.events.isNotEmpty) ...[
+              const Text(
+                'المناسبات الإسلامية:',
+                style: TextStyle(fontFamily: 'Cairo', color: Colors.amber, fontSize: 14, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              ..._selectedDayData!.events.map((event) => Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(event.isImportant ? Icons.star : Icons.circle,
+                         color: event.isImportant ? Colors.amber : Colors.tealAccent,
+                         size: event.isImportant ? 16 : 10),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            event.title,
+                            style: TextStyle(
+                              fontFamily: 'me_quran',
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: event.isImportant ? FontWeight.bold : FontWeight.normal,
+                            ),
+                          ),
+                          if (event.description != null && event.description!.isNotEmpty)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 4),
+                              child: Text(
+                                event.description!,
+                                style: const TextStyle(
+                                  fontFamily: 'Cairo',
+                                  color: Colors.white70,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ),
+                        ],
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
+              )).toList(),
+            ],
+
+            if (_selectedDayData!.astronomicalEvents.isNotEmpty) ...[
+              if (_selectedDayData!.events.isNotEmpty) const Divider(color: Colors.white24, height: 24),
+              const Text(
+                'الأحداث الفلكية:',
+                style: TextStyle(fontFamily: 'Cairo', color: Colors.amber, fontSize: 14, fontWeight: FontWeight.bold),
               ),
-            )).toList(),
+              const SizedBox(height: 8),
+              ..._selectedDayData!.astronomicalEvents.map((event) => Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(Icons.nightlight_round, color: Colors.blueAccent, size: 14),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            event.title,
+                            style: const TextStyle(
+                              fontFamily: 'me_quran',
+                              color: Colors.white,
+                              fontSize: 15,
+                            ),
+                          ),
+                          if (event.description != null && event.description!.isNotEmpty)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 4),
+                              child: Text(
+                                event.description!,
+                                style: const TextStyle(
+                                  fontFamily: 'Cairo',
+                                  color: Colors.white70,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              )).toList(),
+            ],
           ],
         ),
       ),
@@ -332,70 +447,6 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
       'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر',
     ];
     return months[month - 1];
-  }
-
-  Widget _buildTodayEventCard(List<CalendarEvent> events) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFF2A2A2A),
-        borderRadius: BorderRadius.circular(15),
-        border: Border.all(
-          color: Colors.amber,
-          width: 1.5,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'مناسبة اليوم',
-            style: TextStyle(
-              fontFamily: 'me_quran',
-              color: Colors.amber,
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          ...events.map((event) => Padding(
-          padding: const EdgeInsets.only(bottom: 8),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('🕌', style: TextStyle(fontSize: 20)),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      event.title,
-                      style: const TextStyle(
-                        fontFamily: 'me_quran',
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '${_todayHijri!.hDay} ${_todayHijri!.longMonthName} ${_todayHijri!.hYear} هـ',
-                      style: const TextStyle(
-                        fontFamily: 'me_quran',
-                        color: Colors.amber,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        )).toList(),
-        ],
-      ),
-    );
   }
 
   @override
@@ -414,7 +465,7 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
           _todayHijri = newTodayHijri;
           _displayedHijri = newTodayHijri;
           _selectedDay = null;
-          _selectedDayEvents = [];
+          _selectedDayData = null;
           if (_pageController?.hasClients ?? false) {
              _pageController?.jumpToPage(_initialPage);
           }
@@ -428,9 +479,6 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
         body: Center(child: CircularProgressIndicator(color: Colors.teal)),
       );
     }
-
-    final CalendarEvent? nextEvent = _getNextEvent();
-    final List<CalendarEvent> todayEvents = _getEventsForDay(_todayHijri!.hDay, _todayHijri!.hMonth);
 
     return Scaffold(
       backgroundColor: const Color(0xFF1E1E1E),
@@ -456,8 +504,6 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
       ),
       body: Column(
         children: [
-          if (todayEvents.isNotEmpty)
-            _buildTodayEventCard(todayEvents),
           Expanded(
             child: PageView.builder(
               controller: _pageController,
@@ -465,19 +511,17 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
                 setState(() {
                   _displayedHijri = _getHijriMonthForPage(page);
                   _selectedDay = null;
-                  _selectedDayEvents = [];
+                  _selectedDayData = null;
                 });
               },
               itemBuilder: (context, index) => _buildCalendarGridForPage(context, index),
             ),
           ),
-          if (_selectedDay != null && _selectedDayEvents.isNotEmpty)
-            _buildEventsCard('أحداث هذا اليوم', _selectedDayEvents)
-          else if (nextEvent != null && !(todayEvents.isNotEmpty && nextEvent.title == todayEvents.first.title))
-            _buildEventsCard('الأحداث القادمة', [nextEvent])
-          else if (nextEvent == null)
-             _buildEventsCard('الأحداث القادمة', [CalendarEvent(title: 'لا توجد مناسبات قادمة')]),
-          const SizedBox(height: 8),
+          if (_selectedDay != null)
+            _buildCombinedEventsCard()
+          else
+            const SizedBox(height: 8),
+          const SizedBox(height: 16),
         ],
       ),
     );
