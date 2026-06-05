@@ -80,7 +80,22 @@ class MafatihService {
     }
   }
 
-  static Future<int> getArticlesCount(int categoryId) async {
+  static Future<int> getTotalArticlesCount() async {
+    try {
+      if (kIsWeb || _db == null) {
+        return 0;
+      }
+      final count = Sqflite.firstIntValue(
+        await _db!.rawQuery('SELECT COUNT(*) FROM articles'),
+      );
+      return count ?? 0;
+    } catch (e) {
+      debugPrint("MafatihService getTotalArticlesCount Error: $e");
+      return 0;
+    }
+  }
+
+  static Future<int> getCategoryArticlesCount(int categoryId) async {
     try {
       if (kIsWeb || _db == null) {
         return 0;
@@ -97,7 +112,7 @@ class MafatihService {
       ));
       return count ?? 0;
     } catch (e) {
-      debugPrint("MafatihService getArticlesCount Error: $e");
+      debugPrint("MafatihService getCategoryArticlesCount Error: $e");
       return 0;
     }
   }
