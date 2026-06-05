@@ -527,7 +527,7 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
 
           // Calendar Grid
           Expanded(
-            flex: 2,
+            flex: 4,
             child: PageView.builder(
               controller: _pageController,
               onPageChanged: (page) {
@@ -543,7 +543,7 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
 
           // Bottom Section (Selected or Upcoming)
           Expanded(
-            flex: 3,
+            flex: 2,
             child: SingleChildScrollView(
               child: Column(
                 children: [
