@@ -575,6 +575,11 @@
             title: "استيراد شامل بالدفعة",
             icon: "dynamic_feed",
           },
+          {
+            id: "hijri_calendar",
+            title: "التقويم الهجري",
+            icon: "event",
+          },
           { divider: true },
         ];
         Object.keys(db.sections).forEach((k) =>
@@ -791,6 +796,17 @@
                     <div id="sections-list" class="row g-3"></div>
                 `;
           renderSectionsList();
+        } else if (id === "hijri_calendar") {
+          title.innerText = "التقويم الهجري";
+          icon.innerText = "event";
+          ws.innerHTML = `
+                    <div class="card card-lux p-4 shadow-sm">
+                        <h6 class="fw-bold mb-3 text-primary">إدارة بيانات التقويم الهجري</h6>
+                        <p class="small text-muted">ألصق مصفوفة JSON التي تحتوي على بيانات التقويم الهجري هنا.</p>
+                        <textarea id="hijri-cal-text" class="form-control mb-3" rows="15" placeholder='ألصق كود JSON هنا...' style="font-family:monospace; font-size:0.8rem;" dir="ltr">${db.hijri_calendar ? JSON.stringify(db.hijri_calendar, null, 2) : ''}</textarea>
+                        <button class="btn btn-gold w-100 fw-bold" onclick="saveHijriCalendar()">حفظ بيانات التقويم الهجري</button>
+                    </div>
+                `;
         } else if (id === "universal_batch") {
           title.innerText = "استيراد شامل لكل الأقسام";
           icon.innerText = "dynamic_feed";
@@ -934,6 +950,26 @@
           alert("خطأ في تنسيق JSON: " + e.message);
         }
       }
+
+      window.saveHijriCalendar = function() {
+        const text = document.getElementById("hijri-cal-text").value.trim();
+        if (!text) {
+          db.hijri_calendar = null;
+          alert("تم مسح بيانات التقويم الهجري.");
+          return;
+        }
+        try {
+          const parsed = JSON.parse(text);
+          if (!Array.isArray(parsed)) {
+            alert("خطأ: يجب أن يكون المحتوى مصفوفة JSON [ ]");
+            return;
+          }
+          db.hijri_calendar = parsed;
+          alert("تم حفظ بيانات التقويم الهجري في الذاكرة بنجاح! لا تنسَ الضغط على 'نشر التحديثات'.");
+        } catch (e) {
+          alert("خطأ في تنسيق JSON: " + e.message);
+        }
+      };
 
       function processUniversalBatch() {
         const txt = document.getElementById("u-batch-text").value.trim();
@@ -1397,6 +1433,10 @@
           }
           if (db.daily_duas) {
               latestDB.daily_duas = { ...(latestDB.daily_duas || {}), ...(db.daily_duas || {}) };
+          }
+
+          if (db.hijri_calendar) {
+              latestDB.hijri_calendar = db.hijri_calendar;
           }
 
           // 2. The Push (Git Database API)
