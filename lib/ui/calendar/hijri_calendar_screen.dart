@@ -102,7 +102,7 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
                 const Icon(Icons.error_outline, color: Colors.amber, size: 50),
                 const SizedBox(height: 16),
                 Text(
-                  'لا توجد بيانات متاحة لشهر ${monthHijri.longMonthName}',
+                  'لا توجد بيانات متاحة لشهر ${_getHijriMonthName(monthHijri.hMonth)}',
                   style: const TextStyle(color: Colors.white, fontFamily: 'Cairo', fontSize: 18),
                 ),
                 const SizedBox(height: 16),
@@ -160,7 +160,7 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      '${monthHijri.longMonthName} ${monthHijri.hYear}',
+                      '${_getHijriMonthName(monthHijri.hMonth)} ${monthHijri.hYear}',
                       style: const TextStyle(
                         fontFamily: 'Cairo',
                         fontSize: 24,
@@ -438,6 +438,26 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
         ),
       ),
     );
+  }
+
+
+  String _getHijriMonthName(int month) {
+    const months = [
+      'محرم',
+      'صفر',
+      'ربيع الأول',
+      'ربيع الآخر',
+      'جمادى الأولى',
+      'جمادى الآخرة',
+      'رجب',
+      'شعبان',
+      'رمضان',
+      'شوال',
+      'ذو القعدة',
+      'ذو الحجة',
+    ];
+    if (month >= 1 && month <= 12) return months[month - 1];
+    return '';
   }
 
   String _getGregorianMonthName(int month) {
