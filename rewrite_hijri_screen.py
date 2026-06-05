@@ -1,4 +1,6 @@
-import 'package:flutter/material.dart';
+import os
+
+content = """import 'package:flutter/material.dart';
 import 'package:hijri/hijri_calendar.dart';
 import 'package:provider/provider.dart';
 import '../../providers/settings_provider.dart';
@@ -604,3 +606,7 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
     );
   }
 }
+"""
+
+with open('lib/ui/calendar/hijri_calendar_screen.dart', 'w') as f:
+    f.write(content)
