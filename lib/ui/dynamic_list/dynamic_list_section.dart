@@ -288,28 +288,19 @@ class _DynamicListSectionState extends State<DynamicListSection> {
                                       '')
                                   .trim();
                               displayTitle = '$cleanName ﴿عليه السلام﴾';
-                              titleStyle = TextStyle(
-                                fontFamily: 'me_quran',
-                                fontSize: 24 * widget.fontSizeFactor,
-                                fontWeight: FontWeight.normal,
-                                color: dynamicTextColor,
-                              );
                             } else if (widget.sectionKey.contains('imam_ali')) {
                               displayTitle =
                                   'قال أمير المؤمنين علي (عليه السلام)';
-                              titleStyle = TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 18,
-                                color: dynamicTextColor,
-                              );
                             } else {
                               displayTitle = data[index]['title'].toString();
-                              titleStyle = TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 18,
-                                color: dynamicTextColor,
-                              );
                             }
+
+                            titleStyle = TextStyle(
+                              fontFamily: AppCardTheme.fontFamily,
+                              fontSize: 18 * widget.fontSizeFactor,
+                              fontWeight: FontWeight.bold,
+                              color: dynamicTextColor,
+                            );
 
                             return ListTile(
                               contentPadding: AppCardTheme.padding,
@@ -317,32 +308,6 @@ class _DynamicListSectionState extends State<DynamicListSection> {
                                 displayTitle,
                                 style: titleStyle,
                               ),
-                              subtitle: widget.sectionKey == 'prophets_stories'
-                                  ? null
-                                  : Padding(
-                                      padding: const EdgeInsets.only(top: 10),
-                                      child: Text(
-                                        cleanSubtitle.cleanSnippet(),
-                                        maxLines: widget.sectionKey
-                                                .contains('imam_ali')
-                                            ? 3
-                                            : 2,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: widget.sectionKey
-                                                .contains('imam_ali')
-                                            ? TextStyle(
-                                                fontFamily: 'me_quran',
-                                                fontSize: 18,
-                                                height: 1.8,
-                                                color: dynamicTextColor,
-                                              )
-                                            : TextStyle(
-                                                fontFamily: 'OmarNaskh',
-                                                fontSize: 16,
-                                                color: dynamicTextColor,
-                                              ),
-                                      ),
-                                    ),
                               onTap: () => Navigator.push(
                                 context,
                                 MaterialPageRoute(
