@@ -268,35 +268,15 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
   Widget _buildCalendarGridForPage(BuildContext context, int pageIndex) {
     final HijriCalendar monthHijri = _getHijriMonthForPage(pageIndex);
 
-    return FutureBuilder<HijriMonthData?>(
+    return FutureBuilder<HijriMonthData>(
       future: CalendarRepository.getMonthDataAsync(monthHijri.hYear, monthHijri.hMonth),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator(color: Colors.teal));
         }
 
-        if (snapshot.hasError || !snapshot.hasData || snapshot.data == null) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.error_outline, color: Colors.amber, size: 50),
-                const SizedBox(height: 16),
-                Text(
-                  'لا توجد بيانات متاحة لشهر ${_getHijriMonthName(monthHijri.hMonth)}',
-                  style: const TextStyle(color: Colors.white, fontFamily: 'Cairo', fontSize: 18),
-                ),
-                const SizedBox(height: 16),
-                ElevatedButton(
-                  onPressed: () {
-                    setState(() {});
-                  },
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.teal),
-                  child: const Text('إعادة المحاولة', style: TextStyle(fontFamily: 'Cairo')),
-                )
-              ],
-            ),
-          );
+        if (snapshot.hasError || !snapshot.hasData) {
+          return const Center(child: Text('حدث خطأ', style: TextStyle(color: Colors.white)));
         }
 
         final monthData = snapshot.data!;
