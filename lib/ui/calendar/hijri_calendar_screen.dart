@@ -353,6 +353,7 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
                     ),
                   )).toList(),
                 ),
+              ),
               const SizedBox(height: 8),
               GridView.count(
                   crossAxisCount: 7,
