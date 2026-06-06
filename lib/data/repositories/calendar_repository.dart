@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import '../data_manager.dart';
+import 'package:hijri/hijri_calendar.dart';
 
 class CalendarEvent {
   final String title;
@@ -144,33 +145,55 @@ class HijriMonthData {
 }
 
 class CalendarRepository {
-  static Future<HijriMonthData?> getMonthDataAsync(int year, int month) async {
-    // Wrap the retrieval in a Future to allow for FutureBuilder usage
+  static Future<HijriMonthData> getMonthDataAsync(int year, int month) async {
     return getMonthData(year, month);
   }
 
-  static HijriMonthData? getMonthData(int year, int month) {
+  static HijriMonthData getMonthData(int year, int month) {
     final db = DataManager.getDB();
-    if (db == null || db['hijri_calendar'] == null) return null;
+    if (db != null && db['hijri_calendar'] != null) {
+      final monthsData = db['hijri_calendar'];
+      if (monthsData is List) {
+        for (var m in monthsData) {
+          try {
+            if (m is Map<String, dynamic>) {
+              final hYear = m['year'] is int ? m['year'] : int.tryParse(m['year']?.toString() ?? '');
+              final hMonth = m['month'] is int ? m['month'] : int.tryParse(m['month']?.toString() ?? '');
 
-    final monthsData = db['hijri_calendar'];
-    if (monthsData is! List) return null;
-
-    for (var m in monthsData) {
-      try {
-        if (m is Map<String, dynamic>) {
-          final hYear = m['year'] is int ? m['year'] : int.tryParse(m['year']?.toString() ?? '');
-          final hMonth = m['month'] is int ? m['month'] : int.tryParse(m['month']?.toString() ?? '');
-
-          if (hYear == year && hMonth == month) {
-            return HijriMonthData.fromJson(m);
+              if (hYear == year && hMonth == month) {
+                return HijriMonthData.fromJson(m);
+              }
+            }
+          } catch (e) {
+            debugPrint('Error checking month data: $e');
           }
         }
-      } catch (e) {
-        debugPrint('Error checking month data: $e');
       }
     }
-    return null;
+
+    try {
+      final fallbackHijri = HijriCalendar()
+        ..hYear = year
+        ..hMonth = month
+        ..hDay = 1;
+
+      final gregorianStart = fallbackHijri.hijriToGregorian(year, month, 1);
+      final totalDays = fallbackHijri.getDaysInMonth(year, month);
+
+      return HijriMonthData(
+        year: year,
+        month: month,
+        totalDays: totalDays,
+        expectedGregorianStart: gregorianStart.toIso8601String().split('T').first,
+        days: [],
+      );
+    } catch (e) {
+      return HijriMonthData(
+        year: year, month: month, totalDays: 30,
+        expectedGregorianStart: DateTime.now().toIso8601String().split('T').first,
+        days: []
+      );
+    }
   }
 
   static HijriDayData? getDayData(int year, int month, int day) {
