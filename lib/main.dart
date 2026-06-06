@@ -353,6 +353,15 @@ class _MainScaffoldState extends State<MainScaffold> {
       }
     } catch (e) {
       if (!mounted) return;
+
+      // Silent fail on network errors
+      if (e is DioException && e.type == DioExceptionType.connectionError) {
+        return;
+      }
+      if (e is SocketException) {
+        return;
+      }
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('خطأ في التحديث: ${e.toString()}'),
