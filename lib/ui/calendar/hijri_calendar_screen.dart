@@ -353,12 +353,10 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
                     ),
                   )).toList(),
                 ),
-              ),
               const SizedBox(height: 8),
-              SizedBox(
-                height: gridHeight,
-                child: GridView.count(
+              GridView.count(
                   crossAxisCount: 7,
+                  childAspectRatio: cellWidth / cellHeight,
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
                   children: List.generate(leadingEmptyCells + daysInMonth, (index) {
@@ -426,7 +424,6 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
                     );
                   }),
                 ),
-              ),
               const SizedBox(height: 8),
             ],
           ),
