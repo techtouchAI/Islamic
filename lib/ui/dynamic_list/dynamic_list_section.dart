@@ -27,7 +27,8 @@ import '../reader/reader_page.dart';
 import '../../ui/qibla/qibla_screen.dart';
 import '../../presentation/screens/istikhara_screen.dart';
 import '../../main.dart'; // For AlDhakereenApp globals
-
+import '../widgets/app_standard_card.dart';
+import '../../theme/app_card_theme.dart';
 
 class DynamicListSection extends StatefulWidget {
   final String title;
@@ -257,32 +258,12 @@ class _DynamicListSectionState extends State<DynamicListSection> {
                   physics: const BouncingScrollPhysics(),
                   itemCount: data.length,
                   padding: const EdgeInsets.only(bottom: 20),
-                  itemBuilder: (context, index) => Container(
-                    margin: const EdgeInsets.symmetric(
-                        horizontal: 4.0, vertical: 8.0),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(15),
+                  itemBuilder: (context, index) {
+                    return AppStandardCard(
+                      uiOpacity: widget.uiOpacity,
+                      customPadding: EdgeInsets.zero,
                       child: Stack(
                         children: [
-                          Positioned.fill(
-                            child: BackdropFilter(
-                              filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: Theme.of(context).cardColor.withValues(
-                                        alpha: widget.uiOpacity * 0.8,
-                                      ),
-                                  borderRadius: BorderRadius.circular(15),
-                                  border: Border.all(
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.primary,
-                                    width: 1.0,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
                           Builder(builder: (context) {
                             String rawText = data[index]['content']
                                 .toString()
@@ -296,6 +277,7 @@ class _DynamicListSectionState extends State<DynamicListSection> {
 
                             String displayTitle;
                             TextStyle titleStyle;
+                            Color dynamicTextColor = Theme.of(context).cardColor.contrastTextColor;
 
                             if (widget.sectionKey == 'prophets_stories') {
                               String rawTitle = data[index]['title'].toString();
@@ -310,25 +292,27 @@ class _DynamicListSectionState extends State<DynamicListSection> {
                                 fontFamily: 'me_quran',
                                 fontSize: 24 * widget.fontSizeFactor,
                                 fontWeight: FontWeight.normal,
-                                color: Theme.of(context).colorScheme.primary,
+                                color: dynamicTextColor,
                               );
                             } else if (widget.sectionKey.contains('imam_ali')) {
                               displayTitle =
                                   'قال أمير المؤمنين علي (عليه السلام)';
-                              titleStyle = const TextStyle(
+                              titleStyle = TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 18,
+                                color: dynamicTextColor,
                               );
                             } else {
                               displayTitle = data[index]['title'].toString();
-                              titleStyle = const TextStyle(
+                              titleStyle = TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 18,
+                                color: dynamicTextColor,
                               );
                             }
 
                             return ListTile(
-                              contentPadding: const EdgeInsets.all(20),
+                              contentPadding: AppCardTheme.padding,
                               title: Text(
                                 displayTitle,
                                 style: titleStyle,
@@ -350,10 +334,13 @@ class _DynamicListSectionState extends State<DynamicListSection> {
                                                 fontFamily: 'me_quran',
                                                 fontSize: 18,
                                                 height: 1.8,
+                                                color: dynamicTextColor,
                                               )
                                             : TextStyle(
                                                 fontFamily: 'OmarNaskh',
-                                                fontSize: 16),
+                                                fontSize: 16,
+                                                color: dynamicTextColor,
+                                              ),
                                       ),
                                     ),
                               onTap: () => Navigator.push(
@@ -374,8 +361,8 @@ class _DynamicListSectionState extends State<DynamicListSection> {
                             );
                           }),
                           Positioned(
-                            top: 10,
-                            left: 10,
+                            top: 0,
+                            left: 0,
                             child: Builder(builder: (context) {
                               final itemId = data[index]['title'].toString();
                               return ValueListenableBuilder<List<FavoriteItem>>(
@@ -391,9 +378,7 @@ class _DynamicListSectionState extends State<DynamicListSection> {
                                           : Icons.favorite_border,
                                       color: isFav
                                           ? Colors.red
-                                          : Theme.of(context)
-                                              .colorScheme
-                                              .primary,
+                                          : Theme.of(context).cardColor.contrastTextColor,
                                     ),
                                     onPressed: () {
                                       final item = FavoriteItem(
@@ -415,8 +400,8 @@ class _DynamicListSectionState extends State<DynamicListSection> {
                           ),
                         ],
                       ),
-                    ),
-                  ),
+                    );
+                  },
                 ),
         ),
       ],

@@ -29,6 +29,8 @@ import '../reader/reader_page.dart';
 import '../../presentation/screens/istikhara_screen.dart';
 import 'package:provider/provider.dart';
 import '../../providers/settings_provider.dart';
+import '../widgets/app_standard_card.dart';
+import '../../theme/app_card_theme.dart';
 
 
 class HomeSection extends StatefulWidget {
@@ -729,107 +731,78 @@ class _HomeSmallCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bool isDarkCard = cardColor.computeLuminance() < 0.5;
-    final Color textColor = isDarkCard ? Colors.white : Colors.black87;
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(20),
-      child: Container(
-        width: isFullWidth
-            ? double.infinity
-            : (MediaQuery.of(context).size.width - 48) / 2,
-        height: 100,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: Theme.of(
-                context,
-              ).colorScheme.primary.withValues(alpha: 0.15),
-              blurRadius: 10,
-              offset: const Offset(0, 5),
+    final Color textColor = cardColor.contrastTextColor;
+    return SizedBox(
+      width: isFullWidth
+          ? double.infinity
+          : (MediaQuery.of(context).size.width - 48) / 2,
+      height: 100,
+      child: AppStandardCard(
+        uiOpacity: uiOpacity,
+        onTap: onTap,
+        customMargins: EdgeInsets.zero,
+        customPadding: EdgeInsets.zero,
+        child: Stack(
+          children: [
+            Positioned(
+              left: -10,
+              top: 10,
+              bottom: 10,
+              child: Opacity(
+                opacity: 0.5,
+                child: Image.asset(
+                  watermarkPath,
+                  width: (tag.contains('قرآن') ||
+                          tag.contains('قرأن') ||
+                          tag.contains('سجادي') ||
+                          tag.contains('صحيفة') ||
+                          tag.contains('احلام') ||
+                          tag.contains('أحلام'))
+                      ? 60
+                      : 80,
+                  height: (tag.contains('قرآن') ||
+                          tag.contains('قرأن') ||
+                          tag.contains('سجادي') ||
+                          tag.contains('صحيفة') ||
+                          tag.contains('احلام') ||
+                          tag.contains('أحلام'))
+                      ? 60
+                      : 80,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(15),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    tag,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Theme.of(context).colorScheme.primary,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 1.2,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: textColor,
+                      height: 1.2,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(20),
-          child: Stack(
-            children: [
-              Positioned.fill(
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: cardColor.withValues(alpha: uiOpacity * 0.8),
-                      border: Border.all(
-                        color: Theme.of(context).colorScheme.primary,
-                        width: 2,
-                      ),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                  ),
-                ),
-              ),
-              Positioned(
-                left: -10,
-                top: 10,
-                bottom: 10,
-                child: Opacity(
-                  opacity: 0.5,
-                  child: Image.asset(
-                    watermarkPath,
-                    width: (tag.contains('قرآن') ||
-                            tag.contains('قرأن') ||
-                            tag.contains('سجادي') ||
-                            tag.contains('صحيفة') ||
-                            tag.contains('احلام') ||
-                            tag.contains('أحلام'))
-                        ? 60
-                        : 80,
-                    height: (tag.contains('قرآن') ||
-                            tag.contains('قرأن') ||
-                            tag.contains('سجادي') ||
-                            tag.contains('صحيفة') ||
-                            tag.contains('احلام') ||
-                            tag.contains('أحلام'))
-                        ? 60
-                        : 80,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(15),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      tag,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Theme.of(context).colorScheme.primary,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 1.2,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      title,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color: textColor,
-                        height: 1.2,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
         ),
       ),
     );

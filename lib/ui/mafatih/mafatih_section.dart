@@ -6,6 +6,8 @@ import '../reader/reader_page.dart';
 import '../widgets/app_drawer.dart'; // For CountBadge
 import '../../services/favorites_service.dart'; // For Favorites
 import '../../models/favorite_item.dart';
+import '../widgets/app_standard_card.dart';
+import '../../theme/app_card_theme.dart';
 
 class MafatihSection extends StatefulWidget {
   final double fontSizeFactor;
@@ -181,30 +183,18 @@ class _MafatihCategoryListState extends State<_MafatihCategoryList> {
               padding: const EdgeInsets.only(bottom: 20),
               itemBuilder: (context, index) {
                 final subCat = subCategories[index];
-                return Card(
-                  color: Theme.of(context)
-                      .cardColor
-                      .withValues(alpha: widget.uiOpacity),
-                  margin: const EdgeInsets.symmetric(
-                    horizontal: 16.0,
-                    vertical: 8.0,
-                  ),
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(15),
-                    side: BorderSide(
-                      color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
-                    ),
-                  ),
+                return AppStandardCard(
+                  uiOpacity: widget.uiOpacity,
+                  customPadding: EdgeInsets.zero,
                   child: ListTile(
-                    contentPadding: const EdgeInsets.all(16),
+                    contentPadding: AppCardTheme.padding,
                     title: Text(
                       subCat.title,
                       style: TextStyle(
                         fontSize: 18 * widget.fontSizeFactor,
                         fontWeight: FontWeight.bold,
-                        fontFamily: 'amiri',
-                        color: Theme.of(context).colorScheme.primary,
+                        fontFamily: AppCardTheme.fontFamily,
+                        color: Theme.of(context).cardColor.contrastTextColor,
                       ),
                     ),
                       trailing: Row(
@@ -271,30 +261,18 @@ class _MafatihCategoryListState extends State<_MafatihCategoryList> {
                   final title = article.title;
                   final text = article.text;
 
-                  return Card(
-                    color: Theme.of(context)
-                        .cardColor
-                        .withValues(alpha: widget.uiOpacity),
-                    margin: const EdgeInsets.symmetric(
-                      horizontal: 16.0,
-                      vertical: 8.0,
-                    ),
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(15),
-                      side: BorderSide(
-                        color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
-                      ),
-                    ),
+                  return AppStandardCard(
+                    uiOpacity: widget.uiOpacity,
+                    customPadding: EdgeInsets.zero,
                     child: ListTile(
-                      contentPadding: const EdgeInsets.all(16),
+                      contentPadding: AppCardTheme.padding,
                       title: Text(
                         title,
                         style: TextStyle(
                           fontSize: 18 * widget.fontSizeFactor,
                           fontWeight: FontWeight.bold,
-                          fontFamily: 'amiri',
-                          color: Theme.of(context).colorScheme.primary,
+                          fontFamily: AppCardTheme.fontFamily,
+                          color: Theme.of(context).cardColor.contrastTextColor,
                         ),
                       ),
                       trailing: Row(
