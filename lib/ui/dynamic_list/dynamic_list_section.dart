@@ -308,6 +308,18 @@ class _DynamicListSectionState extends State<DynamicListSection> {
                                 displayTitle,
                                 style: titleStyle,
                               ),
+                              subtitle: widget.sectionKey.contains('imam_ali')
+                                  ? Padding(
+                                      padding: const EdgeInsets.only(top: 4.0),
+                                      child: Text(
+                                        cleanSubtitle,
+                                        style: TextStyle(
+                                          fontSize: 14 * widget.fontSizeFactor,
+                                          color: dynamicTextColor.withValues(alpha: 0.8),
+                                        ),
+                                      ),
+                                    )
+                                  : null,
                               onTap: () => Navigator.push(
                                 context,
                                 MaterialPageRoute(
