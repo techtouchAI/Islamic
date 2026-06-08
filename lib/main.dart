@@ -10,6 +10,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'dart:ui';
 import 'package:flutter/gestures.dart';
 import 'package:hijri/hijri_calendar.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'data/data_manager.dart';
 import 'services/quran_service.dart';
@@ -457,6 +458,9 @@ class _MainScaffoldState extends State<MainScaffold> {
       valueListenable: DataManager.dbNotifier,
       builder: (context, _, __) {
         final settingsProvider = context.watch<SettingsProvider>();
+        final about = DataManager.getAbout();
+        final bool showFloatingBtn = about['floating_btn_enabled'] == true;
+
         return PopScope(
           canPop: !isSubPage,
           onPopInvokedWithResult: (didPop, result) {
@@ -464,6 +468,24 @@ class _MainScaffoldState extends State<MainScaffold> {
             _onBack();
           },
           child: Scaffold(
+            floatingActionButton: showFloatingBtn
+                ? FloatingActionButton(
+                    onPressed: () async {
+                      final url = about['floating_btn_url']?.toString();
+                      if (url != null && url.isNotEmpty) {
+                        final uri = Uri.tryParse(url);
+                        if (uri != null) {
+                          await launchUrl(uri, mode: LaunchMode.externalApplication);
+                        }
+                      }
+                    },
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    child: Icon(
+                      getMaterialIcon(about['floating_btn_icon']?.toString() ?? 'chat'),
+                      color: Colors.white,
+                    ),
+                  )
+                : null,
             drawer: AppDrawer(
               currentSection: _currentSection,
               onNavigate: (section) {

@@ -37,7 +37,7 @@ class AboutSection extends StatelessWidget {
       padding: const EdgeInsets.all(24.0),
       child: Center(
         child: Container(
-          padding: const EdgeInsets.all(30),
+          clipBehavior: Clip.hardEdge,
           decoration: BoxDecoration(
             color: Theme.of(context).cardColor,
             borderRadius: BorderRadius.circular(30),
@@ -58,37 +58,72 @@ class AboutSection extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              CircleAvatar(
-                radius: 50,
-                backgroundColor: Theme.of(
-                  context,
-                ).colorScheme.primary.withValues(alpha: 0.1),
-                backgroundImage: about['developer_image'] != null &&
-                        about['developer_image'].toString().isNotEmpty
-                    ? (about['developer_image'].toString().startsWith('http')
-                        ? NetworkImage(about['developer_image'].toString())
-                        : (about['developer_image']
-                                .toString()
-                                .startsWith('data:image')
-                            ? MemoryImage(base64Decode(about['developer_image']
-                                .toString()
-                                .split(',')
-                                .last))
-                            : AssetImage(about['developer_image'].toString())
-                                as ImageProvider))
-                    : null,
-                child: (about['developer_image'] == null ||
-                        about['developer_image'].toString().isEmpty)
-                    ? Icon(
-                        getMaterialIcon(
-                          about['developer_icon']?.toString() ?? 'person',
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Container(
+                    height: 120,
+                    width: double.infinity,
+                    color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                    child: about['cover_image'] != null &&
+                            about['cover_image'].toString().isNotEmpty
+                        ? (about['cover_image'].toString().startsWith('http')
+                            ? Image.network(about['cover_image'].toString(), fit: BoxFit.cover)
+                            : (about['cover_image'].toString().startsWith('data:image')
+                                ? Image.memory(base64Decode(about['cover_image'].toString().split(',').last), fit: BoxFit.cover)
+                                : Image.asset(about['cover_image'].toString(), fit: BoxFit.cover)))
+                        : null,
+                  ),
+                  Positioned(
+                    right: 20,
+                    bottom: -30,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: Theme.of(context).cardColor,
+                          width: 4,
                         ),
-                        size: 60,
-                        color: Theme.of(context).colorScheme.primary,
-                      )
-                    : null,
+                      ),
+                      child: CircleAvatar(
+                        radius: 40,
+                        backgroundColor: Theme.of(
+                          context,
+                        ).colorScheme.primary.withValues(alpha: 0.1),
+                        backgroundImage: about['developer_image'] != null &&
+                                about['developer_image'].toString().isNotEmpty
+                            ? (about['developer_image'].toString().startsWith('http')
+                                ? NetworkImage(about['developer_image'].toString())
+                                : (about['developer_image']
+                                        .toString()
+                                        .startsWith('data:image')
+                                    ? MemoryImage(base64Decode(about['developer_image']
+                                        .toString()
+                                        .split(',')
+                                        .last))
+                                    : AssetImage(about['developer_image'].toString())
+                                        as ImageProvider))
+                            : null,
+                        child: (about['developer_image'] == null ||
+                                about['developer_image'].toString().isEmpty)
+                            ? Icon(
+                                getMaterialIcon(
+                                  about['developer_icon']?.toString() ?? 'person',
+                                ),
+                                size: 40,
+                                color: Theme.of(context).colorScheme.primary,
+                              )
+                            : null,
+                      ),
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 40),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 30),
+                child: Column(
+                  children: [
               Text(
                 about['developer_name']?.toString() ?? 'المطور',
                 style: const TextStyle(
@@ -210,6 +245,10 @@ class AboutSection extends StatelessWidget {
                     ),
                   ),
                 ),
+              const SizedBox(height: 30),
+                  ],
+                ),
+              ),
             ],
           ),
         ),
