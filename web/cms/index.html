@@ -362,21 +362,8 @@
                 <select
                   id="m-target-key"
                   class="form-select shadow-sm"
-                  onchange="handleCategorySelect()"
                 ></select>
-                <div id="m-new-category-div" class="mt-2 d-none">
-                  <input type="text" id="m-new-category-name" class="form-control" placeholder="اسم الفئة الجديدة...">
-                </div>
               </div>
-            </div>
-
-            <div class="mb-4 text-center">
-              <img id="m-image-preview" src="" style="max-height: 200px; border-radius: 10px; display: none;" class="mb-2 shadow-sm w-100 object-fit-cover">
-              <label class="btn btn-outline-primary w-100">
-                  <i class="material-icons align-middle">add_photo_alternate</i> إضافة صورة عرض للمنشور
-                  <input type="file" hidden accept="image/*" onchange="handlePostImageUpload(this)">
-              </label>
-              <button id="m-remove-image-btn" class="btn btn-outline-danger w-100 mt-2 d-none" onclick="removePostImage()">حذف الصورة</button>
             </div>
 
             <input
@@ -392,13 +379,6 @@
               placeholder="المحتوى الكامل هنا..."
               style="white-space: pre-wrap; border-radius: 15px"
             ></textarea>
-
-            <div class="mt-4 p-3 bg-light rounded border border-light">
-                <h6 class="fw-bold mb-3">الروابط المرفقة (Dynamic Links)</h6>
-                <div id="m-links-container"></div>
-                <button class="btn btn-sm btn-outline-success mt-2" onclick="addPostLink()">+ إضافة رابط آخر</button>
-            </div>
-
             <div class="mt-4 text-end">
               <button class="btn btn-light px-4 me-2" data-bs-dismiss="modal">
                 إلغاء
@@ -744,41 +724,15 @@
                                 <input type="text" class="form-control text-center mb-3" value="${db.about.developer_icon || 'person'}" onchange="db.about.developer_icon=this.value; document.getElementById('dev_icon_preview') && (document.getElementById('dev_icon_preview').innerText = this.value)">
                             </div>
                             <div class="col-md-8">
-                                <label class="fw-bold small">اسم الموقع / المطور</label>
+                                <label class="fw-bold small">اسم المطور</label>
                                 <input type="text" class="form-control mb-3" value="${db.about.developer_name || ''}" onchange="db.about.developer_name=this.value">
                                 <label class="fw-bold small">رابط الصفحة الرئيسية</label>
                                 <input type="text" class="form-control mb-3" value="${db.about.developer_page || ''}" onchange="db.about.developer_page=this.value">
-                                <label class="fw-bold small">وصف الموقع / عن التطبيق</label>
+                                <label class="fw-bold small">عن التطبيق</label>
                                 <textarea class="form-control mb-3" rows="5" onchange="db.about.app_info=this.value">${db.about.app_info || ''}</textarea>
 
-                                <label class="fw-bold small d-block mt-3">صورة الغلاف (Cover Image - رابط أو Base64)</label>
-                                <input type="text" class="form-control text-center mb-2" id="cover_image_input" value="${db.about.cover_image || ''}" onchange="updateCoverImage(this.value)" placeholder="رابط صورة الغلاف">
-                                <label class="btn btn-sm btn-outline-primary w-100 mb-3">
-                                    رفع صورة غلاف من الجهاز <input type="file" hidden accept="image/*" onchange="handleCoverImageUpload(this)">
-                                </label>
-
                                 <hr>
-                                <h6 class="fw-bold text-primary mb-3">إعدادات الزر العائم (Floating Button)</h6>
-                                <div class="row mb-3">
-                                    <div class="col-md-4">
-                                        <label class="fw-bold small">تفعيل الزر؟</label>
-                                        <select class="form-select form-select-sm" onchange="db.about.floating_btn_enabled = (this.value === 'true')">
-                                            <option value="false" ${db.about.floating_btn_enabled === false ? 'selected' : ''}>معطل</option>
-                                            <option value="true" ${db.about.floating_btn_enabled === true ? 'selected' : ''}>مفعل</option>
-                                        </select>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label class="fw-bold small">الرابط / الرقم</label>
-                                        <input type="text" class="form-control form-control-sm" value="${db.about.floating_btn_url || ''}" onchange="db.about.floating_btn_url=this.value">
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label class="fw-bold small">الأيقونة (Material Icon)</label>
-                                        <input type="text" class="form-control form-control-sm" value="${db.about.floating_btn_icon || 'chat'}" onchange="db.about.floating_btn_icon=this.value">
-                                    </div>
-                                </div>
-
-                                <hr>
-                                <h6 class="fw-bold text-primary mb-3">روابط التذييل / مواقع التواصل (Footer Links)</h6>
+                                <h6 class="fw-bold text-primary mb-3">مواقع التواصل الاجتماعي</h6>
                                 <div id="social_media_container">
                                     ${renderSocialMediaInputs()}
                                 </div>
@@ -833,7 +787,7 @@
                     <div class="card card-lux p-4 shadow-sm mb-4">
                         <h6 class="fw-bold mb-3">إضافة قسم جديد</h6>
                         <div class="row g-3">
-                            <div class="col-md-3"><input type="text" id="new-sec-id" class="form-control" placeholder="المعرف (مثل: news)"></div>
+                            <div class="col-md-3"><input type="text" id="new-sec-id" class="form-control" placeholder="ID (e.g. news)"></div>
                             <div class="col-md-3"><input type="text" id="new-sec-title" class="form-control" placeholder="اسم القسم"></div>
                             <div class="col-md-3"><input type="text" id="new-sec-icon" class="form-control" placeholder="أيقونة Material"></div>
                             <div class="col-md-3"><button class="btn btn-gold w-100" onclick="addNewSection()">إنشاء القسم</button></div>
@@ -1270,118 +1224,6 @@
             select.innerHTML += `<option value="${k}">${db.sections[k].title}</option>`;
           }
         });
-        select.innerHTML += `<option value="__NEW_CATEGORY__" class="fw-bold text-success">+ إضافة فئة جديدة</option>`;
-      }
-
-      window.handleCategorySelect = function() {
-          const val = document.getElementById("m-target-key").value;
-          const newDiv = document.getElementById("m-new-category-div");
-          if (val === "__NEW_CATEGORY__") {
-              newDiv.classList.remove("d-none");
-          } else {
-              newDiv.classList.add("d-none");
-          }
-      };
-
-      let currentPostImageBase64 = null;
-      let currentPostLinks = [];
-
-      async function uploadFileToGitHub(file, pathPrefix) {
-          const token = prompt("لرفع الصورة مباشرة إلى GitHub، أدخل GitHub Personal Access Token:");
-          if (!token) return null;
-
-          const branch = "main";
-          const owner = "techtouchAI";
-          const repo = "Islamic";
-          const fileName = Date.now() + "_" + file.name.replace(/[^a-zA-Z0-9.\-_]/g, '');
-          const filePath = `${pathPrefix}${fileName}`;
-
-          const reader = new FileReader();
-          return new Promise((resolve, reject) => {
-              reader.onload = async function(e) {
-                  const base64Data = e.target.result.split(',')[1];
-                  const url = `https://api.github.com/repos/${owner}/${repo}/contents/${filePath}`;
-
-                  try {
-                      const res = await fetch(url, {
-                          method: "PUT",
-                          headers: {
-                              "Authorization": `token ${token}`,
-                              "Accept": "application/vnd.github.v3+json",
-                              "Content-Type": "application/json"
-                          },
-                          body: JSON.stringify({
-                              message: `Upload image ${fileName} via CMS`,
-                              content: base64Data,
-                              branch: branch
-                          })
-                      });
-
-                      const data = await res.json();
-                      if (data.content && data.content.download_url) {
-                          alert("تم الرفع بنجاح!");
-                          resolve(data.content.download_url);
-                      } else {
-                          alert("خطأ في الرفع: " + JSON.stringify(data));
-                          resolve(null);
-                      }
-                  } catch (err) {
-                      alert("خطأ: " + err.message);
-                      resolve(null);
-                  }
-              };
-              reader.readAsDataURL(file);
-          });
-      }
-
-      window.handlePostImageUpload = async function(input) {
-          if (input.files && input.files[0]) {
-              const file = input.files[0];
-              const uploadedUrl = await uploadFileToGitHub(file, "assets/images/posts/");
-              if (uploadedUrl) {
-                  currentPostImageBase64 = uploadedUrl;
-                  document.getElementById("m-image-preview").src = currentPostImageBase64;
-                  document.getElementById("m-image-preview").style.display = "block";
-                  document.getElementById("m-remove-image-btn").classList.remove("d-none");
-              }
-              // Clear input so same file can be selected again
-              input.value = "";
-          }
-      };
-
-      window.removePostImage = function() {
-          currentPostImageBase64 = null;
-          document.getElementById("m-image-preview").style.display = "none";
-          document.getElementById("m-remove-image-btn").classList.add("d-none");
-      };
-
-      window.addPostLink = function() {
-          currentPostLinks.push({title: "", url: ""});
-          renderPostLinks();
-      };
-
-      window.removePostLink = function(idx) {
-          currentPostLinks.splice(idx, 1);
-          renderPostLinks();
-      };
-
-      window.updatePostLink = function(idx, field, val) {
-          currentPostLinks[idx][field] = val;
-      };
-
-      function renderPostLinks() {
-          const container = document.getElementById("m-links-container");
-          if (!container) return;
-          container.innerHTML = "";
-          currentPostLinks.forEach((link, idx) => {
-              container.innerHTML += `
-                  <div class="d-flex gap-2 mb-2 align-items-center">
-                      <input type="text" class="form-control form-control-sm" placeholder="عنوان الرابط" value="${link.title || ''}" onchange="updatePostLink(${idx}, 'title', this.value)">
-                      <input type="text" class="form-control form-control-sm" placeholder="مسار الرابط (URL)" value="${link.url || ''}" onchange="updatePostLink(${idx}, 'url', this.value)">
-                      <button class="btn btn-sm btn-outline-danger" onclick="removePostLink(${idx})"><i class="material-icons" style="font-size:16px;">delete</i></button>
-                  </div>
-              `;
-          });
       }
 
       function openAdd() {
@@ -1392,7 +1234,6 @@
         const contentKey = activeSubView || activeView;
         populateTargetKey();
         document.getElementById("m-target-key").value = contentKey;
-        handleCategorySelect();
 
         const listData = getListData(contentKey);
         const it =
@@ -1403,17 +1244,6 @@
               : { title: "", content: "" };
         document.getElementById("m-title").value = it.title;
         document.getElementById("m-content").value = it.content;
-
-        currentPostImageBase64 = it.image || null;
-        currentPostLinks = it.links ? JSON.parse(JSON.stringify(it.links)) : [];
-        if (currentPostImageBase64) {
-            document.getElementById("m-image-preview").src = currentPostImageBase64;
-            document.getElementById("m-image-preview").style.display = "block";
-            document.getElementById("m-remove-image-btn").classList.remove("d-none");
-        } else {
-            removePostImage();
-        }
-        renderPostLinks();
 
         const contentArea = document.getElementById("m-content");
         const titleArea = document.getElementById("m-title");
@@ -1429,78 +1259,33 @@
       function saveItem() {
         const t = document.getElementById("m-title").value;
         const c = document.getElementById("m-content").value;
-        let targetKey = document.getElementById("m-target-key").value;
+        const targetKey = document.getElementById("m-target-key").value;
         const currentKey = activeSubView || activeView;
 
         if (!t || !c) return alert("املاً الحقول");
 
-        // Handle New Category Creation
-        if (targetKey === "__NEW_CATEGORY__") {
-            const newCatName = document.getElementById("m-new-category-name").value.trim();
-            if (!newCatName) return alert("الرجاء إدخال اسم الفئة الجديدة");
-
-            // Create a safe ID
-            const newCatId = Date.now().toString();
-
-            if (!subSections[activeView]) subSections[activeView] = [];
-
-            let prefix = "";
-            if (activeView === "fatawa") {
-                prefix = "fatawa_cat_";
-                if (!db.fatawa_categories) db.fatawa_categories = [];
-                db.fatawa_categories.push({ id: newCatId, title: newCatName, items: [] });
-            } else if (activeView === "dreams") {
-                prefix = "dreams_cat_";
-                if (!db.dreams_categories) db.dreams_categories = [];
-                db.dreams_categories.push({ id: newCatId, title: newCatName, items: [] });
-            } else if (activeView === "imam_ali") {
-                prefix = "imam_ali_cat_";
-                if (!db.content) db.content = {};
-                if (!db.content.imam_ali) db.content.imam_ali = [];
-                db.content.imam_ali.push({ id: newCatId, title: newCatName, items: [] });
-            } else {
-                prefix = "cat_";
-            }
-
-            subSections[activeView].push({ id: prefix + newCatId, title: newCatName });
-
-            targetKey = prefix + newCatId;
-            // Clear input for future
-            document.getElementById("m-new-category-name").value = "";
-        }
-
         let targetList = getListData(targetKey) || [];
 
-        const finalItem = {
-            id: editIdx === -1 ? Date.now() : (getListData(currentKey)[editIdx]?.id || Date.now()),
-            title: t,
-            content: c,
-        };
-
-        if (currentPostImageBase64) finalItem.image = currentPostImageBase64;
-        if (currentPostLinks.length > 0) finalItem.links = currentPostLinks;
-
         if (editIdx === -1) {
-          targetList.push(finalItem);
+          targetList.push({ id: Date.now(), title: t, content: c });
           setListData(targetKey, targetList);
         } else {
           let currentList = getListData(currentKey) || [];
           if (targetKey === currentKey) {
-            currentList[editIdx] = finalItem;
+            currentList[editIdx].title = t;
+            currentList[editIdx].content = c;
             setListData(currentKey, currentList);
           } else {
             currentList.splice(editIdx, 1);
             setListData(currentKey, currentList);
-            targetList.push(finalItem);
+            targetList.push({
+              id: Date.now(),
+              title: t,
+              content: c,
+            });
             setListData(targetKey, targetList);
           }
         }
-
-        // Refresh sidebar sub-tabs in case a new category was added
-        if (document.getElementById("m-target-key").value === "__NEW_CATEGORY__") {
-            loadView(activeView);
-        }
-
         modal.hide();
         renderItems();
       }
@@ -1572,14 +1357,14 @@
           // Progress Callback / Alert
           const reportProgress = onProgress;
 
-          reportProgress("الخطوة 1/5: جلب البيانات الحالية...");
+          reportProgress("Step 1/5: Fetching current data...");
 
           // 1. The Fetch (Bypass 1MB Limit using raw URL)
           const rawUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${filePath}?t=${Date.now()}`;
           const getResponse = await fetchWithRetry(rawUrl, { method: "GET" });
           const latestDB = await getResponse.json();
 
-          reportProgress("الخطوة 1.5: دمج التحديثات المحلية...");
+          reportProgress("Step 1.5: Merging local updates...");
           // Merge Data Logic
           function deepMergeCategories(latestArr, localArr) {
             if (!latestArr) return localArr;
@@ -1655,7 +1440,7 @@
           }
 
           // 2. The Push (Git Database API)
-          reportProgress("الخطوة 2/5: إنشاء كتلة البيانات (Blob)...");
+          reportProgress("Step 2/5: Creating blob...");
 
           // Step A (Get Reference)
           const refUrl = `https://api.github.com/repos/${owner}/${repo}/git/refs/heads/${branch}`;
@@ -1677,14 +1462,14 @@
             const blobData = await blobRes.json();
             blobSha = blobData.sha;
           } catch (e) {
-             alert("خطأ في الخطوة ب: فشل في إنشاء كتلة البيانات (Blob) - " + e.message);
+             alert("Error in Step B: Failed to create Blob - " + e.message);
              return;
           }
 
           // Force garbage collection of the 25MB string
           mergedJsonString = null;
 
-          reportProgress("الخطوة 3/5: إنشاء الشجرة (Tree)...");
+          reportProgress("Step 3/5: Creating tree...");
           // Step C (Create Tree)
           let treeSha;
           try {
@@ -1707,11 +1492,11 @@
             const treeData = await treeRes.json();
             treeSha = treeData.sha;
           } catch (e) {
-            alert("خطأ في الخطوة ج: فشل في إنشاء الشجرة (Tree) - " + e.message);
+            alert("Error in Step C: Failed to create Tree - " + e.message);
             return;
           }
 
-          reportProgress("الخطوة 4/5: إنشاء التزام (Commit)...");
+          reportProgress("Step 4/5: Creating commit...");
           // Step D (Create Commit)
           let newCommitSha;
           try {
@@ -1728,18 +1513,18 @@
              const commitData = await commitRes.json();
              newCommitSha = commitData.sha;
           } catch (e) {
-             alert("خطأ في الخطوة د: فشل في إنشاء الالتزام (Commit) - " + e.message);
+             alert("Error in Step D: Failed to create Commit - " + e.message);
              return;
           }
 
-          reportProgress("الخطوة 5/5: تحديث المرجع...");
+          reportProgress("Step 5/5: Updating reference...");
           // Step E (Update Ref)
           try {
              // Pre-check for concurrent modification
              const verifyRefRes = await fetchWithRetry(refUrl, { headers });
              const verifyRefData = await verifyRefRes.json();
              if (verifyRefData.object.sha !== initialCommitSha) {
-                alert("تم اكتشاف تعارض: مستخدم آخر قام بحفظ التغييرات. يرجى تحديث الصفحة والمحاولة مرة أخرى.");
+                alert("Conflict Detected: Another user saved changes. Please refresh and try again.");
                 return;
              }
 
@@ -1757,12 +1542,12 @@
                 throw new Error("Update Ref failed");
              }
           } catch (e) {
-             alert("خطأ في الخطوة هـ: فشل في تحديث المرجع - " + e.message);
+             alert("Error in Step E: Failed to update Ref - " + e.message);
              return;
           }
 
         } catch (error) {
-          alert("خطأ: فشل في جلب ملف JSON الخام أو خطأ آخر - " + error.message);
+          alert("Error: Fetching Raw JSON failed or other error - " + error.message);
         }
       }
 
@@ -1773,30 +1558,14 @@
           loadView('about');
       };
 
-      window.handleDevImageUpload = async function(input) {
+      window.handleDevImageUpload = function(input) {
           if (input.files && input.files[0]) {
-              const uploadedUrl = await uploadFileToGitHub(input.files[0], "assets/images/profiles/");
-              if (uploadedUrl) {
-                  db.about.developer_image = uploadedUrl;
+              var reader = new FileReader();
+              reader.onload = function(e) {
+                  db.about.developer_image = e.target.result;
                   loadView('about');
               }
-              input.value = "";
-          }
-      };
-
-      window.updateCoverImage = function(val) {
-          db.about.cover_image = val;
-          loadView('about');
-      };
-
-      window.handleCoverImageUpload = async function(input) {
-          if (input.files && input.files[0]) {
-              const uploadedUrl = await uploadFileToGitHub(input.files[0], "assets/images/covers/");
-              if (uploadedUrl) {
-                  db.about.cover_image = uploadedUrl;
-                  loadView('about');
-              }
-              input.value = "";
+              reader.readAsDataURL(input.files[0]);
           }
       };
 
