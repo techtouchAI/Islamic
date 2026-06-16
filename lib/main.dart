@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
+import 'dart:developer';
 import 'package:firebase_core/firebase_core.dart';
 import 'services/analytics_service.dart';
 import 'sections/html_content_renderer.dart';
@@ -333,7 +334,8 @@ class _MainScaffoldState extends State<MainScaffold> {
         final PackageInfo info = await PackageInfo.fromPlatform();
         final currentVersionCode = int.tryParse(info.buildNumber) ?? 1;
 
-        final String releaseNotes = '✨ يتوفر الآن تحديث جديد للتطبيق!\n\nقمنا بإضافة تحسينات وإصلاحات جديدة لضمان أفضل تجربة لك. يرجى التحديث الآن.';
+        final String releaseNotes =
+            '✨ يتوفر الآن تحديث جديد للتطبيق!\n\nقمنا بإضافة تحسينات وإصلاحات جديدة لضمان أفضل تجربة لك. يرجى التحديث الآن.';
         String updateUrl = '';
         final assets = data['assets'];
         if (assets != null && assets is List && assets.isNotEmpty) {
@@ -355,24 +357,34 @@ class _MainScaffoldState extends State<MainScaffold> {
       if (!mounted) return;
 
       // Silent fail on network errors
-      if (e is DioException && e.type == DioExceptionType.connectionError) {
-        return;
+      if (e is DioException) {
+        if (e.type == DioExceptionType.connectionError) return;
+        if (e.response?.statusCode == 403) {
+          log('Update error: $e', name: 'OTA_Update');
+          return;
+        }
       }
       if (e is SocketException) {
         return;
       }
 
+      log('Update error: $e', name: 'OTA_Update');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('خطأ في التحديث: ${e.toString()}'),
-          backgroundColor: Colors.red,
+          content: const Text('❌', textAlign: TextAlign.center),
+          backgroundColor: Colors.grey[850],
           duration: const Duration(seconds: 4),
         ),
       );
     }
   }
 
-  void _showUpdateDialog(bool forceUpdate, String updateUrl, String releaseNotes, String? checksum) {
+  void _showUpdateDialog(
+    bool forceUpdate,
+    String updateUrl,
+    String releaseNotes,
+    String? checksum,
+  ) {
     final rootContext = navigatorKey.currentContext;
     if (rootContext == null) return;
 
@@ -414,7 +426,12 @@ class _MainScaffoldState extends State<MainScaffold> {
                           checksum,
                           onError: (errorMessage) {
                             ScaffoldMessenger.of(contextBuilder).showSnackBar(
-                              SnackBar(content: Text(errorMessage, textAlign: TextAlign.center)),
+                              SnackBar(
+                                content: Text(
+                                  errorMessage,
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
                             );
                           },
                         );
