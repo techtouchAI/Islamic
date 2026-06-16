@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
-import 'dart:developer';
+import 'dart:developer' show log;
 import 'package:firebase_core/firebase_core.dart';
 import 'services/analytics_service.dart';
 import 'sections/html_content_renderer.dart';
@@ -34,7 +34,7 @@ import 'ui/settings/settings_section.dart';
 import 'ui/prayer_times/prayer_times_section.dart';
 import 'ui/mafatih/mafatih_section.dart';
 
-import 'dart:math';
+import 'dart:math' hide log;
 import 'dart:typed_data';
 import 'dart:io';
 import 'package:intl/date_symbol_data_local.dart';
