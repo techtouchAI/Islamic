@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:hijri/hijri_calendar.dart';
 import 'package:provider/provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../data/repositories/calendar_repository.dart';
@@ -41,8 +40,8 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
     'الأحد',
   ];
 
-  HijriCalendar? _todayHijri;
-  HijriCalendar _displayedHijri = HijriCalendar.fromDate(DateTime.now());
+  AppHijriDate? _todayHijri;
+  AppHijriDate _displayedHijri = AppHijriDate(day: 1, month: 1, year: 1446, monthName: 'محرم');
   PageController? _pageController;
 
   int? _realTodayHDay;
@@ -68,8 +67,8 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
         listen: false,
       );
       final currentMonthData = CalendarRepository.getMonthData(
-        _todayHijri!.hYear,
-        _todayHijri!.hMonth,
+        _todayHijri!.year,
+        _todayHijri!.month,
       );
       int calculatedTodayHDay = _calculateHDayForDate(
         DateTime.now(),
@@ -98,12 +97,12 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
     }
   }
 
-  HijriCalendar _getHijriMonthForPage(int pageIndex) {
-    if (_todayHijri == null) return HijriCalendar.fromDate(DateTime.now());
+  AppHijriDate _getHijriMonthForPage(int pageIndex) {
+    if (_todayHijri == null) return AppHijriDate(day: 1, month: 1, year: 1446, monthName: 'محرم');
     int monthOffset = pageIndex - _initialPage;
 
-    int newMonth = _todayHijri!.hMonth + monthOffset;
-    int newYear = _todayHijri!.hYear;
+    int newMonth = _todayHijri!.month + monthOffset;
+    int newYear = _todayHijri!.year;
 
     while (newMonth > 12) {
       newMonth -= 12;
@@ -114,11 +113,12 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
       newYear -= 1;
     }
 
-    final temp = HijriCalendar()
-      ..hYear = newYear
-      ..hMonth = newMonth
-      ..hDay = 1;
-    return temp;
+    return AppHijriDate(
+      day: 1,
+      month: newMonth,
+      year: newYear,
+      monthName: CalendarRepository.getHijriMonthName(newMonth),
+    );
   }
 
   String _getHijriMonthName(int month) {
@@ -160,19 +160,19 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
   }
 
   _UpcomingEventInfo? _getNextEvent() {
-    int y = _displayedHijri.hYear;
-    int m = _displayedHijri.hMonth;
+    int y = _displayedHijri.year;
+    int m = _displayedHijri.month;
     int d = 1;
 
     if (_selectedDay != null) {
       d = _selectedDay! + 1;
     } else if (_todayHijri != null &&
-        y == _todayHijri!.hYear &&
-        m == _todayHijri!.hMonth) {
+        y == _todayHijri!.year &&
+        m == _todayHijri!.month) {
       d = (_realTodayHDay ?? 1) + 1;
     }
 
-    for (int i = 0; i < 60; i++) {
+    for (int i = 0; i < 90; i++) {
       final monthData = CalendarRepository.getMonthData(y, m);
       final int totalDays = monthData.totalDays;
 
@@ -335,15 +335,15 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
   }
 
   Widget _buildCalendarGridForPage(BuildContext context, int pageIndex) {
-    final HijriCalendar monthHijri = _getHijriMonthForPage(pageIndex);
+    final AppHijriDate monthHijri = _getHijriMonthForPage(pageIndex);
     final settingsProvider = context.watch<SettingsProvider>();
     final int offset = settingsProvider.hijriAdjustment;
     final DateTime realNow = DateTime.now();
 
     return FutureBuilder<HijriMonthData>(
       future: CalendarRepository.getMonthDataAsync(
-        monthHijri.hYear,
-        monthHijri.hMonth,
+        monthHijri.year,
+        monthHijri.month,
       ),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
@@ -365,19 +365,10 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
         try {
           firstDayGregorian = DateTime.parse(monthData.expectedGregorianStart);
         } catch (e) {
-          try {
-            final firstDayTemp = HijriCalendar()
-              ..hYear = monthHijri.hYear
-              ..hMonth = monthHijri.hMonth
-              ..hDay = 1;
-            firstDayGregorian = firstDayTemp.hijriToGregorian(
-              firstDayTemp.hYear,
-              firstDayTemp.hMonth,
-              firstDayTemp.hDay,
-            );
-          } catch (e2) {
-            firstDayGregorian = DateTime.now();
-          }
+          firstDayGregorian = CalendarRepository.getGregorianStartFallback(
+            monthHijri.year,
+            monthHijri.month,
+          );
         }
 
         final DateTime adjustedGregorianStart = firstDayGregorian.add(
@@ -398,7 +389,7 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
                 padding: const EdgeInsets.symmetric(vertical: 8),
                 alignment: Alignment.center,
                 child: Text(
-                  '${_getHijriMonthName(monthHijri.hMonth)} - ${_getGregorianMonthName(adjustedGregorianStart.month)}',
+                  '${_getHijriMonthName(monthHijri.month)} - ${_getGregorianMonthName(adjustedGregorianStart.month)}',
                   style: const TextStyle(
                     fontFamily: 'Cairo',
                     fontSize: 16,
@@ -463,8 +454,8 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
                       (dayData.events.isNotEmpty ||
                           dayData.astronomicalEvents.isNotEmpty);
                   final bool isSelected = _selectedDay == hDay &&
-                      _displayedHijri.hMonth == monthHijri.hMonth &&
-                      _displayedHijri.hYear == monthHijri.hYear;
+                      _displayedHijri.month == monthHijri.month &&
+                      _displayedHijri.year == monthHijri.year;
 
                   return InkWell(
                     onTap: () {
@@ -561,25 +552,18 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
   Widget build(BuildContext context) {
     final settingsProvider = context.watch<SettingsProvider>();
     final DateTime realNow = DateTime.now();
-    final DateTime adjustedTodayForHijri = realNow.add(
-      Duration(days: settingsProvider.hijriAdjustment),
-    );
-    final newTodayHijri = HijriCalendar.fromDate(adjustedTodayForHijri);
-
     final int offset = settingsProvider.hijriAdjustment;
+    final newTodayHijri = CalendarRepository.getTodayHijri(realNow, offset);
+
     final currentMonthData = CalendarRepository.getMonthData(
-      newTodayHijri.hYear,
-      newTodayHijri.hMonth,
+      newTodayHijri.year,
+      newTodayHijri.month,
     );
-    int calculatedTodayHDay = _calculateHDayForDate(
-      realNow,
-      currentMonthData,
-      offset,
-    );
+    int calculatedTodayHDay = newTodayHijri.day;
 
     if (_todayHijri == null ||
-        _todayHijri!.hMonth != newTodayHijri.hMonth ||
-        _todayHijri!.hYear != newTodayHijri.hYear ||
+        _todayHijri!.month != newTodayHijri.month ||
+        _todayHijri!.year != newTodayHijri.year ||
         _realTodayHDay != calculatedTodayHDay) {
       HijriDayData? initialDayData;
       for (var d in currentMonthData.days) {
@@ -644,7 +628,9 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
             child: Column(
               children: [
                 Text(
-                  '${_todayHijri!.hDay} ${_getHijriMonthName(_todayHijri!.hMonth)} ${_todayHijri!.hYear} هـ',
+                  _selectedDay != null
+                    ? '$_selectedDay ${_getHijriMonthName(_displayedHijri.month)} ${_displayedHijri.year} هـ'
+                    : '${_getHijriMonthName(_displayedHijri.month)} ${_displayedHijri.year} هـ',
                   style: const TextStyle(
                     fontSize: 14,
                     color: Colors.amber,
@@ -710,7 +696,7 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
                           _selectedDayData!.astronomicalEvents.isNotEmpty))
                     _buildIslamicCard(
                       title:
-                          'أحداث يوم $_selectedDay ${_getHijriMonthName(_displayedHijri.hMonth)}',
+                          'أحداث يوم $_selectedDay ${_getHijriMonthName(_displayedHijri.month)}',
                       icon: Icons.event_available,
                       children: [
                         ..._selectedDayData!.events.map(
@@ -734,7 +720,7 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
                   else if (_selectedDayData != null)
                     _buildIslamicCard(
                       title:
-                          'أحداث يوم $_selectedDay ${_getHijriMonthName(_displayedHijri.hMonth)}',
+                          'أحداث يوم $_selectedDay ${_getHijriMonthName(_displayedHijri.month)}',
                       icon: Icons.event_busy,
                       children: [
                         const Padding(
@@ -749,8 +735,10 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
                           ),
                         ),
                       ],
-                    )
-                  else if (upcomingInfo != null)
+                    ),
+                  if (upcomingInfo != null && _selectedDay != null)
+                    const SizedBox(height: 12),
+                  if (upcomingInfo != null && _selectedDay != null)
                     _buildIslamicCard(
                       title: 'الحدث القادم',
                       icon: Icons.update,
