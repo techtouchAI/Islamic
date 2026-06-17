@@ -389,7 +389,7 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
                 padding: const EdgeInsets.symmetric(vertical: 8),
                 alignment: Alignment.center,
                 child: Text(
-                  '${_getHijriMonthName(monthHijri.hMonth)} - ${_getGregorianMonthName(adjustedGregorianStart.month)}',
+                  '${_getHijriMonthName(monthHijri.month)} - ${_getGregorianMonthName(adjustedGregorianStart.month)}',
                   style: const TextStyle(
                     fontFamily: 'Cairo',
                     fontSize: 16,
@@ -454,8 +454,8 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
                       (dayData.events.isNotEmpty ||
                           dayData.astronomicalEvents.isNotEmpty);
                   final bool isSelected = _selectedDay == hDay &&
-                      _displayedHijri.hMonth == monthHijri.hMonth &&
-                      _displayedHijri.hYear == monthHijri.hYear;
+                      _displayedHijri.month == monthHijri.month &&
+                      _displayedHijri.year == monthHijri.year;
 
                   return InkWell(
                     onTap: () {
