@@ -120,8 +120,18 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
   String _getGregorianMonthName(int month) {
     if (month < 1 || month > 12) return '';
     const months = [
-      'يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو',
-      'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر',
+      'يناير',
+      'فبراير',
+      'مارس',
+      'أبريل',
+      'مايو',
+      'يونيو',
+      'يوليو',
+      'أغسطس',
+      'سبتمبر',
+      'أكتوبر',
+      'نوفمبر',
+      'ديسمبر',
     ];
     return months[month - 1];
   }
@@ -143,11 +153,13 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
 
       final events = CalendarRepository.getEventsForDay(y, m, d);
       if (events.isNotEmpty) {
-        return _UpcomingEventInfo(event: events.first, hDay: d, hMonth: m, hYear: y);
+        return _UpcomingEventInfo(
+            event: events.first, hDay: d, hMonth: m, hYear: y);
       }
       final astro = CalendarRepository.getAstronomicalEventsForDay(y, m, d);
       if (astro.isNotEmpty) {
-        return _UpcomingEventInfo(astroEvent: astro.first, hDay: d, hMonth: m, hYear: y);
+        return _UpcomingEventInfo(
+            astroEvent: astro.first, hDay: d, hMonth: m, hYear: y);
       }
       d++;
     }
@@ -187,25 +199,24 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
                   child: Text(
                     title,
                     style: const TextStyle(
-                      fontFamily: 'Cairo',
-                      color: Colors.amber,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold
-                    ),
+                        fontFamily: 'Cairo',
+                        color: Colors.amber,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold),
                   ),
                 ),
                 if (subtitle != null)
                   Text(
                     subtitle,
                     style: const TextStyle(
-                      fontFamily: 'Cairo',
-                      color: Colors.white54,
-                      fontSize: 12
-                    ),
+                        fontFamily: 'Cairo',
+                        color: Colors.white54,
+                        fontSize: 12),
                   ),
               ],
             ),
-            if (children.isNotEmpty) const Divider(color: Colors.white24, height: 16),
+            if (children.isNotEmpty)
+              const Divider(color: Colors.white24, height: 16),
             ...children,
           ],
         ),
@@ -213,7 +224,8 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
     );
   }
 
-  Widget _buildEventItem(String title, String? description, bool isImportant, bool isAstro) {
+  Widget _buildEventItem(
+      String title, String? description, bool isImportant, bool isAstro) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8.0),
       child: Row(
@@ -222,8 +234,12 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
           Padding(
             padding: const EdgeInsets.only(top: 4.0),
             child: Icon(
-              isAstro ? Icons.nightlight_round : (isImportant ? Icons.star : Icons.circle),
-              color: isAstro ? Colors.blueAccent : (isImportant ? Colors.amber : Colors.tealAccent),
+              isAstro
+                  ? Icons.nightlight_round
+                  : (isImportant ? Icons.star : Icons.circle),
+              color: isAstro
+                  ? Colors.blueAccent
+                  : (isImportant ? Colors.amber : Colors.tealAccent),
               size: isAstro ? 14 : (isImportant ? 16 : 10),
             ),
           ),
@@ -240,7 +256,8 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
                     fontSize: 14,
                     height: 1.3,
                     wordSpacing: 1.5,
-                    fontWeight: isImportant ? FontWeight.bold : FontWeight.normal,
+                    fontWeight:
+                        isImportant ? FontWeight.bold : FontWeight.normal,
                   ),
                 ),
                 if (description != null && description.isNotEmpty)
@@ -267,89 +284,116 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
 
   Widget _buildCalendarGridForPage(BuildContext context, int pageIndex) {
     final HijriCalendar monthHijri = _getHijriMonthForPage(pageIndex);
+    final settingsProvider = context.watch<SettingsProvider>();
+    final int offset = settingsProvider.hijriAdjustment;
+    final DateTime realNow = DateTime.now();
 
     return FutureBuilder<HijriMonthData>(
-      future: CalendarRepository.getMonthDataAsync(monthHijri.hYear, monthHijri.hMonth),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator(color: Colors.teal));
-        }
-
-        if (snapshot.hasError || !snapshot.hasData) {
-          return const Center(child: Text('حدث خطأ', style: TextStyle(color: Colors.white)));
-        }
-
-        final monthData = snapshot.data!;
-        final int daysInMonth = monthData.totalDays;
-
-        DateTime firstDayGregorian;
-        try {
-          firstDayGregorian = DateTime.parse(monthData.expectedGregorianStart);
-        } catch (e) {
-          try {
-            final firstDayTemp = HijriCalendar()
-              ..hYear = monthHijri.hYear
-              ..hMonth = monthHijri.hMonth
-              ..hDay = 1;
-            firstDayGregorian = firstDayTemp.hijriToGregorian(
-              firstDayTemp.hYear,
-              firstDayTemp.hMonth,
-              firstDayTemp.hDay,
-            );
-          } catch (e2) {
-            firstDayGregorian = DateTime.now();
+        future: CalendarRepository.getMonthDataAsync(
+            monthHijri.hYear, monthHijri.hMonth),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(
+                child: CircularProgressIndicator(color: Colors.teal));
           }
-        }
 
-        int startWeekday = firstDayGregorian.weekday;
-        int leadingEmptyCells = startWeekday - 1;
+          if (snapshot.hasError || !snapshot.hasData) {
+            return const Center(
+                child: Text('حدث خطأ', style: TextStyle(color: Colors.white)));
+          }
 
-        final screenWidth = MediaQuery.of(context).size.width;
-        final cellWidth = (screenWidth - 32) / 7;
-        final cellHeight = cellWidth * 0.9;
-        final totalCells = leadingEmptyCells + daysInMonth;
-        final rowsCount = (totalCells / 7).ceil();
-        final gridHeight = rowsCount * cellHeight;
+          final monthData = snapshot.data!;
+          final int daysInMonth = monthData.totalDays;
 
-        return SingleChildScrollView(
-          child: Column(
-            children: [
+          DateTime firstDayGregorian;
+          try {
+            firstDayGregorian =
+                DateTime.parse(monthData.expectedGregorianStart);
+          } catch (e) {
+            try {
+              final firstDayTemp = HijriCalendar()
+                ..hYear = monthHijri.hYear
+                ..hMonth = monthHijri.hMonth
+                ..hDay = 1;
+              firstDayGregorian = firstDayTemp.hijriToGregorian(
+                firstDayTemp.hYear,
+                firstDayTemp.hMonth,
+                firstDayTemp.hDay,
+              );
+            } catch (e2) {
+              firstDayGregorian = DateTime.now();
+            }
+          }
 
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: _weekDays.map((day) => Expanded(
-                    child: Center(
-                      child: Text(
-                        day,
-                        style: const TextStyle(
-                          fontFamily: 'Cairo',
-                          fontSize: 12,
-                          color: Colors.grey,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
+          final DateTime adjustedGregorianStart =
+              firstDayGregorian.add(Duration(days: offset));
+
+          int startWeekday = adjustedGregorianStart.weekday;
+          int leadingEmptyCells = startWeekday - 1;
+
+          final screenWidth = MediaQuery.of(context).size.width;
+          final cellWidth = (screenWidth - 32) / 7;
+          final cellHeight = cellWidth * 0.9;
+          final totalCells = leadingEmptyCells + daysInMonth;
+          final rowsCount = (totalCells / 7).ceil();
+          final gridHeight = rowsCount * cellHeight;
+
+          return SingleChildScrollView(
+            child: Column(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  alignment: Alignment.center,
+                  child: Text(
+                    '${_getHijriMonthName(monthHijri.hMonth)} - ${_getGregorianMonthName(adjustedGregorianStart.month)}',
+                    style: const TextStyle(
+                      fontFamily: 'Cairo',
+                      fontSize: 16,
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
                     ),
-                  )).toList(),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 8),
-              GridView.count(
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: _weekDays
+                        .map((day) => Expanded(
+                              child: Center(
+                                child: Text(
+                                  day,
+                                  style: const TextStyle(
+                                    fontFamily: 'Cairo',
+                                    fontSize: 12,
+                                    color: Colors.grey,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            ))
+                        .toList(),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                GridView.count(
                   crossAxisCount: 7,
                   childAspectRatio: cellWidth / cellHeight,
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
-                  children: List.generate(leadingEmptyCells + daysInMonth, (index) {
+                  children:
+                      List.generate(leadingEmptyCells + daysInMonth, (index) {
                     if (index < leadingEmptyCells) {
                       return const SizedBox.shrink();
                     }
 
                     final int hDay = index - leadingEmptyCells + 1;
-                    final bool isToday = _todayHijri != null &&
-                        hDay == _todayHijri!.hDay &&
-                        monthHijri.hMonth == _todayHijri!.hMonth &&
-                        monthHijri.hYear == _todayHijri!.hYear;
+                    final DateTime cellGregorianDate =
+                        adjustedGregorianStart.add(Duration(days: hDay - 1));
+                    final bool isToday =
+                        cellGregorianDate.year == realNow.year &&
+                            cellGregorianDate.month == realNow.month &&
+                            cellGregorianDate.day == realNow.day;
 
                     HijriDayData? dayData;
                     for (var d in monthData.days) {
@@ -359,7 +403,9 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
                       }
                     }
 
-                    final bool hasEvent = dayData != null && (dayData.events.isNotEmpty || dayData.astronomicalEvents.isNotEmpty);
+                    final bool hasEvent = dayData != null &&
+                        (dayData.events.isNotEmpty ||
+                            dayData.astronomicalEvents.isNotEmpty);
                     final bool isSelected = _selectedDay == hDay &&
                         _displayedHijri.hMonth == monthHijri.hMonth &&
                         _displayedHijri.hYear == monthHijri.hYear;
@@ -376,7 +422,9 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
                         margin: const EdgeInsets.all(2),
                         decoration: BoxDecoration(
                           color: isToday
-                              ? (hasEvent ? Colors.teal.shade700 : Colors.teal.withOpacity(0.6))
+                              ? (hasEvent
+                                  ? Colors.teal.shade700
+                                  : Colors.teal.withOpacity(0.6))
                               : null,
                           shape: BoxShape.rectangle,
                           borderRadius: BorderRadius.circular(8),
@@ -385,8 +433,12 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
                                 ? Colors.amber
                                 : (isSelected
                                     ? Colors.green
-                                    : (hasEvent ? Colors.amber.withOpacity(0.8) : Colors.white12)),
-                            width: isToday || isSelected ? 2.0 : (hasEvent ? 1.5 : 1.0),
+                                    : (hasEvent
+                                        ? Colors.amber.withOpacity(0.8)
+                                        : Colors.white12)),
+                            width: isToday || isSelected
+                                ? 2.0
+                                : (hasEvent ? 1.5 : 1.0),
                           ),
                         ),
                         alignment: Alignment.center,
@@ -395,29 +447,35 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
                           style: TextStyle(
                             fontFamily: 'Cairo',
                             fontSize: 18,
-                            fontWeight: isToday ? FontWeight.bold : FontWeight.normal,
+                            fontWeight:
+                                isToday ? FontWeight.bold : FontWeight.normal,
                             color: isToday
-                                ? (hasEvent ? Colors.amber.shade200 : Colors.white)
-                                : (hasEvent ? Colors.amber.shade300 : Colors.white70),
+                                ? (hasEvent
+                                    ? Colors.amber.shade200
+                                    : Colors.white)
+                                : (hasEvent
+                                    ? Colors.amber.shade300
+                                    : Colors.white70),
                           ),
                         ),
                       ),
                     );
                   }),
                 ),
-              const SizedBox(height: 8),
-            ],
-          ),
-        );
-      }
-    );
+                const SizedBox(height: 8),
+              ],
+            ),
+          );
+        });
   }
 
   @override
   Widget build(BuildContext context) {
     final settingsProvider = context.watch<SettingsProvider>();
-    final DateTime trueNow = DateTime.now().add(Duration(days: settingsProvider.hijriAdjustment));
-    final newTodayHijri = HijriCalendar.fromDate(trueNow);
+    final DateTime realNow = DateTime.now();
+    final DateTime adjustedTodayForHijri =
+        realNow.add(Duration(days: settingsProvider.hijriAdjustment));
+    final newTodayHijri = HijriCalendar.fromDate(adjustedTodayForHijri);
 
     if (_todayHijri == null ||
         _todayHijri!.hDay != newTodayHijri.hDay ||
@@ -431,7 +489,7 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
           _selectedDay = null;
           _selectedDayData = null;
           if (_pageController?.hasClients ?? false) {
-             _pageController?.jumpToPage(_initialPage);
+            _pageController?.jumpToPage(_initialPage);
           }
         });
       });
@@ -445,8 +503,10 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
     }
 
     // Top Section logic
-    final todayEvents = CalendarRepository.getEventsForDay(_todayHijri!.hYear, _todayHijri!.hMonth, _todayHijri!.hDay);
-    final todayAstro = CalendarRepository.getAstronomicalEventsForDay(_todayHijri!.hYear, _todayHijri!.hMonth, _todayHijri!.hDay);
+    final todayEvents = CalendarRepository.getEventsForDay(
+        _todayHijri!.hYear, _todayHijri!.hMonth, _todayHijri!.hDay);
+    final todayAstro = CalendarRepository.getAstronomicalEventsForDay(
+        _todayHijri!.hYear, _todayHijri!.hMonth, _todayHijri!.hDay);
 
     // Bottom Section logic
     final upcomingInfo = _getNextEvent(_todayHijri!);
@@ -482,11 +542,16 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
               children: [
                 Text(
                   '${_todayHijri!.hDay} ${_getHijriMonthName(_todayHijri!.hMonth)} ${_todayHijri!.hYear} هـ',
-                  style: const TextStyle(fontSize: 14, color: Colors.amber, fontFamily: 'Cairo', fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                      fontSize: 14,
+                      color: Colors.amber,
+                      fontFamily: 'Cairo',
+                      fontWeight: FontWeight.bold),
                 ),
                 Text(
-                  '${trueNow.day} ${_getGregorianMonthName(trueNow.month)} ${trueNow.year} م',
-                  style: const TextStyle(fontSize: 12, color: Colors.white70, fontFamily: 'Cairo'),
+                  '${realNow.day} ${_getGregorianMonthName(realNow.month)} ${realNow.year} م',
+                  style: const TextStyle(
+                      fontSize: 12, color: Colors.white70, fontFamily: 'Cairo'),
                 ),
               ],
             ),
@@ -498,8 +563,10 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
               title: 'أحداث اليوم',
               icon: Icons.mosque,
               children: [
-                ...todayEvents.map((e) => _buildEventItem(e.title, e.description, e.isImportant, false)),
-                ...todayAstro.map((e) => _buildEventItem(e.title, e.description, false, true)),
+                ...todayEvents.map((e) => _buildEventItem(
+                    e.title, e.description, e.isImportant, false)),
+                ...todayAstro.map((e) =>
+                    _buildEventItem(e.title, e.description, false, true)),
               ],
             ),
 
@@ -515,7 +582,8 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
                   _selectedDayData = null;
                 });
               },
-              itemBuilder: (context, index) => _buildCalendarGridForPage(context, index),
+              itemBuilder: (context, index) =>
+                  _buildCalendarGridForPage(context, index),
             ),
           ),
 
@@ -525,41 +593,60 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
             child: SingleChildScrollView(
               child: Column(
                 children: [
-          if (_selectedDayData != null && (_selectedDayData!.events.isNotEmpty || _selectedDayData!.astronomicalEvents.isNotEmpty))
-            _buildIslamicCard(
-              title: 'أحداث يوم $_selectedDay ${_getHijriMonthName(_displayedHijri.hMonth)}',
-              icon: Icons.event_available,
-              children: [
-                ..._selectedDayData!.events.map((e) => _buildEventItem(e.title, e.description, e.isImportant, false)),
-                ..._selectedDayData!.astronomicalEvents.map((e) => _buildEventItem(e.title, e.description, false, true)),
-              ],
-            )
-          else if (_selectedDayData != null)
-            _buildIslamicCard(
-              title: 'أحداث يوم $_selectedDay ${_getHijriMonthName(_displayedHijri.hMonth)}',
-              icon: Icons.event_busy,
-              children: [
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 4.0),
-                  child: Text(
-                    'لا توجد أحداث في هذا اليوم',
-                    style: TextStyle(fontFamily: 'Cairo', color: Colors.white54, fontSize: 13),
-                  ),
-                )
-              ],
-            )
-          else if (upcomingInfo != null)
-            _buildIslamicCard(
-              title: 'الحدث القادم',
-              icon: Icons.update,
-              subtitle: 'يوم ${upcomingInfo.hDay} ${_getHijriMonthName(upcomingInfo.hMonth)}',
-              children: [
-                if (upcomingInfo.event != null)
-                  _buildEventItem(upcomingInfo.event!.title, upcomingInfo.event!.description, upcomingInfo.event!.isImportant, false),
-                if (upcomingInfo.astroEvent != null)
-                  _buildEventItem(upcomingInfo.astroEvent!.title, upcomingInfo.astroEvent!.description, false, true),
-              ],
-            ),
+                  if (_selectedDayData != null &&
+                      (_selectedDayData!.events.isNotEmpty ||
+                          _selectedDayData!.astronomicalEvents.isNotEmpty))
+                    _buildIslamicCard(
+                      title:
+                          'أحداث يوم $_selectedDay ${_getHijriMonthName(_displayedHijri.hMonth)}',
+                      icon: Icons.event_available,
+                      children: [
+                        ..._selectedDayData!.events.map((e) => _buildEventItem(
+                            e.title, e.description, e.isImportant, false)),
+                        ..._selectedDayData!.astronomicalEvents.map((e) =>
+                            _buildEventItem(
+                                e.title, e.description, false, true)),
+                      ],
+                    )
+                  else if (_selectedDayData != null)
+                    _buildIslamicCard(
+                      title:
+                          'أحداث يوم $_selectedDay ${_getHijriMonthName(_displayedHijri.hMonth)}',
+                      icon: Icons.event_busy,
+                      children: [
+                        const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 4.0),
+                          child: Text(
+                            'لا توجد أحداث في هذا اليوم',
+                            style: TextStyle(
+                                fontFamily: 'Cairo',
+                                color: Colors.white54,
+                                fontSize: 13),
+                          ),
+                        )
+                      ],
+                    )
+                  else if (upcomingInfo != null)
+                    _buildIslamicCard(
+                      title: 'الحدث القادم',
+                      icon: Icons.update,
+                      subtitle:
+                          'يوم ${upcomingInfo.hDay} ${_getHijriMonthName(upcomingInfo.hMonth)}',
+                      children: [
+                        if (upcomingInfo.event != null)
+                          _buildEventItem(
+                              upcomingInfo.event!.title,
+                              upcomingInfo.event!.description,
+                              upcomingInfo.event!.isImportant,
+                              false),
+                        if (upcomingInfo.astroEvent != null)
+                          _buildEventItem(
+                              upcomingInfo.astroEvent!.title,
+                              upcomingInfo.astroEvent!.description,
+                              false,
+                              true),
+                      ],
+                    ),
                   const SizedBox(height: 12),
                 ],
               ),
