@@ -144,7 +144,122 @@ class HijriMonthData {
   }
 }
 
+class AppHijriDate {
+  final int day;
+  final int month;
+  final int year;
+  final String monthName;
+
+  AppHijriDate({
+    required this.day,
+    required this.month,
+    required this.year,
+    required this.monthName,
+  });
+
+  @override
+  String toString() {
+    return '$day $monthName $year هـ';
+  }
+}
+
 class CalendarRepository {
+  static String getHijriMonthName(int month) {
+    if (month < 1 || month > 12) return '';
+    const months = [
+      'محرم',
+      'صفر',
+      'ربيع الأول',
+      'ربيع الآخر',
+      'جمادى الأولى',
+      'جمادى الآخرة',
+      'رجب',
+      'شعبان',
+      'رمضان',
+      'شوال',
+      'ذو القعدة',
+      'ذو الحجة',
+    ];
+    return months[month - 1];
+  }
+
+  static AppHijriDate getTodayHijri(DateTime targetDate, int offset) {
+    // Determine fallback current hijri using the library
+    final fallbackHijri = HijriCalendar.fromDate(
+        targetDate.add(Duration(days: offset)));
+
+    // Ensure we load month data (could be missing/fallback from hijri calendar)
+    final monthData = getMonthData(fallbackHijri.hYear, fallbackHijri.hMonth);
+
+    DateTime firstDayGregorian;
+    try {
+      firstDayGregorian = DateTime.parse(monthData.expectedGregorianStart);
+    } catch (e) {
+       // A simplistic fallback for missing JSON: we just use the calculated day by hijri package
+       return AppHijriDate(
+         day: fallbackHijri.hDay,
+         month: fallbackHijri.hMonth,
+         year: fallbackHijri.hYear,
+         monthName: getHijriMonthName(fallbackHijri.hMonth),
+       );
+    }
+
+    // Adjust the target date with the offset (instead of moving the Gregorian start)
+    final DateTime adjustedTargetDate = targetDate.add(Duration(days: offset));
+
+    // Calculate actual difference relative to JSON's expected Gregorian start
+    final targetDateOnly = DateTime(
+      adjustedTargetDate.year,
+      adjustedTargetDate.month,
+      adjustedTargetDate.day,
+    );
+    final startDateOnly = DateTime(
+      firstDayGregorian.year,
+      firstDayGregorian.month,
+      firstDayGregorian.day,
+    );
+
+    int calculatedHDay = targetDateOnly.difference(startDateOnly).inDays + 1;
+
+    // Handle month boundary logic
+    int resultYear = monthData.year;
+    int resultMonth = monthData.month;
+    int resultDay = calculatedHDay;
+
+    if (calculatedHDay > monthData.totalDays) {
+      resultDay = calculatedHDay - monthData.totalDays;
+      resultMonth++;
+      if (resultMonth > 12) {
+        resultMonth = 1;
+        resultYear++;
+      }
+    } else if (calculatedHDay < 1) {
+       // A simplistic fallback for past bounds: we just use the calculated day by hijri package
+       resultDay = fallbackHijri.hDay;
+       resultMonth = fallbackHijri.hMonth;
+       resultYear = fallbackHijri.hYear;
+    }
+
+    return AppHijriDate(
+      day: resultDay,
+      month: resultMonth,
+      year: resultYear,
+      monthName: getHijriMonthName(resultMonth),
+    );
+  }
+
+  static DateTime getGregorianStartFallback(int year, int month) {
+    try {
+      final firstDayTemp = HijriCalendar()
+        ..hYear = year
+        ..hMonth = month
+        ..hDay = 1;
+      return firstDayTemp.hijriToGregorian(year, month, 1);
+    } catch (e) {
+      return DateTime.now();
+    }
+  }
+
   static Future<HijriMonthData> getMonthDataAsync(int year, int month) async {
     return getMonthData(year, month);
   }

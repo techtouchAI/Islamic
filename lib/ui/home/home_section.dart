@@ -9,7 +9,6 @@ import 'dart:math';
 
 
 
-import 'package:hijri/hijri_calendar.dart';
 import 'package:geolocator/geolocator.dart';
 
 
@@ -20,6 +19,7 @@ import '../../data/daily_duas.dart';
 import '../../utils/string_extensions.dart';
 import '../../services/prayer_times_service.dart';
 import '../../services/quran_service.dart';
+import '../../data/repositories/calendar_repository.dart';
 
 
 
@@ -413,8 +413,10 @@ class _HomeSectionState extends State<HomeSection> {
     }
 
     final now = DateTime.now();
-    final hijri = HijriCalendar.fromDate(
-        DateTime.now().add(Duration(days: settingsProvider.hijriAdjustment)));
+    final hijri = CalendarRepository.getTodayHijri(
+      now,
+      settingsProvider.hijriAdjustment,
+    );
     final bool isDarkCard = settingsProvider.cardColor.computeLuminance() < 0.5;
     final Color textColor = isDarkCard ? Colors.white : Colors.black87;
     // Process items into rows for lazy loading
@@ -530,7 +532,7 @@ class _HomeSectionState extends State<HomeSection> {
                               ),
                               const SizedBox(height: 8),
                               Text(
-                                '${hijri.hDay} ${hijri.longMonthName} ${hijri.hYear} هـ'
+                                '${hijri.day} ${hijri.monthName} ${hijri.year} هـ'
                                     .toEasternArabic(),
                                 style: TextStyle(
                                   color: Theme.of(context).colorScheme.primary,
