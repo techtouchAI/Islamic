@@ -22,7 +22,7 @@ class _UpcomingEventInfo {
 }
 
 class HijriCalendarScreen extends StatefulWidget {
-  const HijriCalendarScreen({Key? key}) : super(key: key);
+  const HijriCalendarScreen({super.key});
 
   @override
   State<HijriCalendarScreen> createState() => _HijriCalendarScreenState();
@@ -231,7 +231,7 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
       child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: Colors.amber.withOpacity(0.15), width: 1),
+          border: Border.all(color: Colors.amber.withValues(alpha: 0.15), width: 1),
         ),
         padding: const EdgeInsets.all(12),
         child: Column(
@@ -471,7 +471,7 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
                         color: isToday
                             ? (hasEvent
                                 ? Colors.teal.shade700
-                                : Colors.teal.withOpacity(0.6))
+                                : Colors.teal.withValues(alpha: 0.6))
                             : null,
                         shape: BoxShape.rectangle,
                         borderRadius: BorderRadius.circular(8),
@@ -481,7 +481,7 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
                               : (isSelected
                                   ? Colors.green
                                   : (hasEvent
-                                      ? Colors.amber.withOpacity(0.8)
+                                      ? Colors.amber.withValues(alpha: 0.8)
                                       : Colors.white12)),
                           width: isToday || isSelected
                               ? 2.0
@@ -548,6 +548,105 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
     return targetDateOnly.difference(startDateOnly).inDays + 1;
   }
 
+  Widget _buildTodayEventsCard() {
+    if (_selectedDay == null) {
+      return _buildIslamicCard(
+        title: 'الأحداث',
+        icon: Icons.touch_app,
+        children: [
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 4.0),
+            child: Text(
+              'اختر يوماً لعرض الأحداث',
+              style: TextStyle(
+                fontFamily: 'Cairo',
+                color: Colors.white54,
+                fontSize: 13,
+              ),
+            ),
+          ),
+        ],
+      );
+    } else if (_selectedDayData != null &&
+        (_selectedDayData!.events.isNotEmpty ||
+            _selectedDayData!.astronomicalEvents.isNotEmpty)) {
+      return _buildIslamicCard(
+        title:
+            'أحداث يوم $_selectedDay ${_getHijriMonthName(_displayedHijri.month)}',
+        icon: Icons.event_available,
+        children: [
+          ..._selectedDayData!.events.map(
+            (e) => _buildEventItem(
+              e.title,
+              e.description,
+              e.isImportant,
+              false,
+            ),
+          ),
+          ..._selectedDayData!.astronomicalEvents.map(
+            (e) => _buildEventItem(
+              e.title,
+              e.description,
+              false,
+              true,
+            ),
+          ),
+        ],
+      );
+    } else if (_selectedDayData != null) {
+      return _buildIslamicCard(
+        title:
+            'أحداث يوم $_selectedDay ${_getHijriMonthName(_displayedHijri.month)}',
+        icon: Icons.event_busy,
+        children: [
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 4.0),
+            child: Text(
+              'لا توجد أحداث في هذا اليوم',
+              style: TextStyle(
+                fontFamily: 'Cairo',
+                color: Colors.white54,
+                fontSize: 13,
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+    return const SizedBox.shrink();
+  }
+
+  Widget _buildUpcomingEventCard(_UpcomingEventInfo? upcomingInfo) {
+    if (upcomingInfo != null && _selectedDay != null) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 12.0),
+        child: _buildIslamicCard(
+          title: 'الحدث القادم',
+          icon: Icons.update,
+          subtitle:
+              'يوم ${upcomingInfo.hDay} ${_getHijriMonthName(upcomingInfo.hMonth)}',
+          children: [
+            if (upcomingInfo.event != null)
+              _buildEventItem(
+                upcomingInfo.event!.title,
+                upcomingInfo.event!.description,
+                upcomingInfo.event!.isImportant,
+                false,
+              ),
+            if (upcomingInfo.astroEvent != null)
+              _buildEventItem(
+                upcomingInfo.astroEvent!.title,
+                upcomingInfo.astroEvent!.description,
+                false,
+                true,
+              ),
+          ],
+        ),
+      );
+    }
+    return const SizedBox.shrink();
+  }
+
   @override
   Widget build(BuildContext context) {
     final settingsProvider = context.watch<SettingsProvider>();
@@ -595,8 +694,12 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
       );
     }
 
-    // Bottom Section logic
     final upcomingInfo = _getNextEvent();
+
+    final screenWidth = MediaQuery.of(context).size.width;
+    final cellWidth = (screenWidth - 32) / 7;
+    final cellHeight = cellWidth * 0.9;
+    final double pageViewHeight = (cellHeight * 6) + 120; // 6 rows + header space
 
     return Scaffold(
       backgroundColor: const Color(0xFF121212),
@@ -620,153 +723,69 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
           ),
         ],
       ),
-      body: Column(
-        children: [
-          // Header Dates
-          Container(
-            margin: const EdgeInsets.only(bottom: 8),
-            child: Column(
-              children: [
-                Text(
-                  _selectedDay != null
-                    ? '$_selectedDay ${_getHijriMonthName(_displayedHijri.month)} ${_displayedHijri.year} هـ'
-                    : '${_getHijriMonthName(_displayedHijri.month)} ${_displayedHijri.year} هـ',
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: Colors.amber,
-                    fontFamily: 'Cairo',
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                Text(
-                  '${realNow.day} ${_getGregorianMonthName(realNow.month)} ${realNow.year} م',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Colors.white70,
-                    fontFamily: 'Cairo',
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // Calendar Grid
-          Expanded(
-            flex: 4,
-            child: PageView.builder(
-              controller: _pageController,
-              onPageChanged: (page) {
-                setState(() {
-                  _displayedHijri = _getHijriMonthForPage(page);
-                  _selectedDay = null;
-                  _selectedDayData = null;
-                });
-              },
-              itemBuilder: (context, index) =>
-                  _buildCalendarGridForPage(context, index),
-            ),
-          ),
-
-          // Bottom Section (Selected or Upcoming)
-          Expanded(
-            flex: 2,
-            child: SingleChildScrollView(
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            // Header Dates
+            Container(
+              margin: const EdgeInsets.only(bottom: 8, top: 8),
               child: Column(
                 children: [
-                  if (_selectedDay == null)
-                    _buildIslamicCard(
-                      title: 'الأحداث',
-                      icon: Icons.touch_app,
-                      children: [
-                        const Padding(
-                          padding: EdgeInsets.symmetric(vertical: 4.0),
-                          child: Text(
-                            'اختر يوماً لعرض الأحداث',
-                            style: TextStyle(
-                              fontFamily: 'Cairo',
-                              color: Colors.white54,
-                              fontSize: 13,
-                            ),
-                          ),
-                        ),
-                      ],
-                    )
-                  else if (_selectedDayData != null &&
-                      (_selectedDayData!.events.isNotEmpty ||
-                          _selectedDayData!.astronomicalEvents.isNotEmpty))
-                    _buildIslamicCard(
-                      title:
-                          'أحداث يوم $_selectedDay ${_getHijriMonthName(_displayedHijri.month)}',
-                      icon: Icons.event_available,
-                      children: [
-                        ..._selectedDayData!.events.map(
-                          (e) => _buildEventItem(
-                            e.title,
-                            e.description,
-                            e.isImportant,
-                            false,
-                          ),
-                        ),
-                        ..._selectedDayData!.astronomicalEvents.map(
-                          (e) => _buildEventItem(
-                            e.title,
-                            e.description,
-                            false,
-                            true,
-                          ),
-                        ),
-                      ],
-                    )
-                  else if (_selectedDayData != null)
-                    _buildIslamicCard(
-                      title:
-                          'أحداث يوم $_selectedDay ${_getHijriMonthName(_displayedHijri.month)}',
-                      icon: Icons.event_busy,
-                      children: [
-                        const Padding(
-                          padding: EdgeInsets.symmetric(vertical: 4.0),
-                          child: Text(
-                            'لا توجد أحداث في هذا اليوم',
-                            style: TextStyle(
-                              fontFamily: 'Cairo',
-                              color: Colors.white54,
-                              fontSize: 13,
-                            ),
-                          ),
-                        ),
-                      ],
+                  Text(
+                    _selectedDay != null
+                      ? '$_selectedDay ${_getHijriMonthName(_displayedHijri.month)} ${_displayedHijri.year} هـ'
+                      : '${_getHijriMonthName(_displayedHijri.month)} ${_displayedHijri.year} هـ',
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: Colors.amber,
+                      fontFamily: 'Cairo',
+                      fontWeight: FontWeight.bold,
                     ),
-                  if (upcomingInfo != null && _selectedDay != null)
-                    const SizedBox(height: 12),
-                  if (upcomingInfo != null && _selectedDay != null)
-                    _buildIslamicCard(
-                      title: 'الحدث القادم',
-                      icon: Icons.update,
-                      subtitle:
-                          'يوم ${upcomingInfo.hDay} ${_getHijriMonthName(upcomingInfo.hMonth)}',
-                      children: [
-                        if (upcomingInfo.event != null)
-                          _buildEventItem(
-                            upcomingInfo.event!.title,
-                            upcomingInfo.event!.description,
-                            upcomingInfo.event!.isImportant,
-                            false,
-                          ),
-                        if (upcomingInfo.astroEvent != null)
-                          _buildEventItem(
-                            upcomingInfo.astroEvent!.title,
-                            upcomingInfo.astroEvent!.description,
-                            false,
-                            true,
-                          ),
-                      ],
+                  ),
+                  Text(
+                    '${realNow.day} ${_getGregorianMonthName(realNow.month)} ${realNow.year} م',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Colors.white70,
+                      fontFamily: 'Cairo',
                     ),
-                  const SizedBox(height: 12),
+                  ),
                 ],
               ),
             ),
-          ),
-        ],
+
+            const SizedBox(height: 8),
+
+            // Today's Events
+            _buildTodayEventsCard(),
+
+            const SizedBox(height: 16),
+
+            // Calendar Grid
+            SizedBox(
+              height: pageViewHeight,
+              child: PageView.builder(
+                controller: _pageController,
+                onPageChanged: (page) {
+                  setState(() {
+                    _displayedHijri = _getHijriMonthForPage(page);
+                    _selectedDay = null;
+                    _selectedDayData = null;
+                  });
+                },
+                itemBuilder: (context, index) =>
+                    _buildCalendarGridForPage(context, index),
+              ),
+            ),
+
+            const SizedBox(height: 8),
+
+            // Upcoming Event
+            _buildUpcomingEventCard(upcomingInfo),
+
+            const SizedBox(height: 24),
+          ],
+        ),
       ),
     );
   }
