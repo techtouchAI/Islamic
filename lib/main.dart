@@ -310,8 +310,12 @@ class _MainScaffoldState extends State<MainScaffold> {
     if (!mounted) return;
 
     try {
+      final String timestamp = DateTime.now().millisecondsSinceEpoch.toString();
+      final String apiUrl = 'https://api.github.com/repos/techtouchAI/Islamic/releases/latest?t=$timestamp';
+
       final response = await Dio().get(
-        'https://api.github.com/repos/techtouchAI/Islamic/releases/latest',
+        apiUrl,
+        options: Options(headers: {'Cache-Control': 'no-cache', 'Pragma': 'no-cache'}),
       );
 
       if (!mounted) return;
@@ -319,12 +323,24 @@ class _MainScaffoldState extends State<MainScaffold> {
       if (response.statusCode == 200) {
         final data = response.data;
         final String tagName = data['tag_name']?.toString() ?? '';
-        int? latestVersionCode;
 
-        if (tagName.contains('-')) {
-          latestVersionCode = int.tryParse(tagName.split('-').last);
-        } else if (tagName.contains('+')) {
-          latestVersionCode = int.tryParse(tagName.split('+').last);
+        // Robust SemVer Parsing using Regex
+        // Match patterns like "v1.2.3-45", "1.2.3+45", "v1.0.41-671", etc.
+        final RegExp versionRegExp = RegExp(r'[-+](\d+)$');
+        final Match? match = versionRegExp.firstMatch(tagName);
+
+        int? latestVersionCode;
+        if (match != null && match.groupCount >= 1) {
+          latestVersionCode = int.tryParse(match.group(1)!);
+        }
+
+        // Fallback robust digits only if specific format isn't matched
+        if (latestVersionCode == null) {
+             final RegExp allDigits = RegExp(r'\d+');
+             final matches = allDigits.allMatches(tagName);
+             if (matches.isNotEmpty) {
+                 latestVersionCode = int.tryParse(matches.last.group(0)!);
+             }
         }
 
         if (latestVersionCode == null) {
@@ -348,7 +364,7 @@ class _MainScaffoldState extends State<MainScaffold> {
 
         // التحقق من الشرط الرياضي وإظهار النافذة
         if (currentVersionCode < latestVersionCode) {
-          _showUpdateDialog(false, updateUrl, releaseNotes, null);
+          _showUpdateDialogWithRetry(false, updateUrl, releaseNotes, null);
         }
       } else {
         throw Exception("فشل الاتصال، رمز الخطأ: ${response.statusCode}");
@@ -356,11 +372,21 @@ class _MainScaffoldState extends State<MainScaffold> {
     } catch (e) {
       if (!mounted) return;
 
-      // Silent fail on network errors
+      // Handle network errors
       if (e is DioException) {
         if (e.type == DioExceptionType.connectionError) return;
         if (e.response?.statusCode == 403) {
-          log('Update error: $e', name: 'OTA_Update');
+          debugPrint('OTA Rate Limit Reached: $e');
+          log('Update error (Rate Limit): $e', name: 'OTA_Update');
+
+          // Optionally show rate limit indicator without crashing
+           ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: const Text('الخادم مشغول مؤقتاً. يرجى المحاولة لاحقاً', textAlign: TextAlign.center),
+                backgroundColor: Colors.grey[850],
+                duration: const Duration(seconds: 4),
+              ),
+            );
           return;
         }
       }
@@ -377,6 +403,29 @@ class _MainScaffoldState extends State<MainScaffold> {
         ),
       );
     }
+  }
+
+  void _showUpdateDialogWithRetry(
+    bool forceUpdate,
+    String updateUrl,
+    String releaseNotes,
+    String? checksum,
+    [int retryCount = 0]
+  ) {
+    final rootContext = navigatorKey.currentContext;
+    if (rootContext == null) {
+      if (retryCount < 5) {
+         // Retry up to 5 times, waiting 500ms each time for the context to become available
+         Future.delayed(const Duration(milliseconds: 500), () {
+            _showUpdateDialogWithRetry(forceUpdate, updateUrl, releaseNotes, checksum, retryCount + 1);
+         });
+      } else {
+          debugPrint("Failed to show update dialog: context is still null after retries.");
+      }
+      return;
+    }
+
+    _showUpdateDialog(forceUpdate, updateUrl, releaseNotes, checksum);
   }
 
   void _showUpdateDialog(
