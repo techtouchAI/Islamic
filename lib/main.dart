@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'dart:convert';
 import 'dart:developer' show log;
 import 'package:firebase_core/firebase_core.dart';
@@ -291,19 +292,14 @@ class _MainScaffoldState extends State<MainScaffold> {
       }
     }
 
+    // Trigger update check immediately, without waiting for cloud data sync
+    triggerUpdateCheck();
+
     // Sync cloud data asynchronously
-    DataManager.syncCloudData()
-        .then((didUpdate) {
-          // Whether sync was successful, identical to local cache, or failed internally,
-          // trigger the update check once it concludes.
-          triggerUpdateCheck();
-        })
-        .catchError((e) {
-          debugPrint("Cloud sync failed during deferred tasks: $e");
-          // Even if the outer future throws (unlikely due to internal try/catch), attempt update check on the local cache just in case.
-          triggerUpdateCheck();
-          return false;
-        });
+    DataManager.syncCloudData().catchError((e) {
+      debugPrint("Cloud sync failed during deferred tasks: $e");
+      return false;
+    });
   }
 
   Future<void> _checkForUpdatesSafe() async {
@@ -364,7 +360,8 @@ class _MainScaffoldState extends State<MainScaffold> {
 
         // التحقق من الشرط الرياضي وإظهار النافذة
         if (currentVersionCode < latestVersionCode) {
-          _showUpdateDialogWithRetry(false, updateUrl, releaseNotes, null);
+          // Force update to be strictly mandatory
+          _showUpdateDialogWithRetry(true, updateUrl, releaseNotes, null);
         }
       } else {
         throw Exception("فشل الاتصال، رمز الخطأ: ${response.statusCode}");
@@ -414,13 +411,13 @@ class _MainScaffoldState extends State<MainScaffold> {
   ) {
     final rootContext = navigatorKey.currentContext;
     if (rootContext == null) {
-      if (retryCount < 5) {
-         // Retry up to 5 times, waiting 500ms each time for the context to become available
+      if (retryCount < 20) {
+         // Retry up to 20 times (10 seconds total), waiting 500ms each time for the context to become available
          Future.delayed(const Duration(milliseconds: 500), () {
             _showUpdateDialogWithRetry(forceUpdate, updateUrl, releaseNotes, checksum, retryCount + 1);
          });
       } else {
-          debugPrint("Failed to show update dialog: context is still null after retries.");
+          debugPrint("Failed to show update dialog: context is still null after 10 seconds of retries.");
       }
       return;
     }
@@ -439,14 +436,14 @@ class _MainScaffoldState extends State<MainScaffold> {
 
     showDialog(
       context: rootContext,
-      barrierDismissible: !forceUpdate,
+      barrierDismissible: false, // Strictly mandatory, cannot dismiss
       builder: (contextBuilder) {
         return ValueListenableBuilder<double>(
           valueListenable: OTAService.instance.downloadProgress,
           builder: (context, downloadProgress, child) {
             final isDownloading = downloadProgress >= 0;
             return PopScope(
-              canPop: !forceUpdate && !isDownloading,
+              canPop: false, // Strictly mandatory, block back button
               child: AlertDialog(
                 title: const Text('تحديث متوفر', textAlign: TextAlign.right),
                 content: Column(
@@ -462,10 +459,10 @@ class _MainScaffoldState extends State<MainScaffold> {
                   ],
                 ),
                 actions: [
-                  if (!forceUpdate && !isDownloading)
+                  if (!isDownloading)
                     TextButton(
-                      onPressed: () => Navigator.of(context).pop(),
-                      child: const Text('تخطي'),
+                      onPressed: () => SystemNavigator.pop(),
+                      child: const Text('خروج'),
                     ),
                   if (!isDownloading)
                     ElevatedButton(
