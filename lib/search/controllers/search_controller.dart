@@ -2,6 +2,8 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import '../models/search_models.dart';
 import '../../services/search_engine.dart'; // To use fuzzyMatch if needed
+import '../../services/quran_service.dart';
+import '../../services/mafatih_service.dart';
 
 class SearchController extends ChangeNotifier {
   // ─── Dependencies ───
@@ -113,26 +115,75 @@ class SearchController extends ChangeNotifier {
       categoryFiltered = _allItems.where((i) => i.sectionId == _selectedCategory).toList();
     }
 
-    // 2. Filter by search query in background
+    // 2. Filter by search query (Hybrid Search)
     if (_query.isEmpty) {
       _filteredItems = [];
     } else {
-      // Offload search logic to background isolate
+      final currentQuery = _query;
+
       try {
-        final currentQuery = _query;
-        final results = await compute(_performSearch, {
+        // 2a. Search in SQLite DBs if category matches 'all', 'quran', or 'mafatih'
+        final quranFuture = (_selectedCategory == 'all' || _selectedCategory == 'quran')
+            ? QuranService.searchVerses(currentQuery)
+            : Future.value(<Map<String, dynamic>>[]);
+
+        final mafatihFuture = (_selectedCategory == 'all' || _selectedCategory == 'mafatih')
+            ? MafatihService.searchArticles(currentQuery)
+            : Future.value(<MafatihArticle>[]);
+
+        // 2b. Search JSON data in isolate
+        final memorySearchFuture = compute(_performSearch, {
           'items': categoryFiltered,
           'query': currentQuery,
         });
 
-        // Prevent race condition: only apply if query hasn't changed
+        // Run all futures concurrently
+        final results = await Future.wait([quranFuture, mafatihFuture, memorySearchFuture]);
+
         if (_query == currentQuery) {
-          _filteredItems = results;
+          final quranResultsRaw = results[0] as List<Map<String, dynamic>>;
+          final mafatihResultsRaw = results[1] as List<MafatihArticle>;
+          final memoryResults = results[2] as List<ContentItem>;
+
+          // Map Quran results
+          final quranItems = quranResultsRaw.map((ayah) {
+            return ContentItem(
+              id: '\${ayah['surah_number']}_\${ayah['ayah_number']}',
+              title: 'سورة \${ayah['surah_name']} - آية \${ayah['ayah_number']}',
+              subtitle: 'القرآن الكريم',
+              content: ayah['ayah_text'].toString(),
+              sectionId: 'quran',
+              sectionName: 'القرآن الكريم',
+              category: 'quran',
+              surahNumber: ayah['surah_number'] as int,
+              ayahNumber: ayah['ayah_number'] is String ? int.tryParse(ayah['ayah_number']) : ayah['ayah_number'],
+              type: 'quran',
+            );
+          }).toList();
+
+          // Map Mafatih results
+          final mafatihItems = mafatihResultsRaw.map((article) {
+            return ContentItem(
+              id: 'mafatih_\${article.id}',
+              title: article.title,
+              subtitle: 'مفاتيح الجنان',
+              content: article.content,
+              sectionId: 'mafatih',
+              sectionName: 'مفاتيح الجنان',
+              category: 'mafatih',
+            );
+          }).toList();
+
+          _filteredItems = [
+            ...quranItems,
+            ...mafatihItems,
+            ...memoryResults,
+          ];
         } else {
-          return;
+          return; // Query changed during await
         }
       } catch (e) {
-        debugPrint("Compute search error: $e");
+        debugPrint("Hybrid search error: \$e");
         _filteredItems = [];
       }
     }
@@ -198,6 +249,8 @@ class SearchController extends ChangeNotifier {
           wordScore += 4;
         }
 
+        bool isWordFuzzy = word.length >= 4;
+
         // Content Matching
         if (normalizedContent == word) {
              wordMatched = true;
@@ -205,6 +258,16 @@ class SearchController extends ChangeNotifier {
         } else if (contentWords.contains(word)) {
           wordMatched = true;
           wordScore += 2;
+        } else if (SearchEngine.fuzzyMatch(word, normalizedContent, isFuzzy: isWordFuzzy)) {
+          wordMatched = true;
+          wordScore += 1;
+        }
+
+        if (!wordMatched && isWordFuzzy) {
+           if (SearchEngine.fuzzyMatch(word, normalizedTitle, isFuzzy: isWordFuzzy)) {
+              wordMatched = true;
+              wordScore += 6;
+           }
         }
 
         if (!wordMatched) {

@@ -183,19 +183,17 @@ class SearchEngine {
       }
 
       // 2. Prepare Quran data
-      final quranAyahs = await QuranService.getAllVerses();
+      // No longer fully indexed in memory to save RAM. Uses Hybrid SQLite Queries instead.
 
       // 3. Build index via isolate
       try {
         _index = await compute(_buildIndex, {
           'contentItems': contentItems,
-          'quranAyahs': quranAyahs,
         });
       } catch (computeError) {
         debugPrint("SearchEngine Isolate Error: $computeError. Fallback to synchronous indexing.");
         _index = _buildIndex({
           'contentItems': contentItems,
-          'quranAyahs': quranAyahs,
         });
       }
 
@@ -215,7 +213,6 @@ class SearchEngine {
   static List<SearchDocument> _buildIndex(Map<String, dynamic> data) {
     final List<SearchDocument> index = [];
     final contentItems = data['contentItems'] as List<Map<String, dynamic>>;
-    final quranAyahs = data['quranAyahs'] as List<Map<String, dynamic>>;
 
     for (var item in contentItems) {
       final id = item['id']?.toString() ?? '';
@@ -238,29 +235,6 @@ class SearchEngine {
         normalizedContent: normalizeArabic(content),
         normalizedCategory: normalizeArabic(category),
         normalizedTags: tags.map((e) => normalizeArabic(e)).toList(),
-      ));
-    }
-
-    for (var ayah in quranAyahs) {
-      final surahName = ayah['surah_name'] as String;
-      final ayahText = ayah['ayah_text'] as String;
-      final ayahNum = ayah['ayah_number']; // Could be int or string
-      final surahNum = ayah['surah_number'] as int;
-      final String title = 'سورة $surahName - آية $ayahNum';
-
-      index.add(SearchDocument(
-        id: '${surahNum}_$ayahNum',
-        title: title,
-        content: ayahText,
-        category: 'quran',
-        tags: [],
-        type: 'quran',
-        surahNumber: surahNum,
-        ayahNumber: int.tryParse(ayahNum.toString()),
-        normalizedTitle: normalizeArabic(title),
-        normalizedContent: normalizeArabic(ayahText),
-        normalizedCategory: normalizeArabic('quran'),
-        normalizedTags: [],
       ));
     }
 
