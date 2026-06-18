@@ -346,6 +346,23 @@ class _MainScaffoldState extends State<MainScaffold> {
         final PackageInfo info = await PackageInfo.fromPlatform();
         final currentVersionCode = int.tryParse(info.buildNumber) ?? 1;
 
+        if (mounted) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!mounted) return;
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  'نجاح الاتصال | إصدار التطبيق: $currentVersionCode | إصدار السيرفر: $latestVersionCode',
+                  textAlign: TextAlign.center,
+                  textDirection: TextDirection.rtl,
+                ),
+                backgroundColor: Colors.green,
+                duration: const Duration(seconds: 4),
+              ),
+            );
+          });
+        }
+
         final String releaseNotes =
             '✨ يتوفر الآن تحديث جديد للتطبيق!\n\nقمنا بإضافة تحسينات وإصلاحات جديدة لضمان أفضل تجربة لك. يرجى التحديث الآن.';
         String updateUrl = '';
@@ -369,21 +386,27 @@ class _MainScaffoldState extends State<MainScaffold> {
     } catch (e) {
       if (!mounted) return;
 
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'خطأ في الاتصال بالسيرفر: $e',
+              textAlign: TextAlign.center,
+              textDirection: TextDirection.rtl,
+            ),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      });
+
       // Handle network errors
       if (e is DioException) {
         if (e.type == DioExceptionType.connectionError) return;
         if (e.response?.statusCode == 403) {
           debugPrint('OTA Rate Limit Reached: $e');
           log('Update error (Rate Limit): $e', name: 'OTA_Update');
-
-          // Optionally show rate limit indicator without crashing
-           ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: const Text('الخادم مشغول مؤقتاً. يرجى المحاولة لاحقاً', textAlign: TextAlign.center),
-                backgroundColor: Colors.grey[850],
-                duration: const Duration(seconds: 4),
-              ),
-            );
           return;
         }
       }
@@ -392,13 +415,6 @@ class _MainScaffoldState extends State<MainScaffold> {
       }
 
       log('Update error: $e', name: 'OTA_Update');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('❌', textAlign: TextAlign.center),
-          backgroundColor: Colors.grey[850],
-          duration: const Duration(seconds: 4),
-        ),
-      );
     }
   }
 
