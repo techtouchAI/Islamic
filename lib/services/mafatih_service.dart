@@ -117,6 +117,25 @@ class MafatihService {
     }
   }
 
+  static Future<List<MafatihArticle>> searchArticles(String query) async {
+    try {
+      if (kIsWeb || _db == null || query.isEmpty) {
+        return [];
+      }
+      final String safeQuery = '%$query%';
+      final maps = await _db!.query(
+        'articles',
+        where: 'title LIKE ? OR content LIKE ?',
+        whereArgs: [safeQuery, safeQuery],
+        limit: 50,
+      );
+      return maps.map((m) => MafatihArticle.fromMap(m)).toList();
+    } catch (e) {
+      debugPrint("MafatihService searchArticles Error: \$e");
+      return [];
+    }
+  }
+
   static Future<List<MafatihArticle>> getArticles(int categoryId) async {
     try {
       if (kIsWeb || _db == null) {

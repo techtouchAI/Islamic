@@ -35,6 +35,7 @@ class _SearchScreenState extends State<SearchScreen> {
       allItems: _loadContentItems(),
       availableSections: const [
         'quran',
+        'mafatih',
         'dua',
         'ziyarat',
         'amal',
@@ -139,6 +140,9 @@ class _SearchScreenState extends State<SearchScreen> {
       );
     }
 
+    // The whole scaffold is built once.
+    // The AppBar has its own isolated rebuild for the category filter.
+    // The body has its own isolated rebuild for results.
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
@@ -158,6 +162,9 @@ class _SearchScreenState extends State<SearchScreen> {
           preferredSize: const Size.fromHeight(56),
           child: ValueListenableBuilder<SearchSnapshot>(
             valueListenable: _notifier,
+            // Only rebuilds when category/filters change significantly.
+            // (We could optimize this further to listen to just category if needed,
+            // but isolating it from the body is already a massive improvement).
             builder: (context, snapshot, child) {
               return CategoryFilterBar(
                 categories: _controller.availableSections,
