@@ -403,7 +403,7 @@
           "fatawa_categories",
           "dreams_categories",
           "content",
-          "imam_ali"
+          "imam_ali",
         ]) {
           let parentArray = db[rootKey];
           if (rootKey === "content" && db.content)
@@ -413,7 +413,8 @@
               let catPrefix = "";
               if (rootKey === "fatawa_categories") catPrefix = "fatawa_cat_";
               if (rootKey === "dreams_categories") catPrefix = "dreams_cat_";
-              if (rootKey === "content" || rootKey === "imam_ali") catPrefix = "imam_ali_cat_";
+              if (rootKey === "content" || rootKey === "imam_ali")
+                catPrefix = "imam_ali_cat_";
               return catPrefix + c.id === key;
             });
             if (category && category.items) return category.items;
@@ -435,7 +436,7 @@
           "fatawa_categories",
           "dreams_categories",
           "content",
-          "imam_ali"
+          "imam_ali",
         ]) {
           let parentArray = db[rootKey];
           if (rootKey === "content" && db.content)
@@ -445,7 +446,8 @@
               let catPrefix = "";
               if (rootKey === "fatawa_categories") catPrefix = "fatawa_cat_";
               if (rootKey === "dreams_categories") catPrefix = "dreams_cat_";
-              if (rootKey === "content" || rootKey === "imam_ali") catPrefix = "imam_ali_cat_";
+              if (rootKey === "content" || rootKey === "imam_ali")
+                catPrefix = "imam_ali_cat_";
               return catPrefix + c.id === key;
             });
             if (category) {
@@ -498,10 +500,9 @@
           db = await res.json();
 
           const urlParams = new URLSearchParams(window.location.search);
-          const pView = urlParams.get('view') || 'settings';
-          const pSub = urlParams.get('sub');
-          currentPage = parseInt(urlParams.get('page')) || 1;
-
+          const pView = urlParams.get("view") || "settings";
+          const pSub = urlParams.get("sub");
+          currentPage = parseInt(urlParams.get("page")) || 1;
 
           if (db.prophets_stories) {
             db.content = db.content || {};
@@ -517,7 +518,8 @@
             }));
             // ensure content keys exist
             db.content.imam_ali.forEach((c) => {
-              db.content["imam_ali_cat_" + c.id] = db.content["imam_ali_cat_" + c.id] || c.items || [];
+              db.content["imam_ali_cat_" + c.id] =
+                db.content["imam_ali_cat_" + c.id] || c.items || [];
             });
           }
 
@@ -531,7 +533,8 @@
             // also ensure these keys exist in db for editing
             db.content = db.content || {};
             db.fatawa_categories.forEach((c) => {
-              db.content["fatawa_cat_" + c.id] = db.content["fatawa_cat_" + c.id] || c.items || [];
+              db.content["fatawa_cat_" + c.id] =
+                db.content["fatawa_cat_" + c.id] || c.items || [];
             });
           }
 
@@ -541,13 +544,14 @@
               title: c.title,
             }));
             db.dreams_categories.forEach((c) => {
-              db.content["dreams_cat_" + c.id] = db.content["dreams_cat_" + c.id] || c.items || [];
+              db.content["dreams_cat_" + c.id] =
+                db.content["dreams_cat_" + c.id] || c.items || [];
             });
           }
 
           loadView(pView, pSub, true);
 
-          window.addEventListener('popstate', (e) => {
+          window.addEventListener("popstate", (e) => {
             if (e.state) {
               currentPage = e.state.page || 1;
               loadView(e.state.view, e.state.sub, true);
@@ -580,6 +584,11 @@
             title: "التقويم الهجري",
             icon: "event",
           },
+          {
+            id: "ota_manager",
+            title: "إدارة التحديثات (OTA)",
+            icon: "system_update",
+          },
           { divider: true },
         ];
         Object.keys(db.sections).forEach((k) =>
@@ -611,11 +620,15 @@
 
         if (!isPopState) {
           const url = new URL(window.location);
-          url.searchParams.set('view', activeView);
-          if (activeSubView) url.searchParams.set('sub', activeSubView);
-          else url.searchParams.delete('sub');
-          url.searchParams.set('page', currentPage);
-          window.history.pushState({ view: activeView, sub: activeSubView, page: currentPage }, '', url);
+          url.searchParams.set("view", activeView);
+          if (activeSubView) url.searchParams.set("sub", activeSubView);
+          else url.searchParams.delete("sub");
+          url.searchParams.set("page", currentPage);
+          window.history.pushState(
+            { view: activeView, sub: activeSubView, page: currentPage },
+            "",
+            url,
+          );
         }
 
         if (db.prophets_stories) {
@@ -709,27 +722,28 @@
                         <div class="row g-4">
                             <div class="col-md-4 text-center">
                                 <div class="bg-light rounded-circle mb-3 d-inline-flex justify-content-center align-items-center border border-gold" style="width: 150px; height: 150px; overflow: hidden; position: relative;">
-                                    ${db.about.developer_image
+                                    ${
+                                      db.about.developer_image
                                         ? `<img id="dev_img_preview" src="${db.about.developer_image}" style="width: 100%; height: 100%; object-fit: cover;">`
-                                        : `<i id="dev_icon_preview" class="material-icons text-gold" style="font-size:4rem">${db.about.developer_icon || 'person'}</i>`
+                                        : `<i id="dev_icon_preview" class="material-icons text-gold" style="font-size:4rem">${db.about.developer_icon || "person"}</i>`
                                     }
                                 </div>
                                 <label class="fw-bold small d-block">صورة المطور (رابط أو Base64)</label>
-                                <input type="text" class="form-control text-center mb-2" id="dev_image_input" value="${db.about.developer_image || ''}" onchange="updateDevImage(this.value)" placeholder="رابط الصورة">
+                                <input type="text" class="form-control text-center mb-2" id="dev_image_input" value="${db.about.developer_image || ""}" onchange="updateDevImage(this.value)" placeholder="رابط الصورة">
                                 <label class="btn btn-sm btn-outline-primary w-100 mb-2">
                                     رفع صورة من الجهاز <input type="file" hidden accept="image/*" onchange="handleDevImageUpload(this)">
                                 </label>
 
                                 <label class="fw-bold small d-block mt-3">أو أيقونة (في حال عدم وجود صورة)</label>
-                                <input type="text" class="form-control text-center mb-3" value="${db.about.developer_icon || 'person'}" onchange="db.about.developer_icon=this.value; document.getElementById('dev_icon_preview') && (document.getElementById('dev_icon_preview').innerText = this.value)">
+                                <input type="text" class="form-control text-center mb-3" value="${db.about.developer_icon || "person"}" onchange="db.about.developer_icon=this.value; document.getElementById('dev_icon_preview') && (document.getElementById('dev_icon_preview').innerText = this.value)">
                             </div>
                             <div class="col-md-8">
                                 <label class="fw-bold small">اسم المطور</label>
-                                <input type="text" class="form-control mb-3" value="${db.about.developer_name || ''}" onchange="db.about.developer_name=this.value">
+                                <input type="text" class="form-control mb-3" value="${db.about.developer_name || ""}" onchange="db.about.developer_name=this.value">
                                 <label class="fw-bold small">رابط الصفحة الرئيسية</label>
-                                <input type="text" class="form-control mb-3" value="${db.about.developer_page || ''}" onchange="db.about.developer_page=this.value">
+                                <input type="text" class="form-control mb-3" value="${db.about.developer_page || ""}" onchange="db.about.developer_page=this.value">
                                 <label class="fw-bold small">عن التطبيق</label>
-                                <textarea class="form-control mb-3" rows="5" onchange="db.about.app_info=this.value">${db.about.app_info || ''}</textarea>
+                                <textarea class="form-control mb-3" rows="5" onchange="db.about.app_info=this.value">${db.about.app_info || ""}</textarea>
 
                                 <hr>
                                 <h6 class="fw-bold text-primary mb-3">مواقع التواصل الاجتماعي</h6>
@@ -803,10 +817,64 @@
                     <div class="card card-lux p-4 shadow-sm">
                         <h6 class="fw-bold mb-3 text-primary">إدارة بيانات التقويم الهجري</h6>
                         <p class="small text-muted">ألصق مصفوفة JSON التي تحتوي على بيانات التقويم الهجري هنا.</p>
-                        <textarea id="hijri-cal-text" class="form-control mb-3" rows="15" placeholder='ألصق كود JSON هنا...' style="font-family:monospace; font-size:0.8rem;" dir="ltr">${db.hijri_calendar ? JSON.stringify(db.hijri_calendar, null, 2) : ''}</textarea>
+                        <textarea id="hijri-cal-text" class="form-control mb-3" rows="15" placeholder='ألصق كود JSON هنا...' style="font-family:monospace; font-size:0.8rem;" dir="ltr">${db.hijri_calendar ? JSON.stringify(db.hijri_calendar, null, 2) : ""}</textarea>
                         <button class="btn btn-gold w-100 fw-bold" onclick="saveHijriCalendar()">حفظ بيانات التقويم الهجري</button>
                     </div>
                 `;
+        } else if (id === "ota_manager") {
+          title.innerText = "إدارة التحديثات (OTA)";
+          icon.innerText = "system_update";
+
+          const storedToken = localStorage.getItem("github_ota_token") || "";
+
+          ws.innerHTML = `
+            <div class="row g-4">
+              <div class="col-md-12">
+                <div class="card card-lux p-4" id="ota-status-card" style="display:none;">
+                  <div class="d-flex align-items-center gap-3">
+                    <i class="material-icons text-success" style="font-size: 2rem;">check_circle</i>
+                    <div>
+                      <h5 class="fw-bold mb-1" id="ota-status-title">متصل بـ GitHub</h5>
+                      <p class="mb-0 text-muted" id="ota-status-text">جاري جلب البيانات...</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="col-md-6">
+                <div class="card card-lux p-4 h-100">
+                  <h5 class="fw-bold mb-4"><i class="material-icons align-middle me-2">vpn_key</i> إعدادات الاتصال (GitHub)</h5>
+                  <div class="mb-3">
+                    <label class="form-label text-muted small">GitHub Personal Access Token</label>
+                    <input type="password" id="ota-github-token" class="form-control" placeholder="ghp_..." value="${storedToken}">
+                    <div class="form-text mt-2"><i class="material-icons align-middle" style="font-size:14px">info</i> يتم حفظ التوكن محلياً في المتصفح لاستخدامه لاحقاً.</div>
+                  </div>
+                  <button class="btn btn-outline-dark w-100 mt-2" onclick="saveOtaTokenAndFetch()">حفظ التوكن وتحديث البيانات</button>
+                </div>
+              </div>
+
+              <div class="col-md-6">
+                <div class="card card-lux p-4 h-100">
+                  <h5 class="fw-bold mb-4"><i class="material-icons align-middle me-2">build</i> إصدار التطبيق الحالي (pubspec.yaml)</h5>
+                  <div class="mb-3">
+                    <label class="form-label text-muted small">اسم الإصدار (Version Name)</label>
+                    <input type="text" id="ota-version-name" class="form-control text-start" dir="ltr" placeholder="مثال: 1.0.0" disabled>
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label text-muted small">رقم البناء (Build Number)</label>
+                    <input type="number" id="ota-build-number" class="form-control text-start" dir="ltr" placeholder="مثال: 45" disabled>
+                  </div>
+                  <button class="btn btn-gold w-100 mt-2 fw-bold shadow-sm" id="ota-trigger-build-btn" onclick="triggerOtaBuild()" disabled>
+                    <i class="material-icons align-middle">rocket_launch</i> حفظ وإطلاق تحديث جديد (GitHub Actions)
+                  </button>
+                </div>
+              </div>
+            </div>
+          `;
+
+          if (storedToken) {
+            fetchOtaData(storedToken);
+          }
         } else if (id === "universal_batch") {
           title.innerText = "استيراد شامل لكل الأقسام";
           icon.innerText = "dynamic_feed";
@@ -846,7 +914,8 @@
 
         const totalItems = items.length;
         const totalPages = Math.ceil(totalItems / itemsPerPage);
-        if (currentPage > totalPages && totalPages > 0) currentPage = totalPages;
+        if (currentPage > totalPages && totalPages > 0)
+          currentPage = totalPages;
 
         const startIdx = (currentPage - 1) * itemsPerPage;
         const endIdx = Math.min(startIdx + itemsPerPage, totalItems);
@@ -859,7 +928,7 @@
                         <div class="card card-lux p-3 d-flex flex-row justify-content-between align-items-center">
                             <div class="text-truncate" style="max-width:70%">
                                 <span class="badge bg-gold text-dark me-2">#${globalIndex + 1}</span>
-                                <span class="fw-bold text-dark ${isQuran ? "quran-font" : ""}">${isQuran && !it.title.startsWith("سورة") ? "سورة " : ""}${it.title || 'بدون عنوان'}</span>
+                                <span class="fw-bold text-dark ${isQuran ? "quran-font" : ""}">${isQuran && !it.title.startsWith("سورة") ? "سورة " : ""}${it.title || "بدون عنوان"}</span>
                             </div>
                             <div class="d-flex gap-2">
                                 <button class="btn btn-sm btn-outline-primary" onclick="openEdit(${globalIndex})"><i class="material-icons small">edit</i></button>
@@ -871,31 +940,38 @@
         });
 
         // Render Pagination UI
-        let paginationContainer = document.getElementById("pagination-container");
+        let paginationContainer = document.getElementById(
+          "pagination-container",
+        );
         if (!paginationContainer) {
-            paginationContainer = document.createElement("div");
-            paginationContainer.id = "pagination-container";
-            paginationContainer.className = "col-12 mt-4 d-flex justify-content-center gap-2 align-items-center";
-            container.parentElement.appendChild(paginationContainer);
+          paginationContainer = document.createElement("div");
+          paginationContainer.id = "pagination-container";
+          paginationContainer.className =
+            "col-12 mt-4 d-flex justify-content-center gap-2 align-items-center";
+          container.parentElement.appendChild(paginationContainer);
         }
 
         if (totalPages > 1) {
-            paginationContainer.innerHTML = `
+          paginationContainer.innerHTML = `
                 <button class="btn btn-outline-gold px-3" ${currentPage === 1 ? "disabled" : ""} onclick="changePage(${currentPage - 1})">السابق</button>
                 <span class="fw-bold px-3 py-2 bg-light rounded shadow-sm">صفحة ${currentPage} من ${totalPages}</span>
                 <button class="btn btn-outline-gold px-3" ${currentPage === totalPages ? "disabled" : ""} onclick="changePage(${currentPage + 1})">التالي</button>
             `;
         } else {
-            paginationContainer.innerHTML = "";
+          paginationContainer.innerHTML = "";
         }
       }
 
       function changePage(newPage) {
-          currentPage = newPage;
-          const url = new URL(window.location);
-          url.searchParams.set('page', currentPage);
-          window.history.pushState({ view: activeView, sub: activeSubView, page: currentPage }, '', url);
-          renderItems();
+        currentPage = newPage;
+        const url = new URL(window.location);
+        url.searchParams.set("page", currentPage);
+        window.history.pushState(
+          { view: activeView, sub: activeSubView, page: currentPage },
+          "",
+          url,
+        );
+        renderItems();
       }
 
       function toggleSidebar(show) {
@@ -951,7 +1027,7 @@
         }
       }
 
-      window.saveHijriCalendar = function() {
+      window.saveHijriCalendar = function () {
         const text = document.getElementById("hijri-cal-text").value.trim();
         if (!text) {
           db.hijri_calendar = null;
@@ -965,7 +1041,9 @@
             return;
           }
           db.hijri_calendar = parsed;
-          alert("تم حفظ بيانات التقويم الهجري في الذاكرة بنجاح! لا تنسَ الضغط على 'نشر التحديثات'.");
+          alert(
+            "تم حفظ بيانات التقويم الهجري في الذاكرة بنجاح! لا تنسَ الضغط على 'نشر التحديثات'.",
+          );
         } catch (e) {
           alert("خطأ في تنسيق JSON: " + e.message);
         }
@@ -1301,7 +1379,7 @@
         }
       }
 
-            async function fetchWithRetry(url, options, maxRetries = 3) {
+      async function fetchWithRetry(url, options, maxRetries = 3) {
         let retries = 0;
         let baseDelay = 1000;
 
@@ -1310,19 +1388,29 @@
           const timeoutId = setTimeout(() => controller.abort(), 120000); // 120-second timeout
 
           try {
-            const res = await fetch(url, { ...options, signal: controller.signal });
+            const res = await fetch(url, {
+              ...options,
+              signal: controller.signal,
+            });
             clearTimeout(timeoutId);
 
             // Monitor X-RateLimit-Remaining
-            const rateLimitRemaining = res.headers.get('X-RateLimit-Remaining');
-            if (rateLimitRemaining !== null && parseInt(rateLimitRemaining) < 10) {
-              console.warn(`تحذير: طلبات GitHub المتبقية قليلة جداً (${rateLimitRemaining})`);
+            const rateLimitRemaining = res.headers.get("X-RateLimit-Remaining");
+            if (
+              rateLimitRemaining !== null &&
+              parseInt(rateLimitRemaining) < 10
+            ) {
+              console.warn(
+                `تحذير: طلبات GitHub المتبقية قليلة جداً (${rateLimitRemaining})`,
+              );
               // Could alert here if needed
             }
 
             if (!res.ok) {
               const errData = await res.json().catch(() => ({}));
-              throw new Error(`HTTP Error ${res.status}: ${errData.message || res.statusText}`);
+              throw new Error(
+                `HTTP Error ${res.status}: ${errData.message || res.statusText}`,
+              );
             }
             return res;
           } catch (err) {
@@ -1331,8 +1419,12 @@
               throw err;
             }
             retries++;
-            console.warn(`Fetch failed (${err.message}), retrying ${retries}/${maxRetries}...`);
-            await new Promise(resolve => setTimeout(resolve, baseDelay * Math.pow(2, retries - 1)));
+            console.warn(
+              `Fetch failed (${err.message}), retrying ${retries}/${maxRetries}...`,
+            );
+            await new Promise((resolve) =>
+              setTimeout(resolve, baseDelay * Math.pow(2, retries - 1)),
+            );
           }
         }
       }
@@ -1348,9 +1440,9 @@
         const filePath = "assets/data/content.json";
 
         const headers = {
-          "Authorization": `token ${token}`,
-          "Accept": "application/vnd.github.v3+json",
-          "Content-Type": "application/json"
+          Authorization: `token ${token}`,
+          Accept: "application/vnd.github.v3+json",
+          "Content-Type": "application/json",
         };
 
         try {
@@ -1370,13 +1462,14 @@
             if (!latestArr) return localArr;
             if (!localArr) return latestArr;
             const merged = [...latestArr];
-            localArr.forEach(localCat => {
-              const existingIdx = merged.findIndex(c => c.id === localCat.id);
+            localArr.forEach((localCat) => {
+              const existingIdx = merged.findIndex((c) => c.id === localCat.id);
               if (existingIdx !== -1) {
                 if (localCat.items) {
-                    merged[existingIdx].items = localCat.items;
+                  merged[existingIdx].items = localCat.items;
                 }
-                merged[existingIdx].title = localCat.title || merged[existingIdx].title;
+                merged[existingIdx].title =
+                  localCat.title || merged[existingIdx].title;
               } else {
                 merged.push(localCat);
               }
@@ -1385,58 +1478,86 @@
           }
 
           if (db.fatawa_categories) {
-            db.fatawa_categories.forEach(c => {
+            db.fatawa_categories.forEach((c) => {
               if (db.content && db.content["fatawa_cat_" + c.id]) {
                 c.items = db.content["fatawa_cat_" + c.id];
               }
             });
           }
           if (db.dreams_categories) {
-            db.dreams_categories.forEach(c => {
+            db.dreams_categories.forEach((c) => {
               if (db.content && db.content["dreams_cat_" + c.id]) {
                 c.items = db.content["dreams_cat_" + c.id];
               }
             });
           }
           if (db.content && db.content.imam_ali) {
-            db.content.imam_ali.forEach(c => {
+            db.content.imam_ali.forEach((c) => {
               if (db.content["imam_ali_cat_" + c.id]) {
                 c.items = db.content["imam_ali_cat_" + c.id];
               }
             });
           }
 
-          latestDB.sections = { ...(latestDB.sections || {}), ...(db.sections || {}) };
-          latestDB.settings = { ...(latestDB.settings || {}), ...(db.settings || {}) };
+          latestDB.sections = {
+            ...(latestDB.sections || {}),
+            ...(db.sections || {}),
+          };
+          latestDB.settings = {
+            ...(latestDB.settings || {}),
+            ...(db.settings || {}),
+          };
           latestDB.about = { ...(latestDB.about || {}), ...(db.about || {}) };
 
           if (db.content) {
-             latestDB.content = latestDB.content || {};
-             Object.keys(db.content).forEach(k => {
-                 if (k !== 'imam_ali' && k !== 'prophets_stories' && !k.startsWith('fatawa_cat_') && !k.startsWith('dreams_cat_') && !k.startsWith('imam_ali_cat_')) {
-                     latestDB.content[k] = db.content[k];
-                 }
-             });
+            latestDB.content = latestDB.content || {};
+            Object.keys(db.content).forEach((k) => {
+              if (
+                k !== "imam_ali" &&
+                k !== "prophets_stories" &&
+                !k.startsWith("fatawa_cat_") &&
+                !k.startsWith("dreams_cat_") &&
+                !k.startsWith("imam_ali_cat_")
+              ) {
+                latestDB.content[k] = db.content[k];
+              }
+            });
           }
 
           if (db.fatawa_categories) {
-              latestDB.fatawa_categories = deepMergeCategories(latestDB.fatawa_categories, db.fatawa_categories);
+            latestDB.fatawa_categories = deepMergeCategories(
+              latestDB.fatawa_categories,
+              db.fatawa_categories,
+            );
           }
           if (db.dreams_categories) {
-              latestDB.dreams_categories = deepMergeCategories(latestDB.dreams_categories, db.dreams_categories);
+            latestDB.dreams_categories = deepMergeCategories(
+              latestDB.dreams_categories,
+              db.dreams_categories,
+            );
           }
           if (db.content && db.content.imam_ali && latestDB.content) {
-              latestDB.content.imam_ali = deepMergeCategories(latestDB.content.imam_ali, db.content.imam_ali);
+            latestDB.content.imam_ali = deepMergeCategories(
+              latestDB.content.imam_ali,
+              db.content.imam_ali,
+            );
           }
-          if (db.prophets_stories || (db.content && db.content.prophets_stories)) {
-              latestDB.prophets_stories = db.prophets_stories || db.content.prophets_stories;
+          if (
+            db.prophets_stories ||
+            (db.content && db.content.prophets_stories)
+          ) {
+            latestDB.prophets_stories =
+              db.prophets_stories || db.content.prophets_stories;
           }
           if (db.daily_duas) {
-              latestDB.daily_duas = { ...(latestDB.daily_duas || {}), ...(db.daily_duas || {}) };
+            latestDB.daily_duas = {
+              ...(latestDB.daily_duas || {}),
+              ...(db.daily_duas || {}),
+            };
           }
 
           if (db.hijri_calendar) {
-              latestDB.hijri_calendar = db.hijri_calendar;
+            latestDB.hijri_calendar = db.hijri_calendar;
           }
 
           // 2. The Push (Git Database API)
@@ -1457,13 +1578,16 @@
             const blobRes = await fetchWithRetry(blobUrl, {
               method: "POST",
               headers,
-              body: JSON.stringify({ content: mergedJsonString, encoding: "utf-8" })
+              body: JSON.stringify({
+                content: mergedJsonString,
+                encoding: "utf-8",
+              }),
             });
             const blobData = await blobRes.json();
             blobSha = blobData.sha;
           } catch (e) {
-             alert("Error in Step B: Failed to create Blob - " + e.message);
-             return;
+            alert("Error in Step B: Failed to create Blob - " + e.message);
+            return;
           }
 
           // Force garbage collection of the 25MB string
@@ -1484,10 +1608,10 @@
                     path: filePath,
                     mode: "100644",
                     type: "blob",
-                    sha: blobSha
-                  }
-                ]
-              })
+                    sha: blobSha,
+                  },
+                ],
+              }),
             });
             const treeData = await treeRes.json();
             treeSha = treeData.sha;
@@ -1500,114 +1624,323 @@
           // Step D (Create Commit)
           let newCommitSha;
           try {
-             const commitUrl = `https://api.github.com/repos/${owner}/${repo}/git/commits`;
-             const commitRes = await fetchWithRetry(commitUrl, {
-               method: "POST",
-               headers,
-               body: JSON.stringify({
-                 message: "تحديث المحتوى من لوحة التحكم (Git DB API)",
-                 tree: treeSha,
-                 parents: [initialCommitSha]
-               })
-             });
-             const commitData = await commitRes.json();
-             newCommitSha = commitData.sha;
+            const commitUrl = `https://api.github.com/repos/${owner}/${repo}/git/commits`;
+            const commitRes = await fetchWithRetry(commitUrl, {
+              method: "POST",
+              headers,
+              body: JSON.stringify({
+                message: "تحديث المحتوى من لوحة التحكم (Git DB API)",
+                tree: treeSha,
+                parents: [initialCommitSha],
+              }),
+            });
+            const commitData = await commitRes.json();
+            newCommitSha = commitData.sha;
           } catch (e) {
-             alert("Error in Step D: Failed to create Commit - " + e.message);
-             return;
+            alert("Error in Step D: Failed to create Commit - " + e.message);
+            return;
           }
 
           reportProgress("Step 5/5: Updating reference...");
           // Step E (Update Ref)
           try {
-             // Pre-check for concurrent modification
-             const verifyRefRes = await fetchWithRetry(refUrl, { headers });
-             const verifyRefData = await verifyRefRes.json();
-             if (verifyRefData.object.sha !== initialCommitSha) {
-                alert("Conflict Detected: Another user saved changes. Please refresh and try again.");
-                return;
-             }
+            // Pre-check for concurrent modification
+            const verifyRefRes = await fetchWithRetry(refUrl, { headers });
+            const verifyRefData = await verifyRefRes.json();
+            if (verifyRefData.object.sha !== initialCommitSha) {
+              alert(
+                "Conflict Detected: Another user saved changes. Please refresh and try again.",
+              );
+              return;
+            }
 
-             const updateRefRes = await fetchWithRetry(refUrl, {
-               method: "PATCH",
-               headers,
-               body: JSON.stringify({
-                 sha: newCommitSha,
-                 force: false
-               })
-             });
-             if (updateRefRes.ok) {
-                alert("تم الحفظ في GitHub بنجاح!");
-             } else {
-                throw new Error("Update Ref failed");
-             }
+            const updateRefRes = await fetchWithRetry(refUrl, {
+              method: "PATCH",
+              headers,
+              body: JSON.stringify({
+                sha: newCommitSha,
+                force: false,
+              }),
+            });
+            if (updateRefRes.ok) {
+              alert("تم الحفظ في GitHub بنجاح!");
+            } else {
+              throw new Error("Update Ref failed");
+            }
           } catch (e) {
-             alert("Error in Step E: Failed to update Ref - " + e.message);
-             return;
+            alert("Error in Step E: Failed to update Ref - " + e.message);
+            return;
           }
-
         } catch (error) {
-          alert("Error: Fetching Raw JSON failed or other error - " + error.message);
+          alert(
+            "Error: Fetching Raw JSON failed or other error - " + error.message,
+          );
         }
       }
 
       init();
 
-      window.updateDevImage = function(val) {
-          db.about.developer_image = val;
-          loadView('about');
+      window.updateDevImage = function (val) {
+        db.about.developer_image = val;
+        loadView("about");
       };
 
-      window.handleDevImageUpload = function(input) {
-          if (input.files && input.files[0]) {
-              var reader = new FileReader();
-              reader.onload = function(e) {
-                  db.about.developer_image = e.target.result;
-                  loadView('about');
-              }
-              reader.readAsDataURL(input.files[0]);
-          }
+      window.handleDevImageUpload = function (input) {
+        if (input.files && input.files[0]) {
+          var reader = new FileReader();
+          reader.onload = function (e) {
+            db.about.developer_image = e.target.result;
+            loadView("about");
+          };
+          reader.readAsDataURL(input.files[0]);
+        }
       };
 
-      window.renderSocialMediaInputs = function() {
-          if (!db.about.social_media) db.about.social_media = [];
-          return db.about.social_media.map((s, idx) => `
+      window.renderSocialMediaInputs = function () {
+        if (!db.about.social_media) db.about.social_media = [];
+        return db.about.social_media
+          .map(
+            (s, idx) => `
               <div class="row g-2 mb-2 align-items-center">
                   <div class="col-3">
                       <select class="form-select form-select-sm" onchange="db.about.social_media[${idx}].icon = this.value">
-                          <option value="facebook" ${s.icon === 'facebook' ? 'selected' : ''}>Facebook</option>
-                          <option value="twitter" ${s.icon === 'twitter' || s.icon === 'x' ? 'selected' : ''}>Twitter / X</option>
-                          <option value="instagram" ${s.icon === 'instagram' ? 'selected' : ''}>Instagram</option>
-                          <option value="youtube" ${s.icon === 'youtube' ? 'selected' : ''}>YouTube</option>
-                          <option value="tiktok" ${s.icon === 'tiktok' ? 'selected' : ''}>TikTok</option>
-                          <option value="telegram" ${s.icon === 'telegram' ? 'selected' : ''}>Telegram</option>
-                          <option value="whatsapp" ${s.icon === 'whatsapp' ? 'selected' : ''}>WhatsApp</option>
-                          <option value="snapchat" ${s.icon === 'snapchat' ? 'selected' : ''}>Snapchat</option>
-                          <option value="linkedin" ${s.icon === 'linkedin' ? 'selected' : ''}>LinkedIn</option>
-                          <option value="github" ${s.icon === 'github' ? 'selected' : ''}>GitHub</option>
-                          <option value="link" ${s.icon === 'link' ? 'selected' : ''}>أخرى</option>
+                          <option value="facebook" ${s.icon === "facebook" ? "selected" : ""}>Facebook</option>
+                          <option value="twitter" ${s.icon === "twitter" || s.icon === "x" ? "selected" : ""}>Twitter / X</option>
+                          <option value="instagram" ${s.icon === "instagram" ? "selected" : ""}>Instagram</option>
+                          <option value="youtube" ${s.icon === "youtube" ? "selected" : ""}>YouTube</option>
+                          <option value="tiktok" ${s.icon === "tiktok" ? "selected" : ""}>TikTok</option>
+                          <option value="telegram" ${s.icon === "telegram" ? "selected" : ""}>Telegram</option>
+                          <option value="whatsapp" ${s.icon === "whatsapp" ? "selected" : ""}>WhatsApp</option>
+                          <option value="snapchat" ${s.icon === "snapchat" ? "selected" : ""}>Snapchat</option>
+                          <option value="linkedin" ${s.icon === "linkedin" ? "selected" : ""}>LinkedIn</option>
+                          <option value="github" ${s.icon === "github" ? "selected" : ""}>GitHub</option>
+                          <option value="link" ${s.icon === "link" ? "selected" : ""}>أخرى</option>
                       </select>
                   </div>
                   <div class="col-8">
-                      <input type="text" class="form-control form-control-sm" placeholder="الرابط" value="${s.url || ''}" onchange="db.about.social_media[${idx}].url = this.value">
+                      <input type="text" class="form-control form-control-sm" placeholder="الرابط" value="${s.url || ""}" onchange="db.about.social_media[${idx}].url = this.value">
                   </div>
                   <div class="col-1 text-center">
                       <button class="btn btn-sm btn-outline-danger p-1" onclick="removeSocialMedia(${idx})"><i class="material-icons" style="font-size: 1rem;">delete</i></button>
                   </div>
               </div>
-          `).join('');
+          `,
+          )
+          .join("");
       };
 
-      window.addSocialMedia = function() {
-          if (!db.about.social_media) db.about.social_media = [];
-          db.about.social_media.push({ icon: 'facebook', url: '' });
-          loadView('about');
+      window.addSocialMedia = function () {
+        if (!db.about.social_media) db.about.social_media = [];
+        db.about.social_media.push({ icon: "facebook", url: "" });
+        loadView("about");
       };
 
-      window.removeSocialMedia = function(idx) {
-          db.about.social_media.splice(idx, 1);
-          loadView('about');
+      window.removeSocialMedia = function (idx) {
+        db.about.social_media.splice(idx, 1);
+        loadView("about");
       };
-</script>
+
+      function saveOtaTokenAndFetch() {
+        const token = document.getElementById("ota-github-token").value.trim();
+        if (!token) {
+          alert("الرجاء إدخال GitHub Token.");
+          return;
+        }
+        localStorage.setItem("github_ota_token", token);
+        fetchOtaData(token);
+      }
+
+      window.otaCurrentPubspecSha = null;
+      window.otaCurrentPubspecContent = null;
+      window.otaCurrentBuildNumber = 0;
+      window.otaCurrentVersionName = "";
+
+      async function fetchOtaData(token) {
+        const owner = "techtouchAI";
+        const repo = "Islamic";
+        const branch = "main";
+
+        const statusCard = document.getElementById("ota-status-card");
+        const statusTitle = document.getElementById("ota-status-title");
+        const statusText = document.getElementById("ota-status-text");
+        const statusIcon = statusCard.querySelector(".material-icons");
+
+        statusCard.style.display = "block";
+        statusIcon.innerText = "sync";
+        statusIcon.className = "material-icons text-warning";
+        statusTitle.innerText = "جاري الاتصال بـ GitHub...";
+        statusText.innerText = "جلب بيانات الإصدارات وملف pubspec.yaml...";
+
+        document.getElementById("ota-version-name").disabled = true;
+        document.getElementById("ota-build-number").disabled = true;
+        document.getElementById("ota-trigger-build-btn").disabled = true;
+
+        try {
+          // 1. Fetch Latest Release
+          const releaseRes = await fetch(
+            `https://api.github.com/repos/${owner}/${repo}/releases/latest?t=${Date.now()}`,
+            {
+              headers: {
+                Authorization: `token ${token}`,
+                Accept: "application/vnd.github.v3+json",
+              },
+            },
+          );
+
+          let latestReleaseTag = "غير متوفر";
+          if (releaseRes.ok) {
+            const releaseData = await releaseRes.json();
+            latestReleaseTag = releaseData.tag_name || "غير متوفر";
+          }
+
+          // 2. Fetch pubspec.yaml
+          const pubspecRes = await fetch(
+            `https://api.github.com/repos/${owner}/${repo}/contents/pubspec.yaml?ref=${branch}&t=${Date.now()}`,
+            {
+              headers: {
+                Authorization: `token ${token}`,
+                Accept: "application/vnd.github.v3+json",
+              },
+            },
+          );
+
+          if (!pubspecRes.ok)
+            throw new Error(
+              "فشل في جلب ملف pubspec.yaml. تأكد من التوكن وصلاحياته.",
+            );
+
+          const pubspecData = await pubspecRes.json();
+          window.otaCurrentPubspecSha = pubspecData.sha;
+
+          // Decode Base64 (handling UTF-8 correctly)
+          const decodedContent = decodeURIComponent(
+            escape(atob(pubspecData.content)),
+          );
+          window.otaCurrentPubspecContent = decodedContent;
+
+          // Parse version: e.g., version: 1.0.0+45
+          const versionMatch = decodedContent.match(
+            /version:\s*([0-9\.]+)\+([0-9]+)/,
+          );
+          if (versionMatch) {
+            window.otaCurrentVersionName = versionMatch[1];
+            window.otaCurrentBuildNumber = parseInt(versionMatch[2], 10);
+
+            document.getElementById("ota-version-name").value =
+              window.otaCurrentVersionName;
+            document.getElementById("ota-build-number").value =
+              window.otaCurrentBuildNumber;
+
+            document.getElementById("ota-version-name").disabled = false;
+            document.getElementById("ota-build-number").disabled = false;
+            document.getElementById("ota-trigger-build-btn").disabled = false;
+
+            statusIcon.innerText = "check_circle";
+            statusIcon.className = "material-icons text-success";
+            statusTitle.innerText = "متصل بـ GitHub";
+            statusText.innerText = `الإصدار في السيرفر (Release): ${latestReleaseTag} | البناء الحالي في الكود (pubspec): ${window.otaCurrentBuildNumber}`;
+          } else {
+            throw new Error(
+              "لم يتم العثور على صيغة الإصدار (version: x.y.z+n) في ملف pubspec.yaml",
+            );
+          }
+        } catch (err) {
+          statusIcon.innerText = "error";
+          statusIcon.className = "material-icons text-danger";
+          statusTitle.innerText = "خطأ في الاتصال";
+          statusText.innerText = err.message;
+        }
+      }
+
+      async function triggerOtaBuild() {
+        const token = localStorage.getItem("github_ota_token");
+        if (!token) return alert("توكن GitHub مفقود!");
+
+        const newVersionName = document
+          .getElementById("ota-version-name")
+          .value.trim();
+        const newBuildNumberStr = document
+          .getElementById("ota-build-number")
+          .value.trim();
+        const newBuildNumber = parseInt(newBuildNumberStr, 10);
+
+        if (!newVersionName || isNaN(newBuildNumber)) {
+          return alert("يرجى إدخال اسم إصدار ورقم بناء صحيحين.");
+        }
+
+        if (newBuildNumber < window.otaCurrentBuildNumber) {
+          return alert(
+            `لا يمكن أن يكون رقم البناء الجديد (${newBuildNumber}) أصغر من الحالي (${window.otaCurrentBuildNumber})!`,
+          );
+        }
+
+        if (
+          newBuildNumber === window.otaCurrentBuildNumber &&
+          newVersionName === window.otaCurrentVersionName
+        ) {
+          return alert("لم تقم بتغيير أرقام الإصدار!");
+        }
+
+        const confirmMsg = `هل أنت متأكد من رغبتك في تحديث الإصدار إلى ${newVersionName}+${newBuildNumber} وإطلاق عملية بناء جديدة (OTA)؟\nهذا الإجراء سيقوم بتعديل ملف pubspec.yaml مباشرة!`;
+        if (!confirm(confirmMsg)) return;
+
+        const btn = document.getElementById("ota-trigger-build-btn");
+        btn.disabled = true;
+        btn.innerHTML = `<span class="spinner-border spinner-border-sm align-middle me-2"></span> جاري الإطلاق...`;
+
+        try {
+          const owner = "techtouchAI";
+          const repo = "Islamic";
+          const branch = "main";
+
+          // Replace version in content
+          const updatedContent = window.otaCurrentPubspecContent.replace(
+            /version:\s*[0-9\.]+\+[0-9]+/,
+            `version: ${newVersionName}+${newBuildNumber}`,
+          );
+
+          // Encode to Base64 (handling UTF-8)
+          const encodedContent = btoa(
+            unescape(encodeURIComponent(updatedContent)),
+          );
+
+          const commitMsg = `chore: update version to ${newVersionName}+${newBuildNumber} via CMS (trigger OTA build)`;
+
+          const updateRes = await fetch(
+            `https://api.github.com/repos/${owner}/${repo}/contents/pubspec.yaml`,
+            {
+              method: "PUT",
+              headers: {
+                Authorization: `token ${token}`,
+                Accept: "application/vnd.github.v3+json",
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                message: commitMsg,
+                content: encodedContent,
+                sha: window.otaCurrentPubspecSha,
+                branch: branch,
+              }),
+            },
+          );
+
+          if (!updateRes.ok) {
+            const errData = await updateRes.json();
+            throw new Error(
+              errData.message || "فشل في تحديث الملف على GitHub.",
+            );
+          }
+
+          alert(
+            "تم تحديث الإصدار بنجاح! جاري إطلاق عملية البناء (GitHub Actions) لتوفير التحديث الهوائي (OTA).",
+          );
+          fetchOtaData(token); // Refresh data
+        } catch (err) {
+          alert("خطأ أثناء الإطلاق: " + err.message);
+          btn.disabled = false;
+          btn.innerHTML = `<i class="material-icons align-middle">rocket_launch</i> حفظ وإطلاق تحديث جديد (GitHub Actions)`;
+        }
+      }
+    </script>
   </body>
 </html>

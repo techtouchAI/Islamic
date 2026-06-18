@@ -1,20 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'dart:convert';
 import 'dart:developer' show log;
 import 'package:firebase_core/firebase_core.dart';
 import 'services/analytics_service.dart';
-import 'sections/html_content_renderer.dart';
 
 import 'sections/tasbih_section.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'dart:ui';
-import 'package:flutter/gestures.dart';
-import 'package:hijri/hijri_calendar.dart';
 
 import 'data/data_manager.dart';
-import 'services/quran_service.dart';
 import 'services/favorites_service.dart';
 import 'services/prayer_alarm_service.dart';
 import 'sections/favorites_section.dart';
@@ -30,25 +23,17 @@ import 'ui/home/home_section.dart';
 import 'ui/about/about_section.dart';
 import 'ui/tabs/tabbed_section.dart';
 import 'ui/dynamic_list/dynamic_list_section.dart';
-import 'ui/reader/reader_page.dart';
 import 'ui/settings/settings_section.dart';
 import 'ui/prayer_times/prayer_times_section.dart';
 import 'ui/mafatih/mafatih_section.dart';
 
 import 'dart:math' hide log;
-import 'dart:typed_data';
 import 'dart:io';
-import 'package:intl/date_symbol_data_local.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'presentation/screens/istikhara_screen.dart';
 import 'package:provider/provider.dart';
 
-import 'dart:io';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:dio/dio.dart';
-import 'package:permission_handler/permission_handler.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:open_file/open_file.dart';
 
 import 'providers/settings_provider.dart';
 import 'services/ota_service.dart';
@@ -209,8 +194,9 @@ class _AlDhakereenAppState extends State<AlDhakereenApp> {
   @override
   Widget build(BuildContext context) {
     final settingsProvider = context.watch<SettingsProvider>();
-    if (!settingsProvider.isLoaded)
+    if (!settingsProvider.isLoaded) {
       return const Center(child: CircularProgressIndicator());
+    }
 
     return MaterialApp(
       navigatorKey: navigatorKey,
@@ -270,6 +256,7 @@ class _MainScaffoldState extends State<MainScaffold> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkForUpdatesSafe();
       _runDeferredTasks();
     });
   }
@@ -283,18 +270,6 @@ class _MainScaffoldState extends State<MainScaffold> {
   }
 
   void _setupUpdateListener() {
-    bool hasCheckedForUpdates = false;
-
-    void triggerUpdateCheck() {
-      if (!hasCheckedForUpdates) {
-        hasCheckedForUpdates = true;
-        _checkForUpdatesSafe();
-      }
-    }
-
-    // Trigger update check immediately, without waiting for cloud data sync
-    triggerUpdateCheck();
-
     // Sync cloud data asynchronously
     DataManager.syncCloudData().catchError((e) {
       debugPrint("Cloud sync failed during deferred tasks: $e");
@@ -346,24 +321,9 @@ class _MainScaffoldState extends State<MainScaffold> {
         final PackageInfo info = await PackageInfo.fromPlatform();
         final currentVersionCode = int.tryParse(info.buildNumber) ?? 1;
 
-        if (mounted) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (!mounted) return;
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                  'نجاح الاتصال | إصدار التطبيق: $currentVersionCode | إصدار السيرفر: $latestVersionCode',
-                  textAlign: TextAlign.center,
-                  textDirection: TextDirection.rtl,
-                ),
-                backgroundColor: Colors.green,
-                duration: const Duration(seconds: 4),
-              ),
-            );
-          });
-        }
 
-        final String releaseNotes =
+
+        const String releaseNotes =
             '✨ يتوفر الآن تحديث جديد للتطبيق!\n\nقمنا بإضافة تحسينات وإصلاحات جديدة لضمان أفضل تجربة لك. يرجى التحديث الآن.';
         String updateUrl = '';
         final assets = data['assets'];
@@ -386,20 +346,7 @@ class _MainScaffoldState extends State<MainScaffold> {
     } catch (e) {
       if (!mounted) return;
 
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'خطأ في الاتصال بالسيرفر: $e',
-              textAlign: TextAlign.center,
-              textDirection: TextDirection.rtl,
-            ),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 4),
-          ),
-        );
-      });
+
 
       // Handle network errors
       if (e is DioException) {
@@ -670,7 +617,7 @@ class _MainScaffoldState extends State<MainScaffold> {
       case 'qibla':
         return QiblaScreen();
       case 'calendar':
-        return HijriCalendarScreen();
+        return const HijriCalendarScreen();
       case 'duas':
         return TabbedSection(
           key: const ValueKey('duas'),
@@ -752,7 +699,7 @@ class _MainScaffoldState extends State<MainScaffold> {
           uiOpacity: settingsProvider.uiOpacity,
         );
       case 'istikhara':
-        return IstikharaScreen(key: const ValueKey('istikhara'));
+        return const IstikharaScreen(key: ValueKey('istikhara'));
       default:
         return DynamicListSection(
           key: ValueKey(_currentSection),
