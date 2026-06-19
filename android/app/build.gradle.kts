@@ -10,7 +10,7 @@ plugins {
 }
 
 val keystoreProperties = Properties()
-val keystorePropertiesFile = file("key.properties")
+val keystorePropertiesFile = rootProject.file("key.properties")
 if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(FileInputStream(keystorePropertiesFile))
 }
@@ -40,13 +40,17 @@ android {
 
     signingConfigs {
         create("release") {
-            keyAlias = keystoreProperties.getProperty("keyAlias")
-            keyPassword = keystoreProperties.getProperty("keyPassword")
-            val storeFileStr = keystoreProperties.getProperty("storeFile")
-            if (storeFileStr != null) {
-                storeFile = file(storeFileStr)
+            val envStoreFile = System.getenv("KEYSTORE_FILE")
+            val propStoreFile = keystoreProperties.getProperty("storeFile")
+            val finalStoreFile = envStoreFile ?: propStoreFile
+            if (finalStoreFile != null) {
+                storeFile = file(finalStoreFile)
             }
-            storePassword = keystoreProperties.getProperty("storePassword")
+
+            keyAlias = System.getenv("KEY_ALIAS") ?: keystoreProperties.getProperty("keyAlias")
+            storePassword = System.getenv("KEYSTORE_STOREPASS") ?: keystoreProperties.getProperty("storePassword")
+            keyPassword = System.getenv("KEYSTORE_KEYPASS") ?: keystoreProperties.getProperty("keyPassword")
+
             enableV1Signing = true
             enableV2Signing = true
         }
