@@ -4,6 +4,7 @@ import '../models/search_models.dart';
 import '../../services/search_engine.dart'; // To use fuzzyMatch if needed
 import '../../services/quran_service.dart';
 import '../../services/mafatih_service.dart';
+import '../../models/mafatih_article.dart';
 
 class SearchController extends ChangeNotifier {
   // ─── Dependencies ───
@@ -148,8 +149,8 @@ class SearchController extends ChangeNotifier {
           // Map Quran results
           final quranItems = quranResultsRaw.map((ayah) {
             return ContentItem(
-              id: '\${ayah['surah_number']}_\${ayah['ayah_number']}',
-              title: 'سورة \${ayah['surah_name']} - آية \${ayah['ayah_number']}',
+              id: '${ayah['surah_number']}_${ayah['ayah_number']}',
+              title: 'سورة ${ayah['surah_name']} - آية ${ayah['ayah_number']}',
               subtitle: 'القرآن الكريم',
               content: ayah['ayah_text'].toString(),
               sectionId: 'quran',
@@ -164,10 +165,10 @@ class SearchController extends ChangeNotifier {
           // Map Mafatih results
           final mafatihItems = mafatihResultsRaw.map((article) {
             return ContentItem(
-              id: 'mafatih_\${article.id}',
+              id: 'mafatih_${article.id}',
               title: article.title,
               subtitle: 'مفاتيح الجنان',
-              content: article.content,
+              content: article.text,
               sectionId: 'mafatih',
               sectionName: 'مفاتيح الجنان',
               category: 'mafatih',
