@@ -1,0 +1,38 @@
+name: Cleanup All Releases and Tags
+
+on: workflow_dispatch
+
+jobs:
+  delete-releases-and-tags:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 
+
+      - name: Delete All Releases
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # استخراج كل الإصدارات وحذفها
+          releases=$(gh release list --limit 1000 | awk '{print $1}')
+          for release in $releases; do
+            if [ -n "$release" ]; then
+              echo "Deleting release: $release"
+              gh release delete "$release" -y || true
+            fi
+          done
+
+      - name: Delete All Tags
+        run: |
+          # استخراج كل العلامات وحذفها من السيرفر
+          tags=$(git tag -l)
+          for tag in $tags; do
+            if [ -n "$tag" ]; then
+              echo "Deleting tag: $tag"
+              git push origin --delete "$tag" || true
+            fi
+          done
