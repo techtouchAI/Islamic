@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'dart:developer' show log;
 import 'package:firebase_core/firebase_core.dart';
 import 'services/analytics_service.dart';
 
@@ -335,6 +334,19 @@ class _MainScaffoldState extends State<MainScaffold> {
           throw Exception("رابط التحميل (APK) غير موجود في جيت هاب");
         }
 
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'نجاح الاتصال | إصدار التطبيق: $currentVersionCode | إصدار السيرفر: $latestVersionCode',
+                style: const TextStyle(color: Colors.white),
+              ),
+              backgroundColor: Colors.green,
+              duration: const Duration(seconds: 3),
+            ),
+          );
+        }
+
         // التحقق من الشرط الرياضي وإظهار النافذة
         if (currentVersionCode < latestVersionCode) {
           // Force update to be strictly mandatory
@@ -344,24 +356,7 @@ class _MainScaffoldState extends State<MainScaffold> {
         throw Exception("فشل الاتصال، رمز الخطأ: ${response.statusCode}");
       }
     } catch (e) {
-      if (!mounted) return;
-
-
-
-      // Handle network errors
-      if (e is DioException) {
-        if (e.type == DioExceptionType.connectionError) return;
-        if (e.response?.statusCode == 403) {
-          debugPrint('OTA Rate Limit Reached: $e');
-          log('Update error (Rate Limit): $e', name: 'OTA_Update');
-          return;
-        }
-      }
-      if (e is SocketException) {
-        return;
-      }
-
-      log('Update error: $e', name: 'OTA_Update');
+      debugPrint('OTA_Update Error: $e');
     }
   }
 
