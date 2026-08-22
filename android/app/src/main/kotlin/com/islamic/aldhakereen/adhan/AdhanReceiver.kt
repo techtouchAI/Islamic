@@ -1,5 +1,6 @@
 package com.islamic.aldhakereen.adhan
 
+import android.app.AlarmManager
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -12,7 +13,9 @@ class AdhanReceiver : BroadcastReceiver() {
         if (action == Intent.ACTION_BOOT_COMPLETED ||
             action == Intent.ACTION_MY_PACKAGE_REPLACED ||
             action == Intent.ACTION_TIMEZONE_CHANGED ||
+            action == Intent.ACTION_TIME_CHANGED ||
             action == Intent.ACTION_DATE_CHANGED ||
+            action == AlarmManager.ACTION_SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED ||
             action == AdhanNativeManager.ACTION_RESTORE_ALARMS
         ) {
             manager.restoreSavedAlarms(timezoneChanged = action == Intent.ACTION_TIMEZONE_CHANGED)
