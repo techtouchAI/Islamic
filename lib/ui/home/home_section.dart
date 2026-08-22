@@ -8,6 +8,7 @@ import 'dart:math';
 
 import '../../data/data_manager.dart';
 import '../../data/daily_duas.dart';
+import '../../utils/next_prayer.dart';
 import '../../utils/string_extensions.dart';
 import '../../services/prayer_times_service.dart';
 import '../../models/prayer_schedule.dart';
@@ -108,29 +109,16 @@ class _HomeSectionState extends State<HomeSection> {
     final schedule = _prayerSchedule;
     if (schedule == null) return;
     final now = schedule.nowAsLocalCivil();
-    String next = 'الفجر';
-    final sorted = schedule.availableLocalCivilTimes.entries.toList()
-      ..sort((a, b) => a.value.compareTo(b.value));
-    for (final entry in sorted) {
-      if (now.isBefore(entry.value)) {
-        next = _getArName(entry.key);
-        break;
-      }
-    }
-    if (mounted) _currentPrayerNotifier.value = next;
-  }
-
-  String _getArName(String key) {
-    const map = {
-      'fajr': 'الفجر',
-      'sunrise': 'الشروق',
-      'dhuhr': 'الظهر',
-      'asr': 'العصر',
-      'maghrib': 'المغرب',
-      'isha': 'العشاء',
-      'midnight': 'منتصف الليل',
-    };
-    return map[key] ?? key;
+    final hijri = CalendarRepository.getTodayHijri(
+      now,
+      context.read<SettingsProvider>().hijriAdjustment,
+    );
+    final nextKey = nextPrayerKeyForHome(
+      localCivilTimes: schedule.availableLocalCivilTimes,
+      now: now,
+      isRamadan: hijri.month == 9,
+    );
+    if (mounted) _currentPrayerNotifier.value = prayerDisplayNameAr(nextKey);
   }
 
   void _refreshItems(SettingsProvider settingsProvider) {
@@ -483,8 +471,8 @@ class _HomeSectionState extends State<HomeSection> {
                         Container(
                           width: double.infinity,
                           padding: const EdgeInsets.symmetric(
-                            vertical: 20,
-                            horizontal: 15,
+                            vertical: 18,
+                            horizontal: 12,
                           ),
                           child: Column(
                             children: [
@@ -511,14 +499,17 @@ class _HomeSectionState extends State<HomeSection> {
                                           borderRadius:
                                               BorderRadius.circular(10),
                                         ),
-                                        child: Text(
-                                          "الصلاة القادمة: $currentPrayerName",
-                                          style: TextStyle(
-                                            color: Theme.of(context)
-                                                .colorScheme
-                                                .primary,
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 12,
+                                        child: FittedBox(
+                                          fit: BoxFit.scaleDown,
+                                          child: Text(
+                                            'الصلاة القادمة: $currentPrayerName',
+                                            style: TextStyle(
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .primary,
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 12,
+                                            ),
                                           ),
                                         ),
                                       ),
@@ -531,26 +522,36 @@ class _HomeSectionState extends State<HomeSection> {
                                 color: Theme.of(context).colorScheme.primary,
                               ),
                               const SizedBox(height: 8),
-                              Text(
-                                '${hijri.day} ${hijri.monthName} ${hijri.year} هـ'
-                                    .toEasternArabic(),
-                                style: TextStyle(
-                                  color: Theme.of(context).colorScheme.primary,
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
+                              FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text(
+                                  '${hijri.day} ${hijri.monthName} ${hijri.year} هـ'
+                                      .toEasternArabic(),
+                                  style: TextStyle(
+                                    color:
+                                        Theme.of(context).colorScheme.primary,
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                               ),
-                              Text(
-                                intl.DateFormat(
-                                  'EEEE, d MMMM yyyy',
-                                  'ar_SA',
-                                ).format(now).toEasternArabic(),
-                                style: TextStyle(
-                                  color: Theme.of(
-                                    context,
-                                  ).colorScheme.primary.withValues(alpha: 0.8),
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w500,
+                              FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text(
+                                  intl.DateFormat(
+                                    'EEEE, d MMMM yyyy',
+                                    'ar_SA',
+                                  ).format(now).toEasternArabic(),
+                                  style: TextStyle(
+                                    color: Theme.of(
+                                      context,
+                                    )
+                                        .colorScheme
+                                        .primary
+                                        .withValues(alpha: 0.8),
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
+                                  ),
                                 ),
                               ),
                             ],
