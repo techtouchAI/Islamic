@@ -1,7 +1,7 @@
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { lazy, Suspense } from "react";
-import { Route, Switch } from "wouter";
+import { Route, Router as WouterRouter, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 
@@ -21,26 +21,28 @@ const TasbihFeature = lazy(() => import("./pages/FeatureDetails").then((module) 
 const CustomizeFeature = lazy(() => import("./pages/FeatureDetails").then((module) => ({ default: module.CustomizeFeature })));
 
 
-function Router() {
+function SiteRouter() {
   return (
-    <Suspense fallback={<div dir="rtl" className="grid min-h-screen place-items-center bg-[#f6f1e7] font-kufi text-sm text-[#173a3c]">جارٍ تجهيز الصفحة…</div>}>
-      <Switch>
-        <Route path={"/"} component={Home} />
-        <Route path={"/features"} component={Features} />
-        <Route path={"/prayer-times"} component={PrayerFeature} />
-        <Route path={"/adhan"} component={AdhanFeature} />
-        <Route path={"/quran"} component={QuranFeature} />
-        <Route path={"/duas"} component={DuasFeature} />
-        <Route path={"/tasbih"} component={TasbihFeature} />
-        <Route path={"/customize"} component={CustomizeFeature} />
-        <Route path={"/guide"} component={Guide} />
-        <Route path={"/downloads"} component={Downloads} />
-        <Route path={"/content"} component={Content} />
-        <Route path={"/about"} component={About} />
-        <Route path={"/404"} component={NotFound} />
-        <Route component={NotFound} />
-      </Switch>
-    </Suspense>
+    <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+      <Suspense fallback={<div dir="rtl" className="grid min-h-screen place-items-center bg-[#f6f1e7] font-kufi text-sm text-[#173a3c]">جارٍ تجهيز الصفحة…</div>}>
+        <Switch>
+          <Route path={"/"} component={Home} />
+          <Route path={"/features"} component={Features} />
+          <Route path={"/prayer-times"} component={PrayerFeature} />
+          <Route path={"/adhan"} component={AdhanFeature} />
+          <Route path={"/quran"} component={QuranFeature} />
+          <Route path={"/duas"} component={DuasFeature} />
+          <Route path={"/tasbih"} component={TasbihFeature} />
+          <Route path={"/customize"} component={CustomizeFeature} />
+          <Route path={"/guide"} component={Guide} />
+          <Route path={"/downloads"} component={Downloads} />
+          <Route path={"/content"} component={Content} />
+          <Route path={"/about"} component={About} />
+          <Route path={"/404"} component={NotFound} />
+          <Route component={NotFound} />
+        </Switch>
+      </Suspense>
+    </WouterRouter>
   );
 }
 
@@ -58,7 +60,7 @@ function App() {
       >
         <TooltipProvider>
           <Toaster />
-          <Router />
+          <SiteRouter />
         </TooltipProvider>
       </ThemeProvider>
     </ErrorBoundary>

@@ -181,6 +181,9 @@ export function PageHero({ eyebrow, title, description }: { eyebrow: string; tit
 }
 
 export function ExternalLink({ href, children }: { href: string; children: React.ReactNode }) {
+  if (href.startsWith("/")) {
+    return <Link href={href} className="inline-flex items-center gap-2 font-kufi text-[12px] text-[#b7833f] hover:text-[#9d6a2f]">{children}<ArrowUpLeft className="h-3.5 w-3.5" /></Link>;
+  }
   return <a href={href} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 font-kufi text-[12px] text-[#b7833f] hover:text-[#9d6a2f]">{children}<ArrowUpLeft className="h-3.5 w-3.5" /></a>;
 }
 
