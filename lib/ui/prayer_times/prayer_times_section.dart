@@ -25,9 +25,9 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
   final Map<String, bool> _enabledPrayers = {
     'fajr': true,
     'dhuhr': true,
-    'asr': true,
+    'asr': false,
     'maghrib': true,
-    'isha': true,
+    'isha': false,
   };
   final Map<String, bool> _fullScreenPrayers = {
     'fajr': false,
@@ -79,11 +79,16 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
     final prefs = await SharedPreferences.getInstance();
     if (!mounted) return;
     setState(() {
-      _enabledPrayers['fajr'] = prefs.getBool('adhan_fajr') ?? true;
-      _enabledPrayers['dhuhr'] = prefs.getBool('adhan_dhuhr') ?? true;
-      _enabledPrayers['asr'] = prefs.getBool('adhan_asr') ?? true;
-      _enabledPrayers['maghrib'] = prefs.getBool('adhan_maghrib') ?? true;
-      _enabledPrayers['isha'] = prefs.getBool('adhan_isha') ?? true;
+      _enabledPrayers['fajr'] = prefs.getBool('adhan_fajr') ??
+          PrayerTimesService.isAdhanEnabledByDefault('fajr');
+      _enabledPrayers['dhuhr'] = prefs.getBool('adhan_dhuhr') ??
+          PrayerTimesService.isAdhanEnabledByDefault('dhuhr');
+      _enabledPrayers['asr'] = prefs.getBool('adhan_asr') ??
+          PrayerTimesService.isAdhanEnabledByDefault('asr');
+      _enabledPrayers['maghrib'] = prefs.getBool('adhan_maghrib') ??
+          PrayerTimesService.isAdhanEnabledByDefault('maghrib');
+      _enabledPrayers['isha'] = prefs.getBool('adhan_isha') ??
+          PrayerTimesService.isAdhanEnabledByDefault('isha');
       _fullScreenPrayers['fajr'] = prefs.getBool('fullscreen_fajr') ?? false;
       _fullScreenPrayers['dhuhr'] = prefs.getBool('fullscreen_dhuhr') ?? false;
       _fullScreenPrayers['asr'] = prefs.getBool('fullscreen_asr') ?? false;

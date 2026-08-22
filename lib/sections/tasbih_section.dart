@@ -1,3 +1,4 @@
+// Design: مسبحة عربية هادئة تستلهم المرجع المرئي، لكنها تستخدم ألوان وثيم الذاكرين وتبقي منطق العد والحفظ مستقلاً عن الواجهة.
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -5,8 +6,8 @@ import 'package:flutter/services.dart';
 import 'package:intl/intl.dart' as intl;
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../utils/string_extensions.dart';
 import '../models/tasbih_state.dart';
+import '../utils/string_extensions.dart';
 
 enum TasbihSelection {
   subhanAllah,
@@ -48,8 +49,10 @@ class _TasbihSectionState extends State<TasbihSection> {
     TasbihSelection.salawat: 'اللهم صل على محمد وآل محمد',
   };
 
-  TasbihSelection _selection = TasbihSelection.subhanAllah;
-  TasbihMode _mode = TasbihMode.singleDhikr;
+  /// A first-time visitor enters Tasbih al-Zahra. A deliberate open-dhikr
+  /// choice is retained for later visits as an explicit user preference.
+  TasbihSelection _selection = TasbihSelection.tasbihAlZahra;
+  TasbihMode _mode = TasbihMode.tasbihAlZahra;
   int _counter = 0;
   int _lifetimeCounter = 0;
   int _zahraStageIndex = 0;
@@ -79,7 +82,7 @@ class _TasbihSectionState extends State<TasbihSection> {
     final prefs = await SharedPreferences.getInstance();
     final savedSelection =
         _selectionFromName(prefs.getString('tasbih_selection'));
-    final isZahra = prefs.getBool('tasbih_zahra_mode') ?? false;
+    final isZahra = prefs.getBool('tasbih_zahra_mode') ?? true;
     final savedStage =
         (prefs.getInt('tasbih_zahra_stage') ?? 0).clamp(0, 2).toInt();
     final savedCount = prefs.getInt('tasbih_zahra_count') ?? 0;
@@ -149,15 +152,15 @@ class _TasbihSectionState extends State<TasbihSection> {
 
   Future<void> _switchSelection(TasbihSelection? value) async {
     if (value == null ||
-        value == _selection &&
+        (value == _selection &&
             ((value == TasbihSelection.tasbihAlZahra) ==
-                (_mode == TasbihMode.tasbihAlZahra))) {
+                (_mode == TasbihMode.tasbihAlZahra)))) {
       return;
     }
 
     final generation = ++_loadGeneration;
+    final prefs = await SharedPreferences.getInstance();
     if (value == TasbihSelection.tasbihAlZahra) {
-      final prefs = await SharedPreferences.getInstance();
       final stage =
           (prefs.getInt('tasbih_zahra_stage') ?? 0).clamp(0, 2).toInt();
       final count = prefs.getInt('tasbih_zahra_count') ?? 0;
@@ -174,7 +177,6 @@ class _TasbihSectionState extends State<TasbihSection> {
         _lifetimeCounter = lifetime < 0 ? 0 : lifetime;
       });
     } else {
-      final prefs = await SharedPreferences.getInstance();
       final lifetime = _readLegacyLifetime(prefs, value);
       if (!mounted || generation != _loadGeneration) return;
       setState(() {
@@ -191,7 +193,8 @@ class _TasbihSectionState extends State<TasbihSection> {
   Future<void> _handleTap() async {
     if (_loading) return;
 
-    String? completionMessage;
+    String? stageMessage;
+    var cycleCompleted = false;
     if (_mode == TasbihMode.tasbihAlZahra) {
       final previous = TasbihZahraState(
         stageIndex: _zahraStageIndex,
@@ -200,10 +203,10 @@ class _TasbihSectionState extends State<TasbihSection> {
         lifetimeTotal: _lifetimeCounter,
       );
       final next = previous.increment();
-      if (next.stageIndex != previous.stageIndex) {
-        completionMessage = next.completedCycles > previous.completedCycles
-            ? 'اكتملت تسبيحة الزهراء، ابدأ دورة جديدة'
-            : 'انتهت ${previous.stage.label}، ابدأ ${next.stage.label} ${next.stage.target} مرة';
+      cycleCompleted = next.completedCycles > previous.completedCycles;
+      if (!cycleCompleted && next.stageIndex != previous.stageIndex) {
+        stageMessage =
+            'اكتملت ${previous.stage.label}، ننتقل إلى ${next.stage.label}';
       }
       setState(() {
         _zahraStageIndex = next.stageIndex;
@@ -218,170 +221,485 @@ class _TasbihSectionState extends State<TasbihSection> {
       });
     }
 
-    await HapticFeedback.lightImpact();
     await _persistState();
-
-    if (completionMessage != null) {
-      await HapticFeedback.mediumImpact();
+    if (cycleCompleted) {
+      await HapticFeedback.heavyImpact();
       if (!mounted) return;
+      await _showCompletionDialog();
+      return;
+    }
+
+    if (stageMessage != null) {
+      await HapticFeedback.mediumImpact();
+    } else {
+      await HapticFeedback.lightImpact();
+    }
+    if (stageMessage != null && mounted) {
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
-        ..showSnackBar(SnackBar(content: Text(completionMessage)));
+        ..showSnackBar(SnackBar(content: Text(stageMessage)));
     }
+  }
+
+  Future<void> _showCompletionDialog() {
+    final scheme = Theme.of(context).colorScheme;
+    return showDialog<void>(
+      context: context,
+      builder: (dialogContext) => Dialog(
+        insetPadding: const EdgeInsets.symmetric(horizontal: 28),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(34)),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(28, 32, 28, 22),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.auto_awesome_rounded, color: scheme.primary, size: 34),
+              const SizedBox(height: 14),
+              const Text(
+                'اكتمل التسبيح',
+                textAlign: TextAlign.center,
+                style:
+                    const TextStyle(fontSize: 25, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                'تقبّل الله منكم صالح الأعمال',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 17),
+              ),
+              const SizedBox(height: 26),
+              Row(
+                children: [
+                  Expanded(
+                    child: FilledButton.icon(
+                      onPressed: () async {
+                        Navigator.of(dialogContext).pop();
+                        if (!mounted) return;
+                        setState(() {
+                          _zahraStageIndex = 0;
+                          _counter = 0;
+                        });
+                        await _persistState();
+                      },
+                      icon: const Icon(Icons.replay_rounded),
+                      label: const Text('تسبيح مرة أخرى'),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  TextButton(
+                    onPressed: () => Navigator.of(dialogContext).pop(),
+                    child: const Text('خروج'),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   Future<void> _resetCounter() async {
     if (!mounted) return;
     setState(() => _counter = 0);
     await _persistState();
+    await HapticFeedback.selectionClick();
   }
 
   @override
   Widget build(BuildContext context) {
     if (_loading) return const Center(child: CircularProgressIndicator());
 
+    final scheme = Theme.of(context).colorScheme;
     final target = _target;
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color:
-                  Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(15),
-            ),
-            child: Column(
-              children: [
-                Text(
-                  _currentLabel,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontFamily: 'OmarNaskh',
-                    fontSize: 35,
-                    fontWeight: FontWeight.bold,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                ),
-                if (target != null) ...[
-                  const SizedBox(height: 6),
-                  Text(
-                    'المرحلة ${_zahraStageIndex + 1} من ${TasbihZahraState.stages.length} — $_counter/$target',
-                    style: const TextStyle(fontSize: 14, color: Colors.grey),
-                  ),
-                ],
-                const SizedBox(height: 20),
-                Semantics(
-                  button: true,
-                  label: 'زيادة عداد $_currentLabel',
-                  child: Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(100),
-                      onTap: _handleTap,
-                      child: Container(
-                        width: 200,
-                        height: 200,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          gradient: RadialGradient(
-                            colors: [
-                              Theme.of(context)
-                                  .colorScheme
-                                  .primary
-                                  .withValues(alpha: 0.2),
-                              Theme.of(context)
-                                  .colorScheme
-                                  .primary
-                                  .withValues(alpha: 0.05),
-                            ],
-                          ),
-                          border: Border.all(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .primary
-                                .withValues(alpha: 0.5),
-                            width: 2,
-                          ),
-                        ),
-                        child: Center(
-                          child: Text(
-                            '$_counter'.toEasternArabic(),
-                            style: TextStyle(
-                              fontSize: 70,
-                              fontWeight: FontWeight.bold,
-                              color: Theme.of(context).colorScheme.primary,
-                            ),
-                          ),
-                        ),
+      padding: const EdgeInsets.fromLTRB(20, 24, 20, 40),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 560),
+          child: Column(
+            children: [
+              _TasbihModeSelector(
+                mode: _mode,
+                onZahraTap: () =>
+                    _switchSelection(TasbihSelection.tasbihAlZahra),
+                onOpenTap: () => _switchSelection(TasbihSelection.subhanAllah),
+              ),
+              const SizedBox(height: 30),
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 220),
+                child: Column(
+                  key: ValueKey<String>('$_mode.name-$_currentLabel'),
+                  children: [
+                    Text(
+                      _currentLabel,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: scheme.primary,
+                        fontFamily: 'OmarNaskh',
+                        fontSize: 42,
+                        fontWeight: FontWeight.bold,
+                        height: 1.25,
                       ),
                     ),
-                  ),
+                    const SizedBox(height: 8),
+                    if (target != null) ...[
+                      Text(
+                        'المرحلة ${(_zahraStageIndex + 1).toString().toEasternArabic()} من ${TasbihZahraState.stages.length.toString().toEasternArabic()}',
+                        style: TextStyle(color: scheme.onSurfaceVariant),
+                      ),
+                      const SizedBox(height: 14),
+                      _TasbihStageRail(activeStage: _zahraStageIndex),
+                    ] else ...[
+                      Text(
+                        'عدّ مفتوح',
+                        style: TextStyle(color: scheme.onSurfaceVariant),
+                      ),
+                      const SizedBox(height: 14),
+                      _OpenDhikrPicker(
+                        value: _selection,
+                        labels: _labels,
+                        onChanged: _switchSelection,
+                      ),
+                    ],
+                  ],
                 ),
-                const SizedBox(height: 20),
-                Text(
-                  'المجموع الكلي: ${intl.NumberFormat.decimalPattern().format(_lifetimeCounter).toEasternArabic()}',
-                  style: TextStyle(
-                    fontFamily: 'OmarNaskh',
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                ),
-                if (_mode == TasbihMode.tasbihAlZahra)
-                  Text(
-                    'الدورات المكتملة: ${_completedCycles.toString().toEasternArabic()}',
-                    style: const TextStyle(fontSize: 14, color: Colors.grey),
-                  ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 50),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              IconButton(
-                icon: const Icon(Icons.refresh, size: 30),
-                onPressed: _resetCounter,
-                color: Theme.of(context).colorScheme.primary,
-                tooltip: 'تصفير المرحلة الحالية',
               ),
-              const SizedBox(width: 30),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(15),
-                  border: Border.all(
-                    color: Theme.of(context)
-                        .colorScheme
-                        .primary
-                        .withValues(alpha: 0.5),
-                  ),
+              const SizedBox(height: 24),
+              if (target != null)
+                _TasbihCountPanel(count: _counter, target: target),
+              const SizedBox(height: 28),
+              Semantics(
+                button: true,
+                label: 'زيادة عداد $_currentLabel',
+                child: _TasbihTapTarget(
+                  onTap: _handleTap,
+                  primaryColor: scheme.primary,
+                  surfaceColor: scheme.surface,
                 ),
-                child: DropdownButton<TasbihSelection>(
-                  value: _selection,
-                  underline: const SizedBox(),
-                  icon: Icon(
-                    Icons.arrow_drop_down,
-                    color: Theme.of(context).colorScheme.primary,
+              ),
+              const SizedBox(height: 24),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  IconButton.filledTonal(
+                    onPressed: _resetCounter,
+                    icon: const Icon(Icons.refresh_rounded),
+                    tooltip: target == null
+                        ? 'تصفير العداد'
+                        : 'تصفير المرحلة الحالية',
                   ),
-                  onChanged: _switchSelection,
-                  items: TasbihSelection.values
-                      .map(
-                        (value) => DropdownMenuItem<TasbihSelection>(
-                          value: value,
-                          child: Text(
-                            _labels[value]!,
-                            style: const TextStyle(fontSize: 14),
-                          ),
-                        ),
-                      )
-                      .toList(),
-                ),
+                  const SizedBox(width: 14),
+                  _TasbihStat(
+                    label: 'الإجمالي',
+                    value: intl.NumberFormat.decimalPattern()
+                        .format(_lifetimeCounter)
+                        .toEasternArabic(),
+                  ),
+                  if (_mode == TasbihMode.tasbihAlZahra) ...[
+                    const SizedBox(width: 14),
+                    _TasbihStat(
+                      label: 'الدورات',
+                      value: _completedCycles.toString().toEasternArabic(),
+                    ),
+                  ],
+                ],
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _TasbihModeSelector extends StatelessWidget {
+  const _TasbihModeSelector({
+    required this.mode,
+    required this.onZahraTap,
+    required this.onOpenTap,
+  });
+
+  final TasbihMode mode;
+  final VoidCallback onZahraTap;
+  final VoidCallback onOpenTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.all(5),
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerHighest.withValues(alpha: 0.6),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: scheme.outlineVariant),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: _TasbihModeButton(
+              label: 'تسبيحة الزهراء',
+              selected: mode == TasbihMode.tasbihAlZahra,
+              onTap: onZahraTap,
+            ),
+          ),
+          const SizedBox(width: 6),
+          Expanded(
+            child: _TasbihModeButton(
+              label: 'التسبيح المفتوح',
+              selected: mode == TasbihMode.singleDhikr,
+              onTap: onOpenTap,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TasbihModeButton extends StatelessWidget {
+  const _TasbihModeButton({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Material(
+      color: selected ? scheme.primary : Colors.transparent,
+      borderRadius: BorderRadius.circular(13),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(13),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 15),
+          child: Text(
+            label,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: selected ? scheme.onPrimary : scheme.onSurface,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _TasbihStageRail extends StatelessWidget {
+  const _TasbihStageRail({required this.activeStage});
+
+  final int activeStage;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Row(
+      children: List<Widget>.generate(TasbihZahraState.stages.length, (index) {
+        final active = index <= activeStage;
+        return Expanded(
+          child: Container(
+            height: 5,
+            margin: EdgeInsetsDirectional.only(
+              start: index == 0 ? 0 : 4,
+            ),
+            decoration: BoxDecoration(
+              color: active
+                  ? scheme.primary
+                  : scheme.outlineVariant.withValues(alpha: 0.6),
+              borderRadius: BorderRadius.circular(99),
+            ),
+          ),
+        );
+      }),
+    );
+  }
+}
+
+class _OpenDhikrPicker extends StatelessWidget {
+  const _OpenDhikrPicker({
+    required this.value,
+    required this.labels,
+    required this.onChanged,
+  });
+
+  final TasbihSelection value;
+  final Map<TasbihSelection, String> labels;
+  final ValueChanged<TasbihSelection?> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 250,
+      child: DropdownButtonFormField<TasbihSelection>(
+        initialValue: value,
+        decoration: const InputDecoration(
+          labelText: 'اختر الذكر',
+          border: OutlineInputBorder(),
+          isDense: true,
+        ),
+        items: TasbihSelection.values
+            .where((item) => item != TasbihSelection.tasbihAlZahra)
+            .map(
+              (item) => DropdownMenuItem<TasbihSelection>(
+                value: item,
+                child: Text(labels[item]!),
+              ),
+            )
+            .toList(),
+        onChanged: onChanged,
+      ),
+    );
+  }
+}
+
+class _TasbihCountPanel extends StatelessWidget {
+  const _TasbihCountPanel({required this.count, required this.target});
+
+  final int count;
+  final int target;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      width: 210,
+      decoration: BoxDecoration(
+        border: Border.all(
+            color: scheme.primary.withValues(alpha: 0.7), width: 1.5),
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Row(
+        children: [
+          Expanded(child: _CounterCell(value: count, label: 'العدد')),
+          Container(width: 1, height: 52, color: scheme.outlineVariant),
+          Expanded(child: _CounterCell(value: target, label: 'الهدف')),
+        ],
+      ),
+    );
+  }
+}
+
+class _CounterCell extends StatelessWidget {
+  const _CounterCell({required this.value, required this.label});
+
+  final int value;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      child: Column(
+        children: [
+          Text(
+            value.toString().toEasternArabic(),
+            style: TextStyle(
+              fontSize: 27,
+              fontWeight: FontWeight.bold,
+              color: scheme.onSurface,
+            ),
+          ),
+          Text(label,
+              style: TextStyle(fontSize: 11, color: scheme.onSurfaceVariant)),
+        ],
+      ),
+    );
+  }
+}
+
+class _TasbihTapTarget extends StatelessWidget {
+  const _TasbihTapTarget({
+    required this.onTap,
+    required this.primaryColor,
+    required this.surfaceColor,
+  });
+
+  final VoidCallback onTap;
+  final Color primaryColor;
+  final Color surfaceColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        customBorder:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(92)),
+        child: Ink(
+          width: 242,
+          height: 242,
+          decoration: BoxDecoration(
+            border: Border.all(
+                color: primaryColor.withValues(alpha: 0.75), width: 2),
+            borderRadius: BorderRadius.circular(92),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: surfaceColor,
+                boxShadow: [
+                  BoxShadow(
+                    color: primaryColor.withValues(alpha: 0.12),
+                    blurRadius: 22,
+                    spreadRadius: 3,
+                  ),
+                ],
+              ),
+              child: Center(
+                child: Text(
+                  'اضغط',
+                  style: TextStyle(
+                    fontFamily: 'OmarNaskh',
+                    fontSize: 42,
+                    fontWeight: FontWeight.bold,
+                    color: primaryColor,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _TasbihStat extends StatelessWidget {
+  const _TasbihStat({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      constraints: const BoxConstraints(minWidth: 88),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerHighest.withValues(alpha: 0.55),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Column(
+        children: [
+          Text(label,
+              style: TextStyle(fontSize: 11, color: scheme.onSurfaceVariant)),
+          const SizedBox(height: 2),
+          Text(value,
+              style: TextStyle(
+                  fontWeight: FontWeight.bold, color: scheme.primary)),
         ],
       ),
     );

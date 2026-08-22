@@ -39,6 +39,16 @@ void main() {
     });
   });
 
+  group('PrayerTimesService adhan defaults', () {
+    test('Asr and Isha are disabled until a user enables them', () {
+      expect(PrayerTimesService.isAdhanEnabledByDefault('fajr'), isTrue);
+      expect(PrayerTimesService.isAdhanEnabledByDefault('dhuhr'), isTrue);
+      expect(PrayerTimesService.isAdhanEnabledByDefault('maghrib'), isTrue);
+      expect(PrayerTimesService.isAdhanEnabledByDefault('asr'), isFalse);
+      expect(PrayerTimesService.isAdhanEnabledByDefault('isha'), isFalse);
+    });
+  });
+
   group('PrayerTimesService and PrayTimes', () {
     test('returns finite prayer times and uses explicit Iraq timezone', () {
       final service = PrayerTimesService();

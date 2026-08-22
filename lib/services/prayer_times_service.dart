@@ -24,6 +24,12 @@ class PrayerTimesService with WidgetsBindingObserver {
   static const double defaultLongitude = 44.3615;
   static const double maxAcceptedAccuracyMeters = 1000;
   static const Duration maxCachedLocationAge = Duration(days: 7);
+  static const Set<String> _disabledAdhanByDefault = <String>{'asr', 'isha'};
+
+  /// Stored user choices always win. This applies only when a preference has
+  /// never been written, so Asr and Isha remain off until manually enabled.
+  static bool isAdhanEnabledByDefault(String prayerKey) =>
+      !_disabledAdhanByDefault.contains(prayerKey);
 
   static const String _sourceKey = 'prayer_location_source';
   static const String _cityKey = 'prayer_city';
@@ -549,7 +555,7 @@ class PrayerTimesService with WidgetsBindingObserver {
 
     final enabled = <String, bool>{
       for (final key in _adhanPrayerKeys)
-        key: prefs.getBool('adhan_$key') ?? true,
+        key: prefs.getBool('adhan_$key') ?? isAdhanEnabledByDefault(key),
     };
     final offsets = <String, int>{
       for (final key in _adhanPrayerKeys) key: prefs.getInt('adj_$key') ?? 0,
@@ -625,7 +631,8 @@ class PrayerTimesService with WidgetsBindingObserver {
   ) async {
     final prefs = await SharedPreferences.getInstance();
     final offset = prefs.getInt('adj_$prayerKey') ?? 0;
-    final enabled = prefs.getBool('adhan_$prayerKey') ?? true;
+    final enabled =
+        prefs.getBool('adhan_$prayerKey') ?? isAdhanEnabledByDefault(prayerKey);
     final nowLocal = PrayerTimeZonePolicy.utcToLocalCivil(
       DateTime.now().toUtc(),
       location.timeZoneOffsetHours,
