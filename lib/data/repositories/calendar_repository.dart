@@ -19,7 +19,9 @@ class CalendarEvent {
     }
     return CalendarEvent(
       title: json['title']?.toString() ?? 'بدون عنوان',
-      description: json['description']?.toString().isNotEmpty == true ? json['description'].toString() : null,
+      description: json['description']?.toString().isNotEmpty == true
+          ? json['description'].toString()
+          : null,
       isImportant: json['isImportant'] == true,
     );
   }
@@ -40,7 +42,9 @@ class AstronomicalEvent {
     }
     return AstronomicalEvent(
       title: json['title']?.toString() ?? 'بدون عنوان',
-      description: json['description']?.toString().isNotEmpty == true ? json['description'].toString() : null,
+      description: json['description']?.toString().isNotEmpty == true
+          ? json['description'].toString()
+          : null,
     );
   }
 }
@@ -88,7 +92,9 @@ class HijriDayData {
     }
 
     return HijriDayData(
-      day: json['day'] is int ? json['day'] : int.tryParse(json['day']?.toString() ?? '1') ?? 1,
+      day: json['day'] is int
+          ? json['day']
+          : int.tryParse(json['day']?.toString() ?? '1') ?? 1,
       events: parsedEvents,
       astronomicalEvents: parsedAstroEvents,
     );
@@ -116,7 +122,8 @@ class HijriMonthData {
         year: 1446,
         month: 1,
         totalDays: 30,
-        expectedGregorianStart: DateTime.now().toIso8601String().split('T').first,
+        expectedGregorianStart:
+            DateTime.now().toIso8601String().split('T').first,
         days: [],
       );
     }
@@ -135,10 +142,17 @@ class HijriMonthData {
     }
 
     return HijriMonthData(
-      year: json['year'] is int ? json['year'] : int.tryParse(json['year']?.toString() ?? '1446') ?? 1446,
-      month: json['month'] is int ? json['month'] : int.tryParse(json['month']?.toString() ?? '1') ?? 1,
-      totalDays: json['total_days'] is int ? json['total_days'] : int.tryParse(json['total_days']?.toString() ?? '30') ?? 30,
-      expectedGregorianStart: json['expected_gregorian_start']?.toString() ?? DateTime.now().toIso8601String().split('T').first,
+      year: json['year'] is int
+          ? json['year']
+          : int.tryParse(json['year']?.toString() ?? '1446') ?? 1446,
+      month: json['month'] is int
+          ? json['month']
+          : int.tryParse(json['month']?.toString() ?? '1') ?? 1,
+      totalDays: json['total_days'] is int
+          ? json['total_days']
+          : int.tryParse(json['total_days']?.toString() ?? '30') ?? 30,
+      expectedGregorianStart: json['expected_gregorian_start']?.toString() ??
+          DateTime.now().toIso8601String().split('T').first,
       days: parsedDays,
     );
   }
@@ -185,8 +199,8 @@ class CalendarRepository {
 
   static AppHijriDate getTodayHijri(DateTime targetDate, int offset) {
     // Determine fallback current hijri using the library
-    final fallbackHijri = HijriCalendar.fromDate(
-        targetDate.add(Duration(days: offset)));
+    final fallbackHijri =
+        HijriCalendar.fromDate(targetDate.add(Duration(days: offset)));
 
     // Ensure we load month data (could be missing/fallback from hijri calendar)
     final monthData = getMonthData(fallbackHijri.hYear, fallbackHijri.hMonth);
@@ -195,13 +209,13 @@ class CalendarRepository {
     try {
       firstDayGregorian = DateTime.parse(monthData.expectedGregorianStart);
     } catch (e) {
-       // A simplistic fallback for missing JSON: we just use the calculated day by hijri package
-       return AppHijriDate(
-         day: fallbackHijri.hDay,
-         month: fallbackHijri.hMonth,
-         year: fallbackHijri.hYear,
-         monthName: getHijriMonthName(fallbackHijri.hMonth),
-       );
+      // A simplistic fallback for missing JSON: we just use the calculated day by hijri package
+      return AppHijriDate(
+        day: fallbackHijri.hDay,
+        month: fallbackHijri.hMonth,
+        year: fallbackHijri.hYear,
+        monthName: getHijriMonthName(fallbackHijri.hMonth),
+      );
     }
 
     // Adjust the target date with the offset (instead of moving the Gregorian start)
@@ -234,10 +248,10 @@ class CalendarRepository {
         resultYear++;
       }
     } else if (calculatedHDay < 1) {
-       // A simplistic fallback for past bounds: we just use the calculated day by hijri package
-       resultDay = fallbackHijri.hDay;
-       resultMonth = fallbackHijri.hMonth;
-       resultYear = fallbackHijri.hYear;
+      // A simplistic fallback for past bounds: we just use the calculated day by hijri package
+      resultDay = fallbackHijri.hDay;
+      resultMonth = fallbackHijri.hMonth;
+      resultYear = fallbackHijri.hYear;
     }
 
     return AppHijriDate(
@@ -272,8 +286,12 @@ class CalendarRepository {
         for (var m in monthsData) {
           try {
             if (m is Map<String, dynamic>) {
-              final hYear = m['year'] is int ? m['year'] : int.tryParse(m['year']?.toString() ?? '');
-              final hMonth = m['month'] is int ? m['month'] : int.tryParse(m['month']?.toString() ?? '');
+              final hYear = m['year'] is int
+                  ? m['year']
+                  : int.tryParse(m['year']?.toString() ?? '');
+              final hMonth = m['month'] is int
+                  ? m['month']
+                  : int.tryParse(m['month']?.toString() ?? '');
 
               if (hYear == year && hMonth == month) {
                 return HijriMonthData.fromJson(m);
@@ -299,24 +317,25 @@ class CalendarRepository {
         year: year,
         month: month,
         totalDays: totalDays,
-        expectedGregorianStart: gregorianStart.toIso8601String().split('T').first,
+        expectedGregorianStart:
+            gregorianStart.toIso8601String().split('T').first,
         days: [],
       );
     } catch (e) {
       return HijriMonthData(
-        year: year, month: month, totalDays: 30,
-        expectedGregorianStart: DateTime.now().toIso8601String().split('T').first,
-        days: []
-      );
+          year: year,
+          month: month,
+          totalDays: 30,
+          expectedGregorianStart:
+              DateTime.now().toIso8601String().split('T').first,
+          days: []);
     }
   }
 
   static HijriDayData? getDayData(int year, int month, int day) {
     final monthData = getMonthData(year, month);
-    if (monthData != null) {
-      for (var d in monthData.days) {
-        if (d.day == day) return d;
-      }
+    for (final d in monthData.days) {
+      if (d.day == day) return d;
     }
     return null;
   }
@@ -329,7 +348,8 @@ class CalendarRepository {
     return [];
   }
 
-  static List<AstronomicalEvent> getAstronomicalEventsForDay(int year, int month, int day) {
+  static List<AstronomicalEvent> getAstronomicalEventsForDay(
+      int year, int month, int day) {
     final dayData = getDayData(year, month, day);
     if (dayData != null) {
       return dayData.astronomicalEvents;

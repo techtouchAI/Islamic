@@ -42,9 +42,8 @@ class DataManager {
         item['_normalized_title'] = item['title'].toString().normalizeArabic();
       }
       if (item['content'] != null) {
-        item['_normalized_content'] = item['content']
-            .toString()
-            .normalizeArabic();
+        item['_normalized_content'] =
+            item['content'].toString().normalizeArabic();
       }
       if (item.containsKey('items') && item['items'] is List) {
         for (var nestedItem in item['items']) {
@@ -115,10 +114,13 @@ class DataManager {
     try {
       client = client ?? httpClient ?? http.Client();
       // Add random component to fully bypass strict CDN caches
-      final timestamp = DateTime.now().millisecondsSinceEpoch.toString() + '_' + DateTime.now().microsecondsSinceEpoch.toString();
+      final timestamp = DateTime.now().millisecondsSinceEpoch.toString() +
+          '_' +
+          DateTime.now().microsecondsSinceEpoch.toString();
       final url = Uri.parse("$_repoUrl?t=$timestamp");
 
-      final response = await client.get(url).timeout(const Duration(seconds: 15));
+      final response =
+          await client.get(url).timeout(const Duration(seconds: 15));
       if (response.statusCode == 200) {
         final content = utf8.decode(response.bodyBytes);
 
@@ -131,24 +133,22 @@ class DataManager {
 
         try {
           final newDb = await compute(_decodeAndNormalizeJson, content);
-          // ⚠️ تم حذف الشرط الخبيث الذي يبحث عن 'sections' ليقبل أي JSON صالح
-          if (newDb is Map) {
-            await localFile.writeAsString(content, encoding: utf8);
-            _db = Map<String, dynamic>.from(newDb);
-            dbNotifier.value++;
-            debugPrint("DataManager: Cloud sync successful.");
-            return true;
-          } else {
-             debugPrint("DataManager Sync Error: Root JSON is not a valid Map");
-          }
+          await localFile.writeAsString(content, encoding: utf8);
+          _db = Map<String, dynamic>.from(newDb);
+          dbNotifier.value++;
+          debugPrint("DataManager: Cloud sync successful.");
+          return true;
         } catch (parseError) {
-          debugPrint("CRITICAL JSON ERROR: Invalid JSON Syntax in the remote file. $parseError");
-          assert(false, "CRITICAL JSON ERROR: Failed to parse remote content.json. $parseError");
+          debugPrint(
+              "CRITICAL JSON ERROR: Invalid JSON Syntax in the remote file. $parseError");
+          assert(false,
+              "CRITICAL JSON ERROR: Failed to parse remote content.json. $parseError");
         }
       } else {
-        debugPrint("DataManager Sync Error: HTTP Status ${response.statusCode}");
+        debugPrint(
+            "DataManager Sync Error: HTTP Status ${response.statusCode}");
       }
-} catch (e) {
+    } catch (e) {
       debugPrint("DataManager Sync Error (Network/Timeout): $e");
     }
     return false;
@@ -303,9 +303,8 @@ class DataManager {
         item['_normalized_title'] = item['title'].toString().normalizeArabic();
       }
       if (item['content'] != null) {
-        item['_normalized_content'] = item['content']
-            .toString()
-            .normalizeArabic();
+        item['_normalized_content'] =
+            item['content'].toString().normalizeArabic();
       }
       if (item.containsKey('items') && item['items'] is List) {
         for (var nestedItem in item['items']) {

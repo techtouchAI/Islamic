@@ -32,8 +32,15 @@ abstract class PrayerTimesEngine {
     double timeZone, {
     double elevation = 0,
   });
-}
 
+  Map<String, double> getTimesAsHours(
+    DateTime date,
+    double lat,
+    double lng,
+    double timeZone, {
+    double elevation = 0,
+  });
+}
 
 /// Implementation of PrayTimes astronomical algorithms.
 /// Based on PrayTimes.org JS library (v2.5) by Hamid Zarrabi-Zadeh.
@@ -51,34 +58,44 @@ class PrayTimes implements PrayerTimesEngine {
   late double _elv;
   late double _timeZone;
   late double _jDate;
+  late DateTime _calculationDate;
 
-  PrayTimes([PrayerCalculationParameters? params]) : _params = params ?? PrayerCalculationParameters.jafari;
+  PrayTimes([PrayerCalculationParameters? params])
+      : _params = params ?? PrayerCalculationParameters.jafari;
 
   /// Calculate prayer times for a given date, coordinates, and timezone.
   /// returns a Map of string to DateTime
   @override
   Map<String, DateTime> getTimes(
-      DateTime date, double lat, double lng, double timeZone, {double elevation = 0}) {
+      DateTime date, double lat, double lng, double timeZone,
+      {double elevation = 0}) {
+    final times = getTimesAsHours(
+      date,
+      lat,
+      lng,
+      timeZone,
+      elevation: elevation,
+    );
+
+    final dateTimes = <String, DateTime>{};
+    times.forEach((key, value) {
+      if (!value.isFinite) return;
+      dateTimes[key] = _timeToDateTime(date, value);
+    });
+    return dateTimes;
+  }
+
+  @override
+  Map<String, double> getTimesAsHours(
+      DateTime date, double lat, double lng, double timeZone,
+      {double elevation = 0}) {
     _lat = lat;
     _lng = lng;
     _elv = elevation;
     _timeZone = timeZone;
-
-    int year = date.year;
-    int month = date.month;
-    int day = date.day;
-
-    _jDate = _julian(year, month, day) - lng / 360;
-
-    Map<String, double> times = _computeTimes();
-
-    // Convert double times to DateTimes
-    Map<String, DateTime> dateTimes = {};
-    times.forEach((key, value) {
-      dateTimes[key] = _timeToDateTime(date, value);
-    });
-
-    return dateTimes;
+    _calculationDate = date;
+    _jDate = _julian(date.year, date.month, date.day) - lng / 360;
+    return _computeTimes();
   }
 
   //---------------------- Calculation Functions -----------------------
@@ -97,8 +114,11 @@ class PrayTimes implements PrayerTimesEngine {
     double denominator = _DMath.cos(decl) * _DMath.cos(_lat);
     if (denominator == 0) denominator = 0.00001; // zero-division safeguard
 
-    double t = 1 / 15 * _DMath.arccos(
-        (-_DMath.sin(angle) - _DMath.sin(decl) * _DMath.sin(_lat)) / denominator);
+    double t = 1 /
+        15 *
+        _DMath.arccos(
+            (-_DMath.sin(angle) - _DMath.sin(decl) * _DMath.sin(_lat)) /
+                denominator);
 
     return noon + (direction == 'ccw' ? -t : t);
   }
@@ -116,12 +136,14 @@ class PrayTimes implements PrayerTimesEngine {
     double D = jd - 2451545.0;
     double g = _DMath.fixAngle(357.529 + 0.98560028 * D);
     double q = _DMath.fixAngle(280.459 + 0.98564736 * D);
-    double L = _DMath.fixAngle(q + 1.915 * _DMath.sin(g) + 0.020 * _DMath.sin(2 * g));
+    double L =
+        _DMath.fixAngle(q + 1.915 * _DMath.sin(g) + 0.020 * _DMath.sin(2 * g));
 
     // double R = 1.00014 - 0.01671 * _DMath.cos(g) - 0.00014 * _DMath.cos(2 * g);
     double e = 23.439 - 0.00000036 * D;
 
-    double ra = _DMath.arctan2(_DMath.cos(e) * _DMath.sin(L), _DMath.cos(L)) / 15;
+    double ra =
+        _DMath.arctan2(_DMath.cos(e) * _DMath.sin(L), _DMath.cos(L)) / 15;
     double eqt = q / 15 - _DMath.fixHour(ra);
     double decl = _DMath.arcsin(_DMath.sin(e) * _DMath.sin(L));
 
@@ -139,7 +161,10 @@ class PrayTimes implements PrayerTimesEngine {
     int B = 2 - A + (A / 4).floor();
 
     double jd = (365.25 * (year + 4716)).floor() +
-        (30.6001 * (month + 1)).floor() + day + B - 1524.5;
+        (30.6001 * (month + 1)).floor() +
+        day +
+        B -
+        1524.5;
     return jd;
   }
 
@@ -154,7 +179,8 @@ class PrayTimes implements PrayerTimesEngine {
     double dhuhr = _midDay(times['dhuhr']!);
     double asr = _asrTime(1, times['asr']!); // Standard factor = 1
     double sunset = _sunAngleTime(_riseSetAngle(), times['sunset']!, 'cw');
-    double maghrib = _sunAngleTime(_params.maghribAngle, times['maghrib']!, 'cw');
+    double maghrib =
+        _sunAngleTime(_params.maghribAngle, times['maghrib']!, 'cw');
     double isha = _sunAngleTime(_params.ishaAngle, times['isha']!, 'cw');
 
     return {
@@ -188,9 +214,35 @@ class PrayTimes implements PrayerTimesEngine {
 
     times = _adjustTimes(times);
 
-    // add midnight time (Jafari method)
-    // For Sayyid Sistani, Midnight is halfway between Sunset and Sunrise of the next day
-    times['midnight'] = times['sunset']! + _timeDiff(times['sunset']!, times['sunrise']! + 24) / 2;
+    // Jafari legal midnight is halfway between sunset and the next day's Fajr.
+    final currentJDate = _jDate;
+    final nextDate = _calculationDate.add(const Duration(days: 1));
+    _jDate = _julian(nextDate.year, nextDate.month, nextDate.day) - _lng / 360;
+    var nextTimes = <String, double>{
+      'fajr': 5,
+      'sunrise': 6,
+      'dhuhr': 12,
+      'asr': 13,
+      'sunset': 18,
+      'maghrib': 18,
+      'isha': 18,
+    };
+    for (int i = 1; i <= _numIterations; i++) {
+      nextTimes = _computePrayerTimes(nextTimes);
+    }
+    nextTimes = _adjustTimes(nextTimes);
+    _jDate = currentJDate;
+
+    final sunset = times['sunset'];
+    final nextFajr = nextTimes['fajr'];
+    if (sunset != null &&
+        nextFajr != null &&
+        sunset.isFinite &&
+        nextFajr.isFinite) {
+      times['midnight'] = sunset + _timeDiff(sunset, nextFajr + 24) / 2;
+    } else {
+      times['midnight'] = double.nan;
+    }
 
     return times;
   }
@@ -211,18 +263,28 @@ class PrayTimes implements PrayerTimesEngine {
   Map<String, double> _adjustHighLats(Map<String, double> times) {
     double nightTime = _timeDiff(times['sunset']!, times['sunrise']!);
 
-    times['imsak'] = _adjustHLTime(times['imsak'] ?? times['fajr']!, times['sunrise']!, _params.fajrAngle, nightTime, 'ccw'); // fallback for imsak since it might not be in the map in this port
-    times['fajr'] = _adjustHLTime(times['fajr']!, times['sunrise']!, _params.fajrAngle, nightTime, 'ccw');
-    times['isha'] = _adjustHLTime(times['isha']!, times['sunset']!, _params.ishaAngle, nightTime, 'cw');
-    times['maghrib'] = _adjustHLTime(times['maghrib']!, times['sunset']!, _params.maghribAngle, nightTime, 'cw');
+    times['imsak'] = _adjustHLTime(
+        times['imsak'] ?? times['fajr']!,
+        times['sunrise']!,
+        _params.fajrAngle,
+        nightTime,
+        'ccw'); // fallback for imsak since it might not be in the map in this port
+    times['fajr'] = _adjustHLTime(
+        times['fajr']!, times['sunrise']!, _params.fajrAngle, nightTime, 'ccw');
+    times['isha'] = _adjustHLTime(
+        times['isha']!, times['sunset']!, _params.ishaAngle, nightTime, 'cw');
+    times['maghrib'] = _adjustHLTime(times['maghrib']!, times['sunset']!,
+        _params.maghribAngle, nightTime, 'cw');
 
     return times;
   }
 
   // adjust a time for higher latitudes
-  double _adjustHLTime(double time, double base, double angle, double night, String direction) {
+  double _adjustHLTime(
+      double time, double base, double angle, double night, String direction) {
     double portion = _nightPortion(angle, night);
-    double timeDiff = (direction == 'ccw') ? _timeDiff(time, base) : _timeDiff(base, time);
+    double timeDiff =
+        (direction == 'ccw') ? _timeDiff(time, base) : _timeDiff(base, time);
 
     if (time.isNaN || timeDiff > portion) {
       time = base + (direction == 'ccw' ? -portion : portion);
@@ -261,8 +323,9 @@ class PrayTimes implements PrayerTimesEngine {
 
   // Convert double hours to DateTime
   DateTime _timeToDateTime(DateTime date, double time) {
-    if (time.isNaN) {
-      return date; // or handle invalid time
+    // Callers must filter non-finite values before conversion.
+    if (!time.isFinite) {
+      throw ArgumentError.value(time, 'time', 'Prayer time must be finite');
     }
 
     // The time could be > 24 if it's the next day (e.g. midnight or tomorrow fajr calculation)
@@ -278,7 +341,8 @@ class PrayTimes implements PrayerTimesEngine {
       date.year,
       date.month,
       date.day,
-    ).add(Duration(days: daysToAdd, hours: hours, minutes: minutes)).subtract(Duration(minutes: (_timeZone * 60).round())); // convert back to UTC
+    ).add(Duration(days: daysToAdd, hours: hours, minutes: minutes)).subtract(
+        Duration(minutes: (_timeZone * 60).round())); // convert back to UTC
   }
 }
 

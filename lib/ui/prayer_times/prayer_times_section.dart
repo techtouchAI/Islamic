@@ -1,33 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_linkify/flutter_linkify.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:intl/intl.dart' as intl;
-import 'package:intl/date_symbol_data_local.dart';
-import 'dart:async';
-import 'dart:math';
-import 'package:share_plus/share_plus.dart';
 import 'package:flutter/services.dart';
-import 'package:url_launcher/url_launcher.dart';
-import 'package:hijri/hijri_calendar.dart';
-import 'package:geolocator/geolocator.dart';
+import 'package:intl/intl.dart' as intl;
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:image_picker/image_picker.dart';
-import 'dart:io';
 
-import '../../data/data_manager.dart';
 import '../../data/iraq_provinces.dart';
-import '../../utils/string_extensions.dart';
 import '../../services/prayer_times_service.dart';
-import '../../services/quran_service.dart';
-import '../../services/favorites_service.dart';
-import '../../models/favorite_item.dart';
-import '../../sections/html_content_renderer.dart';
-import '../../ui/calendar/hijri_calendar_screen.dart';
-import '../../ui/qibla/qibla_screen.dart';
-import '../../presentation/screens/istikhara_screen.dart';
-import '../../main.dart'; // For AlDhakereenApp globals
-
+import '../../services/prayer_alarm_service.dart';
+import '../../models/prayer_location.dart';
+import '../../models/prayer_schedule.dart';
 
 class PrayerTimesSection extends StatefulWidget {
   const PrayerTimesSection({super.key});
@@ -37,7 +18,8 @@ class PrayerTimesSection extends StatefulWidget {
 
 class _PrayerTimesSectionState extends State<PrayerTimesSection> {
   Map<String, DateTime>? _prayerTimes;
-  Position? _currentPosition;
+  PrayerSchedule? _prayerSchedule;
+  PrayerLocation? _prayerLocation;
   bool _loading = true;
   final PrayerTimesService _prayerService = PrayerTimesService();
   final Map<String, bool> _enabledPrayers = {
@@ -57,6 +39,8 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
   bool _ignoreBatteryOptimizations = false;
   double _adhanVolume = 1.0;
   int _adhanPreAlert = 0;
+  bool? _exactAlarmAvailable;
+  bool? _fullScreenAvailable;
 
   final Map<String, int> _manualAdjustments = {
     'fajr': 0,
@@ -70,12 +54,30 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
   @override
   void initState() {
     super.initState();
-    _loadSettings();
-    _getLocationAndPrayers();
+    _initializePrayerTimes();
+  }
+
+  Future<void> _initializePrayerTimes() async {
+    await _loadSettings();
+    if (!mounted) return;
+    await _refreshPermissionStates();
+    if (!mounted) return;
+    await _refreshPrayerTimes();
+  }
+
+  Future<void> _refreshPermissionStates() async {
+    final exact = await PrayerAlarmService.checkExactAlarmPermission();
+    final fullScreen = await PrayerAlarmService.checkFullScreenPermission();
+    if (!mounted) return;
+    setState(() {
+      _exactAlarmAvailable = exact;
+      _fullScreenAvailable = fullScreen;
+    });
   }
 
   Future<void> _loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
     setState(() {
       _enabledPrayers['fajr'] = prefs.getBool('adhan_fajr') ?? true;
       _enabledPrayers['dhuhr'] = prefs.getBool('adhan_dhuhr') ?? true;
@@ -99,120 +101,81 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
       _manualAdjustments['isha'] = prefs.getInt('adj_isha') ?? 0;
       _selectedProvince = prefs.getString('prayer_city') ?? "بغداد";
 
-      final lat = prefs.getDouble('gps_lat');
-      final lon = prefs.getDouble('gps_lon');
-      if (lat != null &&
-          lon != null &&
-          _selectedProvince == "الموقع الحالي (GPS)") {
-        _currentPosition = Position(
-          latitude: lat,
-          longitude: lon,
-          timestamp: DateTime.now(),
-          accuracy: 0,
-          altitude: 0,
-          heading: 0,
-          speed: 0,
-          speedAccuracy: 0,
-          altitudeAccuracy: 0,
-          headingAccuracy: 0,
-        );
-      }
+      // The canonical location record is resolved by PrayerTimesService after
+      // all settings have loaded. No separate GPS cache is read here.
     });
   }
 
-  Future<void> _getLocationAndPrayers() async {
+  Future<void> _refreshPrayerTimes() async {
+    if (mounted) setState(() => _loading = true);
     try {
-      Position pos;
-      if (_currentPosition != null) {
-        pos = _currentPosition!;
-      } else {
-        final coords = iraqProvinces[_selectedProvince]!;
-        pos = Position(
-          latitude: coords[0],
-          longitude: coords[1],
-          timestamp: DateTime.now(),
-          accuracy: 0,
-          altitude: 0,
-          heading: 0,
-          speed: 0,
-          speedAccuracy: 0,
-          altitudeAccuracy: 0,
-          headingAccuracy: 0,
-        );
+      final schedule = await _prayerService.loadTodaySchedule();
+      if (schedule == null) {
+        if (mounted) setState(() => _loading = false);
+        return;
       }
-      final pt = _prayerService.calculatePrayerTimes(pos);
-      final db = DataManager.getDB();
-      final todayStr = intl.DateFormat('yyyy-MM-dd').format(DateTime.now());
-      if (db != null &&
-          db['settings'] != null &&
-          db['settings']['adhan'] != null &&
-          db['settings']['adhan']['manual_schedules'] != null) {
-        final list = db['settings']['adhan']['manual_schedules'] as List;
-        final manual = list.firstWhere(
-          (s) => s['date'] == todayStr,
-          orElse: () => null,
-        );
-        if (manual != null) {
-          pt['fajr'] = _applyManualTime(pt['fajr']!, manual['fajr']);
-          pt['dhuhr'] = _applyManualTime(pt['dhuhr']!, manual['dhuhr']);
-          pt['asr'] = _applyManualTime(pt['asr']!, manual['asr']);
-          pt['maghrib'] = _applyManualTime(pt['maghrib']!, manual['maghrib']);
-          pt['isha'] = _applyManualTime(pt['isha']!, manual['isha']);
-        }
-      }
+      if (!mounted) return;
       setState(() {
-        _prayerTimes = pt;
+        _prayerLocation = schedule.location;
+        _prayerSchedule = schedule;
+        _prayerTimes = schedule.availableUtcTimes;
         _loading = false;
       });
+
       await _prayerService.scheduleAdhanNotifications(
-        pos,
+        schedule.location,
         _enabledPrayers,
         _manualAdjustments,
       );
-    } catch (e) {
-      debugPrint("Prayer times error: $e");
-      setState(() => _loading = false);
-    }
-  }
-
-  DateTime _applyManualTime(DateTime calc, String? man) {
-    if (man == null || !man.contains(':')) return calc;
-    try {
-      final parts = man.split(':');
-      final dt = DateTime(
-        calc.year,
-        calc.month,
-        calc.day,
-        int.parse(parts[0]),
-        int.parse(parts[1]),
-      );
-      return calc.isUtc ? dt.toUtc() : dt;
-    } catch (e) {
-      return calc;
+    } catch (error, stackTrace) {
+      debugPrint('Prayer times error: $error\n$stackTrace');
+      if (mounted) setState(() => _loading = false);
     }
   }
 
   Future<void> _useGPS() async {
-    setState(() => _loading = true);
-    final pos = await _prayerService.getCurrentLocation();
-    if (pos != null) {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setDouble('gps_lat', pos.latitude);
-      await prefs.setDouble('gps_lon', pos.longitude);
-      await prefs.setString('prayer_city', "الموقع الحالي (GPS)");
-      if (!mounted) return;
-      setState(() {
-        _currentPosition = pos;
-        _selectedProvince = "الموقع الحالي (GPS)";
-      });
-      _getLocationAndPrayers();
-    } else {
+    if (mounted) setState(() => _loading = true);
+    final location = await _prayerService.resolveLocation(
+      selectedCity: PrayerTimesService.gpsLocationName,
+      refreshGps: true,
+    );
+    if (location == null) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('الرجاء منح صلاحية الوصول للموقع')),
+        const SnackBar(
+            content: Text('تعذر تحديد الموقع الحالي. تحقق من GPS والصلاحية.')),
       );
       setState(() => _loading = false);
+      return;
     }
+
+    if (!mounted) return;
+    setState(() {
+      _prayerLocation = location;
+      _selectedProvince = PrayerTimesService.gpsLocationName;
+    });
+    await _refreshPrayerTimes();
+    if (!mounted) return;
+    if (!location.isGps) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content:
+                Text('تعذر تحديث GPS؛ تم استخدام ${location.displayName}.')),
+      );
+    }
+  }
+
+  Future<PrayerLocation?> _resolveLocationForAction() async {
+    final location = await _prayerService.resolveLocation(
+      selectedCity: _selectedProvince,
+      refreshGps: false,
+    );
+    if (location != null && mounted) {
+      setState(() {
+        _prayerLocation = location;
+      });
+    }
+    return location;
   }
 
   @override
@@ -259,17 +222,12 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
                         if (v != null) {
                           final prefs = await SharedPreferences.getInstance();
                           await prefs.setString('prayer_city', v);
-                          if (v != "الموقع الحالي (GPS)") {
-                            await prefs.remove('gps_lat');
-                            await prefs.remove('gps_lon');
-                          }
                           setState(() {
                             _selectedProvince = v;
-                            if (v != "الموقع الحالي (GPS)")
-                              _currentPosition = null;
+                            _prayerLocation = null;
                             _loading = true;
                           });
-                          _getLocationAndPrayers();
+                          await _refreshPrayerTimes();
                         }
                       },
                       items: [
@@ -285,25 +243,35 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
                     ),
                   ],
                 ),
+                if (_prayerLocation != null)
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: Text(
+                      'مصدر الحساب: ${_prayerLocation!.displayName}',
+                      style: const TextStyle(fontSize: 12, color: Colors.grey),
+                    ),
+                  ),
                 const Divider(),
                 TextButton.icon(
                   onPressed: _useGPS,
                   icon: const Icon(Icons.my_location),
                   label: Text(
-                    _currentPosition == null
+                    _prayerLocation == null
                         ? 'استخدام الموقع الحالي (GPS)'
-                        : 'موقعك محدد حالياً عبر GPS',
+                        : _prayerLocation!.isGps
+                            ? 'GPS حي (${_prayerLocation!.accuracyMeters!.round()}م)'
+                            : 'استخدام ${_prayerLocation!.displayName}',
                   ),
                 ),
               ],
             ),
           ),
           const SizedBox(height: 20),
-          _buildPrayerCard('الفجر', _prayerTimes?['fajr'], 'fajr'),
-          _buildPrayerCard('الظهر', _prayerTimes?['dhuhr'], 'dhuhr'),
-          _buildPrayerCard('العصر', _prayerTimes?['asr'], 'asr'),
-          _buildPrayerCard('المغرب', _prayerTimes?['maghrib'], 'maghrib'),
-          _buildPrayerCard('العشاء', _prayerTimes?['isha'], 'isha'),
+          _buildPrayerCard('الفجر', _prayerSchedule?['fajr'], 'fajr'),
+          _buildPrayerCard('الظهر', _prayerSchedule?['dhuhr'], 'dhuhr'),
+          _buildPrayerCard('العصر', _prayerSchedule?['asr'], 'asr'),
+          _buildPrayerCard('المغرب', _prayerSchedule?['maghrib'], 'maghrib'),
+          _buildPrayerCard('العشاء', _prayerSchedule?['isha'], 'isha'),
           const SizedBox(height: 30),
           const Divider(),
           const Text(
@@ -332,25 +300,11 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
                       final prefs = await SharedPreferences.getInstance();
                       await prefs.setBool('adhan_$k', v);
 
-                      Position pos;
-                      if (_currentPosition != null) {
-                        pos = _currentPosition!;
-                      } else {
-                        final coords = iraqProvinces[_selectedProvince]!;
-                        pos = Position(
-                          latitude: coords[0],
-                          longitude: coords[1],
-                          timestamp: DateTime.now(),
-                          accuracy: 0,
-                          altitude: 0,
-                          heading: 0,
-                          speed: 0,
-                          speedAccuracy: 0,
-                          altitudeAccuracy: 0,
-                          headingAccuracy: 0,
-                        );
+                      final location = await _resolveLocationForAction();
+                      if (location != null) {
+                        await _prayerService.rescheduleSinglePrayerForLocation(
+                            k, location);
                       }
-                      await _prayerService.rescheduleSinglePrayer(k, pos);
                     },
                   ),
                   Padding(
@@ -366,25 +320,13 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
                                   await SharedPreferences.getInstance();
                               await prefs.setBool('fullscreen_$k', false);
 
-                              Position pos;
-                              if (_currentPosition != null) {
-                                pos = _currentPosition!;
-                              } else {
-                                final coords = iraqProvinces[_selectedProvince]!;
-                                pos = Position(
-                                  latitude: coords[0],
-                                  longitude: coords[1],
-                                  timestamp: DateTime.now(),
-                                  accuracy: 0,
-                                  altitude: 0,
-                                  heading: 0,
-                                  speed: 0,
-                                  speedAccuracy: 0,
-                                  altitudeAccuracy: 0,
-                                  headingAccuracy: 0,
-                                );
+                              final location =
+                                  await _resolveLocationForAction();
+                              if (location != null) {
+                                await _prayerService
+                                    .rescheduleSinglePrayerForLocation(
+                                        k, location);
                               }
-                              await _prayerService.rescheduleSinglePrayer(k, pos);
                             },
                             child: Card(
                               color: (_fullScreenPrayers[k] ?? false)
@@ -430,25 +372,13 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
                                   await SharedPreferences.getInstance();
                               await prefs.setBool('fullscreen_$k', true);
 
-                              Position pos;
-                              if (_currentPosition != null) {
-                                pos = _currentPosition!;
-                              } else {
-                                final coords = iraqProvinces[_selectedProvince]!;
-                                pos = Position(
-                                  latitude: coords[0],
-                                  longitude: coords[1],
-                                  timestamp: DateTime.now(),
-                                  accuracy: 0,
-                                  altitude: 0,
-                                  heading: 0,
-                                  speed: 0,
-                                  speedAccuracy: 0,
-                                  altitudeAccuracy: 0,
-                                  headingAccuracy: 0,
-                                );
+                              final location =
+                                  await _resolveLocationForAction();
+                              if (location != null) {
+                                await _prayerService
+                                    .rescheduleSinglePrayerForLocation(
+                                        k, location);
                               }
-                              await _prayerService.rescheduleSinglePrayer(k, pos);
                             },
                             child: Card(
                               color: (_fullScreenPrayers[k] ?? false)
@@ -530,9 +460,50 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
                           setState(() => _adhanPreAlert = v);
                           final prefs = await SharedPreferences.getInstance();
                           await prefs.setInt('adhan_pre_alert', v);
-                          _getLocationAndPrayers(); // Reschedule with pre alerts
+                          await _refreshPrayerTimes(); // Reschedule with pre alerts
                         }
                       },
+                    ),
+                  ),
+                  const Divider(),
+                  ListTile(
+                    title: const Text('المنبه الدقيق',
+                        style: TextStyle(
+                            fontSize: 14, fontWeight: FontWeight.bold)),
+                    subtitle: Text(
+                      _exactAlarmAvailable == true
+                          ? 'مفعّل: يمكن تشغيل الأذان في الموعد بدقة أعلى'
+                          : 'غير مفعّل: قد يتأخر التنبيه بسبب قيود النظام',
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                    trailing: _exactAlarmAvailable == true
+                        ? const Icon(Icons.check_circle, color: Colors.green)
+                        : TextButton(
+                            onPressed: () async {
+                              await PrayerAlarmService.openExactAlarmSettings();
+                              await _refreshPermissionStates();
+                              await _refreshPrayerTimes();
+                            },
+                            child: const Text('تفعيل'),
+                          ),
+                  ),
+                  ListTile(
+                    title: const Text('الشاشة الكاملة',
+                        style: TextStyle(
+                            fontSize: 14, fontWeight: FontWeight.bold)),
+                    subtitle: Text(
+                      _fullScreenAvailable == true
+                          ? 'مسموح به من النظام'
+                          : 'قد يظهر التنبيه كرأس إشعار بدل فتح الشاشة',
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                    trailing: Icon(
+                      _fullScreenAvailable == true
+                          ? Icons.check_circle
+                          : Icons.info_outline,
+                      color: _fullScreenAvailable == true
+                          ? Colors.green
+                          : Colors.orange,
                     ),
                   ),
                   const Divider(),
@@ -577,12 +548,10 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
     );
   }
 
-  Widget _buildPrayerCard(String label, DateTime? utcTime, String key) {
-    if (utcTime == null) return const SizedBox();
-    final localTime = utcTime.toLocal();
-    final adjTime = localTime.add(
-      Duration(minutes: _manualAdjustments[key] ?? 0),
-    );
+  Widget _buildPrayerCard(String label, PrayerTimeValue? prayer, String key) {
+    final localTime = prayer?.localCivilTime;
+    if (localTime == null) return const SizedBox();
+    final adjTime = localTime;
     return Card(
       margin: const EdgeInsets.only(bottom: 15),
       elevation: 4,
@@ -621,7 +590,7 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
             initialTime: TimeOfDay.fromDateTime(adjTime),
           );
           if (picked != null) {
-            final pickedDateTimeLocal = DateTime(
+            final pickedDateTimeLocal = DateTime.utc(
               localTime.year,
               localTime.month,
               localTime.day,
@@ -634,32 +603,13 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
             final validatedDiff =
                 _prayerService.validateOffset(key, diff, _prayerTimes!);
 
+            if (!mounted) return;
             setState(() {
               _manualAdjustments[key] = validatedDiff;
             });
             final prefs = await SharedPreferences.getInstance();
             await prefs.setInt('adj_$key', validatedDiff);
-
-            // إعادة جدولة ذكية لهذه الصلاة فقط لتقليل الاستهلاك
-            Position pos;
-            if (_currentPosition != null) {
-              pos = _currentPosition!;
-            } else {
-              final coords = iraqProvinces[_selectedProvince]!;
-              pos = Position(
-                latitude: coords[0],
-                longitude: coords[1],
-                timestamp: DateTime.now(),
-                accuracy: 0,
-                altitude: 0,
-                heading: 0,
-                speed: 0,
-                speedAccuracy: 0,
-                altitudeAccuracy: 0,
-                headingAccuracy: 0,
-              );
-            }
-            await _prayerService.rescheduleSinglePrayer(key, pos);
+            await _refreshPrayerTimes();
 
             if (validatedDiff != diff) {
               if (!mounted) return;

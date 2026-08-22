@@ -1,99 +1,110 @@
-import 'package:flutter_test/flutter_test.dart';
-import 'package:geolocator/geolocator.dart';
+import 'package:aldhakereen/models/prayer_location.dart';
 import 'package:aldhakereen/services/prayer_times_service.dart';
+import 'package:aldhakereen/utils/pray_times.dart';
+import 'package:aldhakereen/utils/prayer_time_zone.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
-  group('PrayerTimesService - calculatePrayerTimes', () {
-    late PrayerTimesService service;
+  TestWidgetsFlutterBinding.ensureInitialized();
 
+  group('PrayerTimesService location source', () {
     setUp(() {
-      TestWidgetsFlutterBinding.ensureInitialized();
-      service = PrayerTimesService();
+      SharedPreferences.setMockInitialValues({});
     });
 
-    // Helper function to create a dummy Position
-    Position createDummyPosition(double latitude, double longitude) {
-      return Position(
-        latitude: latitude,
-        longitude: longitude,
-        timestamp: DateTime.now(),
-        accuracy: 100.0,
-        altitude: 0.0,
-        heading: 0.0,
-        speed: 0.0,
-        speedAccuracy: 0.0,
-        altitudeAccuracy: 0.0,
-        headingAccuracy: 0.0,
+    test('selected city is stable and does not depend on device timezone',
+        () async {
+      final service = PrayerTimesService();
+      final location = await service.resolveLocation(
+          selectedCity: 'بغداد', refreshGps: false);
+
+      expect(location, isNotNull);
+      expect(location!.source, PrayerLocationSource.selectedCity);
+      expect(location.latitude, closeTo(33.3128, 0.0001));
+      expect(
+          location.timeZoneOffsetHours, PrayerTimeZonePolicy.iraqOffsetHours);
+    });
+
+    test('GPS failure is explicit and never mislabeled as live GPS', () async {
+      final service = PrayerTimesService();
+      final location = await service.resolveLocation(
+        selectedCity: PrayerTimesService.gpsLocationName,
+        refreshGps: true,
       );
-    }
+
+      expect(location, isNotNull);
+      expect(location!.source, isNot(PrayerLocationSource.gps));
+      expect(location.displayName, isNot('الموقع الحالي عبر GPS'));
+    });
+  });
+
+  group('PrayerTimesService and PrayTimes', () {
+    test('returns finite prayer times and uses explicit Iraq timezone', () {
+      final service = PrayerTimesService();
+      final position = const PrayerLocation(
+        latitude: 33.3128,
+        longitude: 44.3615,
+        source: PrayerLocationSource.selectedCity,
+        displayName: 'بغداد',
+        timeZoneOffsetHours: 3,
+      ).toPosition();
+      final date = DateTime.utc(2026, 8, 22);
+      final times = service.calculatePrayerTimes(
+        position,
+        date: date,
+        timeZoneOffsetHours: 3,
+      );
+
+      expect(times, containsPair('fajr', isA<DateTime>()));
+      expect(times, containsPair('dhuhr', isA<DateTime>()));
+      expect(times, containsPair('midnight', isA<DateTime>()));
+      expect(times.values.every((value) => value.isUtc), isTrue);
+    });
+
+    test('Jafari midnight is halfway between sunset and next-day Fajr', () {
+      final engine = PrayTimes(PrayerCalculationParameters.jafari);
+      final date = DateTime.utc(2026, 8, 22);
+      final current = engine.getTimesAsHours(
+        date,
+        33.3128,
+        44.3615,
+        3,
+      );
+      final next = engine.getTimesAsHours(
+        date.add(const Duration(days: 1)),
+        33.3128,
+        44.3615,
+        3,
+      );
+      final expected =
+          current['sunset']! + ((next['fajr']! + 24) - current['sunset']!) / 2;
+
+      expect(current['midnight'], closeTo(expected, 0.02));
+      expect(current['midnight']!.isFinite, isTrue);
+    });
 
     test(
-      'should return correct map of prayer times for a given position and date',
-      () {
-        // Mecca coordinates
-        final position = createDummyPosition(21.4225, 39.8262);
-        final date = DateTime(2023, 10, 15);
+        'invalid high-latitude values are omitted rather than converted to 00:00',
+        () {
+      final service = PrayerTimesService();
+      final position = const PrayerLocation(
+        latitude: 69.6492,
+        longitude: 18.9553,
+        source: PrayerLocationSource.selectedCity,
+        displayName: 'Tromsø',
+        timeZoneOffsetHours: 2,
+      ).toPosition();
+      final times = service.calculatePrayerTimes(
+        position,
+        date: DateTime.utc(2026, 6, 21),
+        timeZoneOffsetHours: 2,
+      );
 
-        final times = service.calculatePrayerTimes(position, date: date);
-
-        expect(times, containsPair('fajr', isA<DateTime>()));
-        expect(times, containsPair('sunrise', isA<DateTime>()));
-        expect(times, containsPair('dhuhr', isA<DateTime>()));
-        expect(times, containsPair('asr', isA<DateTime>()));
-        expect(times, containsPair('maghrib', isA<DateTime>()));
-        expect(times, containsPair('isha', isA<DateTime>()));
-        expect(times, containsPair('midnight', isA<DateTime>()));
-
-        // Check if dates are matching the requested date
-        expect(times['dhuhr']!.year, 2023);
-        expect(times['dhuhr']!.month, 10);
-        expect(times['dhuhr']!.day, 15);
-      },
-    );
-
-    test(
-      'should return prayer times even if date is not provided (defaults to now)',
-      () {
-        final position = createDummyPosition(21.4225, 39.8262);
-
-        final times = service.calculatePrayerTimes(position);
-
-        final now = DateTime.now();
-        expect(times['dhuhr']!.year, now.year);
-        expect(times['dhuhr']!.month, now.month);
-        expect(times['dhuhr']!.day, now.day);
-      },
-    );
-
-    test(
-      'should correctly calculate midnight as halfway between sunset and actual next day fajr based on service logic',
-      () {
-        final position = createDummyPosition(33.3152, 44.3661); // Baghdad
-        // Create date as UTC to avoid local timezone differences causing the test to run differently on different machines
-        final date = DateTime.utc(2023, 1, 1);
-
-        final times = service.calculatePrayerTimes(position, date: date);
-
-        final midnight = times['midnight']!;
-
-        // Assert midnight is calculated and exists
-        expect(midnight, isA<DateTime>());
-      },
-    );
-
-    test('should handle extreme latitudes gracefully', () {
-      // Tromso, Norway - above Arctic circle
-      final position = createDummyPosition(69.6492, 18.9553);
-      final date = DateTime(2023, 6, 21); // Summer solstice
-
-      final times = service.calculatePrayerTimes(position, date: date);
-
-      expect(times.containsKey('fajr'), isTrue);
-      expect(times.containsKey('dhuhr'), isTrue);
-      expect(times.containsKey('maghrib'), isTrue);
-
-      expect(times['fajr'], isA<DateTime>());
-      expect(times['maghrib'], isA<DateTime>());
+      expect(times.values.every((value) => value.isUtc), isTrue);
+      expect(
+          times.values.every((value) => value.hour != 0 || value.minute != 0),
+          isTrue);
     });
   });
 }

@@ -6,7 +6,6 @@ import 'dart:io';
 
 import '../services/favorites_service.dart';
 import '../models/favorite_item.dart';
-import '../main.dart' show ReaderPage;
 
 class FavoritesSection extends StatefulWidget {
   final double fontSizeFactor;
@@ -23,7 +22,6 @@ class FavoritesSection extends StatefulWidget {
 }
 
 class _FavoritesSectionState extends State<FavoritesSection> {
-  
   // -----------------------------------------------------------------
   // التصدير صار ذكي وسطر واحد بس يستدعي السيرفس (بدون دوخة الصلاحيات)
   // -----------------------------------------------------------------
@@ -42,7 +40,8 @@ class _FavoritesSectionState extends State<FavoritesSection> {
         final file = File(result.files.single.path!);
         final jsonString = await file.readAsString(encoding: utf8);
 
-        final success = await FavoritesService.instance.importFavorites(jsonString);
+        final success =
+            await FavoritesService.instance.importFavorites(jsonString);
 
         if (mounted) {
           if (success) {
@@ -66,8 +65,10 @@ class _FavoritesSectionState extends State<FavoritesSection> {
   }
 
   void _showAddNoteSheet([FavoriteItem? existingNote]) {
-    final titleController = TextEditingController(text: existingNote?.title ?? '');
-    final contentController = TextEditingController(text: existingNote?.content ?? '');
+    final titleController =
+        TextEditingController(text: existingNote?.title ?? '');
+    final contentController =
+        TextEditingController(text: existingNote?.content ?? '');
 
     showModalBottomSheet(
       context: context,
@@ -85,7 +86,8 @@ class _FavoritesSectionState extends State<FavoritesSection> {
             children: [
               Text(
                 existingNote == null ? 'إضافة ملاحظة جديدة' : 'تعديل الملاحظة',
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                style:
+                    const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 16),
               TextField(
@@ -113,8 +115,8 @@ class _FavoritesSectionState extends State<FavoritesSection> {
                     if (existingNote == null) {
                       FavoritesService.instance.addCustomNote(title, content);
                     } else {
-                      FavoritesService.instance.updateCustomNote(
-                          existingNote.id, title, content);
+                      FavoritesService.instance
+                          .updateCustomNote(existingNote.id, title, content);
                     }
                     Navigator.pop(context);
                   }
@@ -180,7 +182,9 @@ class _FavoritesSectionState extends State<FavoritesSection> {
         return Container(
           margin: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
           decoration: BoxDecoration(
-            color: Theme.of(context).cardColor.withValues(alpha: widget.uiOpacity * 0.8),
+            color: Theme.of(context)
+                .cardColor
+                .withValues(alpha: widget.uiOpacity * 0.8),
             borderRadius: BorderRadius.circular(15),
             border: Border.all(
               color: Theme.of(context).colorScheme.primary,
@@ -231,7 +235,9 @@ class _FavoritesSectionState extends State<FavoritesSection> {
         return Container(
           margin: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
           decoration: BoxDecoration(
-            color: Theme.of(context).cardColor.withValues(alpha: widget.uiOpacity * 0.8),
+            color: Theme.of(context)
+                .cardColor
+                .withValues(alpha: widget.uiOpacity * 0.8),
             borderRadius: BorderRadius.circular(15),
             border: Border.all(
               color: Theme.of(context).colorScheme.primary,
@@ -303,7 +309,8 @@ class _FavoritesSectionState extends State<FavoritesSection> {
         body: ValueListenableBuilder<List<FavoriteItem>>(
           valueListenable: FavoritesService.instance.favoritesNotifier,
           builder: (context, favorites, _) {
-            final referential = favorites.where((item) => !item.isCustom).toList();
+            final referential =
+                favorites.where((item) => !item.isCustom).toList();
             final custom = favorites.where((item) => item.isCustom).toList();
 
             return TabBarView(

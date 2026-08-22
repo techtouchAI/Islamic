@@ -1,28 +1,18 @@
 import 'package:flutter/material.dart';
 
-
 import 'package:intl/intl.dart' as intl;
 
 import 'dart:async';
 import 'dart:ui';
 import 'dart:math';
 
-
-
-import 'package:geolocator/geolocator.dart';
-
-
-
-
 import '../../data/data_manager.dart';
 import '../../data/daily_duas.dart';
 import '../../utils/string_extensions.dart';
 import '../../services/prayer_times_service.dart';
+import '../../models/prayer_schedule.dart';
 import '../../services/quran_service.dart';
 import '../../data/repositories/calendar_repository.dart';
-
-
-
 
 import '../reader/reader_page.dart';
 
@@ -31,7 +21,6 @@ import 'package:provider/provider.dart';
 import '../../providers/settings_provider.dart';
 import '../widgets/app_standard_card.dart';
 import '../../theme/app_card_theme.dart';
-
 
 class HomeSection extends StatefulWidget {
   final VoidCallback? onPrayerCardTap;
@@ -46,19 +35,30 @@ class HomeSection extends StatefulWidget {
 
 class _HomeSectionState extends State<HomeSection> {
   String getExactWatermark(String tag) {
-    if (tag.contains('إلهام')) return 'assets/images/Mscreen/إلهام اليوم.png';
-    if (tag.contains('دعاء اليوم'))
+    if (tag.contains('إلهام')) {
+      return 'assets/images/Mscreen/إلهام اليوم.png';
+    }
+    if (tag.contains('دعاء اليوم')) {
       return 'assets/images/Mscreen/دعاء اليوم 2.png';
-    if (tag.contains('قرآن') || tag.contains('قرأن'))
+    }
+    if (tag.contains('قرآن') || tag.contains('قرأن')) {
       return 'assets/images/Mscreen/القرأن الكريم.png';
-    if (tag.contains('زيار')) return 'assets/images/Mscreen/الزيارات.png';
-    if (tag.contains('سجادي') || tag.contains('صحيفة'))
+    }
+    if (tag.contains('زيار')) {
+      return 'assets/images/Mscreen/الزيارات.png';
+    }
+    if (tag.contains('سجادي') || tag.contains('صحيفة')) {
       return 'assets/images/Mscreen/الصحيفة السجادية.png';
-    if (tag.contains('حج')) return 'assets/images/Mscreen/بطاقة الحج.png';
-    if (tag.contains('احلام') || tag.contains('أحلام'))
+    }
+    if (tag.contains('حج')) {
+      return 'assets/images/Mscreen/بطاقة الحج.png';
+    }
+    if (tag.contains('احلام') || tag.contains('أحلام')) {
       return 'assets/images/Mscreen/تفسير الاحلام.png';
-    if (tag.contains('علي') || tag.contains('موسوعة'))
+    }
+    if (tag.contains('علي') || tag.contains('موسوعة')) {
       return 'assets/images/Mscreen/موسوعة الامام علي.png';
+    }
     return 'assets/images/Mscreen/جميع البطاقات التي ليس لها بطاقة.png';
   }
 
@@ -69,8 +69,9 @@ class _HomeSectionState extends State<HomeSection> {
   Map<String, dynamic> items = {};
   Map<String, dynamic>? _inspirationDua;
   Map<String, dynamic>? _dayDua;
-  Map<String, DateTime>? _prayerTimes;
-  final ValueNotifier<String> _currentPrayerNotifier = ValueNotifier<String>("");
+  PrayerSchedule? _prayerSchedule;
+  final ValueNotifier<String> _currentPrayerNotifier =
+      ValueNotifier<String>("");
   Timer? _prayerTimer;
 
   @override
@@ -95,38 +96,24 @@ class _HomeSectionState extends State<HomeSection> {
   }
 
   Future<void> _initPrayerTimes() async {
-    final service = PrayerTimesService();
-    final pos = await service.getCurrentLocation();
-    if (pos != null) {
-      _prayerTimes = service.calculatePrayerTimes(pos);
-    } else {
-      // Fallback to Baghdad if location is null
-      final fallbackPos = Position(
-        latitude: 33.3128,
-        longitude: 44.3615,
-        timestamp: DateTime.now(),
-        accuracy: 0,
-        altitude: 0,
-        heading: 0,
-        speed: 0,
-        speedAccuracy: 0,
-        altitudeAccuracy: 0,
-        headingAccuracy: 0,
-      );
-      _prayerTimes = service.calculatePrayerTimes(fallbackPos);
-    }
+    final schedule = await PrayerTimesService().loadTodaySchedule();
+    if (!mounted || schedule == null) return;
+    setState(() {
+      _prayerSchedule = schedule;
+    });
     _updateCurrentPrayer();
   }
 
   void _updateCurrentPrayer() {
-    if (_prayerTimes == null) return;
-    final now = DateTime.now();
-    String next = "الفجر";
-    final sorted = _prayerTimes!.entries.toList()
+    final schedule = _prayerSchedule;
+    if (schedule == null) return;
+    final now = schedule.nowAsLocalCivil();
+    String next = 'الفجر';
+    final sorted = schedule.availableLocalCivilTimes.entries.toList()
       ..sort((a, b) => a.value.compareTo(b.value));
-    for (var e in sorted) {
-      if (now.isBefore(e.value)) {
-        next = _getArName(e.key);
+    for (final entry in sorted) {
+      if (now.isBefore(entry.value)) {
+        next = _getArName(entry.key);
         break;
       }
     }
@@ -151,7 +138,9 @@ class _HomeSectionState extends State<HomeSection> {
     final sections = DataManager.getSections();
     items = {};
     sections.forEach((key, value) {
-      if (key == 'mafatih' || key == 'Mafatih_alJinan') return; // Hide Mafatih from Home Screen
+      if (key == 'mafatih' || key == 'Mafatih_alJinan') {
+        return; // Hide Mafatih from Home Screen
+      }
       if (settingsProvider.homeVisibility[key] ?? true) {
         String fetchKey = key;
         if (key == 'visits') fetchKey = 'visits_general';
@@ -244,7 +233,8 @@ class _HomeSectionState extends State<HomeSection> {
     return list[r.nextInt(list.length)];
   }
 
-  Widget _buildSpecialCard(SettingsProvider settingsProvider,
+  Widget _buildSpecialCard(
+    SettingsProvider settingsProvider,
     BuildContext context,
     String tag,
     Map<String, dynamic> data,
@@ -400,13 +390,13 @@ class _HomeSectionState extends State<HomeSection> {
   Widget build(BuildContext context) {
     final settingsProvider = context.watch<SettingsProvider>();
     _loadDailyDua();
-    final nowTime = DateTime.now();
+    final nowTime = _prayerSchedule?.nowAsLocalCivil() ??
+        DateTime.utc(
+            DateTime.now().year, DateTime.now().month, DateTime.now().day);
     bool isDayTime = false;
-    if (_prayerTimes != null &&
-        _prayerTimes!.containsKey('sunrise') &&
-        _prayerTimes!.containsKey('maghrib')) {
-      final sunrise = _prayerTimes!['sunrise']!;
-      final maghrib = _prayerTimes!['maghrib']!;
+    final sunrise = _prayerSchedule?['sunrise']?.localCivilTime;
+    final maghrib = _prayerSchedule?['maghrib']?.localCivilTime;
+    if (sunrise != null && maghrib != null) {
       isDayTime = nowTime.isAfter(sunrise) && nowTime.isBefore(maghrib);
     } else {
       isDayTime = nowTime.hour >= 6 && nowTime.hour < 18;
@@ -462,8 +452,10 @@ class _HomeSectionState extends State<HomeSection> {
                     elevation: 10,
                     clipBehavior: Clip.antiAlias,
                     color: Theme.of(context).brightness == Brightness.dark
-                        ? Colors.white.withValues(alpha: settingsProvider.uiOpacity)
-                        : Colors.black.withValues(alpha: settingsProvider.uiOpacity),
+                        ? Colors.white
+                            .withValues(alpha: settingsProvider.uiOpacity)
+                        : Colors.black
+                            .withValues(alpha: settingsProvider.uiOpacity),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(25),
                       side: BorderSide(
@@ -499,7 +491,9 @@ class _HomeSectionState extends State<HomeSection> {
                               ValueListenableBuilder<String>(
                                 valueListenable: _currentPrayerNotifier,
                                 builder: (context, currentPrayerName, child) {
-                                  if (currentPrayerName.isEmpty) return const SizedBox.shrink();
+                                  if (currentPrayerName.isEmpty) {
+                                    return const SizedBox.shrink();
+                                  }
                                   return Column(
                                     children: [
                                       Container(
@@ -510,13 +504,19 @@ class _HomeSectionState extends State<HomeSection> {
                                         decoration: BoxDecoration(
                                           color: Theme.of(
                                             context,
-                                          ).colorScheme.primary.withValues(alpha: 0.2),
-                                          borderRadius: BorderRadius.circular(10),
+                                          )
+                                              .colorScheme
+                                              .primary
+                                              .withValues(alpha: 0.2),
+                                          borderRadius:
+                                              BorderRadius.circular(10),
                                         ),
                                         child: Text(
                                           "الصلاة القادمة: $currentPrayerName",
                                           style: TextStyle(
-                                            color: Theme.of(context).colorScheme.primary,
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .primary,
                                             fontWeight: FontWeight.bold,
                                             fontSize: 12,
                                           ),
@@ -561,7 +561,8 @@ class _HomeSectionState extends State<HomeSection> {
                   ),
                 ),
                 const SizedBox(height: 20),
-                if (_dayDua != null && (settingsProvider.homeVisibility['day_dua'] ?? true))
+                if (_dayDua != null &&
+                    (settingsProvider.homeVisibility['day_dua'] ?? true))
                   _buildSpecialCard(
                     settingsProvider,
                     context,
@@ -570,7 +571,8 @@ class _HomeSectionState extends State<HomeSection> {
                     textColor,
                     Icons.calendar_today,
                   ),
-                if (_dayDua != null && (settingsProvider.homeVisibility['day_dua'] ?? true))
+                if (_dayDua != null &&
+                    (settingsProvider.homeVisibility['day_dua'] ?? true))
                   const SizedBox(height: 15),
                 if (_inspirationDua != null &&
                     (settingsProvider.homeVisibility['inspiration'] ?? true))

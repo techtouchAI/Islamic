@@ -37,11 +37,24 @@ class MainActivity : FlutterActivity() {
                 "scheduleAdhan" -> {
                     val id = call.argument<Int>("id") ?: 0
                     val timeInMillis = call.argument<Long>("timeInMillis") ?: 0L
+                    val localTimeInMillis = call.argument<Long>("localTimeInMillis") ?: timeInMillis
+                    val timezoneOffsetMinutes = call.argument<Int>("timezoneOffsetMinutes") ?: 0
+                    val timezoneUsesDevice = call.argument<Boolean>("timezoneUsesDevice") ?: false
                     val prayerName = call.argument<String>("prayerName") ?: ""
                     val fullScreen = call.argument<Boolean>("fullScreen") ?: false
                     val volume = call.argument<Double>("volume") ?: 1.0
                     val preAlertMinutes = call.argument<Int>("preAlertMinutes") ?: 0
-                    adhanNativeManager.scheduleAdhan(id, timeInMillis, prayerName, fullScreen, volume, preAlertMinutes)
+                    adhanNativeManager.scheduleAdhan(
+                        id,
+                        timeInMillis,
+                        localTimeInMillis,
+                        timezoneOffsetMinutes,
+                        prayerName,
+                        timezoneUsesDevice,
+                        fullScreen,
+                        volume,
+                        preAlertMinutes,
+                    )
                     result.success(null)
                 }
                 "cancelAdhan" -> {
@@ -49,7 +62,17 @@ class MainActivity : FlutterActivity() {
                     adhanNativeManager.cancelAdhan(id)
                     result.success(null)
                 }
-                                "openNotificationSettings" -> {
+                "checkExactAlarmPermission" -> {
+                    result.success(adhanNativeManager.checkExactAlarmPermission())
+                }
+                "openExactAlarmSettings" -> {
+                    adhanNativeManager.openExactAlarmSettings()
+                    result.success(null)
+                }
+                "checkFullScreenPermission" -> {
+                    result.success(adhanNativeManager.checkFullScreenPermission())
+                }
+                "openNotificationSettings" -> {
                     val intent = Intent().apply {
                         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
                             action = Settings.ACTION_APP_NOTIFICATION_SETTINGS
@@ -95,5 +118,12 @@ class MainActivity : FlutterActivity() {
                 }
             }
         )
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (::adhanNativeManager.isInitialized) {
+            adhanNativeManager.restoreSavedAlarms()
+        }
     }
 }

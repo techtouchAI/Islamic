@@ -1,32 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_linkify/flutter_linkify.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:intl/intl.dart' as intl;
-import 'package:intl/date_symbol_data_local.dart';
 import 'dart:async';
 import 'dart:ui';
-import 'dart:math';
-import 'package:share_plus/share_plus.dart';
 import 'package:flutter/services.dart';
-import 'package:url_launcher/url_launcher.dart';
-import 'package:hijri/hijri_calendar.dart';
-import 'package:geolocator/geolocator.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:image_picker/image_picker.dart';
-import 'dart:io';
 
 import '../../data/data_manager.dart';
 import '../../utils/string_extensions.dart';
-import '../../services/prayer_times_service.dart';
 import '../../services/quran_service.dart';
 import '../../services/favorites_service.dart';
 import '../../models/favorite_item.dart';
-import '../../sections/html_content_renderer.dart';
-import '../../ui/calendar/hijri_calendar_screen.dart';
 import '../reader/reader_page.dart';
-import '../../ui/qibla/qibla_screen.dart';
-import '../../presentation/screens/istikhara_screen.dart';
-import '../../main.dart'; // For AlDhakereenApp globals
 import '../widgets/app_standard_card.dart';
 import '../../theme/app_card_theme.dart';
 
@@ -145,7 +127,8 @@ class _DynamicListSectionState extends State<DynamicListSection> {
                             child: Builder(
                               builder: (context) {
                                 final surahId = surah['id'] as int;
-                                final color = Theme.of(context).brightness == Brightness.dark
+                                final color = Theme.of(context).brightness ==
+                                        Brightness.dark
                                     ? Colors.white
                                     : Colors.black;
                                 // surah['surah_index'] usually contains the correct 1..114 index
@@ -157,7 +140,9 @@ class _DynamicListSectionState extends State<DynamicListSection> {
                                 // Nas: id=116, surah_index=114
                                 // So surah_index perfectly maps to 1..114 matching the images.
                                 int imageId = (surah['surah_index'] as int?) ??
-                                    (surahId >= 110 ? surahId - 2 : (surahId == 108 ? 107 : surahId - 1));
+                                    (surahId >= 110
+                                        ? surahId - 2
+                                        : (surahId == 108 ? 107 : surahId - 1));
                                 return Image.asset(
                                   'assets/images/quran/quran_surah_names_$imageId.png',
                                   height: 50,
@@ -277,7 +262,8 @@ class _DynamicListSectionState extends State<DynamicListSection> {
 
                             String displayTitle;
                             TextStyle titleStyle;
-                            Color dynamicTextColor = Theme.of(context).cardColor.contrastTextColor;
+                            Color dynamicTextColor =
+                                Theme.of(context).cardColor.contrastTextColor;
 
                             if (widget.sectionKey == 'prophets_stories') {
                               String rawTitle = data[index]['title'].toString();
@@ -315,7 +301,8 @@ class _DynamicListSectionState extends State<DynamicListSection> {
                                         cleanSubtitle,
                                         style: TextStyle(
                                           fontSize: 14 * widget.fontSizeFactor,
-                                          color: dynamicTextColor.withValues(alpha: 0.8),
+                                          color: dynamicTextColor.withValues(
+                                              alpha: 0.8),
                                         ),
                                       ),
                                     )
@@ -355,7 +342,9 @@ class _DynamicListSectionState extends State<DynamicListSection> {
                                           : Icons.favorite_border,
                                       color: isFav
                                           ? Colors.red
-                                          : Theme.of(context).cardColor.contrastTextColor,
+                                          : Theme.of(context)
+                                              .cardColor
+                                              .contrastTextColor,
                                     ),
                                     onPressed: () {
                                       final item = FavoriteItem(

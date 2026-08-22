@@ -9,7 +9,6 @@ import '../widgets/search_result_tile.dart';
 import '../widgets/section_header.dart';
 import '../../services/search_engine.dart';
 import '../../services/quran_service.dart';
-import '../../main.dart'; // To access ReaderPage
 
 class SearchScreen extends StatefulWidget {
   final double fontSizeFactor;
@@ -58,7 +57,8 @@ class _SearchScreenState extends State<SearchScreen> {
 
     final docs = SearchEngine.instance.allDocuments;
     return docs.map((doc) {
-      final String mappedSectionId = _mapCategoryToSectionId(doc.category, doc.type);
+      final String mappedSectionId =
+          _mapCategoryToSectionId(doc.category, doc.type);
       return ContentItem(
         id: doc.id,
         title: doc.title,
@@ -101,13 +101,21 @@ class _SearchScreenState extends State<SearchScreen> {
     if (category.startsWith('prophets')) return 'prophets_stories';
 
     // Fallback to Arabic string matching if category comes as raw Arabic
-    if (category.contains('دعاء') || category.contains('أدعية') || category.contains('مناجاة')) return 'dua';
-    if (category.contains('زيارة') || category.contains('زيارات')) return 'ziyarat';
+    if (category.contains('دعاء') ||
+        category.contains('أدعية') ||
+        category.contains('مناجاة')) return 'dua';
+    if (category.contains('زيارة') || category.contains('زيارات'))
+      return 'ziyarat';
     if (category.contains('أعمال') || category.contains('عمل')) return 'amal';
-    if (category.contains('استفتاء') || category.contains('فتاوى')) return 'fatawa';
-    if (category.contains('علي') || category.contains('امام')) return 'imam_ali';
-    if (category.contains('حلم') || category.contains('أحلام') || category.contains('تفسير')) return 'dreams';
-    if (category.contains('أنبياء') || category.contains('نبي')) return 'prophets_stories';
+    if (category.contains('استفتاء') || category.contains('فتاوى'))
+      return 'fatawa';
+    if (category.contains('علي') || category.contains('امام'))
+      return 'imam_ali';
+    if (category.contains('حلم') ||
+        category.contains('أحلام') ||
+        category.contains('تفسير')) return 'dreams';
+    if (category.contains('أنبياء') || category.contains('نبي'))
+      return 'prophets_stories';
 
     return 'amal';
   }
@@ -237,7 +245,7 @@ class _SearchScreenState extends State<SearchScreen> {
     final isAll = snapshot.category == 'all';
 
     if (snapshot.query.isEmpty && items.isEmpty && groups.isEmpty) {
-       return const Center(child: Text('ابدأ البحث الآن...'));
+      return const Center(child: Text('ابدأ البحث الآن...'));
     }
 
     if (items.isEmpty && groups.isEmpty) {
@@ -250,7 +258,8 @@ class _SearchScreenState extends State<SearchScreen> {
         controller: _scrollController,
         padding: const EdgeInsets.only(top: 8, bottom: 16),
         itemCount: _computeGroupedListItemCount(groups),
-        itemBuilder: (context, index) => _buildGroupedItem(context, index, groups, snapshot.query),
+        itemBuilder: (context, index) =>
+            _buildGroupedItem(context, index, groups, snapshot.query),
       );
     }
 
@@ -280,7 +289,8 @@ class _SearchScreenState extends State<SearchScreen> {
     return count;
   }
 
-  Widget _buildGroupedItem(BuildContext context, int index, List<SectionGroup> groups, String query) {
+  Widget _buildGroupedItem(BuildContext context, int index,
+      List<SectionGroup> groups, String query) {
     int currentIndex = 0;
     for (final group in groups) {
       // Header index
@@ -325,7 +335,9 @@ class _SearchScreenState extends State<SearchScreen> {
         }
       }
     } else {
-      final isImamAli = (item.category != null && item.category!.contains('علي')) || item.id.startsWith('imam_ali');
+      final isImamAli =
+          (item.category != null && item.category!.contains('علي')) ||
+              item.id.startsWith('imam_ali');
       Navigator.push(
         context,
         MaterialPageRoute(
@@ -383,7 +395,8 @@ class _SearchTextField extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       ),
       onChanged: onChanged,
     );

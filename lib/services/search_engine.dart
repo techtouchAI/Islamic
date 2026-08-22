@@ -1,9 +1,6 @@
 import "../services/quran_service.dart";
 import 'dart:math';
 import 'package:flutter/foundation.dart';
-import 'package:sqflite/sqflite.dart';
-import 'package:path/path.dart';
-import 'dart:io';
 import '../data/data_manager.dart';
 
 class SearchDocument {
@@ -109,21 +106,22 @@ class SearchEngine {
     return v0[t.length];
   }
 
-  static bool fuzzyMatch(String queryWord, String targetText, {required bool isFuzzy}) {
-      if (queryWord.isEmpty) return false;
-      if (!isFuzzy) {
-          return targetText.contains(queryWord);
-      }
-
-      List<String> targetWords = targetText.split(' ');
-      for (String targetWord in targetWords) {
-          if ((targetWord.length - queryWord.length).abs() > 1) continue;
-
-          if (levenshteinDistance(queryWord, targetWord) <= 1) {
-              return true;
-          }
-      }
+  static bool fuzzyMatch(String queryWord, String targetText,
+      {required bool isFuzzy}) {
+    if (queryWord.isEmpty) return false;
+    if (!isFuzzy) {
       return targetText.contains(queryWord);
+    }
+
+    List<String> targetWords = targetText.split(' ');
+    for (String targetWord in targetWords) {
+      if ((targetWord.length - queryWord.length).abs() > 1) continue;
+
+      if (levenshteinDistance(queryWord, targetWord) <= 1) {
+        return true;
+      }
+    }
+    return targetText.contains(queryWord);
   }
 
   Future<void> init() async {
@@ -168,17 +166,29 @@ class SearchEngine {
         // Explicitly load additional implicit sections that do not exist directly as 'sections' keys
         final duas = DataManager.getItems('duas');
         for (var item in duas) {
-          contentItems.add({...item, '_search_section_key': 'dua', '_category_title': 'الأدعية'});
+          contentItems.add({
+            ...item,
+            '_search_section_key': 'dua',
+            '_category_title': 'الأدعية'
+          });
         }
 
         final visits = DataManager.getItems('visits');
         for (var item in visits) {
-          contentItems.add({...item, '_search_section_key': 'ziyarat', '_category_title': 'الزيارات'});
+          contentItems.add({
+            ...item,
+            '_search_section_key': 'ziyarat',
+            '_category_title': 'الزيارات'
+          });
         }
 
         final adhkar = DataManager.getItems('adhkar');
         for (var item in adhkar) {
-          contentItems.add({...item, '_search_section_key': 'amal', '_category_title': 'الأعمال'});
+          contentItems.add({
+            ...item,
+            '_search_section_key': 'amal',
+            '_category_title': 'الأعمال'
+          });
         }
       }
 
@@ -191,7 +201,8 @@ class SearchEngine {
           'contentItems': contentItems,
         });
       } catch (computeError) {
-        debugPrint("SearchEngine Isolate Error: $computeError. Fallback to synchronous indexing.");
+        debugPrint(
+            "SearchEngine Isolate Error: $computeError. Fallback to synchronous indexing.");
         _index = _buildIndex({
           'contentItems': contentItems,
         });
@@ -199,7 +210,6 @@ class SearchEngine {
 
       _isIndexed = true;
       debugPrint("SearchEngine: Indexed ${_index.length} items.");
-
     } catch (e) {
       debugPrint("SearchEngine Init Error: $e");
       // Fallback in case Data prep failed
@@ -245,7 +255,8 @@ class SearchEngine {
     if (query.isEmpty || !_isIndexed) return [];
 
     final normalizedQuery = normalizeArabic(query);
-    final queryWords = normalizedQuery.split(' ').where((w) => w.isNotEmpty).toList();
+    final queryWords =
+        normalizedQuery.split(' ').where((w) => w.isNotEmpty).toList();
     if (queryWords.isEmpty) return [];
 
     final List<SearchResult> results = [];
@@ -261,39 +272,43 @@ class SearchEngine {
 
         // 1. Title / Surah Name
         if (doc.normalizedTitle == word || doc.normalizedTitle.contains(word)) {
-           wordMatched = true;
-           wordScore += 10;
-        } else if (fuzzyMatch(word, doc.normalizedTitle, isFuzzy: isWordFuzzy)) {
-           wordMatched = true;
-           wordScore += 6;
+          wordMatched = true;
+          wordScore += 10;
+        } else if (fuzzyMatch(word, doc.normalizedTitle,
+            isFuzzy: isWordFuzzy)) {
+          wordMatched = true;
+          wordScore += 6;
         }
 
         // 2. Category / Tag exact match
-        if (doc.normalizedCategory == word || doc.normalizedCategory.contains(word)) {
-           wordMatched = true;
-           wordScore += 4;
+        if (doc.normalizedCategory == word ||
+            doc.normalizedCategory.contains(word)) {
+          wordMatched = true;
+          wordScore += 4;
         } else {
-           for (var tag in doc.normalizedTags) {
-             if (tag == word || tag.contains(word)) {
-                wordMatched = true;
-                wordScore += 4;
-                break;
-             }
-           }
+          for (var tag in doc.normalizedTags) {
+            if (tag == word || tag.contains(word)) {
+              wordMatched = true;
+              wordScore += 4;
+              break;
+            }
+          }
         }
 
         // 3. Content / Ayah Text
-        if (doc.normalizedContent == word || doc.normalizedContent.contains(word)) {
-           wordMatched = true;
-           wordScore += 2;
-        } else if (fuzzyMatch(word, doc.normalizedContent, isFuzzy: isWordFuzzy)) {
-           wordMatched = true;
-           wordScore += 1;
+        if (doc.normalizedContent == word ||
+            doc.normalizedContent.contains(word)) {
+          wordMatched = true;
+          wordScore += 2;
+        } else if (fuzzyMatch(word, doc.normalizedContent,
+            isFuzzy: isWordFuzzy)) {
+          wordMatched = true;
+          wordScore += 1;
         }
 
         if (!wordMatched) {
-           allWordsMatched = false;
-           break;
+          allWordsMatched = false;
+          break;
         }
 
         docScore += wordScore;

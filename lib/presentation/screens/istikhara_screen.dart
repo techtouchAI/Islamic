@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'dart:math';
 import 'package:share_plus/share_plus.dart';
 import 'package:flutter/services.dart';
-import 'package:sqflite/sqflite.dart';
-import 'package:path/path.dart' as p;
 import '../../data/data_manager.dart';
 import '../../services/quran_service.dart';
 
@@ -126,7 +124,8 @@ class _IstikharaScreenState extends State<IstikharaScreen>
       debugPrint("Error in _fetchIstikharaData: $e");
       if (mounted) {
         setState(() {
-          _errorMessage = 'حدث خطأ أثناء تحميل البيانات. يرجى المحاولة مرة أخرى.';
+          _errorMessage =
+              'حدث خطأ أثناء تحميل البيانات. يرجى المحاولة مرة أخرى.';
           _isLoadingVerses = false;
         });
       }
@@ -429,13 +428,11 @@ class _IstikharaScreenState extends State<IstikharaScreen>
     // ✅ حساب الآيات مرة واحدة فقط عند تغير البيانات
     String formattedVerses = '';
     if (_verses.isNotEmpty) {
-      formattedVerses = _verses
-          .map((v) {
-            final text = v['ar_text'].toString().trim();
-            final num = v['anum'];
-            return '$text ﴿$num﴾';
-          })
-          .join(' ');
+      formattedVerses = _verses.map((v) {
+        final text = v['ar_text'].toString().trim();
+        final num = v['anum'];
+        return '$text ﴿$num﴾';
+      }).join(' ');
     }
 
     return Column(
