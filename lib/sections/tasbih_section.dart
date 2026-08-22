@@ -257,8 +257,16 @@ class _TasbihSectionState extends State<TasbihSection> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.auto_awesome_rounded,
-                    color: scheme.primary, size: 34),
+                Text(
+                  'الحمد لله',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: scheme.primary,
+                    fontFamily: 'OmarNaskh',
+                    fontSize: 31,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
                 const SizedBox(height: 14),
                 const Text(
                   'اكتمل التسبيح',

@@ -35,6 +35,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('اكتمل التسبيح'), findsOneWidget);
+    expect(find.text('الحمد لله'), findsOneWidget);
+    expect(find.byIcon(Icons.auto_awesome_rounded), findsNothing);
     await tester.tapAt(const Offset(4, 4));
     await tester.pumpAndSettle();
     expect(find.text('اكتمل التسبيح'), findsOneWidget);
