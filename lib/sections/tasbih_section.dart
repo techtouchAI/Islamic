@@ -245,54 +245,60 @@ class _TasbihSectionState extends State<TasbihSection> {
     final scheme = Theme.of(context).colorScheme;
     return showDialog<void>(
       context: context,
-      builder: (dialogContext) => Dialog(
-        insetPadding: const EdgeInsets.symmetric(horizontal: 28),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(34)),
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(28, 32, 28, 22),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.auto_awesome_rounded, color: scheme.primary, size: 34),
-              const SizedBox(height: 14),
-              const Text(
-                'اكتمل التسبيح',
-                textAlign: TextAlign.center,
-                style:
-                    const TextStyle(fontSize: 25, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 10),
-              Text(
-                'تقبّل الله منكم صالح الأعمال',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 17),
-              ),
-              const SizedBox(height: 26),
-              Row(
-                children: [
-                  Expanded(
-                    child: FilledButton.icon(
-                      onPressed: () async {
-                        Navigator.of(dialogContext).pop();
-                        if (!mounted) return;
-                        setState(() {
-                          _zahraStageIndex = 0;
-                          _counter = 0;
-                        });
-                        await _persistState();
-                      },
-                      icon: const Icon(Icons.replay_rounded),
-                      label: const Text('تسبيح مرة أخرى'),
+      barrierDismissible: false,
+      builder: (dialogContext) => PopScope(
+        canPop: false,
+        child: Dialog(
+          insetPadding: const EdgeInsets.symmetric(horizontal: 28),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(34)),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(28, 32, 28, 22),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.auto_awesome_rounded,
+                    color: scheme.primary, size: 34),
+                const SizedBox(height: 14),
+                const Text(
+                  'اكتمل التسبيح',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 25, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  'تقبّل الله منكم صالح الأعمال',
+                  textAlign: TextAlign.center,
+                  style:
+                      TextStyle(color: scheme.onSurfaceVariant, fontSize: 17),
+                ),
+                const SizedBox(height: 26),
+                Row(
+                  children: [
+                    Expanded(
+                      child: FilledButton.icon(
+                        onPressed: () async {
+                          Navigator.of(dialogContext).pop();
+                          if (!mounted) return;
+                          setState(() {
+                            _zahraStageIndex = 0;
+                            _counter = 0;
+                          });
+                          await _persistState();
+                        },
+                        icon: const Icon(Icons.replay_rounded),
+                        label: const Text('تسبيح مرة أخرى'),
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 10),
-                  TextButton(
-                    onPressed: () => Navigator.of(dialogContext).pop(),
-                    child: const Text('خروج'),
-                  ),
-                ],
-              ),
-            ],
+                    const SizedBox(width: 10),
+                    TextButton(
+                      onPressed: () => Navigator.of(dialogContext).pop(),
+                      child: const Text('خروج'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -634,17 +640,17 @@ class _TasbihTapTarget extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         customBorder:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(92)),
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(83)),
         child: Ink(
-          width: 242,
-          height: 242,
+          width: 218,
+          height: 218,
           decoration: BoxDecoration(
             border: Border.all(
                 color: primaryColor.withValues(alpha: 0.75), width: 2),
-            borderRadius: BorderRadius.circular(92),
+            borderRadius: BorderRadius.circular(83),
           ),
           child: Padding(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(11),
             child: DecoratedBox(
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
@@ -662,7 +668,7 @@ class _TasbihTapTarget extends StatelessWidget {
                   'اضغط',
                   style: TextStyle(
                     fontFamily: 'OmarNaskh',
-                    fontSize: 42,
+                    fontSize: 38,
                     fontWeight: FontWeight.bold,
                     color: primaryColor,
                   ),
