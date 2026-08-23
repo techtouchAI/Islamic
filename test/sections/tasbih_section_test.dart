@@ -1,4 +1,5 @@
 import 'package:aldhakereen/sections/tasbih_section.dart';
+import 'package:aldhakereen/services/tasbih_feedback_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -13,17 +14,19 @@ void main() {
 
   testWidgets('completion dialog requires an explicit action to close',
       (tester) async {
-    final hapticCalls = <MethodCall>[];
+    final completionCalls = <MethodCall>[];
     tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
-      SystemChannels.platform,
+      const MethodChannel(TasbihFeedbackService.channelName),
       (call) async {
-        if (call.method == 'HapticFeedback.vibrate') hapticCalls.add(call);
+        if (call.method == 'vibrateStageCompletion') completionCalls.add(call);
         return null;
       },
     );
     addTearDown(() {
-      tester.binding.defaultBinaryMessenger
-          .setMockMethodCallHandler(SystemChannels.platform, null);
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        const MethodChannel(TasbihFeedbackService.channelName),
+        null,
+      );
     });
 
     await tester.pumpWidget(
@@ -51,13 +54,13 @@ void main() {
     expect(find.text('اكتمل التسبيح'), findsOneWidget);
     expect(find.text('الحمد لله'), findsOneWidget);
     expect(find.byIcon(Icons.auto_awesome_rounded), findsNothing);
-    expect(hapticCalls, hasLength(3));
+    expect(completionCalls, hasLength(3));
     expect(
-      hapticCalls.map((call) => call.arguments),
+      completionCalls.map((call) => call.method),
       <String>[
-        'HapticFeedbackType.heavyImpact',
-        'HapticFeedbackType.heavyImpact',
-        'HapticFeedbackType.heavyImpact',
+        'vibrateStageCompletion',
+        'vibrateStageCompletion',
+        'vibrateStageCompletion',
       ],
     );
     expect(tester.getRect(find.byType(Dialog)).top, lessThan(180));

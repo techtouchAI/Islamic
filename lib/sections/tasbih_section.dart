@@ -7,6 +7,7 @@ import 'package:intl/intl.dart' as intl;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/tasbih_state.dart';
+import '../services/tasbih_feedback_service.dart';
 import '../utils/string_extensions.dart';
 
 enum TasbihSelection {
@@ -223,14 +224,14 @@ class _TasbihSectionState extends State<TasbihSection> {
 
     await _persistState();
     if (cycleCompleted) {
-      await HapticFeedback.heavyImpact();
+      await TasbihFeedbackService.stageCompleted();
       if (!mounted) return;
       await _showCompletionDialog();
       return;
     }
 
     if (stageMessage != null) {
-      await HapticFeedback.heavyImpact();
+      await TasbihFeedbackService.stageCompleted();
     } else if (_mode != TasbihMode.tasbihAlZahra) {
       await HapticFeedback.lightImpact();
     }

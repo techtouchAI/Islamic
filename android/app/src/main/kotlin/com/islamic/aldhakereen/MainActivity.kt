@@ -1,6 +1,10 @@
 package com.islamic.aldhakereen
 
+import android.content.Context
+import android.os.Build
 import android.os.Bundle
+import android.os.VibrationEffect
+import android.os.Vibrator
 import io.flutter.embedding.android.FlutterActivity
 import android.content.Intent
 import android.provider.Settings
@@ -16,6 +20,7 @@ class MainActivity : FlutterActivity() {
     private val ADHAN_CHANNEL = "com.techtouchai.islamic/adhan"
     private val HIJRI_CHANNEL = "com.techtouchai.islamic/hijri"
     private val QIBLA_CHANNEL = "com.techtouchai.islamic/qibla"
+    private val TASBIH_FEEDBACK_CHANNEL = "com.techtouchai.islamic/tasbih_feedback"
 
     private lateinit var qiblaSensorManager: QiblaSensorManager
     private lateinit var hijriNativeManager: HijriNativeManager
@@ -104,6 +109,18 @@ class MainActivity : FlutterActivity() {
             }
         }
 
+        // A dual-pulse waveform gives end-of-stage feedback without
+        // vibrating during ordinary tasbih counting.
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, TASBIH_FEEDBACK_CHANNEL).setMethodCallHandler { call, result ->
+            when (call.method) {
+                "vibrateStageCompletion" -> {
+                    vibrateTasbihStageCompletion()
+                    result.success(null)
+                }
+                else -> result.notImplemented()
+            }
+        }
+
         // Qibla EventChannel
         EventChannel(flutterEngine.dartExecutor.binaryMessenger, QIBLA_CHANNEL).setStreamHandler(
             object : EventChannel.StreamHandler {
@@ -124,6 +141,22 @@ class MainActivity : FlutterActivity() {
         super.onResume()
         if (::adhanNativeManager.isInitialized) {
             adhanNativeManager.restoreSavedAlarms()
+        }
+    }
+
+    @Suppress("DEPRECATION")
+    private fun vibrateTasbihStageCompletion() {
+        val vibrator = getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator ?: return
+        if (!vibrator.hasVibrator()) return
+
+        // 170ms + 260ms active pulses with an 80ms pause provide 430ms of
+        // clearly perceptible feedback without an uncomfortably long buzz.
+        val timings = longArrayOf(0L, 170L, 80L, 260L)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val amplitudes = intArrayOf(0, 255, 0, 255)
+            vibrator.vibrate(VibrationEffect.createWaveform(timings, amplitudes, -1))
+        } else {
+            vibrator.vibrate(timings, -1)
         }
     }
 }
