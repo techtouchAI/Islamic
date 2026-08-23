@@ -231,7 +231,7 @@ class _TasbihSectionState extends State<TasbihSection> {
 
     if (stageMessage != null) {
       await HapticFeedback.mediumImpact();
-    } else {
+    } else if (_mode != TasbihMode.tasbihAlZahra) {
       await HapticFeedback.lightImpact();
     }
     if (stageMessage != null && mounted) {
@@ -249,7 +249,8 @@ class _TasbihSectionState extends State<TasbihSection> {
       builder: (dialogContext) => PopScope(
         canPop: false,
         child: Dialog(
-          insetPadding: const EdgeInsets.symmetric(horizontal: 28),
+          alignment: Alignment.topCenter,
+          insetPadding: const EdgeInsets.fromLTRB(28, 88, 28, 24),
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(34)),
           child: Padding(

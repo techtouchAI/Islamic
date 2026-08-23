@@ -1,5 +1,6 @@
 import 'package:aldhakereen/sections/tasbih_section.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -12,6 +13,19 @@ void main() {
 
   testWidgets('completion dialog requires an explicit action to close',
       (tester) async {
+    final hapticCalls = <MethodCall>[];
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      SystemChannels.platform,
+      (call) async {
+        if (call.method == 'HapticFeedback.vibrate') hapticCalls.add(call);
+        return null;
+      },
+    );
+    addTearDown(() {
+      tester.binding.defaultBinaryMessenger
+          .setMockMethodCallHandler(SystemChannels.platform, null);
+    });
+
     await tester.pumpWidget(
       const MaterialApp(
         home: Scaffold(body: TasbihSection()),
@@ -37,6 +51,16 @@ void main() {
     expect(find.text('اكتمل التسبيح'), findsOneWidget);
     expect(find.text('الحمد لله'), findsOneWidget);
     expect(find.byIcon(Icons.auto_awesome_rounded), findsNothing);
+    expect(hapticCalls, hasLength(3));
+    expect(
+      hapticCalls.map((call) => call.arguments),
+      <String>[
+        'HapticFeedbackType.mediumImpact',
+        'HapticFeedbackType.mediumImpact',
+        'HapticFeedbackType.heavyImpact',
+      ],
+    );
+    expect(tester.getRect(find.byType(Dialog)).top, lessThan(180));
     await tester.tapAt(const Offset(4, 4));
     await tester.pumpAndSettle();
     expect(find.text('اكتمل التسبيح'), findsOneWidget);
