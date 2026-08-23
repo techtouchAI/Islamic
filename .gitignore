@@ -31,3 +31,4 @@ ios/Runner/GoogleService-Info.plist
 .idea/
 .vscode/
 *.log
+*.orig

@@ -81,7 +81,9 @@ class AboutSection extends StatelessWidget {
               const SizedBox(height: 15),
               Linkify(
                 onOpen: (link) async {
-                  if (!await launchUrl(Uri.parse(link.url))) {
+                  final launched = await launchUrl(Uri.parse(link.url));
+                  if (!context.mounted) return;
+                  if (!launched) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('Could not launch url')),
                     );

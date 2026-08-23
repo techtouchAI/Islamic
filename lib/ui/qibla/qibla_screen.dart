@@ -1,75 +1,89 @@
 import 'dart:math' as math;
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
 
+import '../../utils/qibla_calculator.dart';
+
 class QiblaScreen extends StatefulWidget {
+  const QiblaScreen({super.key});
+
   @override
-  _QiblaScreenState createState() => _QiblaScreenState();
+  State<QiblaScreen> createState() => _QiblaScreenState();
 }
 
 class _QiblaScreenState extends State<QiblaScreen> {
-  static const EventChannel _qiblaChannel = EventChannel('com.techtouchai.islamic/qibla');
+  static const EventChannel _qiblaChannel =
+      EventChannel('com.techtouchai.islamic/qibla');
   double _qiblaDirection = 0.0;
   bool _hasLocation = false;
   double _currentHeading = 0.0;
   bool _hasSensors = true;
+  StreamSubscription<dynamic>? _headingSubscription;
 
   @override
   void initState() {
     super.initState();
     _initQibla();
-    _qiblaChannel.receiveBroadcastStream().listen((dynamic event) {
-      setState(() {
-        _currentHeading = event as double;
-      });
-    }, onError: (dynamic error) {
-      setState(() {
-        _hasSensors = false;
-      });
-    });
+    _headingSubscription = _qiblaChannel.receiveBroadcastStream().listen(
+      (dynamic event) {
+        if (!mounted || event is! num) return;
+        setState(() => _currentHeading = event.toDouble());
+      },
+      onError: (Object error) {
+        if (!mounted) return;
+        setState(() => _hasSensors = false);
+      },
+    );
   }
 
   Future<void> _initQibla() async {
-    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      _showLocationServiceDisabledDialog();
-      return;
-    }
-    LocationPermission permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
+    try {
+      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!mounted) return;
+      if (!serviceEnabled) {
+        _showLocationServiceDisabledDialog();
+        return;
+      }
+      var permission = await Geolocator.checkPermission();
+      if (!mounted) return;
       if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (!mounted) return;
+        if (permission == LocationPermission.denied) {
+          _showPermissionDeniedDialog();
+          return;
+        }
+      }
+      if (permission == LocationPermission.deniedForever) {
         _showPermissionDeniedDialog();
         return;
       }
+      final position = await Geolocator.getCurrentPosition();
+      if (!mounted) return;
+      setState(() {
+        _qiblaDirection = calculateQiblaDirection(
+          latitude: position.latitude,
+          longitude: position.longitude,
+        );
+        _hasLocation = true;
+      });
+    } catch (error) {
+      debugPrint('Unable to initialize qibla direction: $error');
+      if (!mounted) return;
+      setState(() => _hasLocation = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('تعذر تحديد موقعك لاتجاه القبلة')),
+      );
     }
-    if (permission == LocationPermission.deniedForever) {
-      _showPermissionDeniedDialog();
-      return;
-    }
-    Position position = await Geolocator.getCurrentPosition();
-    setState(() {
-      _qiblaDirection = _calculateQibla(position.latitude, position.longitude);
-      _hasLocation = true;
-    });
   }
 
-  // Calculate Qibla direction locally using spherical trigonometry
-  double _calculateQibla(double lat, double lng) {
-    // Kaaba coordinates
-    const double kaabaLat = 21.422487;
-    const double kaabaLng = 39.826206;
-
-    final latRad = lat * (math.pi / 180.0);
-    final kaabaLatRad = kaabaLat * (math.pi / 180.0);
-    final lngDiffRad = (kaabaLng - lng) * (math.pi / 180.0);
-
-    final y = math.sin(lngDiffRad);
-    final x = math.cos(latRad) * math.tan(kaabaLatRad) - math.sin(latRad) * math.cos(lngDiffRad);
-
-    double qibla = math.atan2(y, x) * (180.0 / math.pi);
-    return (qibla + 360.0) % 360.0;
+  @override
+  void dispose() {
+    _headingSubscription?.cancel();
+    super.dispose();
   }
 
   void _showLocationServiceDisabledDialog() {
@@ -98,7 +112,8 @@ class _QiblaScreenState extends State<QiblaScreen> {
       builder: (BuildContext context) {
         return AlertDialog(
           title: Text("صلاحية الموقع مطلوبة"),
-          content: Text("تطبيق الذاكرين يحتاج إلى صلاحية الوصول إلى الموقع لتحديد اتجاه القبلة. يرجى تفعيل الصلاحية من إعدادات التطبيق."),
+          content: Text(
+              "تطبيق الذاكرين يحتاج إلى صلاحية الوصول إلى الموقع لتحديد اتجاه القبلة. يرجى تفعيل الصلاحية من إعدادات التطبيق."),
           actions: <Widget>[
             TextButton(
               child: Text("إلغاء"),
@@ -134,8 +149,11 @@ class _QiblaScreenState extends State<QiblaScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (!_hasLocation) return Scaffold(body: Center(child: CircularProgressIndicator()));
-    if (!_hasSensors) return Scaffold(body: Center(child: Text("جهازك لا يدعم مستشعر البوصلة")));
+    if (!_hasLocation)
+      return Scaffold(body: Center(child: CircularProgressIndicator()));
+    if (!_hasSensors)
+      return Scaffold(
+          body: Center(child: Text("جهازك لا يدعم مستشعر البوصلة")));
 
     return Scaffold(
       extendBodyBehindAppBar: true,
@@ -171,18 +189,24 @@ class _QiblaScreenState extends State<QiblaScreen> {
                     children: [
                       Transform.rotate(
                         angle: (_currentHeading * (math.pi / 180) * -1),
-                        child: Image.asset('assets/images/qibla_compass.png', width: 340),
+                        child: Image.asset('assets/images/qibla_compass.png',
+                            width: 340),
                       ),
                       Transform.rotate(
-                        angle: ((_qiblaDirection - _currentHeading) * (math.pi / 180)),
-                        child: Image.asset('assets/images/qibla_needle.png', width: 340),
+                        angle: ((_qiblaDirection - _currentHeading) *
+                            (math.pi / 180)),
+                        child: Image.asset('assets/images/qibla_needle.png',
+                            width: 340),
                       ),
                     ],
                   ),
                   SizedBox(height: 30),
                   Text(
                     "${_currentHeading.toStringAsFixed(1)}°",
-                    style: TextStyle(fontSize: 40, fontWeight: FontWeight.bold, color: Colors.white),
+                    style: TextStyle(
+                        fontSize: 40,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white),
                   ),
                   Text(
                     _getDirectionText(_currentHeading),
@@ -200,7 +224,7 @@ class _QiblaScreenState extends State<QiblaScreen> {
                   borderRadius: BorderRadius.circular(15),
                 ),
                 child: Text(
-                  "إتجاه القبله التقريبي هو (201°)",
+                  'اتجاه القبلة التقريبي: ${_qiblaDirection.round()}°',
                   style: TextStyle(color: Colors.white, fontSize: 16),
                 ),
               ),

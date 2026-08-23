@@ -154,18 +154,16 @@ class _IstikharaScreenState extends State<IstikharaScreen>
   void _copyResult() {
     final textToCopy = 'نتيجة الخيرة:\n$_resultText\n\n$_descriptionText';
     Clipboard.setData(ClipboardData(text: textToCopy)).then((_) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('تم النسخ إلى الحافظة')),
-        );
-      }
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('تم النسخ إلى الحافظة')),
+      );
     }).catchError((error) {
       debugPrint("Error copying: $error");
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('حدث خطأ أثناء النسخ')),
-        );
-      }
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('حدث خطأ أثناء النسخ')),
+      );
     });
   }
 
@@ -176,11 +174,10 @@ class _IstikharaScreenState extends State<IstikharaScreen>
       await Share.share(textToShare);
     } catch (e) {
       debugPrint("Error sharing: $e");
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('حدث خطأ أثناء المشاركة')),
-        );
-      }
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('حدث خطأ أثناء المشاركة')),
+      );
     }
   }
 
