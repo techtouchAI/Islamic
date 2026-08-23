@@ -230,7 +230,7 @@ class _TasbihSectionState extends State<TasbihSection> {
     }
 
     if (stageMessage != null) {
-      await HapticFeedback.mediumImpact();
+      await HapticFeedback.heavyImpact();
     } else if (_mode != TasbihMode.tasbihAlZahra) {
       await HapticFeedback.lightImpact();
     }

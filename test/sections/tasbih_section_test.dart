@@ -55,8 +55,8 @@ void main() {
     expect(
       hapticCalls.map((call) => call.arguments),
       <String>[
-        'HapticFeedbackType.mediumImpact',
-        'HapticFeedbackType.mediumImpact',
+        'HapticFeedbackType.heavyImpact',
+        'HapticFeedbackType.heavyImpact',
         'HapticFeedbackType.heavyImpact',
       ],
     );
