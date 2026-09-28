@@ -6,6 +6,9 @@ class ContentItem {
   final String sectionId;      // e.g., 'quran', 'dua', 'ziyarat'
   final String sectionName;    // e.g., 'القرآن الكريم', 'الأدعية'
   final String? category;
+  final String? normalizedTitle;
+  final String? normalizedContent;
+  final String? normalizedCategory;
 
   // Extra fields added to support ReaderPage navigation from existing SearchDocument
   final int? surahNumber;
@@ -20,6 +23,9 @@ class ContentItem {
     required this.sectionId,
     required this.sectionName,
     this.category,
+    this.normalizedTitle,
+    this.normalizedContent,
+    this.normalizedCategory,
     this.surahNumber,
     this.ayahNumber,
     this.type,

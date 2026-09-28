@@ -251,9 +251,10 @@ class SearchController extends ChangeNotifier {
       bool allWordsMatched = true;
       int docScore = 0;
 
-      final normalizedTitle = SearchEngine.normalizeArabic(item.title);
-      final normalizedContent = SearchEngine.normalizeArabic(item.content);
-      final normalizedCategory = SearchEngine.normalizeArabic(item.category ?? '');
+      final normalizedTitle = item.normalizedTitle ?? SearchEngine.normalizeArabic(item.title);
+      final normalizedContent = item.normalizedContent ?? SearchEngine.normalizeArabic(item.content);
+      final normalizedCategory = item.normalizedCategory ??
+          SearchEngine.normalizeArabic(item.category ?? '');
 
       // Tokenize strings once per document
       final titleWords = normalizedTitle.split(' ').toSet();
