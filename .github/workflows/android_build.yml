@@ -42,8 +42,16 @@ jobs:
 
       - name: Run tests
         run: |
-          set -o pipefail
+          set +e
           flutter test 2>&1 | tee flutter-test.log
+          result=${PIPESTATUS[0]}
+          if [ "$result" -ne 0 ]; then
+            echo '### Flutter test failures' >> "$GITHUB_STEP_SUMMARY"
+            echo '```text' >> "$GITHUB_STEP_SUMMARY"
+            tr '\r' '\n' < flutter-test.log | tail -n 120 >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+          fi
+          exit "$result"
 
       - name: Upload test log
         if: always()
