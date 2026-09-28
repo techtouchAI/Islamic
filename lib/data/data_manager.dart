@@ -29,6 +29,15 @@ class DataManager {
     if (db['content'] is! Map || db['sections'] is! Map) {
       throw const FormatException('Content document is missing required sections');
     }
+    final content = db['content'] as Map;
+    final sections = db['sections'] as Map;
+    if (sections.keys.any((key) => key is! String) ||
+        sections.values.any((value) => value is! Map) ||
+        content.keys.any((key) => key is! String) ||
+        content.values.any((value) =>
+            value is! List || value.any((item) => item is! Map))) {
+      throw const FormatException('Content document has an invalid section shape');
+    }
     _normalizeDBLocal(db);
     return db;
   }

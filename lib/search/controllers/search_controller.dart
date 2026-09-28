@@ -10,6 +10,9 @@ class SearchController extends ChangeNotifier {
   // ─── Dependencies ───
   List<ContentItem> _allItems;
   final List<String> _availableSections;
+  final Future<List<Map<String, dynamic>>> Function(String) _searchQuran;
+  final Future<List<MafatihArticle>> Function(String) _searchMafatih;
+  final Future<List<ContentItem>> Function(List<ContentItem>, String) _searchMemory;
 
   // ─── State ───
   String _query = '';
@@ -17,6 +20,7 @@ class SearchController extends ChangeNotifier {
   int _currentPage = 1;
   static const int _itemsPerPage = 10;
   bool _isLoading = false;
+  bool _indexing = false;
 
   Timer? _debounceTimer;
   int _requestGeneration = 0;
@@ -36,7 +40,7 @@ class SearchController extends ChangeNotifier {
   String get query => _query;
   String get selectedCategory => _selectedCategory;
   int get currentPage => _currentPage;
-  bool get isLoading => _isLoading;
+  bool get isLoading => _isLoading || _indexing;
   List<ContentItem> get filteredItems => List.unmodifiable(_filteredItems);
   List<SectionGroup> get groupedItems => List.unmodifiable(_groupedItems);
   PaginationMetadata get pagination => _pagination;
@@ -47,15 +51,21 @@ class SearchController extends ChangeNotifier {
   SearchController({
     required List<ContentItem> allItems,
     required List<String> availableSections,
+    Future<List<Map<String, dynamic>>> Function(String)? searchQuran,
+    Future<List<MafatihArticle>> Function(String)? searchMafatih,
+    Future<List<ContentItem>> Function(List<ContentItem>, String)? searchMemory,
   })  : _allItems = allItems,
-        _availableSections = availableSections {
+        _availableSections = availableSections,
+        _searchQuran = searchQuran ?? QuranService.searchVerses,
+        _searchMafatih = searchMafatih ?? MafatihService.searchArticles,
+        _searchMemory = searchMemory ?? _searchInIsolate {
     SearchEngine.instance.isIndexingNotifier.addListener(_onIndexingStateChanged);
-    _isLoading = SearchEngine.instance.isIndexingNotifier.value;
+    _indexing = SearchEngine.instance.isIndexingNotifier.value;
     _computeResults();
   }
 
   void _onIndexingStateChanged() {
-    _isLoading = SearchEngine.instance.isIndexingNotifier.value;
+    _indexing = SearchEngine.instance.isIndexingNotifier.value;
     notifyListeners();
   }
 
@@ -140,18 +150,15 @@ class SearchController extends ChangeNotifier {
       try {
         // 2a. Search in SQLite DBs if category matches 'all', 'quran', or 'mafatih'
         final quranFuture = (category == 'all' || category == 'quran')
-            ? QuranService.searchVerses(currentQuery)
+            ? _searchQuran(currentQuery)
             : Future.value(<Map<String, dynamic>>[]);
 
         final mafatihFuture = (category == 'all' || category == 'mafatih')
-            ? MafatihService.searchArticles(currentQuery)
+            ? _searchMafatih(currentQuery)
             : Future.value(<MafatihArticle>[]);
 
         // 2b. Search JSON data in isolate
-        final memorySearchFuture = compute(_performSearch, {
-          'items': categoryFiltered,
-          'query': currentQuery,
-        });
+        final memorySearchFuture = _searchMemory(categoryFiltered, currentQuery);
 
         // Run all futures concurrently
         final results = await Future.wait([quranFuture, mafatihFuture, memorySearchFuture]);
@@ -220,6 +227,10 @@ class SearchController extends ChangeNotifier {
     _isLoading = false;
     notifyListeners();
   }
+
+  static Future<List<ContentItem>> _searchInIsolate(
+      List<ContentItem> items, String query) =>
+      compute(_performSearch, {'items': items, 'query': query});
 
   static List<ContentItem> _performSearch(Map<String, dynamic> params) {
     final List<ContentItem> categoryFiltered = params['items'];
