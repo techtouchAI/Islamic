@@ -223,8 +223,18 @@ class _SearchScreenState extends State<SearchScreen> {
                   liveRegion: true,
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    child: Text(snapshot.warning!,
-                        style: TextStyle(color: Theme.of(context).colorScheme.error)),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(snapshot.warning!,
+                              style: TextStyle(color: Theme.of(context).colorScheme.error)),
+                        ),
+                        TextButton(
+                          onPressed: _controller.retry,
+                          child: const Text('إعادة المحاولة'),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
 

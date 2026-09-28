@@ -126,6 +126,12 @@ class SearchController extends ChangeNotifier {
     notifyListeners();
   }
 
+  void retry() {
+    _debounceTimer?.cancel();
+    _currentPage = 1;
+    _computeResults();
+  }
+
   void nextPage() => goToPage(_currentPage + 1);
   void previousPage() => goToPage(_currentPage - 1);
 
