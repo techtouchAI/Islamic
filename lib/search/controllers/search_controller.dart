@@ -156,28 +156,37 @@ class SearchController extends ChangeNotifier {
         final failedSources = <String>[];
         // 2a. Search in SQLite DBs if category matches 'all', 'quran', or 'mafatih'
         final quranFuture = (category == 'all' || category == 'quran')
-            ? _searchQuran(currentQuery).catchError((Object e) {
-                debugPrint('Quran search failed: $e');
-                failedSources.add('القرآن');
-                return <Map<String, dynamic>>[];
-              })
+            ? _searchQuran(currentQuery).then<List<Map<String, dynamic>>>(
+                (rows) => rows,
+                onError: (Object e, StackTrace stack) {
+                  debugPrint('Quran search failed: $e');
+                  failedSources.add('القرآن');
+                  return <Map<String, dynamic>>[];
+                },
+              )
             : Future.value(<Map<String, dynamic>>[]);
 
         final mafatihFuture = (category == 'all' || category == 'mafatih')
-            ? _searchMafatih(currentQuery).catchError((Object e) {
-                debugPrint('Mafatih search failed: $e');
-                failedSources.add('مفاتيح الجنان');
-                return <MafatihArticle>[];
-              })
+            ? _searchMafatih(currentQuery).then<List<MafatihArticle>>(
+                (rows) => rows,
+                onError: (Object e, StackTrace stack) {
+                  debugPrint('Mafatih search failed: $e');
+                  failedSources.add('مفاتيح الجنان');
+                  return <MafatihArticle>[];
+                },
+              )
             : Future.value(<MafatihArticle>[]);
 
         // 2b. Search JSON data in isolate
         final memorySearchFuture = _searchMemory(categoryFiltered, currentQuery)
-            .catchError((Object e) {
-          debugPrint('Local content search failed: $e');
-          failedSources.add('المحتوى المحلي');
-          return <ContentItem>[];
-        });
+            .then<List<ContentItem>>(
+          (rows) => rows,
+          onError: (Object e, StackTrace stack) {
+            debugPrint('Local content search failed: $e');
+            failedSources.add('المحتوى المحلي');
+            return <ContentItem>[];
+          },
+        );
 
         // Run all futures concurrently
         final results = await Future.wait([quranFuture, mafatihFuture, memorySearchFuture]);
