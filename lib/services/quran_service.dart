@@ -105,7 +105,8 @@ class QuranService {
   }
 
   static Future<List<Map<String, dynamic>>> searchVerses(String query) async {
-    if (_db == null || query.isEmpty) return [];
+    if (query.isEmpty) return [];
+    if (_db == null) throw StateError('قاعدة القرآن غير متاحة');
 
     try {
       // Search the unvowelled database column; keep the original text for display.
@@ -116,7 +117,7 @@ class QuranService {
         FROM ayah a
         JOIN surah s ON a.sid = s.id
         WHERE a.ar_text LIKE ? ESCAPE '\' OR s.name LIKE ? ESCAPE '\'
-        LIMIT 50
+        ORDER BY a.sid ASC, a.anum ASC
       ''', [safeQuery, safeQuery]);
 
       return result
@@ -130,8 +131,8 @@ class QuranService {
           )
           .toList();
     } catch (e) {
-      debugPrint("QuranService searchVerses Error: \$e");
-      return [];
+      debugPrint("QuranService searchVerses Error: $e");
+      rethrow;
     }
   }
 

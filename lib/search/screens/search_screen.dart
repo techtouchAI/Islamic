@@ -218,6 +218,15 @@ class _SearchScreenState extends State<SearchScreen> {
             children: [
               // Results Count Indicator
               _buildResultsHeader(snapshot),
+              if (snapshot.warning != null)
+                Semantics(
+                  liveRegion: true,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: Text(snapshot.warning!,
+                        style: TextStyle(color: Theme.of(context).colorScheme.error)),
+                  ),
+                ),
 
               // Main Results List
               Expanded(

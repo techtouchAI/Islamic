@@ -45,4 +45,19 @@ void main() {
     expect(controller.filteredItems.map((e) => e.id), ['dua-1']);
     expect(controller.selectedCategory, 'dua');
   });
+
+  test('a failed source retains other results and reports partial coverage', () async {
+    final controller = app.SearchController(
+      allItems: [dua],
+      availableSections: ['dua'],
+      searchQuran: (_) async => throw StateError('database unavailable'),
+      searchMafatih: (_) async => [],
+      searchMemory: (items, query) async => [dua],
+    );
+    addTearDown(controller.dispose);
+    controller.updateQuery('دعاء');
+    await Future<void>.delayed(const Duration(milliseconds: 450));
+    expect(controller.filteredItems.map((item) => item.id), ['dua-1']);
+    expect(controller.warning, contains('القرآن'));
+  });
 }

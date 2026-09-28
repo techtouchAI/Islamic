@@ -323,6 +323,6 @@ class SearchEngine {
       return a.document.title.compareTo(b.document.title);
     });
 
-    return results.take(50).toList();
+    return results;
   }
 }

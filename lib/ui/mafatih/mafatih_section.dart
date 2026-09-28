@@ -147,7 +147,13 @@ class _MafatihCategoryListState extends State<_MafatihCategoryList> {
 
   void _loadData() async {
     _subCategoriesFuture = MafatihService.getSubCategories(widget.categoryId);
-    final subCats = await _subCategoriesFuture;
+    List<MafatihCategory> subCats;
+    try {
+      subCats = await _subCategoriesFuture!;
+    } catch (_) {
+      if (mounted) setState(() {});
+      return; // The FutureBuilder shows the source error.
+    }
     if (mounted) {
       if (subCats != null && subCats.isNotEmpty) {
         setState(() {
@@ -175,6 +181,9 @@ class _MafatihCategoryListState extends State<_MafatihCategoryList> {
           return const Center(child: CircularProgressIndicator());
         }
 
+        if (subCatSnapshot.hasError) {
+          return Center(child: Text('تعذر تحميل الأقسام: ${subCatSnapshot.error}'));
+        }
         if (_hasSubCategories) {
            final subCategories = subCatSnapshot.data!;
            return ListView.builder(

@@ -16,6 +16,7 @@ class SearchController extends ChangeNotifier {
 
   // ─── State ───
   String _query = '';
+  String? _warning;
   String _selectedCategory = 'all'; // 'all' = الكل
   int _currentPage = 1;
   static const int _itemsPerPage = 10;
@@ -38,6 +39,7 @@ class SearchController extends ChangeNotifier {
 
   // ─── Public Getters ───
   String get query => _query;
+  String? get warning => _warning;
   String get selectedCategory => _selectedCategory;
   int get currentPage => _currentPage;
   bool get isLoading => _isLoading || _indexing;
@@ -84,6 +86,7 @@ class SearchController extends ChangeNotifier {
     final normalized = value.trim();
     if (_query == normalized) return;
     _query = normalized;
+    _warning = null;
     _requestGeneration++;
     _currentPage = 1; // Reset pagination on query change
 
@@ -106,6 +109,7 @@ class SearchController extends ChangeNotifier {
   void selectCategory(String category) {
     if (_selectedCategory == category) return;
     _selectedCategory = category;
+    _warning = null;
     _requestGeneration++;
     _currentPage = 1; // Reset pagination on category change
 
@@ -143,27 +147,45 @@ class SearchController extends ChangeNotifier {
 
     // 2. Filter by search query (Hybrid Search)
     if (_query.isEmpty) {
+      _warning = null;
       _filteredItems = [];
     } else {
       final currentQuery = _query;
 
       try {
+        final failedSources = <String>[];
         // 2a. Search in SQLite DBs if category matches 'all', 'quran', or 'mafatih'
         final quranFuture = (category == 'all' || category == 'quran')
-            ? _searchQuran(currentQuery)
+            ? _searchQuran(currentQuery).catchError((Object e) {
+                debugPrint('Quran search failed: $e');
+                failedSources.add('القرآن');
+                return <Map<String, dynamic>>[];
+              })
             : Future.value(<Map<String, dynamic>>[]);
 
         final mafatihFuture = (category == 'all' || category == 'mafatih')
-            ? _searchMafatih(currentQuery)
+            ? _searchMafatih(currentQuery).catchError((Object e) {
+                debugPrint('Mafatih search failed: $e');
+                failedSources.add('مفاتيح الجنان');
+                return <MafatihArticle>[];
+              })
             : Future.value(<MafatihArticle>[]);
 
         // 2b. Search JSON data in isolate
-        final memorySearchFuture = _searchMemory(categoryFiltered, currentQuery);
+        final memorySearchFuture = _searchMemory(categoryFiltered, currentQuery)
+            .catchError((Object e) {
+          debugPrint('Local content search failed: $e');
+          failedSources.add('المحتوى المحلي');
+          return <ContentItem>[];
+        });
 
         // Run all futures concurrently
         final results = await Future.wait([quranFuture, mafatihFuture, memorySearchFuture]);
 
         if (!_disposed && generation == _requestGeneration) {
+          _warning = failedSources.isEmpty
+              ? null
+              : 'تعذر البحث في: ${failedSources.join('، ')}. النتائج جزئية.';
           final quranResultsRaw = results[0] as List<Map<String, dynamic>>;
           final mafatihResultsRaw = results[1] as List<MafatihArticle>;
           final memoryResults = results[2] as List<ContentItem>;
@@ -208,6 +230,7 @@ class SearchController extends ChangeNotifier {
       } catch (e) {
         if (_disposed || generation != _requestGeneration) return;
         debugPrint("Hybrid search error: $e");
+        _warning = 'تعذر إكمال البحث. يرجى المحاولة مجددًا.';
         _filteredItems = [];
       }
     }
