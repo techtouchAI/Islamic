@@ -43,6 +43,7 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
+          flutter-version: '3.35.6'
           channel: stable
           cache: true
 
@@ -56,7 +57,7 @@ jobs:
         run: flutter pub get
 
       - name: Format Dart sources
-        run: dart format lib test
+        run: dart format --output=none --set-exit-if-changed .
 
       - name: Analyze Dart sources
         run: flutter analyze --no-fatal-infos
