@@ -2,6 +2,7 @@ import "../services/quran_service.dart";
 import 'dart:math';
 import 'package:flutter/foundation.dart';
 import '../data/data_manager.dart';
+import '../utils/string_extensions.dart';
 
 class SearchDocument {
   final String id;
@@ -63,21 +64,7 @@ class SearchEngine {
   bool get isIndexed => _isIndexed;
   List<SearchDocument> get allDocuments => _index;
 
-  // Arabic Normalization
-  static final _diacriticsRegExp = RegExp(r'[\u064B-\u065F\u0670]');
-
-  static String normalizeArabic(String text) {
-    return text
-        .replaceAll(_diacriticsRegExp, '')
-        .replaceAll('أ', 'ا')
-        .replaceAll('إ', 'ا')
-        .replaceAll('آ', 'ا')
-        .replaceAll('ٱ', 'ا')
-        .replaceAll('ة', 'ه')
-        .replaceAll('ى', 'ي')
-        .replaceAll(RegExp(r'\s+'), ' ')
-        .trim();
-  }
+  static String normalizeArabic(String text) => normalizeArabicForSearch(text);
 
   // Levenshtein distance calculation
   static int levenshteinDistance(String s, String t) {

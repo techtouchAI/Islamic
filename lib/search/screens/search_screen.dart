@@ -344,14 +344,17 @@ class _SearchScreenState extends State<SearchScreen> {
       if (item.surahNumber != null) {
         final ayahs = await QuranService.getAyahs(item.surahNumber!);
         if (mounted) {
+          final surahName = item.title.split(' - آية').first.replaceFirst('سورة ', '');
           Navigator.push(
             context,
             MaterialPageRoute(
               builder: (context) => ReaderPage(
-                title: item.title,
+                title: surahName,
                 content: '',
                 isQuran: true,
-                surahName: item.title,
+                surahName: surahName,
+                surahId: item.surahNumber,
+                targetAyahNumber: item.ayahNumber,
                 ayahs: ayahs,
                 fontSizeFactor: widget.fontSizeFactor,
               ),
