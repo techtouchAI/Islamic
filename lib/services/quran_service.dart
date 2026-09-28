@@ -1,8 +1,6 @@
 import 'package:sqflite/sqflite.dart';
-import 'package:path/path.dart';
-import 'package:flutter/services.dart';
-import 'dart:io';
 import 'package:flutter/foundation.dart';
+import 'bundled_database.dart';
 import '../data/data_manager.dart';
 
 class QuranService {
@@ -13,23 +11,7 @@ class QuranService {
   static Future<void> initDB() async {
     if (kIsWeb) return;
     try {
-      final dbPath = await getDatabasesPath();
-      final path = join(dbPath, "quran_db.db");
-
-      // Ensure directory exists
-      await Directory(dirname(path)).create(recursive: true);
-
-      if (!await File(path).exists()) {
-        await Directory(dirname(path)).create(recursive: true);
-        ByteData data = await rootBundle.load("assets/data/quran_db.db");
-        List<int> bytes = data.buffer.asUint8List(
-          data.offsetInBytes,
-          data.lengthInBytes,
-        );
-        await File(path).writeAsBytes(bytes);
-        rootBundle.evict("assets/data/quran_db.db");
-      }
-      _db = await openDatabase(path, readOnly: true);
+      _db = await BundledDatabase.open('assets/data/quran_db.db');
     } catch (e) {
       debugPrint("QuranService Init Error: $e");
     }

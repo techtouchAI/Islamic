@@ -1,9 +1,7 @@
 import 'package:sqflite/sqflite.dart';
-import 'package:path/path.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
-import 'dart:io';
 import 'package:flutter/foundation.dart';
+import 'bundled_database.dart';
 import '../models/mafatih_category.dart';
 import '../models/mafatih_article.dart';
 import '../main.dart'; // To access navigatorKey
@@ -14,23 +12,7 @@ class MafatihService {
   static Future<void> initDB() async {
     if (kIsWeb) return;
     try {
-      final dbPath = await getDatabasesPath();
-      final path = join(dbPath, "maftiha.ar2.db");
-
-      // Ensure directory exists
-      await Directory(dirname(path)).create(recursive: true);
-
-      if (!await File(path).exists()) {
-        await Directory(dirname(path)).create(recursive: true);
-        ByteData data = await rootBundle.load("assets/data/maftiha.ar2.db");
-        List<int> bytes = data.buffer.asUint8List(
-          data.offsetInBytes,
-          data.lengthInBytes,
-        );
-        await File(path).writeAsBytes(bytes);
-        rootBundle.evict("assets/data/maftiha.ar2.db");
-      }
-      _db = await openDatabase(path, readOnly: true);
+      _db = await BundledDatabase.open('assets/data/maftiha.ar2.db');
     } catch (e) {
       debugPrint("MafatihService Init Error: $e");
       _showError("حدث خطأ أثناء تهيئة مفاتيح الجنان: ${e.toString()}");
