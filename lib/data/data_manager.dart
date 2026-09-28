@@ -26,6 +26,9 @@ class DataManager {
 
   static Map<String, dynamic> _decodeAndNormalizeJson(String source) {
     final db = json.decode(source) as Map<String, dynamic>;
+    if (db['content'] is! Map || db['sections'] is! Map) {
+      throw const FormatException('Content document is missing required sections');
+    }
     _normalizeDBLocal(db);
     return db;
   }
@@ -112,8 +115,9 @@ class DataManager {
   }
 
   static Future<bool> syncCloudData({http.Client? client}) async {
+    final ownedClient = client == null && httpClient == null ? http.Client() : null;
+    client ??= httpClient ?? ownedClient;
     try {
-      client = client ?? httpClient ?? http.Client();
       // Add random component to fully bypass strict CDN caches
       final timestamp = DateTime.now().millisecondsSinceEpoch.toString() +
           '_' +
@@ -155,6 +159,8 @@ class DataManager {
       }
     } catch (e) {
       debugPrint("DataManager Sync Error (Network/Timeout): $e");
+    } finally {
+      ownedClient?.close();
     }
     return false;
   }

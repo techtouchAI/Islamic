@@ -33,9 +33,9 @@ import 'package:provider/provider.dart';
 
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:dio/dio.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'providers/settings_provider.dart';
-import 'services/ota_service.dart';
 
 class IslamicPatternPainter extends CustomPainter {
   final Color color;
@@ -325,33 +325,46 @@ class _MainScaffoldState extends State<MainScaffold> {
 
         const String releaseNotes =
             '✨ يتوفر الآن تحديث جديد للتطبيق!\n\nقمنا بإضافة تحسينات وإصلاحات جديدة لضمان أفضل تجربة لك. يرجى التحديث الآن.';
-        String updateUrl = '';
+        // Never treat the first arbitrary release asset as an installable APK.
         final assets = data['assets'];
-        if (assets != null && assets is List && assets.isNotEmpty) {
-          updateUrl = assets[0]['browser_download_url']?.toString() ?? '';
-        }
+        final apkAssets = assets is List
+            ? assets.where((asset) {
+                if (asset is! Map) return false;
+                final name = asset['name']?.toString().toLowerCase() ?? '';
+                final url = Uri.tryParse(asset['browser_download_url']?.toString() ?? '');
+                return name.endsWith('.apk') && url?.scheme == 'https';
+              }).toList()
+            : [];
+        final releaseUrl = Uri.tryParse(data['html_url']?.toString() ?? '');
 
-        if (updateUrl.isEmpty) {
-          throw Exception("رابط التحميل (APK) غير موجود في جيت هاب");
-        }
-
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                'نجاح الاتصال | إصدار التطبيق: $currentVersionCode | إصدار السيرفر: $latestVersionCode',
-                style: const TextStyle(color: Colors.white),
+        if (currentVersionCode < latestVersionCode && mounted &&
+            releaseUrl != null && releaseUrl.scheme == 'https' &&
+            releaseUrl.host == 'github.com' && apkAssets.isNotEmpty) {
+          // Releases currently provide no authenticated checksum manifest.
+          // Offer the official release page rather than forcing an unverified install.
+          final context = navigatorKey.currentContext;
+          if (context != null) {
+            showDialog<void>(
+              context: context,
+              builder: (dialogContext) => AlertDialog(
+                title: const Text('تحديث متوفر'),
+                content: Text(releaseNotes),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(dialogContext).pop(),
+                    child: const Text('لاحقاً'),
+                  ),
+                  TextButton(
+                    onPressed: () async {
+                      Navigator.of(dialogContext).pop();
+                      await launchUrl(releaseUrl, mode: LaunchMode.externalApplication);
+                    },
+                    child: const Text('صفحة الإصدار الرسمية'),
+                  ),
+                ],
               ),
-              backgroundColor: Colors.green,
-              duration: const Duration(seconds: 3),
-            ),
-          );
-        }
-
-        // التحقق من الشرط الرياضي وإظهار النافذة
-        if (currentVersionCode < latestVersionCode) {
-          // Force update to be strictly mandatory
-          _showUpdateDialogWithRetry(true, updateUrl, releaseNotes, null);
+            );
+          }
         }
       } else {
         throw Exception("فشل الاتصال، رمز الخطأ: ${response.statusCode}");
@@ -359,97 +372,6 @@ class _MainScaffoldState extends State<MainScaffold> {
     } catch (e) {
       debugPrint('OTA_Update Error: $e');
     }
-  }
-
-  void _showUpdateDialogWithRetry(
-    bool forceUpdate,
-    String updateUrl,
-    String releaseNotes,
-    String? checksum,
-    [int retryCount = 0]
-  ) {
-    final rootContext = navigatorKey.currentContext;
-    if (rootContext == null) {
-      if (retryCount < 20) {
-         // Retry up to 20 times (10 seconds total), waiting 500ms each time for the context to become available
-         Future.delayed(const Duration(milliseconds: 500), () {
-            _showUpdateDialogWithRetry(forceUpdate, updateUrl, releaseNotes, checksum, retryCount + 1);
-         });
-      } else {
-          debugPrint("Failed to show update dialog: context is still null after 10 seconds of retries.");
-      }
-      return;
-    }
-
-    _showUpdateDialog(forceUpdate, updateUrl, releaseNotes, checksum);
-  }
-
-  void _showUpdateDialog(
-    bool forceUpdate,
-    String updateUrl,
-    String releaseNotes,
-    String? checksum,
-  ) {
-    final rootContext = navigatorKey.currentContext;
-    if (rootContext == null) return;
-
-    showDialog(
-      context: rootContext,
-      barrierDismissible: false, // Strictly mandatory, cannot dismiss
-      builder: (contextBuilder) {
-        return ValueListenableBuilder<double>(
-          valueListenable: OTAService.instance.downloadProgress,
-          builder: (context, downloadProgress, child) {
-            final isDownloading = downloadProgress >= 0;
-            return PopScope(
-              canPop: false, // Strictly mandatory, block back button
-              child: AlertDialog(
-                title: const Text('تحديث متوفر', textAlign: TextAlign.right),
-                content: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(releaseNotes, textAlign: TextAlign.right),
-                    if (isDownloading) ...[
-                      const SizedBox(height: 20),
-                      LinearProgressIndicator(value: downloadProgress),
-                      const SizedBox(height: 10),
-                      Text('${(downloadProgress * 100).toStringAsFixed(0)}%'),
-                    ],
-                  ],
-                ),
-                actions: [
-                  if (!isDownloading)
-                    TextButton(
-                      onPressed: () => SystemNavigator.pop(),
-                      child: const Text('خروج'),
-                    ),
-                  if (!isDownloading)
-                    ElevatedButton(
-                      onPressed: () {
-                        OTAService.instance.downloadAndInstallApk(
-                          updateUrl,
-                          checksum,
-                          onError: (errorMessage) {
-                            ScaffoldMessenger.of(contextBuilder).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  errorMessage,
-                                  textAlign: TextAlign.center,
-                                ),
-                              ),
-                            );
-                          },
-                        );
-                      },
-                      child: const Text('تحديث الآن'),
-                    ),
-                ],
-              ),
-            );
-          },
-        );
-      },
-    );
   }
 
   String _currentSection = 'home';
