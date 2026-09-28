@@ -95,10 +95,11 @@ class DataManager {
 
   static Future<void> loadContent() async {
     try {
-      final localFile = await _getLocalFile();
+      // Browser storage has no dart:io file; load the same bundled content.
+      final localFile = kIsWeb ? null : await _getLocalFile();
 
       // 1. Try to load from local storage first
-      if (await localFile.exists()) {
+      if (localFile != null && await localFile.exists()) {
         try {
           final content = await localFile.readAsString(encoding: utf8);
           _db = await compute(_decodeAndNormalizeJson, content);
@@ -137,6 +138,13 @@ class DataManager {
           await requestClient.get(url).timeout(const Duration(seconds: 15));
       if (response.statusCode == 200) {
         final content = utf8.decode(response.bodyBytes);
+
+        if (kIsWeb) {
+          final newDb = await compute(_decodeAndNormalizeJson, content);
+          _db = newDb;
+          dbNotifier.value++;
+          return true;
+        }
 
         // التحقق من وجود تغييرات فعلية
         final localFile = await _getLocalFile();
