@@ -101,15 +101,21 @@ class SearchEngine {
       return targetText.contains(queryWord);
     }
 
-    List<String> targetWords = targetText.split(' ');
-    for (String targetWord in targetWords) {
-      if ((targetWord.length - queryWord.length).abs() > 1) continue;
+    return fuzzyMatchWords(queryWord, targetText, targetText.split(' '));
+  }
 
-      if (levenshteinDistance(queryWord, targetWord) <= 1) {
-        return true;
-      }
+  /// Reuses tokenized words when a document is scored for several query terms.
+  static bool fuzzyMatchWords(
+      String queryWord, String targetText, Iterable<String> targetWords) {
+    if (queryWord.isEmpty) return false;
+    // Substrings are cheaper than edit distance and cover partial searches.
+    if (targetText.contains(queryWord)) return true;
+    if (queryWord.length < 4) return false;
+    for (final targetWord in targetWords) {
+      if ((targetWord.length - queryWord.length).abs() > 1) continue;
+      if (levenshteinDistance(queryWord, targetWord) <= 1) return true;
     }
-    return targetText.contains(queryWord);
+    return false;
   }
 
   Future<void> init({bool force = false}) async {

@@ -318,8 +318,6 @@ class SearchController extends ChangeNotifier {
           wordScore += 4;
         }
 
-        bool isWordFuzzy = word.length >= 4;
-
         // Content Matching
         if (normalizedContent == word) {
              wordMatched = true;
@@ -327,13 +325,13 @@ class SearchController extends ChangeNotifier {
         } else if (contentWords.contains(word)) {
           wordMatched = true;
           wordScore += 2;
-        } else if (SearchEngine.fuzzyMatch(word, normalizedContent, isFuzzy: isWordFuzzy)) {
+        } else if (SearchEngine.fuzzyMatchWords(word, normalizedContent, contentWords)) {
           wordMatched = true;
           wordScore += 1;
         }
 
-        if (!wordMatched && isWordFuzzy) {
-           if (SearchEngine.fuzzyMatch(word, normalizedTitle, isFuzzy: isWordFuzzy)) {
+        if (!wordMatched && word.length >= 4) {
+           if (SearchEngine.fuzzyMatchWords(word, normalizedTitle, titleWords)) {
               wordMatched = true;
               wordScore += 6;
            }
