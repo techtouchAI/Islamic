@@ -43,7 +43,7 @@ jobs:
       - name: Run tests
         run: |
           set +e
-          flutter test 2>&1 | tee flutter-test.log
+          flutter test --reporter expanded 2>&1 | tee flutter-test.log
           result=${PIPESTATUS[0]}
           if [ "$result" -ne 0 ]; then
             echo '### Flutter test failures' >> "$GITHUB_STEP_SUMMARY"
