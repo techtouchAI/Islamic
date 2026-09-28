@@ -43,14 +43,16 @@ jobs:
       - name: Run tests
         run: |
           set +e
-          flutter test --reporter expanded 2>&1 | tee flutter-test.log
+          flutter test --no-pub --reporter expanded 2>&1 | tee flutter-test.log
           result=${PIPESTATUS[0]}
           if [ "$result" -ne 0 ]; then
             echo '### Flutter test failures' >> "$GITHUB_STEP_SUMMARY"
             echo '```text' >> "$GITHUB_STEP_SUMMARY"
             tr '\r' '\n' < flutter-test.log | tail -n 120 >> "$GITHUB_STEP_SUMMARY"
             echo '```' >> "$GITHUB_STEP_SUMMARY"
-            diagnostic=$(tr '\r\n' '  ' < flutter-test.log | tail -c 11000)
+            grep -n -E -A 10 -B 1 'Expected:|Actual:|\[E\]|Exception|FAILED|Some tests failed' flutter-test.log \
+              | tr '\r\n' '  ' | tail -c 1800 > flutter-failures.txt || true
+            diagnostic=$(cat flutter-failures.txt)
             echo "::error title=Flutter test failure::$diagnostic"
           fi
           exit "$result"
