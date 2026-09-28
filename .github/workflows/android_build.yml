@@ -50,6 +50,8 @@ jobs:
             echo '```text' >> "$GITHUB_STEP_SUMMARY"
             tr '\r' '\n' < flutter-test.log | tail -n 120 >> "$GITHUB_STEP_SUMMARY"
             echo '```' >> "$GITHUB_STEP_SUMMARY"
+            diagnostic=$(tr '\r\n' '  ' < flutter-test.log | tail -c 11000)
+            echo "::error title=Flutter test failure::$diagnostic"
           fi
           exit "$result"
 
