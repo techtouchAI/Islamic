@@ -1,34 +1,15 @@
 import 'package:flutter/material.dart';
 
-
-
-
-
-
-
-
-
-
-
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 
 import '../../data/data_manager.dart';
 
-
-
-
-
-
-
-
-
 import 'package:provider/provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../main.dart';
 import 'package:path_provider/path_provider.dart';
-
 
 class SettingsSection extends StatelessWidget {
   const SettingsSection({super.key});
@@ -62,8 +43,8 @@ class SettingsSection extends StatelessWidget {
                   children: [
                     IconButton(
                       icon: const Icon(Icons.remove_circle_outline),
-                      onPressed: () =>
-                          settingsProvider.setHijriAdjustment(settingsProvider.hijriAdjustment - 1),
+                      onPressed: () => settingsProvider.setHijriAdjustment(
+                          settingsProvider.hijriAdjustment - 1),
                     ),
                     Text(
                       '${settingsProvider.hijriAdjustment}',
@@ -71,8 +52,8 @@ class SettingsSection extends StatelessWidget {
                     ),
                     IconButton(
                       icon: const Icon(Icons.add_circle_outline),
-                      onPressed: () =>
-                          settingsProvider.setHijriAdjustment(settingsProvider.hijriAdjustment + 1),
+                      onPressed: () => settingsProvider.setHijriAdjustment(
+                          settingsProvider.hijriAdjustment + 1),
                     ),
                   ],
                 ),
@@ -110,7 +91,8 @@ class SettingsSection extends StatelessWidget {
                       child: CircleAvatar(
                         backgroundColor: c,
                         radius: 18,
-                        child: settingsProvider.primaryColor.toARGB32() == c.toARGB32()
+                        child: settingsProvider.primaryColor.toARGB32() ==
+                                c.toARGB32()
                             ? const Icon(
                                 Icons.check,
                                 color: Colors.white,
@@ -139,7 +121,8 @@ class SettingsSection extends StatelessWidget {
                       child: CircleAvatar(
                         backgroundColor: c,
                         radius: 18,
-                        child: settingsProvider.cardColor.toARGB32() == c.toARGB32()
+                        child: settingsProvider.cardColor.toARGB32() ==
+                                c.toARGB32()
                             ? Icon(
                                 Icons.check,
                                 color: c.computeLuminance() > 0.5
@@ -174,7 +157,8 @@ class SettingsSection extends StatelessWidget {
               onTap: () async {
                 final picker = ImagePicker();
                 final img = await picker.pickImage(source: ImageSource.gallery);
-                if (img != null) settingsProvider.setBackgroundImagePath(img.path);
+                if (img != null)
+                  settingsProvider.setBackgroundImagePath(img.path);
               },
             ),
             const SizedBox(height: 10),
@@ -194,7 +178,8 @@ class SettingsSection extends StatelessWidget {
             _visToggle(context, 'inspiration', 'إلهام اليوم'),
             _visToggle(context, 'day_dua', 'دعاء اليوم'),
             ...DataManager.getSections().entries.map(
-                  (e) => _visToggle(context, e.key, e.value['title'].toString()),
+                  (e) =>
+                      _visToggle(context, e.key, e.value['title'].toString()),
                 ),
           ]),
         ],
@@ -224,17 +209,19 @@ class SettingsSection extends StatelessWidget {
             // Create physical file instead of storing base64 string
             String? filePath;
             if (img.startsWith('data:image')) {
-               try {
-                  final bytes = Uri.parse(img).data!.contentAsBytes();
-                  final dir = await getTemporaryDirectory();
-                  final file = File('${dir.path}/custom_bg_${img.hashCode}.png');
-                  await file.writeAsBytes(bytes);
-                  filePath = file.path;
-               } catch (e) {
-                  debugPrint("Error saving base64 image: $e");
-                  filePath = img; // Fallback
-               }
-            } else { filePath = img; }
+              try {
+                final bytes = Uri.parse(img).data!.contentAsBytes();
+                final dir = await getTemporaryDirectory();
+                final file = File('${dir.path}/custom_bg_${img.hashCode}.png');
+                await file.writeAsBytes(bytes);
+                filePath = file.path;
+              } catch (e) {
+                debugPrint("Error saving base64 image: $e");
+                filePath = img; // Fallback
+              }
+            } else {
+              filePath = img;
+            }
             final prefs = await SharedPreferences.getInstance();
             await prefs.setString('custom_bg_base64_selected', filePath);
             await prefs.remove('backgroundImage');
@@ -245,7 +232,8 @@ class SettingsSection extends StatelessWidget {
             width: 80,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: settingsProvider.primaryColor, width: 1),
+              border:
+                  Border.all(color: settingsProvider.primaryColor, width: 1),
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(9),
@@ -295,10 +283,10 @@ class SettingsSection extends StatelessWidget {
   Widget _visToggle(BuildContext context, String key, String title) {
     final settingsProvider = context.watch<SettingsProvider>();
     return SwitchListTile(
-        title: Text(title, style: const TextStyle(fontSize: 14)),
-        value: settingsProvider.homeVisibility[key] ?? true,
-        onChanged: (v) => settingsProvider.setHomeVisibility(key, v),
-        dense: true,
-      );
+      title: Text(title, style: const TextStyle(fontSize: 14)),
+      value: settingsProvider.homeVisibility[key] ?? true,
+      onChanged: (v) => settingsProvider.setHomeVisibility(key, v),
+      dense: true,
+    );
   }
 }

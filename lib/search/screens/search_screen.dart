@@ -222,12 +222,14 @@ class _SearchScreenState extends State<SearchScreen> {
                 Semantics(
                   liveRegion: true,
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     child: Row(
                       children: [
                         Expanded(
                           child: Text(snapshot.warning!,
-                              style: TextStyle(color: Theme.of(context).colorScheme.error)),
+                              style: TextStyle(
+                                  color: Theme.of(context).colorScheme.error)),
                         ),
                         TextButton(
                           onPressed: _controller.retry,
@@ -366,7 +368,8 @@ class _SearchScreenState extends State<SearchScreen> {
       if (item.surahNumber != null) {
         final ayahs = await QuranService.getAyahs(item.surahNumber!);
         if (mounted) {
-          final surahName = item.title.split(' - آية').first.replaceFirst('سورة ', '');
+          final surahName =
+              item.title.split(' - آية').first.replaceFirst('سورة ', '');
           Navigator.push(
             context,
             MaterialPageRoute(

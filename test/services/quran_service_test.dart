@@ -30,7 +30,8 @@ void main() {
   group('QuranService Fallback Logic', () {
     test('getSurahs Empty Fallback returns hardcoded surahs', () async {
       // Setup DataManager with empty content
-      File('./content.json').writeAsStringSync(jsonEncode({'sections': {}, 'content': {}}));
+      File('./content.json')
+          .writeAsStringSync(jsonEncode({'sections': {}, 'content': {}}));
       await DataManager.loadContent();
 
       final surahs = await QuranService.getSurahs();

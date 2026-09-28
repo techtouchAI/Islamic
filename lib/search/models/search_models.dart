@@ -3,8 +3,8 @@ class ContentItem {
   final String title;
   final String subtitle;
   final String content;
-  final String sectionId;      // e.g., 'quran', 'dua', 'ziyarat'
-  final String sectionName;    // e.g., 'القرآن الكريم', 'الأدعية'
+  final String sectionId; // e.g., 'quran', 'dua', 'ziyarat'
+  final String sectionName; // e.g., 'القرآن الكريم', 'الأدعية'
   final String? category;
   final String? normalizedTitle;
   final String? normalizedContent;
@@ -35,8 +35,8 @@ class ContentItem {
     if (query.isEmpty) return true;
     final lowerQuery = query.toLowerCase();
     return title.toLowerCase().contains(lowerQuery) ||
-           subtitle.toLowerCase().contains(lowerQuery) ||
-           content.toLowerCase().contains(lowerQuery);
+        subtitle.toLowerCase().contains(lowerQuery) ||
+        content.toLowerCase().contains(lowerQuery);
   }
 }
 

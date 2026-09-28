@@ -6,15 +6,24 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   const dua = ContentItem(
-    id: 'dua-1', title: 'دعاء', subtitle: '', content: 'دعاء',
-    sectionId: 'dua', sectionName: 'الأدعية',
+    id: 'dua-1',
+    title: 'دعاء',
+    subtitle: '',
+    content: 'دعاء',
+    sectionId: 'dua',
+    sectionName: 'الأدعية',
   );
   const amal = ContentItem(
-    id: 'amal-1', title: 'عمل', subtitle: '', content: 'عمل',
-    sectionId: 'amal', sectionName: 'الأعمال',
+    id: 'amal-1',
+    title: 'عمل',
+    subtitle: '',
+    content: 'عمل',
+    sectionId: 'amal',
+    sectionName: 'الأعمال',
   );
 
-  test('late results from another category cannot replace current results', () async {
+  test('late results from another category cannot replace current results',
+      () async {
     final oldRequest = Completer<List<ContentItem>>();
     final newRequest = Completer<List<ContentItem>>();
     final started = Completer<void>();
@@ -46,7 +55,8 @@ void main() {
     expect(controller.selectedCategory, 'dua');
   });
 
-  test('a failed source retains other results and reports partial coverage', () async {
+  test('a failed source retains other results and reports partial coverage',
+      () async {
     final controller = app.SearchController(
       allItems: [dua],
       availableSections: ['dua'],

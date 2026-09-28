@@ -95,7 +95,9 @@ class _PaginationButton extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           child: Row(
             children: [
-              if (!isReversed) Icon(icon, size: 18, color: enabled ? Colors.white : Colors.grey[500]),
+              if (!isReversed)
+                Icon(icon,
+                    size: 18, color: enabled ? Colors.white : Colors.grey[500]),
               if (!isReversed) const SizedBox(width: 4),
               Text(
                 label,
@@ -106,7 +108,9 @@ class _PaginationButton extends StatelessWidget {
                 ),
               ),
               if (isReversed) const SizedBox(width: 4),
-              if (isReversed) Icon(icon, size: 18, color: enabled ? Colors.white : Colors.grey[500]),
+              if (isReversed)
+                Icon(icon,
+                    size: 18, color: enabled ? Colors.white : Colors.grey[500]),
             ],
           ),
         ),

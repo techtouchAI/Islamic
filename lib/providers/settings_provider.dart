@@ -87,7 +87,8 @@ class SettingsProvider extends ChangeNotifier {
   }
 
   void toggleTheme() {
-    _themeMode = _themeMode == ThemeMode.light ? ThemeMode.dark : ThemeMode.light;
+    _themeMode =
+        _themeMode == ThemeMode.light ? ThemeMode.dark : ThemeMode.light;
     _saveSetting('theme', _themeMode == ThemeMode.light ? 'light' : 'dark');
     notifyListeners();
   }

@@ -23,8 +23,10 @@ class OTAService {
     if (_isDownloading) return;
     final uri = Uri.tryParse(url);
     final checksum = expectedChecksum?.toLowerCase();
-    if (uri == null || uri.scheme != 'https' ||
-        checksum == null || !RegExp(r'^[0-9a-f]{64}$').hasMatch(checksum)) {
+    if (uri == null ||
+        uri.scheme != 'https' ||
+        checksum == null ||
+        !RegExp(r'^[0-9a-f]{64}$').hasMatch(checksum)) {
       onError('لا يمكن تثبيت تحديث دون رابط آمن وبصمة تحقق موثوقة.');
       return;
     }
@@ -64,7 +66,8 @@ class OTAService {
 
       final File file = File(savePath);
 
-      final fileChecksum = (await sha256.bind(file.openRead()).first).toString();
+      final fileChecksum =
+          (await sha256.bind(file.openRead()).first).toString();
       if (fileChecksum != checksum) {
         await file.delete();
         onError('تعذر التحديث: الملف لا يطابق بصمة التحقق.');
@@ -73,7 +76,6 @@ class OTAService {
 
       final result = await OpenFile.open(savePath);
       debugPrint("OpenFile result: ${result.message}");
-
     } catch (e) {
       debugPrint("Download/Install error: $e");
       downloadProgress.value = -1.0;

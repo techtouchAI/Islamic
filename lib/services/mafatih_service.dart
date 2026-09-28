@@ -90,7 +90,10 @@ class MafatihService {
       if (kIsWeb || _db == null) {
         throw StateError('قاعدة مفاتيح الجنان غير متاحة');
       }
-      final escaped = query.replaceAll('\\', '\\\\').replaceAll('%', '\\%').replaceAll('_', '\\_');
+      final escaped = query
+          .replaceAll('\\', '\\\\')
+          .replaceAll('%', '\\%')
+          .replaceAll('_', '\\_');
       final String safeQuery = '%$escaped%';
       final maps = await _db!.query(
         'articles',
@@ -114,7 +117,8 @@ class MafatihService {
       // group_id can be exact '10', start with '10@@', end with '@@10', or contain '@@10@@'
       final maps = await _db!.query(
         'articles',
-        where: 'group_id = ? OR group_id LIKE ? OR group_id LIKE ? OR group_id LIKE ?',
+        where:
+            'group_id = ? OR group_id LIKE ? OR group_id LIKE ? OR group_id LIKE ?',
         whereArgs: [
           idStr,
           '$idStr@@%',

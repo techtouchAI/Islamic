@@ -27,16 +27,18 @@ class DataManager {
   static Map<String, dynamic> _decodeAndNormalizeJson(String source) {
     final db = json.decode(source) as Map<String, dynamic>;
     if (db['content'] is! Map || db['sections'] is! Map) {
-      throw const FormatException('Content document is missing required sections');
+      throw const FormatException(
+          'Content document is missing required sections');
     }
     final content = db['content'] as Map;
     final sections = db['sections'] as Map;
     if (sections.keys.any((key) => key is! String) ||
         sections.values.any((value) => value is! Map) ||
         content.keys.any((key) => key is! String) ||
-        content.values.any((value) =>
-            value is! List || value.any((item) => item is! Map))) {
-      throw const FormatException('Content document has an invalid section shape');
+        content.values.any(
+            (value) => value is! List || value.any((item) => item is! Map))) {
+      throw const FormatException(
+          'Content document has an invalid section shape');
     }
     _normalizeDBLocal(db);
     return db;
@@ -106,7 +108,8 @@ class DataManager {
           debugPrint("DataManager: Loaded from local storage.");
           return;
         } catch (e) {
-          debugPrint("DataManager: Invalid local content, using bundled asset: $e");
+          debugPrint(
+              "DataManager: Invalid local content, using bundled asset: $e");
         }
       }
       final response = await rootBundle.loadString('assets/data/content.json');

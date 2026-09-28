@@ -110,7 +110,10 @@ class QuranService {
 
     try {
       // Search the unvowelled database column; keep the original text for display.
-      final escaped = query.replaceAll('\\', '\\\\').replaceAll('%', '\\%').replaceAll('_', '\\_');
+      final escaped = query
+          .replaceAll('\\', '\\\\')
+          .replaceAll('%', '\\%')
+          .replaceAll('_', '\\_');
       final String safeQuery = '%$escaped%';
       final List<Map<String, dynamic>> result = await _db!.rawQuery('''
         SELECT a.anum, a.text, a.sid, s.name as surah_name

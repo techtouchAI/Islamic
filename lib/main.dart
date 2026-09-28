@@ -282,11 +282,13 @@ class _MainScaffoldState extends State<MainScaffold> {
 
     try {
       final String timestamp = DateTime.now().millisecondsSinceEpoch.toString();
-      final String apiUrl = 'https://api.github.com/repos/techtouchAI/Islamic/releases/latest?t=$timestamp';
+      final String apiUrl =
+          'https://api.github.com/repos/techtouchAI/Islamic/releases/latest?t=$timestamp';
 
       final response = await Dio().get(
         apiUrl,
-        options: Options(headers: {'Cache-Control': 'no-cache', 'Pragma': 'no-cache'}),
+        options: Options(
+            headers: {'Cache-Control': 'no-cache', 'Pragma': 'no-cache'}),
       );
 
       if (!mounted) return;
@@ -307,11 +309,11 @@ class _MainScaffoldState extends State<MainScaffold> {
 
         // Fallback robust digits only if specific format isn't matched
         if (latestVersionCode == null) {
-             final RegExp allDigits = RegExp(r'\d+');
-             final matches = allDigits.allMatches(tagName);
-             if (matches.isNotEmpty) {
-                 latestVersionCode = int.tryParse(matches.last.group(0)!);
-             }
+          final RegExp allDigits = RegExp(r'\d+');
+          final matches = allDigits.allMatches(tagName);
+          if (matches.isNotEmpty) {
+            latestVersionCode = int.tryParse(matches.last.group(0)!);
+          }
         }
 
         if (latestVersionCode == null) {
@@ -321,8 +323,6 @@ class _MainScaffoldState extends State<MainScaffold> {
         final PackageInfo info = await PackageInfo.fromPlatform();
         final currentVersionCode = int.tryParse(info.buildNumber) ?? 1;
 
-
-
         const String releaseNotes =
             '✨ يتوفر الآن تحديث جديد للتطبيق!\n\nقمنا بإضافة تحسينات وإصلاحات جديدة لضمان أفضل تجربة لك. يرجى التحديث الآن.';
         // Never treat the first arbitrary release asset as an installable APK.
@@ -331,15 +331,19 @@ class _MainScaffoldState extends State<MainScaffold> {
             ? assets.where((asset) {
                 if (asset is! Map) return false;
                 final name = asset['name']?.toString().toLowerCase() ?? '';
-                final url = Uri.tryParse(asset['browser_download_url']?.toString() ?? '');
+                final url = Uri.tryParse(
+                    asset['browser_download_url']?.toString() ?? '');
                 return name.endsWith('.apk') && url?.scheme == 'https';
               }).toList()
             : [];
         final releaseUrl = Uri.tryParse(data['html_url']?.toString() ?? '');
 
-        if (currentVersionCode < latestVersionCode && mounted &&
-            releaseUrl != null && releaseUrl.scheme == 'https' &&
-            releaseUrl.host == 'github.com' && apkAssets.isNotEmpty) {
+        if (currentVersionCode < latestVersionCode &&
+            mounted &&
+            releaseUrl != null &&
+            releaseUrl.scheme == 'https' &&
+            releaseUrl.host == 'github.com' &&
+            apkAssets.isNotEmpty) {
           // Releases currently provide no authenticated checksum manifest.
           // Offer the official release page rather than forcing an unverified install.
           final context = navigatorKey.currentContext;
@@ -357,7 +361,8 @@ class _MainScaffoldState extends State<MainScaffold> {
                   TextButton(
                     onPressed: () async {
                       Navigator.of(dialogContext).pop();
-                      await launchUrl(releaseUrl, mode: LaunchMode.externalApplication);
+                      await launchUrl(releaseUrl,
+                          mode: LaunchMode.externalApplication);
                     },
                     child: const Text('صفحة الإصدار الرسمية'),
                   ),
@@ -425,7 +430,9 @@ class _MainScaffoldState extends State<MainScaffold> {
               ),
               centerTitle: true,
               elevation: 0,
-              backgroundColor: Theme.of(context).appBarTheme.backgroundColor
+              backgroundColor: Theme.of(context)
+                  .appBarTheme
+                  .backgroundColor
                   ?.withValues(alpha: settingsProvider.uiOpacity),
               leading: Builder(
                 builder: (context) => IconButton(
@@ -578,9 +585,8 @@ class _MainScaffoldState extends State<MainScaffold> {
         return TabbedSection(
           key: const ValueKey('imam_ali'),
           tabs: imamAliCats.map((c) => c['title'].toString()).toList(),
-          sectionKeys: imamAliCats
-              .map((c) => 'imam_ali_cat_${c['id']}')
-              .toList(),
+          sectionKeys:
+              imamAliCats.map((c) => 'imam_ali_cat_${c['id']}').toList(),
           fontSizeFactor: settingsProvider.fontSizeFactor,
           uiOpacity: settingsProvider.uiOpacity,
         );

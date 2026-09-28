@@ -33,7 +33,8 @@ class BundledDatabase {
     final db = await openDatabase(path, readOnly: true);
     try {
       await for (final entry in Directory(directory).list()) {
-        if (entry is File && entry.path != path &&
+        if (entry is File &&
+            entry.path != path &&
             (entry.path == p.join(directory, name) ||
                 (p.basename(entry.path).startsWith('${name}_') &&
                     entry.path.endsWith('.db')))) {

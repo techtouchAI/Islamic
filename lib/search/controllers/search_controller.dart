@@ -12,7 +12,8 @@ class SearchController extends ChangeNotifier {
   final List<String> _availableSections;
   final Future<List<Map<String, dynamic>>> Function(String) _searchQuran;
   final Future<List<MafatihArticle>> Function(String) _searchMafatih;
-  final Future<List<ContentItem>> Function(List<ContentItem>, String) _searchMemory;
+  final Future<List<ContentItem>> Function(List<ContentItem>, String)
+      _searchMemory;
 
   // ─── State ───
   String _query = '';
@@ -61,7 +62,8 @@ class SearchController extends ChangeNotifier {
         _searchQuran = searchQuran ?? QuranService.searchVerses,
         _searchMafatih = searchMafatih ?? MafatihService.searchArticles,
         _searchMemory = searchMemory ?? _searchInIsolate {
-    SearchEngine.instance.isIndexingNotifier.addListener(_onIndexingStateChanged);
+    SearchEngine.instance.isIndexingNotifier
+        .addListener(_onIndexingStateChanged);
     _indexing = SearchEngine.instance.isIndexingNotifier.value;
     _computeResults();
   }
@@ -73,7 +75,8 @@ class SearchController extends ChangeNotifier {
 
   @override
   void dispose() {
-    SearchEngine.instance.isIndexingNotifier.removeListener(_onIndexingStateChanged);
+    SearchEngine.instance.isIndexingNotifier
+        .removeListener(_onIndexingStateChanged);
     _debounceTimer?.cancel();
     _disposed = true;
     _requestGeneration++;
@@ -120,7 +123,8 @@ class SearchController extends ChangeNotifier {
   }
 
   void goToPage(int page) {
-    if (page < 1 || page > _pagination.totalPages || page == _currentPage) return;
+    if (page < 1 || page > _pagination.totalPages || page == _currentPage)
+      return;
     _currentPage = page;
     _computePagination(); // Only re-slice, no need to re-filter
     notifyListeners();
@@ -148,7 +152,8 @@ class SearchController extends ChangeNotifier {
     if (category == 'all') {
       categoryFiltered = _allItems;
     } else {
-      categoryFiltered = _allItems.where((i) => i.sectionId == category).toList();
+      categoryFiltered =
+          _allItems.where((i) => i.sectionId == category).toList();
     }
 
     // 2. Filter by search query (Hybrid Search)
@@ -195,7 +200,8 @@ class SearchController extends ChangeNotifier {
         );
 
         // Run all futures concurrently
-        final results = await Future.wait([quranFuture, mafatihFuture, memorySearchFuture]);
+        final results =
+            await Future.wait([quranFuture, mafatihFuture, memorySearchFuture]);
 
         if (!_disposed && generation == _requestGeneration) {
           _warning = failedSources.isEmpty
@@ -216,7 +222,9 @@ class SearchController extends ChangeNotifier {
               sectionName: 'القرآن الكريم',
               category: 'quran',
               surahNumber: ayah['surah_number'] as int,
-              ayahNumber: ayah['ayah_number'] is String ? int.tryParse(ayah['ayah_number']) : ayah['ayah_number'],
+              ayahNumber: ayah['ayah_number'] is String
+                  ? int.tryParse(ayah['ayah_number'])
+                  : ayah['ayah_number'],
               type: 'quran',
             );
           }).toList();
@@ -267,7 +275,7 @@ class SearchController extends ChangeNotifier {
   }
 
   static Future<List<ContentItem>> _searchInIsolate(
-      List<ContentItem> items, String query) =>
+          List<ContentItem> items, String query) =>
       compute(_performSearch, {'items': items, 'query': query});
 
   static List<ContentItem> _performSearch(Map<String, dynamic> params) {
@@ -275,7 +283,8 @@ class SearchController extends ChangeNotifier {
     final String query = params['query'];
 
     final normalizedQuery = SearchEngine.normalizeArabic(query);
-    final queryWords = normalizedQuery.split(' ').where((w) => w.isNotEmpty).toList();
+    final queryWords =
+        normalizedQuery.split(' ').where((w) => w.isNotEmpty).toList();
 
     if (queryWords.isEmpty) {
       return categoryFiltered;
@@ -289,8 +298,10 @@ class SearchController extends ChangeNotifier {
       bool allWordsMatched = true;
       int docScore = 0;
 
-      final normalizedTitle = item.normalizedTitle ?? SearchEngine.normalizeArabic(item.title);
-      final normalizedContent = item.normalizedContent ?? SearchEngine.normalizeArabic(item.content);
+      final normalizedTitle =
+          item.normalizedTitle ?? SearchEngine.normalizeArabic(item.title);
+      final normalizedContent =
+          item.normalizedContent ?? SearchEngine.normalizeArabic(item.content);
       final normalizedCategory = item.normalizedCategory ??
           SearchEngine.normalizeArabic(item.category ?? '');
 
@@ -305,11 +316,11 @@ class SearchController extends ChangeNotifier {
 
         // Title Matching
         if (normalizedTitle == word) {
-            wordMatched = true;
-            wordScore += 20; // Exact match bonus
+          wordMatched = true;
+          wordScore += 20; // Exact match bonus
         } else if (titleWords.contains(word)) {
-            wordMatched = true;
-            wordScore += 10;
+          wordMatched = true;
+          wordScore += 10;
         }
 
         // Category Matching
@@ -320,21 +331,22 @@ class SearchController extends ChangeNotifier {
 
         // Content Matching
         if (normalizedContent == word) {
-             wordMatched = true;
-             wordScore += 5;
+          wordMatched = true;
+          wordScore += 5;
         } else if (contentWords.contains(word)) {
           wordMatched = true;
           wordScore += 2;
-        } else if (SearchEngine.fuzzyMatchWords(word, normalizedContent, contentWords)) {
+        } else if (SearchEngine.fuzzyMatchWords(
+            word, normalizedContent, contentWords)) {
           wordMatched = true;
           wordScore += 1;
         }
 
         if (!wordMatched && word.length >= 4) {
-           if (SearchEngine.fuzzyMatchWords(word, normalizedTitle, titleWords)) {
-              wordMatched = true;
-              wordScore += 6;
-           }
+          if (SearchEngine.fuzzyMatchWords(word, normalizedTitle, titleWords)) {
+            wordMatched = true;
+            wordScore += 6;
+          }
         }
 
         if (!wordMatched) {
@@ -347,13 +359,13 @@ class SearchController extends ChangeNotifier {
 
       // Allow full exact phrase matches even if individual words failed (e.g. phrases with stop words)
       if (!allWordsMatched) {
-          if (normalizedTitle.contains(normalizedQuery)) {
-              allWordsMatched = true;
-              docScore += 30;
-          } else if (normalizedContent.contains(normalizedQuery)) {
-              allWordsMatched = true;
-              docScore += 5;
-          }
+        if (normalizedTitle.contains(normalizedQuery)) {
+          allWordsMatched = true;
+          docScore += 30;
+        } else if (normalizedContent.contains(normalizedQuery)) {
+          allWordsMatched = true;
+          docScore += 5;
+        }
       }
 
       if (allWordsMatched && docScore > 0) {
@@ -364,7 +376,9 @@ class SearchController extends ChangeNotifier {
     scoredItems.sort((a, b) {
       int scoreCompare = (b['score'] as int).compareTo(a['score'] as int);
       if (scoreCompare != 0) return scoreCompare;
-      return (a['item'] as ContentItem).title.compareTo((b['item'] as ContentItem).title);
+      return (a['item'] as ContentItem)
+          .title
+          .compareTo((b['item'] as ContentItem).title);
     });
 
     return scoredItems.map((e) => e['item'] as ContentItem).toList();
@@ -420,7 +434,8 @@ class SearchController extends ChangeNotifier {
   // Expose paginated items safely without destroying the filtered cache
   List<ContentItem> get paginatedFilteredItems {
     final startIndex = (_currentPage - 1) * _itemsPerPage;
-    final endIndex = (startIndex + _itemsPerPage).clamp(0, _filteredItems.length);
+    final endIndex =
+        (startIndex + _itemsPerPage).clamp(0, _filteredItems.length);
     return _filteredItems.sublist(startIndex, endIndex);
   }
 }
