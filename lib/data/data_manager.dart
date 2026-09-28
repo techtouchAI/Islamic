@@ -115,8 +115,8 @@ class DataManager {
   }
 
   static Future<bool> syncCloudData({http.Client? client}) async {
-    final ownedClient = client == null && httpClient == null ? http.Client() : null;
-    client ??= httpClient ?? ownedClient;
+    final ownsClient = client == null && httpClient == null;
+    final requestClient = client ?? httpClient ?? http.Client();
     try {
       // Add random component to fully bypass strict CDN caches
       final timestamp = DateTime.now().millisecondsSinceEpoch.toString() +
@@ -125,7 +125,7 @@ class DataManager {
       final url = Uri.parse("$_repoUrl?t=$timestamp");
 
       final response =
-          await client.get(url).timeout(const Duration(seconds: 15));
+          await requestClient.get(url).timeout(const Duration(seconds: 15));
       if (response.statusCode == 200) {
         final content = utf8.decode(response.bodyBytes);
 
@@ -160,7 +160,7 @@ class DataManager {
     } catch (e) {
       debugPrint("DataManager Sync Error (Network/Timeout): $e");
     } finally {
-      ownedClient?.close();
+      if (ownsClient) requestClient.close();
     }
     return false;
   }
