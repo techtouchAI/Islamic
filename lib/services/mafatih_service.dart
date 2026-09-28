@@ -122,10 +122,11 @@ class MafatihService {
       if (kIsWeb || _db == null || query.isEmpty) {
         return [];
       }
-      final String safeQuery = '%$query%';
+      final escaped = query.replaceAll('\\', '\\\\').replaceAll('%', '\\%').replaceAll('_', '\\_');
+      final String safeQuery = '%$escaped%';
       final maps = await _db!.query(
         'articles',
-        where: 'title LIKE ? OR content LIKE ?',
+        where: r"title LIKE ? ESCAPE '\' OR text LIKE ? ESCAPE '\'",
         whereArgs: [safeQuery, safeQuery],
         limit: 50,
       );

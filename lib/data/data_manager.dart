@@ -87,18 +87,19 @@ class DataManager {
 
       // 1. Try to load from local storage first
       if (await localFile.exists()) {
-        final content = await localFile.readAsString(encoding: utf8);
-        _db = await compute(_decodeAndNormalizeJson, content);
-        debugPrint("DataManager: Loaded from local storage.");
-      } else {
-        // 2. Fallback to bundled assets
-        final String response = await rootBundle.loadString(
-          'assets/data/content.json',
-        );
-        _db = await compute(_decodeAndNormalizeJson, response);
-        rootBundle.evict('assets/data/content.json');
-        debugPrint("DataManager: Loaded from bundled assets.");
+        try {
+          final content = await localFile.readAsString(encoding: utf8);
+          _db = await compute(_decodeAndNormalizeJson, content);
+          debugPrint("DataManager: Loaded from local storage.");
+          return;
+        } catch (e) {
+          debugPrint("DataManager: Invalid local content, using bundled asset: $e");
+        }
       }
+      final response = await rootBundle.loadString('assets/data/content.json');
+      _db = await compute(_decodeAndNormalizeJson, response);
+      rootBundle.evict('assets/data/content.json');
+      debugPrint("DataManager: Loaded from bundled assets.");
     } catch (e) {
       debugPrint("DataManager Error: $e");
       _db = {
@@ -133,16 +134,20 @@ class DataManager {
 
         try {
           final newDb = await compute(_decodeAndNormalizeJson, content);
-          await localFile.writeAsString(content, encoding: utf8);
+          // Rename in the same directory so a failed write cannot corrupt the last good copy.
+          final temporary = File('${localFile.path}.pending');
+          try {
+            await temporary.writeAsString(content, encoding: utf8, flush: true);
+            await temporary.rename(localFile.path);
+          } finally {
+            if (await temporary.exists()) await temporary.delete();
+          }
           _db = Map<String, dynamic>.from(newDb);
           dbNotifier.value++;
           debugPrint("DataManager: Cloud sync successful.");
           return true;
         } catch (parseError) {
-          debugPrint(
-              "CRITICAL JSON ERROR: Invalid JSON Syntax in the remote file. $parseError");
-          assert(false,
-              "CRITICAL JSON ERROR: Failed to parse remote content.json. $parseError");
+          debugPrint("DataManager: Unable to apply cloud content: $parseError");
         }
       } else {
         debugPrint(

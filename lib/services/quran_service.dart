@@ -126,16 +126,14 @@ class QuranService {
     if (_db == null || query.isEmpty) return [];
 
     try {
-      // Removing diacritics for SQLite matching since the DB has the text with diacritics
-      // SQLite doesn't natively support ignoring diacritics easily without custom extensions,
-      // but in standard query we can look for raw text matches if the DB contains clean text,
-      // or we just use normal LIKE. Let's try normal LIKE first.
-      final String safeQuery = '%$query%';
+      // Search the unvowelled database column; keep the original text for display.
+      final escaped = query.replaceAll('\\', '\\\\').replaceAll('%', '\\%').replaceAll('_', '\\_');
+      final String safeQuery = '%$escaped%';
       final List<Map<String, dynamic>> result = await _db!.rawQuery('''
         SELECT a.anum, a.text, a.sid, s.name as surah_name
         FROM ayah a
         JOIN surah s ON a.sid = s.id
-        WHERE a.text LIKE ? OR s.name LIKE ?
+        WHERE a.ar_text LIKE ? ESCAPE '\' OR s.name LIKE ? ESCAPE '\'
         LIMIT 50
       ''', [safeQuery, safeQuery]);
 

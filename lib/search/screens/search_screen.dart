@@ -47,6 +47,7 @@ class _SearchScreenState extends State<SearchScreen> {
 
     _notifier = SearchNotifier(_controller);
     _controller.addListener(_onControllerChanged);
+    SearchEngine.instance.isIndexingNotifier.addListener(_onIndexChanged);
     _searchFocusNode.requestFocus();
   }
 
@@ -120,6 +121,15 @@ class _SearchScreenState extends State<SearchScreen> {
     return 'amal';
   }
 
+  void _onIndexChanged() {
+    if (!mounted) return;
+    if (!SearchEngine.instance.isIndexingNotifier.value &&
+        SearchEngine.instance.isIndexed) {
+      _controller.replaceItems(_loadContentItems());
+    }
+    setState(() {});
+  }
+
   void _onControllerChanged() {
     // Auto-scroll to top when page/category/query changes
     if (_scrollController.hasClients && _scrollController.offset > 0) {
@@ -133,6 +143,8 @@ class _SearchScreenState extends State<SearchScreen> {
 
   @override
   void dispose() {
+    SearchEngine.instance.isIndexingNotifier.removeListener(_onIndexChanged);
+    _controller.removeListener(_onControllerChanged);
     _notifier.dispose();
     _searchFieldController.dispose();
     _searchFocusNode.dispose();
@@ -143,8 +155,21 @@ class _SearchScreenState extends State<SearchScreen> {
   @override
   Widget build(BuildContext context) {
     if (!SearchEngine.instance.isIndexed) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
+      return Scaffold(
+        body: Center(
+          child: SearchEngine.instance.isIndexingNotifier.value
+              ? const CircularProgressIndicator()
+              : Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text('تعذر إعداد البحث'),
+                    TextButton(
+                      onPressed: () => SearchEngine.instance.init(),
+                      child: const Text('إعادة المحاولة'),
+                    ),
+                  ],
+                ),
+        ),
       );
     }
 

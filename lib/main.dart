@@ -270,9 +270,10 @@ class _MainScaffoldState extends State<MainScaffold> {
 
   void _setupUpdateListener() {
     // Sync cloud data asynchronously
-    DataManager.syncCloudData().catchError((e) {
-      debugPrint("Cloud sync failed during deferred tasks: $e");
-      return false;
+    DataManager.syncCloudData().then((changed) async {
+      if (changed) await SearchEngine.instance.init(force: true);
+    }).catchError((Object e) {
+      debugPrint("Cloud sync or search indexing failed: $e");
     });
   }
 

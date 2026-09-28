@@ -8,7 +8,7 @@ import '../../models/mafatih_article.dart';
 
 class SearchController extends ChangeNotifier {
   // ─── Dependencies ───
-  final List<ContentItem> _allItems;
+  List<ContentItem> _allItems;
   final List<String> _availableSections;
 
   // ─── State ───
@@ -19,6 +19,8 @@ class SearchController extends ChangeNotifier {
   bool _isLoading = false;
 
   Timer? _debounceTimer;
+  int _requestGeneration = 0;
+  bool _disposed = false;
 
   // ─── Cached Results ───
   List<ContentItem> _filteredItems = [];
@@ -61,6 +63,8 @@ class SearchController extends ChangeNotifier {
   void dispose() {
     SearchEngine.instance.isIndexingNotifier.removeListener(_onIndexingStateChanged);
     _debounceTimer?.cancel();
+    _disposed = true;
+    _requestGeneration++;
     super.dispose();
   }
 
@@ -70,6 +74,7 @@ class SearchController extends ChangeNotifier {
     final normalized = value.trim();
     if (_query == normalized) return;
     _query = normalized;
+    _requestGeneration++;
     _currentPage = 1; // Reset pagination on query change
 
     _isLoading = true;
@@ -81,9 +86,17 @@ class SearchController extends ChangeNotifier {
     });
   }
 
+  void replaceItems(List<ContentItem> items) {
+    _allItems = items;
+    _currentPage = 1;
+    _debounceTimer?.cancel();
+    _computeResults();
+  }
+
   void selectCategory(String category) {
     if (_selectedCategory == category) return;
     _selectedCategory = category;
+    _requestGeneration++;
     _currentPage = 1; // Reset pagination on category change
 
     _isLoading = true;
@@ -105,15 +118,17 @@ class SearchController extends ChangeNotifier {
   // ─── Core Logic ───
 
   Future<void> _computeResults() async {
+    final generation = ++_requestGeneration;
+    final category = _selectedCategory;
     _isLoading = true;
     notifyListeners();
 
     // 1. Filter by category
     List<ContentItem> categoryFiltered;
-    if (_selectedCategory == 'all') {
+    if (category == 'all') {
       categoryFiltered = _allItems;
     } else {
-      categoryFiltered = _allItems.where((i) => i.sectionId == _selectedCategory).toList();
+      categoryFiltered = _allItems.where((i) => i.sectionId == category).toList();
     }
 
     // 2. Filter by search query (Hybrid Search)
@@ -124,11 +139,11 @@ class SearchController extends ChangeNotifier {
 
       try {
         // 2a. Search in SQLite DBs if category matches 'all', 'quran', or 'mafatih'
-        final quranFuture = (_selectedCategory == 'all' || _selectedCategory == 'quran')
+        final quranFuture = (category == 'all' || category == 'quran')
             ? QuranService.searchVerses(currentQuery)
             : Future.value(<Map<String, dynamic>>[]);
 
-        final mafatihFuture = (_selectedCategory == 'all' || _selectedCategory == 'mafatih')
+        final mafatihFuture = (category == 'all' || category == 'mafatih')
             ? MafatihService.searchArticles(currentQuery)
             : Future.value(<MafatihArticle>[]);
 
@@ -141,7 +156,7 @@ class SearchController extends ChangeNotifier {
         // Run all futures concurrently
         final results = await Future.wait([quranFuture, mafatihFuture, memorySearchFuture]);
 
-        if (_query == currentQuery) {
+        if (!_disposed && generation == _requestGeneration) {
           final quranResultsRaw = results[0] as List<Map<String, dynamic>>;
           final mafatihResultsRaw = results[1] as List<MafatihArticle>;
           final memoryResults = results[2] as List<ContentItem>;
@@ -184,10 +199,13 @@ class SearchController extends ChangeNotifier {
           return; // Query changed during await
         }
       } catch (e) {
-        debugPrint("Hybrid search error: \$e");
+        if (_disposed || generation != _requestGeneration) return;
+        debugPrint("Hybrid search error: $e");
         _filteredItems = [];
       }
     }
+
+    if (_disposed || generation != _requestGeneration) return;
 
     // 3. Group if "All" category
     if (isAllCategory) {

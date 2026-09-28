@@ -51,6 +51,7 @@ class SearchEngine {
 
   List<SearchDocument> _index = [];
   bool _isIndexed = false;
+  Future<void>? _pendingIndex;
   final ValueNotifier<bool> isIndexingNotifier = ValueNotifier<bool>(false);
 
   @visibleForTesting
@@ -124,9 +125,19 @@ class SearchEngine {
     return targetText.contains(queryWord);
   }
 
-  Future<void> init() async {
-    if (_isIndexed) return;
+  Future<void> init({bool force = false}) async {
+    if (_pendingIndex != null) await _pendingIndex;
+    if (_isIndexed && !force) return;
+    final pending = _buildCurrentIndex();
+    _pendingIndex = pending;
+    try {
+      await pending;
+    } finally {
+      if (identical(_pendingIndex, pending)) _pendingIndex = null;
+    }
+  }
 
+  Future<void> _buildCurrentIndex() async {
     isIndexingNotifier.value = true;
     try {
       // Ensure DBs are open before querying
@@ -212,9 +223,8 @@ class SearchEngine {
       debugPrint("SearchEngine: Indexed ${_index.length} items.");
     } catch (e) {
       debugPrint("SearchEngine Init Error: $e");
-      // Fallback in case Data prep failed
-      _index = [];
-      _isIndexed = true;
+      // Preserve the last usable index; allow retry on next initialization.
+      if (!_isIndexed) _index = [];
     } finally {
       isIndexingNotifier.value = false;
     }
