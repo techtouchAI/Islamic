@@ -41,7 +41,16 @@ jobs:
         run: python3 scripts/verify_search_databases.py
 
       - name: Install dependencies
-        run: flutter pub get
+        run: |
+          set +e
+          flutter --version
+          flutter pub get 2>&1 | tee flutter-pub.log
+          result=${PIPESTATUS[0]}
+          if [ "$result" -ne 0 ]; then
+            diagnostic=$(tail -n 20 flutter-pub.log | tr '\r\n' '  ' | tail -c 1700)
+            echo "::error title=Flutter pub get::$diagnostic"
+          fi
+          exit "$result"
 
       - name: Bootstrap formatting baseline on session branch
         if: github.head_ref == 'arena/01a0e896-islamic' && github.event.pull_request.head.repo.full_name == github.repository
