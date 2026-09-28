@@ -155,7 +155,7 @@ class _MafatihCategoryListState extends State<_MafatihCategoryList> {
       return; // The FutureBuilder shows the source error.
     }
     if (mounted) {
-      if (subCats != null && subCats.isNotEmpty) {
+      if (subCats.isNotEmpty) {
         setState(() {
           _hasSubCategories = true;
         });
