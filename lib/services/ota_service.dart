@@ -21,6 +21,10 @@ class OTAService {
     required Function(String) onError,
   }) async {
     if (_isDownloading) return;
+    if (kIsWeb || !Platform.isAndroid) {
+      onError('التحديث الداخلي مدعوم على أندرويد فقط.');
+      return;
+    }
     final uri = Uri.tryParse(url);
     final checksum = expectedChecksum?.toLowerCase();
     if (uri == null ||
@@ -62,8 +66,6 @@ class OTAService {
         },
       );
 
-      downloadProgress.value = -1.0; // Reset progress after download
-
       final File file = File(savePath);
 
       final fileChecksum =
@@ -75,12 +77,15 @@ class OTAService {
       }
 
       final result = await OpenFile.open(savePath);
-      debugPrint("OpenFile result: ${result.message}");
+      if (result.type != ResultType.done) {
+        onError('تعذر فتح مُثبّت التحديث: ${result.message}');
+      }
     } catch (e) {
       debugPrint("Download/Install error: $e");
       downloadProgress.value = -1.0;
       onError('فشل تحميل التحديث');
     } finally {
+      downloadProgress.value = -1.0;
       _isDownloading = false;
     }
   }

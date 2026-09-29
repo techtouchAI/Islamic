@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/services.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'services/analytics_service.dart';
@@ -33,6 +34,9 @@ import 'package:provider/provider.dart';
 
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:dio/dio.dart';
+import 'dart:convert';
+import 'services/release_manifest.dart';
+import 'services/ota_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'providers/settings_provider.dart';
@@ -281,6 +285,19 @@ class _MainScaffoldState extends State<MainScaffold> {
     if (!mounted) return;
 
     try {
+      const publicKeyBase64 = String.fromEnvironment('OTA_PUBLIC_KEY_B64');
+      if (!kIsWeb && Platform.isAndroid && publicKeyBase64.isNotEmpty) {
+        final manifest = await ReleaseManifest.fetchVerified(
+            Dio(), base64Decode(publicKeyBase64));
+        if (!mounted) return;
+        final info = await PackageInfo.fromPlatform();
+        final currentBuild = int.tryParse(info.buildNumber) ?? 0;
+        if (currentBuild < manifest.buildNumber) {
+          _showSignedUpdateDialog(manifest,
+              mandatory: currentBuild < manifest.minSupportedBuild);
+        }
+        return; // Never fall back to unsigned metadata once a key is configured.
+      }
       final String timestamp = DateTime.now().millisecondsSinceEpoch.toString();
       final String apiUrl =
           'https://api.github.com/repos/techtouchAI/Islamic/releases/latest?t=$timestamp';
@@ -377,6 +394,54 @@ class _MainScaffoldState extends State<MainScaffold> {
     } catch (e) {
       debugPrint('OTA_Update Error: $e');
     }
+  }
+
+  void _showSignedUpdateDialog(ReleaseManifest manifest,
+      {required bool mandatory}) {
+    final context = navigatorKey.currentContext;
+    if (context == null) return;
+    final progress = OTAService.instance.downloadProgress;
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => ValueListenableBuilder<double>(
+        valueListenable: progress,
+        builder: (context, value, _) => PopScope(
+          canPop: !mandatory && value < 0,
+          child: AlertDialog(
+            title: const Text('تحديث موثّق متوفر'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('الإصدار ${manifest.version}'),
+                if (value >= 0) LinearProgressIndicator(value: value),
+              ],
+            ),
+            actions: [
+              if (!mandatory && value < 0)
+                TextButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(),
+                  child: const Text('لاحقاً'),
+                ),
+              if (value < 0)
+                FilledButton(
+                  onPressed: () => OTAService.instance.downloadAndInstallApk(
+                    manifest.apkUrl.toString(),
+                    manifest.sha256Hex,
+                    onError: (message) {
+                      if (dialogContext.mounted) {
+                        ScaffoldMessenger.of(dialogContext).showSnackBar(
+                            SnackBar(content: Text(message)));
+                      }
+                    },
+                  ),
+                  child: const Text('تنزيل وتثبيت'),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   String _currentSection = 'home';
