@@ -97,7 +97,7 @@ void main() {
   ) async {
     final repo = _FakeSearchRepository();
     repo.onSearch =
-          (_) => SearchSuccess(items: [item('a'), item('b')], hasMore: false);
+        (_) => SearchSuccess(items: [item('a'), item('b')], hasMore: false);
 
     await pumpScreen(tester, repo);
     await runQuery(tester, 'ذكر');
@@ -114,10 +114,10 @@ void main() {
   ) async {
     final repo = _FakeSearchRepository();
     repo.onSearch = (_) => SearchSuccess(
-            items: [item('a')],
-            hasMore: false,
-            failedSources: {SearchSource.quran},
-          );
+          items: [item('a')],
+          hasMore: false,
+          failedSources: {SearchSource.quran},
+        );
 
     await pumpScreen(tester, repo);
     await runQuery(tester, 'ذكر');
@@ -135,10 +135,10 @@ void main() {
   ) async {
     final repo = _FakeSearchRepository();
     repo.onSearch = (call) => call == 1
-          ? const SearchError(
-              message: 'تعذر إكمال البحث. يرجى المحاولة مجددًا.',
-            )
-          : SearchSuccess(items: [item('a')], hasMore: false);
+        ? const SearchError(
+            message: 'تعذر إكمال البحث. يرجى المحاولة مجددًا.',
+          )
+        : SearchSuccess(items: [item('a')], hasMore: false);
 
     await pumpScreen(tester, repo);
     await runQuery(tester, 'ذكر');
@@ -177,16 +177,16 @@ void main() {
   ) async {
     final repo = _FakeSearchRepository();
     repo.onSearch = (_) => SearchSuccess(
-            items: [for (var i = 1; i <= 3; i++) item('b1-$i')],
-            hasMore: true,
-          );
+          items: [for (var i = 1; i <= 3; i++) item('b1-$i')],
+          hasMore: true,
+        );
     repo.onLoadMore = (_) => SearchSuccess(
-                items: [
-                  for (var i = 1; i <= 3; i++) item('b1-$i'),
-                  for (var i = 1; i <= 3; i++) item('b2-$i'),
-                ],
-                hasMore: false,
-              );
+          items: [
+            for (var i = 1; i <= 3; i++) item('b1-$i'),
+            for (var i = 1; i <= 3; i++) item('b2-$i'),
+          ],
+          hasMore: false,
+        );
 
     await pumpScreen(tester, repo);
     await runQuery(tester, 'ذكر');
@@ -211,16 +211,16 @@ void main() {
   ) async {
     final repo = _FakeSearchRepository();
     repo.onSearch = (_) => SearchSuccess(
-            items: [for (var i = 1; i <= 20; i++) item('b1-$i')],
-            hasMore: true,
-          );
+          items: [for (var i = 1; i <= 20; i++) item('b1-$i')],
+          hasMore: true,
+        );
     repo.onLoadMore = (_) => SearchSuccess(
-                items: [
-                  for (var i = 1; i <= 20; i++) item('b1-$i'),
-                  for (var i = 1; i <= 20; i++) item('b2-$i'),
-                ],
-                hasMore: false,
-              );
+          items: [
+            for (var i = 1; i <= 20; i++) item('b1-$i'),
+            for (var i = 1; i <= 20; i++) item('b2-$i'),
+          ],
+          hasMore: false,
+        );
 
     await pumpScreen(tester, repo);
     await runQuery(tester, 'ذكر');
