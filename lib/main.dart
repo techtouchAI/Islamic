@@ -290,12 +290,9 @@ class _MainScaffoldState extends State<MainScaffold> {
     if (!mounted) return;
 
     try {
-      const publicKeyBase64 = String.fromEnvironment('OTA_PUBLIC_KEY_B64');
-      if (kIsWeb || !Platform.isAndroid || publicKeyBase64.isEmpty) return;
-      // Fetch + verify release_manifest.json through the OTA service.
-      final manifest = await OTAService.instance.fetchManifest(
-        base64Decode(publicKeyBase64),
-      );
+      if (kIsWeb || !Platform.isAndroid) return;
+      // Fetch release_manifest.json from the app's own update server.
+      final manifest = await OTAService.instance.fetchManifest();
       if (!mounted) return;
       final info = await PackageInfo.fromPlatform();
       final currentBuild = int.tryParse(info.buildNumber) ?? 0;
