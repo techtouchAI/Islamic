@@ -87,8 +87,8 @@ jobs:
             tr '\r' '\n' < flutter-test.log > flutter-test-plain.log
             idx=$(grep -n '\[E\]' flutter-test-plain.log | head -1 | cut -d: -f1)
             if [ -n "$idx" ]; then
-              start=$(( idx > 5 ? idx - 5 : 1 ))
-              end=$(( idx + 90 ))
+              start=$(( idx > 45 ? idx - 45 : 1 ))
+              end=$(( idx + 5 ))
               block=$(sed -n "${start},${end}p" flutter-test-plain.log | tr '\n' '~')
               echo "::error title=First failing test context::~${block}"
             else
