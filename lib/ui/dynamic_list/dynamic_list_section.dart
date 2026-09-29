@@ -74,6 +74,7 @@ class _DynamicListSectionState extends State<DynamicListSection> {
           }
           final data = snapshot.data!;
           return ListView.builder(
+            key: PageStorageKey('list-${widget.sectionKey}'),
             physics: const BouncingScrollPhysics(),
             itemCount: data.length,
             padding: const EdgeInsets.only(bottom: 20),

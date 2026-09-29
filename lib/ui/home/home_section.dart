@@ -3,17 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart' as intl;
 
 import 'dart:async';
-import 'dart:ui';
 import 'dart:math';
 
 import '../../data/data_manager.dart';
 import '../../data/daily_duas.dart';
-import '../../utils/next_prayer.dart';
 import '../../utils/string_extensions.dart';
-import '../../services/prayer_times_service.dart';
-import '../../models/prayer_schedule.dart';
 import '../../services/quran_service.dart';
-import '../../data/repositories/calendar_repository.dart';
 
 import '../reader/reader_page.dart';
 
@@ -22,107 +17,49 @@ import '../../presentation/screens/istikhara_screen.dart';
 import 'package:provider/provider.dart';
 
 import '../../providers/settings_provider.dart';
-import '../widgets/app_standard_card.dart';
 import '../../theme/app_card_theme.dart';
+import 'widgets/home_prayer_card.dart';
+import 'widgets/daily_worship_actions.dart';
+import 'widgets/daily_dhikr_card.dart';
 
 class HomeSection extends StatefulWidget {
   final VoidCallback? onPrayerCardTap;
-  const HomeSection({super.key, this.onPrayerCardTap});
+  final ValueChanged<String>? onNavigate;
+  const HomeSection({super.key, this.onPrayerCardTap, this.onNavigate});
 
   @override
   State<HomeSection> createState() => _HomeSectionState();
 }
 
 class _HomeSectionState extends State<HomeSection> {
-  String getExactWatermark(String tag) {
-    if (tag.contains('إلهام')) {
-      return 'assets/images/Mscreen/إلهام اليوم.png';
-    }
-    if (tag.contains('دعاء اليوم')) {
-      return 'assets/images/Mscreen/دعاء اليوم 2.png';
-    }
-    if (tag.contains('قرآن') || tag.contains('قرأن')) {
-      return 'assets/images/Mscreen/القرأن الكريم.png';
-    }
-    if (tag.contains('زيار')) {
-      return 'assets/images/Mscreen/الزيارات.png';
-    }
-    if (tag.contains('سجادي') || tag.contains('صحيفة')) {
-      return 'assets/images/Mscreen/الصحيفة السجادية.png';
-    }
-    if (tag.contains('حج')) {
-      return 'assets/images/Mscreen/بطاقة الحج.png';
-    }
-    if (tag.contains('احلام') || tag.contains('أحلام')) {
-      return 'assets/images/Mscreen/تفسير الاحلام.png';
-    }
-    if (tag.contains('علي') || tag.contains('موسوعة')) {
-      return 'assets/images/Mscreen/موسوعة الامام علي.png';
-    }
-    return 'assets/images/Mscreen/جميع البطاقات التي ليس لها بطاقة.png';
-  }
-
-  static String? _cachedDuaKey;
-  static Map<String, dynamic>? _cachedInspirationDua;
-  static Map<String, dynamic>? _cachedDayDua;
+  String? _cachedDuaKey;
+  Map<String, dynamic>? _cachedInspirationDua;
+  Map<String, dynamic>? _cachedDayDua;
 
   Map<String, dynamic> items = {};
   Map<String, dynamic>? _inspirationDua;
   Map<String, dynamic>? _dayDua;
-  PrayerSchedule? _prayerSchedule;
-  final ValueNotifier<String> _currentPrayerNotifier = ValueNotifier<String>(
-    "",
-  );
-  Timer? _prayerTimer;
+  String? _itemsRevision;
+  Timer? _dayTimer;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _refreshItems(context.read<SettingsProvider>());
+    // Date-dependent content changes without a page reload. The second ticker
+    // belongs to HomePrayerCard and never rebuilds this content list.
+    _dayTimer = Timer.periodic(const Duration(minutes: 1), (_) {
       if (mounted) setState(() {});
     });
-    _initPrayerTimes();
-    _prayerTimer = Timer.periodic(
-      const Duration(minutes: 1),
-      (t) => _updateCurrentPrayer(),
-    );
   }
 
   @override
   void dispose() {
-    _prayerTimer?.cancel();
-    _currentPrayerNotifier.dispose();
+    _dayTimer?.cancel();
     super.dispose();
   }
 
-  Future<void> _initPrayerTimes() async {
-    final schedule = await PrayerTimesService().loadTodaySchedule();
-    if (!mounted || schedule == null) return;
-    setState(() {
-      _prayerSchedule = schedule;
-    });
-    _updateCurrentPrayer();
-  }
-
-  void _updateCurrentPrayer() {
-    final schedule = _prayerSchedule;
-    if (schedule == null) return;
-    final now = schedule.nowAsLocalCivil();
-    final hijri = CalendarRepository.getTodayHijri(
-      now,
-      context.read<SettingsProvider>().hijriAdjustment,
-    );
-    final nextKey = nextPrayerKeyForHome(
-      localCivilTimes: schedule.availableLocalCivilTimes,
-      now: now,
-      isRamadan: hijri.month == 9,
-    );
-    if (mounted) _currentPrayerNotifier.value = prayerDisplayNameAr(nextKey);
-  }
-
   void _refreshItems(SettingsProvider settingsProvider) {
-    final random = Random();
+    final random = Random(int.parse(intl.DateFormat('yyyyMMdd').format(DateTime.now())));
     final sections = DataManager.getSections();
     items = {};
     sections.forEach((key, value) {
@@ -159,8 +96,6 @@ class _HomeSectionState extends State<HomeSection> {
           _safeGet(listToPickFrom, random),
         );
 
-        // removed UI hack
-
         safeItem['sectionKey'] = key;
         items[value['title']] = safeItem;
       }
@@ -188,10 +123,7 @@ class _HomeSectionState extends State<HomeSection> {
     final normalizedDay = dayNameAr.normalizeArabic();
 
     final itemsForToday = allDaysDuas.where((it) {
-      if (it['_normalized_title'] == null) {
-        it['_normalized_title'] = it['title'].toString().normalizeArabic();
-      }
-      final title = it['_normalized_title'] as String;
+      final title = it['title'].toString().normalizeArabic();
       return title.contains(normalizedDay);
     }).toList();
 
@@ -226,151 +158,46 @@ class _HomeSectionState extends State<HomeSection> {
     BuildContext context,
     String tag,
     Map<String, dynamic> data,
-    Color textColor,
     IconData icon,
   ) {
-    return InkWell(
-      onTap: () => Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (c) => ReaderPage(
+    final theme = Theme.of(context);
+    final foreground = theme.cardColor.contrastTextColor;
+    return Card(
+      margin: EdgeInsets.zero,
+      color: theme.cardColor.withValues(alpha: settingsProvider.uiOpacity),
+      elevation: 0,
+      clipBehavior: Clip.antiAlias,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(22),
+        side: BorderSide(color: theme.colorScheme.outlineVariant),
+      ),
+      child: InkWell(
+        onTap: () => Navigator.push(context, MaterialPageRoute(
+          builder: (_) => ReaderPage(
             title: data['title'].toString(),
             content: data['content'].toString(),
             fontSizeFactor: settingsProvider.fontSizeFactor,
           ),
-        ),
-      ),
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(25),
-          boxShadow: [
-            BoxShadow(
-              color:
-                  Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
-              blurRadius: 15,
-              offset: const Offset(0, 8),
-            ),
-          ],
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(25),
-          child: Stack(
-            children: [
-              Positioned.fill(
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: settingsProvider.cardColor.withValues(
-                        alpha: settingsProvider.uiOpacity * 0.8,
-                      ),
-                      borderRadius: BorderRadius.circular(25),
-                      border: Border.all(
-                        color: Theme.of(context)
-                            .colorScheme
-                            .primary
-                            .withValues(alpha: 0.5),
-                        width: 1.5,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              Positioned(
-                left: (tag == 'دعاء اليوم'
-                    ? -40
-                    : (tag == 'إلهام اليوم' ? 10 : -20)),
-                bottom: tag == 'دعاء اليوم'
-                    ? null
-                    : (tag == 'إلهام اليوم' ? 10 : -20),
-                top: tag == 'دعاء اليوم' ? -20 : null,
-                child: Opacity(
-                  opacity: 0.5,
-                  child: Image.asset(
-                    getExactWatermark(tag),
-                    width: (tag == 'إلهام اليوم' ? 120 : 150),
-                    height: (tag == 'إلهام اليوم' ? 120 : 150),
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                ),
-              ),
-              Padding(
-                padding: EdgeInsets.all(tag == 'إلهام اليوم' ? 16 : 24),
-                child: Column(
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .primary
-                                .withValues(alpha: 0.1),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            icon,
-                            color: Theme.of(context).colorScheme.primary,
-                            size: 20,
-                          ),
-                        ),
-                        SizedBox(width: tag == 'دعاء اليوم' ? 6 : 12),
-                        Text(
-                          tag,
-                          style: TextStyle(
-                            color: Theme.of(context).colorScheme.primary,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 22,
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      data['content'].toString(),
-                      textAlign: TextAlign.center,
-                      maxLines: 4,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontFamily: 'OmarNaskh',
-                        fontSize: 17,
-                        height: 1.9,
-                        color: textColor,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        border: Border.all(
-                          color: Theme.of(context)
-                              .colorScheme
-                              .primary
-                              .withValues(alpha: 0.2),
-                        ),
-                        borderRadius: BorderRadius.circular(15),
-                      ),
-                      child: Text(
-                        data["title"].toString(),
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Theme.of(context).colorScheme.primary,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
+        )),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Row(children: [
+              Icon(icon, color: foreground.withValues(alpha: .7), size: 22),
+              const SizedBox(width: 10),
+              Expanded(child: Text(tag, style: TextStyle(color: foreground,
+                  fontWeight: FontWeight.w700, fontSize: 17))),
+              Icon(Icons.chevron_left, color: foreground.withValues(alpha: .5)),
+            ]),
+            const SizedBox(height: 12),
+            Text(data['content'].toString(), maxLines: 3,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(fontFamily: 'OmarNaskh', fontSize: 20,
+                    height: 1.8, color: foreground)),
+            const SizedBox(height: 8),
+            Text(data['title'].toString(), style: TextStyle(
+                color: foreground.withValues(alpha: .65), fontSize: 12)),
+          ]),
         ),
       ),
     );
@@ -380,34 +207,19 @@ class _HomeSectionState extends State<HomeSection> {
   Widget build(BuildContext context) {
     final settingsProvider = context.watch<SettingsProvider>();
     _loadDailyDua();
-    final nowTime = _prayerSchedule?.nowAsLocalCivil() ??
-        DateTime.utc(
-          DateTime.now().year,
-          DateTime.now().month,
-          DateTime.now().day,
-        );
-    bool isDayTime = false;
-    final sunrise = _prayerSchedule?['sunrise']?.localCivilTime;
-    final maghrib = _prayerSchedule?['maghrib']?.localCivilTime;
-    if (sunrise != null && maghrib != null) {
-      isDayTime = nowTime.isAfter(sunrise) && nowTime.isBefore(maghrib);
-    } else {
-      isDayTime = nowTime.hour >= 6 && nowTime.hour < 18;
+    final revision = '${intl.DateFormat('yyyy-MM-dd').format(DateTime.now())}'
+        '_${DataManager.dbNotifier.value}_${settingsProvider.homeVisibility}';
+    if (_itemsRevision != revision) {
+      _refreshItems(settingsProvider);
+      _itemsRevision = revision;
     }
-
-    final now = DateTime.now();
-    final hijri = CalendarRepository.getTodayHijri(
-      now,
-      settingsProvider.hijriAdjustment,
-    );
-    final bool isDarkCard = settingsProvider.cardColor.computeLuminance() < 0.5;
-    final Color textColor = isDarkCard ? Colors.white : Colors.black87;
     // Process items into rows for lazy loading
     List<List<MapEntry<String, dynamic>>> groupedRows = [];
     List<MapEntry<String, dynamic>> currentRow = [];
 
     for (var e in items.entries) {
-      bool isFullWidth = e.key.contains('علي') ||
+      bool isFullWidth = MediaQuery.textScalerOf(context).scale(14) > 21 ||
+          e.key.contains('علي') ||
           e.key.contains('موسوعة') ||
           e.key.contains('istikhara');
       if (isFullWidth) {
@@ -428,144 +240,47 @@ class _HomeSectionState extends State<HomeSection> {
       groupedRows.add(List.from(currentRow));
     }
 
-    return SizedBox(
-      width: double.infinity,
-      height: double.infinity,
-      child: CustomScrollView(
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 760),
+        child: CustomScrollView(
+          key: const PageStorageKey('home-scroll'),
         physics: const BouncingScrollPhysics(),
         slivers: [
           SliverPadding(
             padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
             sliver: SliverList(
               delegate: SliverChildListDelegate([
-                InkWell(
+                Row(children: [
+                  Icon(Icons.auto_awesome_outlined,
+                      color: Theme.of(context).colorScheme.primary),
+                  const SizedBox(width: 12),
+                  Expanded(child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('السلام عليكم', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
+                      Text('نسأل الله أن يجعل يومكم عامراً بالذكر',
+                          style: Theme.of(context).textTheme.bodySmall),
+                    ],
+                  )),
+                ]),
+                const SizedBox(height: 20),
+                HomePrayerCard(
+                  hijriAdjustment: settingsProvider.hijriAdjustment,
                   onTap: widget.onPrayerCardTap,
-                  borderRadius: BorderRadius.circular(25),
-                  child: Card(
-                    elevation: 10,
-                    clipBehavior: Clip.antiAlias,
-                    color: Theme.of(context).brightness == Brightness.dark
-                        ? Colors.white.withValues(
-                            alpha: settingsProvider.uiOpacity,
-                          )
-                        : Colors.black.withValues(
-                            alpha: settingsProvider.uiOpacity,
-                          ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(25),
-                      side: BorderSide(
-                        color: Theme.of(context).colorScheme.primary,
-                        width: 2.5,
-                      ),
-                    ),
-                    child: Stack(
-                      children: [
-                        Positioned(
-                          left: -20,
-                          bottom: -20,
-                          child: Opacity(
-                            opacity: 0.5,
-                            child: Image.asset(
-                              isDayTime
-                                  ? 'assets/images/Mscreen/بطاقة الساعة والتقويم النهاري.png'
-                                  : 'assets/images/Mscreen/بطاقة الساعة والتقويم الليلي.png',
-                              width: 150,
-                              height: 150,
-                              color: Theme.of(context).colorScheme.primary,
-                            ),
-                          ),
-                        ),
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.symmetric(
-                            vertical: 18,
-                            horizontal: 12,
-                          ),
-                          child: Column(
-                            children: [
-                              ValueListenableBuilder<String>(
-                                valueListenable: _currentPrayerNotifier,
-                                builder: (context, currentPrayerName, child) {
-                                  if (currentPrayerName.isEmpty) {
-                                    return const SizedBox.shrink();
-                                  }
-                                  return Column(
-                                    children: [
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 12,
-                                          vertical: 4,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .primary
-                                              .withValues(alpha: 0.2),
-                                          borderRadius: BorderRadius.circular(
-                                            10,
-                                          ),
-                                        ),
-                                        child: FittedBox(
-                                          fit: BoxFit.scaleDown,
-                                          child: Text(
-                                            'الصلاة القادمة: $currentPrayerName',
-                                            style: TextStyle(
-                                              color: Theme.of(context)
-                                                  .colorScheme
-                                                  .primary,
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 12,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                      const SizedBox(height: 10),
-                                    ],
-                                  );
-                                },
-                              ),
-                              _ClockWidget(
-                                color: Theme.of(context).colorScheme.primary,
-                              ),
-                              const SizedBox(height: 8),
-                              FittedBox(
-                                fit: BoxFit.scaleDown,
-                                child: Text(
-                                  '${hijri.day} ${hijri.monthName} ${hijri.year} هـ'
-                                      .toEasternArabic(),
-                                  style: TextStyle(
-                                    color:
-                                        Theme.of(context).colorScheme.primary,
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                              FittedBox(
-                                fit: BoxFit.scaleDown,
-                                child: Text(
-                                  intl.DateFormat(
-                                    'EEEE, d MMMM yyyy',
-                                    'ar_SA',
-                                  ).format(now).toEasternArabic(),
-                                  style: TextStyle(
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .primary
-                                        .withValues(alpha: 0.8),
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                ),
+                const SizedBox(height: 24),
+                Text('العبادة اليومية', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+                const SizedBox(height: 12),
+                DailyWorshipActions(
+                  onNavigate: widget.onNavigate,
+                  visibility: settingsProvider.homeVisibility,
                 ),
                 const SizedBox(height: 20),
+                if (settingsProvider.homeVisibility['adhkar'] ?? true) ...[
+                  const DailyDhikrCard(),
+                  const SizedBox(height: 16),
+                ],
                 if (_dayDua != null &&
                     (settingsProvider.homeVisibility['day_dua'] ?? true))
                   _buildSpecialCard(
@@ -573,7 +288,6 @@ class _HomeSectionState extends State<HomeSection> {
                     context,
                     'دعاء اليوم',
                     _dayDua!,
-                    textColor,
                     Icons.calendar_today,
                   ),
                 if (_dayDua != null &&
@@ -586,7 +300,6 @@ class _HomeSectionState extends State<HomeSection> {
                     context,
                     'إلهام اليوم',
                     _inspirationDua!,
-                    textColor,
                     Icons.auto_awesome,
                   ),
                 const SizedBox(height: 25),
@@ -626,13 +339,8 @@ class _HomeSectionState extends State<HomeSection> {
                           ? 'قال أمير المؤمنين علي (عليه السلام)'
                           : e.value['title'].toString(),
                       uiOpacity: settingsProvider.uiOpacity,
-                      cardColor: settingsProvider.cardColor,
-                      watermarkPath: getExactWatermark(e.key),
-                      isFullWidth: e.key.contains('علي') ||
-                          e.key.contains('موسوعة') ||
-                          e.key.contains('istikhara'),
                       onTap: () async {
-                        final sectionKey = e.value['sectionKey'];
+                        final sectionKey = e.value['sectionKey']?.toString() ?? '';
                         if (sectionKey == 'istikhara') {
                           if (!context.mounted) return;
                           Navigator.push(
@@ -641,6 +349,10 @@ class _HomeSectionState extends State<HomeSection> {
                               builder: (c) => const IstikharaScreen(),
                             ),
                           );
+                          return;
+                        }
+                        if (e.value['title'] == 'قريباً') {
+                          widget.onNavigate?.call(sectionKey);
                           return;
                         }
                         final isQuran = sectionKey == 'quran';
@@ -684,10 +396,7 @@ class _HomeSectionState extends State<HomeSection> {
                   );
                 }
 
-                if (rowItems.length == 1 &&
-                    (rowItems[0].key.contains('علي') ||
-                        rowItems[0].key.contains('موسوعة') ||
-                        rowItems[0].key.contains('istikhara'))) {
+                if (rowItems.length == 1) {
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 12.0),
                     child: buildCard(rowItems[0]),
@@ -713,6 +422,7 @@ class _HomeSectionState extends State<HomeSection> {
           ),
         ],
       ),
+      ),
     );
   }
 }
@@ -720,155 +430,42 @@ class _HomeSectionState extends State<HomeSection> {
 class _HomeSmallCard extends StatelessWidget {
   final String tag, title;
   final double uiOpacity;
-  final Color cardColor;
-  final String watermarkPath;
-  final bool isFullWidth;
   final VoidCallback onTap;
   const _HomeSmallCard({
     required this.tag,
     required this.title,
     required this.uiOpacity,
-    required this.cardColor,
-    required this.watermarkPath,
-    this.isFullWidth = false,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    final Color textColor = cardColor.contrastTextColor;
-    return SizedBox(
-      width: isFullWidth
-          ? double.infinity
-          : (MediaQuery.of(context).size.width - 48) / 2,
-      height: 100,
-      child: AppStandardCard(
-        uiOpacity: uiOpacity,
-        onTap: onTap,
-        customMargins: EdgeInsets.zero,
-        customPadding: EdgeInsets.zero,
-        child: Stack(
-          children: [
-            Positioned(
-              left: -10,
-              top: 10,
-              bottom: 10,
-              child: Opacity(
-                opacity: 0.5,
-                child: Image.asset(
-                  watermarkPath,
-                  width: (tag.contains('قرآن') ||
-                          tag.contains('قرأن') ||
-                          tag.contains('سجادي') ||
-                          tag.contains('صحيفة') ||
-                          tag.contains('احلام') ||
-                          tag.contains('أحلام'))
-                      ? 60
-                      : 80,
-                  height: (tag.contains('قرآن') ||
-                          tag.contains('قرأن') ||
-                          tag.contains('سجادي') ||
-                          tag.contains('صحيفة') ||
-                          tag.contains('احلام') ||
-                          tag.contains('أحلام'))
-                      ? 60
-                      : 80,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(15),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    tag,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Theme.of(context).colorScheme.primary,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 1.2,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    title,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: textColor,
-                      height: 1.2,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
+    final theme = Theme.of(context);
+    final foreground = theme.cardColor.contrastTextColor;
+    return Card(
+      margin: EdgeInsets.zero,
+      elevation: 0,
+      color: theme.cardColor.withValues(alpha: uiOpacity),
+      clipBehavior: Clip.antiAlias,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: BorderSide(color: theme.colorScheme.outlineVariant),
       ),
-    );
-  }
-}
-
-class _ClockWidget extends StatefulWidget {
-  final Color color;
-  const _ClockWidget({required this.color});
-  @override
-  State<_ClockWidget> createState() => _ClockWidgetState();
-}
-
-class _ClockWidgetState extends State<_ClockWidget> {
-  late Timer _timer;
-  final ValueNotifier<String> _timeNotifier = ValueNotifier<String>("");
-  @override
-  void initState() {
-    super.initState();
-    _updateTime();
-    _timer = Timer.periodic(
-      const Duration(seconds: 1),
-      (Timer t) => _updateTime(),
-    );
-  }
-
-  @override
-  void dispose() {
-    _timer.cancel();
-    _timeNotifier.dispose();
-    super.dispose();
-  }
-
-  void _updateTime() {
-    final String formattedTime = intl.DateFormat(
-      'hh:mm:ss a',
-      'en_US',
-    ).format(DateTime.now());
-    _timeNotifier.value = formattedTime
-        .replaceFirst('AM', 'ص')
-        .replaceFirst('PM', 'م')
-        .toEasternArabic();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return RepaintBoundary(
-      child: ValueListenableBuilder<String>(
-        valueListenable: _timeNotifier,
-        builder: (context, value, child) => FittedBox(
-          fit: BoxFit.scaleDown,
-          child: Text(
-            value,
-            maxLines: 1,
-            style: TextStyle(
-              color: widget.color,
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              fontFamily: 'monospace',
-            ),
-          ),
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Icon(Icons.auto_stories_outlined,
+                size: 24, color: foreground.withValues(alpha: .6)),
+            const SizedBox(height: 12),
+            Text(tag, style: TextStyle(fontSize: 14,
+                color: foreground, fontWeight: FontWeight.w700)),
+            const SizedBox(height: 6),
+            Text(title, maxLines: 2, overflow: TextOverflow.ellipsis,
+                style: TextStyle(fontSize: 12, height: 1.6,
+                    color: foreground.withValues(alpha: .65))),
+          ]),
         ),
       ),
     );

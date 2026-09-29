@@ -1,0 +1,36 @@
+# Home UI redesign
+
+## Scope
+- Flutter application UI (not the separate marketing website).
+- Forest/ivory theme with gold accents, dark mode, Cairo UI typography.
+- Five obligatory prayer cells inside the next-prayer card, RTL chronological
+  order, 24-hour civil times, highlight, genuine HH:mm:ss countdown.
+- Daily Quran/adhkar/tasbih/qibla shortcuts and a persisted personal daily dhikr
+  goal. This goal is independent of tasbih al-Zahra and is not a religious prescription.
+- Existing daily duas, inspirations, excerpts, reader routes, settings and content
+  remain accessible. Empty excerpts open their category instead of a null reader.
+
+## Boundaries
+`HomePrayerController` owns only presentation loading/timers. `PrayerTimesService`
+remains the source of location, timezone, calculation and saved manual offsets.
+`loadScheduleForDate` reuses that pipeline for tomorrow; no guessed Fajr +24h.
+Imsak is still Ramadan-only and is never inserted as a sixth obligatory prayer.
+Unavailable times show a dash; failure offers retry; stale days are discarded on
+resume. Tickers stop when disposed/backgrounded. Countdown updates only the card.
+
+`AppNavigationController` separates root tabs from detail history. The adhkar tab
+opens `adhkar`, not `duas`. Drawer and home shortcuts use the same routing method.
+Back from a detail returns to its origin; back from a non-home tab returns home.
+The existing Navigator continues to own reader/search routes.
+
+User-selected colours/backgrounds remain; the default legacy background image is
+not rendered behind the new dashboard. System font scaling and RTL are respected;
+prayer cells wrap at large accessibility sizes, cards have no fixed content height.
+No prayer algorithms, alarms, databases, Quran content or OTA rules were replaced.
+
+## Verification
+New automated coverage includes real shell navigation, drawer roots, RTL ordering,
+320/390/768px layouts in both themes at 1×/2× scale, countdown/date boundaries,
+manual offsets for tomorrow, loading/failure/retry/disposal, and dhikr persistence.
+`UI verification` runs analyzer, all Flutter tests and a release web build on CI.
+Native compass/GPS/permissions/adhan still require an Android/iOS device smoke test.

@@ -418,6 +418,17 @@ class PrayerTimesService with WidgetsBindingObserver {
       location.timeZoneOffsetHours,
     );
     final today = _dateOnly(nowLocal);
+    return loadScheduleForDate(location, today);
+  }
+
+  /// Loads the same saved adjustments and date-specific manual timetable used
+  /// by today's display. Does not resolve GPS again or schedule any alarms.
+  Future<PrayerSchedule> loadScheduleForDate(
+    PrayerLocation location,
+    DateTime date,
+  ) async {
+    final prefs = await SharedPreferences.getInstance();
+    final today = _dateOnly(date);
     final offsets = <String, int>{
       for (final key in _adhanPrayerKeys) key: prefs.getInt('adj_$key') ?? 0,
     };
