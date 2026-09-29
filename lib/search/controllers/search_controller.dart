@@ -171,27 +171,29 @@ class SearchController extends ChangeNotifier {
             'مفاتيح الجنان على المتصفح',
         ];
         // 2a. Search in SQLite DBs if category matches 'all', 'quran', or 'mafatih'
-        final quranFuture = (!kIsWeb && (category == 'all' || category == 'quran'))
-            ? _searchQuran(currentQuery).then<List<Map<String, dynamic>>>(
-                (rows) => rows,
-                onError: (Object e, StackTrace stack) {
-                  debugPrint('Quran search failed: $e');
-                  failedSources.add('القرآن');
-                  return <Map<String, dynamic>>[];
-                },
-              )
-            : Future.value(<Map<String, dynamic>>[]);
+        final quranFuture =
+            (!kIsWeb && (category == 'all' || category == 'quran'))
+                ? _searchQuran(currentQuery).then<List<Map<String, dynamic>>>(
+                    (rows) => rows,
+                    onError: (Object e, StackTrace stack) {
+                      debugPrint('Quran search failed: $e');
+                      failedSources.add('القرآن');
+                      return <Map<String, dynamic>>[];
+                    },
+                  )
+                : Future.value(<Map<String, dynamic>>[]);
 
-        final mafatihFuture = (!kIsWeb && (category == 'all' || category == 'mafatih'))
-            ? _searchMafatih(currentQuery).then<List<MafatihArticle>>(
-                (rows) => rows,
-                onError: (Object e, StackTrace stack) {
-                  debugPrint('Mafatih search failed: $e');
-                  failedSources.add('مفاتيح الجنان');
-                  return <MafatihArticle>[];
-                },
-              )
-            : Future.value(<MafatihArticle>[]);
+        final mafatihFuture =
+            (!kIsWeb && (category == 'all' || category == 'mafatih'))
+                ? _searchMafatih(currentQuery).then<List<MafatihArticle>>(
+                    (rows) => rows,
+                    onError: (Object e, StackTrace stack) {
+                      debugPrint('Mafatih search failed: $e');
+                      failedSources.add('مفاتيح الجنان');
+                      return <MafatihArticle>[];
+                    },
+                  )
+                : Future.value(<MafatihArticle>[]);
 
         // 2b. Search JSON data in isolate
         final memorySearchFuture = _searchMemory(categoryFiltered, currentQuery)
