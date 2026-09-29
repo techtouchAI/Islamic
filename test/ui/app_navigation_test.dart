@@ -122,8 +122,12 @@ void main() {
     await tester.pump(const Duration(milliseconds: 300));
     await tester.binding.handlePopRoute();
     await tester.pumpAndSettle();
-    expect(tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex, 1);
-    expect(tester.state<ScaffoldState>(find.byType(Scaffold).first).isDrawerOpen, isFalse);
+    expect(
+        tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex,
+        1);
+    expect(
+        tester.state<ScaffoldState>(find.byType(Scaffold).first).isDrawerOpen,
+        isFalse);
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox());
     await tester.pumpAndSettle();
