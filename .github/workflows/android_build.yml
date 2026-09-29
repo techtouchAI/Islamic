@@ -84,10 +84,17 @@ jobs:
             echo '```text' >> "$GITHUB_STEP_SUMMARY"
             tr '\r' '\n' < flutter-test.log | tail -n 120 >> "$GITHUB_STEP_SUMMARY"
             echo '```' >> "$GITHUB_STEP_SUMMARY"
-            grep -n -E -A 10 -B 1 'Expected:|Actual:|\[E\]|Exception|FAILED|Some tests failed' flutter-test.log \
-              | tr '\r\n' '  ' | tail -c 1800 > flutter-failures.txt || true
-            diagnostic=$(cat flutter-failures.txt)
-            echo "::error title=Flutter test failure::$diagnostic"
+            tr '\r' '\n' < flutter-test.log > flutter-test-plain.log
+            idx=$(grep -n '\[E\]' flutter-test-plain.log | head -1 | cut -d: -f1)
+            if [ -n "$idx" ]; then
+              start=$(( idx > 5 ? idx - 5 : 1 ))
+              end=$(( idx + 90 ))
+              block=$(sed -n "${start},${end}p" flutter-test-plain.log | tr '\n' '~')
+              echo "::error title=First failing test context::~${block}"
+            else
+              tail -c 3000 flutter-test-plain.log | tr '\n' '~' > /tmp/tt
+              echo "::error title=Test log tail::$(cat /tmp/tt)"
+            fi
           fi
           exit "$result"
 
