@@ -56,8 +56,7 @@ class ReleaseManifest {
     if (url == null || url.scheme != 'https' || !url.path.endsWith('.apk')) {
       throw const FormatException('Invalid manifest: invalid apk_url');
     }
-    if (checksum is! String ||
-        !RegExp(r'^[0-9a-f]{64}$').hasMatch(checksum)) {
+    if (checksum is! String || !RegExp(r'^[0-9a-f]{64}$').hasMatch(checksum)) {
       throw const FormatException('Invalid manifest: invalid sha256');
     }
 
