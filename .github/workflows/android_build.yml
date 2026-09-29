@@ -48,7 +48,20 @@ jobs:
           exit "$result"
 
       - name: Format Dart sources
-        run: dart format --output=none --set-exit-if-changed .
+        run: |
+          set +e
+          echo "::notice title=dart version::$(dart --version 2>&1)"
+          dart format --output=none --set-exit-if-changed .
+          result=$?
+          if [ "$result" -ne 0 ]; then
+            dart format .
+            changed=$(git diff --name-only -- '*.dart' | tr '\n' ' ')
+            untracked=$(git ls-files --others --exclude-standard -- '*.dart' | tr '\n' ' ')
+            echo "CHANGED: $changed"
+            echo "UNTRACKED: $untracked"
+            echo "::error title=Unformatted dart files::changed=[$changed] untracked=[$untracked]"
+          fi
+          exit $result
 
       - name: Analyze Dart sources
         run: |
