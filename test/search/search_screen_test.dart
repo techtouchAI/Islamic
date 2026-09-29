@@ -95,8 +95,8 @@ void main() {
   testWidgets('renders success results with the loaded-count header', (
     tester,
   ) async {
-    final repo = _FakeSearchRepository()
-      ..onSearch =
+    final repo = _FakeSearchRepository();
+    repo.onSearch =
           (_) => SearchSuccess(items: [item('a'), item('b')], hasMore: false);
 
     await pumpScreen(tester, repo);
@@ -112,8 +112,8 @@ void main() {
   testWidgets('partial failure keeps results and offers a Retry banner', (
     tester,
   ) async {
-    final repo = _FakeSearchRepository()
-      ..onSearch = (_) => SearchSuccess(
+    final repo = _FakeSearchRepository();
+    repo.onSearch = (_) => SearchSuccess(
             items: [item('a')],
             hasMore: false,
             failedSources: {SearchSource.quran},
@@ -133,8 +133,8 @@ void main() {
   testWidgets('full failure shows the error state and Retry recovers', (
     tester,
   ) async {
-    final repo = _FakeSearchRepository()
-      ..onSearch = (call) => call == 1
+    final repo = _FakeSearchRepository();
+    repo.onSearch = (call) => call == 1
           ? const SearchError(
               message: 'تعذر إكمال البحث. يرجى المحاولة مجددًا.',
             )
@@ -160,7 +160,8 @@ void main() {
   testWidgets('shows the empty state for a query without matches', (
     tester,
   ) async {
-    final repo = _FakeSearchRepository()..onSearch = (_) => const SearchEmpty();
+    final repo = _FakeSearchRepository();
+    repo.onSearch = (_) => const SearchEmpty();
 
     await pumpScreen(tester, repo);
     await runQuery(tester, 'غير موجود');
@@ -174,11 +175,12 @@ void main() {
   testWidgets('tapping the lazy-load footer fetches the next batch', (
     tester,
   ) async {
-    final repo = _FakeSearchRepository()
-      ..onSearch = (_) => SearchSuccess(
+    final repo = _FakeSearchRepository();
+    repo.onSearch = (_) => SearchSuccess(
             items: [for (var i = 1; i <= 3; i++) item('b1-$i')],
             hasMore: true,
-          )..onLoadMore = (_) => SearchSuccess(
+          );
+    repo.onLoadMore = (_) => SearchSuccess(
                 items: [
                   for (var i = 1; i <= 3; i++) item('b1-$i'),
                   for (var i = 1; i <= 3; i++) item('b2-$i'),
@@ -207,11 +209,12 @@ void main() {
   testWidgets('scrolling to the bottom auto-fetches the next batch', (
     tester,
   ) async {
-    final repo = _FakeSearchRepository()
-      ..onSearch = (_) => SearchSuccess(
+    final repo = _FakeSearchRepository();
+    repo.onSearch = (_) => SearchSuccess(
             items: [for (var i = 1; i <= 20; i++) item('b1-$i')],
             hasMore: true,
-          )..onLoadMore = (_) => SearchSuccess(
+          );
+    repo.onLoadMore = (_) => SearchSuccess(
                 items: [
                   for (var i = 1; i <= 20; i++) item('b1-$i'),
                   for (var i = 1; i <= 20; i++) item('b2-$i'),
