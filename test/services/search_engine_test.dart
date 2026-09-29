@@ -120,17 +120,17 @@ void main() {
     test('searchPaged applies LIMIT and OFFSET over JSON results', () {
       final engine = SearchEngine.instance;
       SearchDocument doc(String id, String title) => SearchDocument(
-        id: id,
-        title: title,
-        content: 'وقت صلاة الفجر',
-        category: 'cat1',
-        tags: [],
-        type: 'content',
-        normalizedTitle: SearchEngine.normalizeArabic(title),
-        normalizedContent: SearchEngine.normalizeArabic('وقت صلاة الفجر'),
-        normalizedCategory: 'cat1',
-        normalizedTags: [],
-      );
+            id: id,
+            title: title,
+            content: 'وقت صلاة الفجر',
+            category: 'cat1',
+            tags: [],
+            type: 'content',
+            normalizedTitle: SearchEngine.normalizeArabic(title),
+            normalizedContent: SearchEngine.normalizeArabic('وقت صلاة الفجر'),
+            normalizedCategory: 'cat1',
+            normalizedTags: [],
+          );
       engine.setMockIndex([
         doc('1', 'صلاة الفجر'),
         doc('2', 'صلاة الظهر'),

@@ -42,13 +42,13 @@ class _TasbihSectionState extends State<TasbihSection> {
 
   static const Map<TasbihSelection, String> _legacyLifetimeKeys =
       <TasbihSelection, String>{
-        TasbihSelection.subhanAllah: 'سبحان الله',
-        TasbihSelection.alhamdulillah: 'الحمد لله',
-        TasbihSelection.laIlahaIllallah: 'لا إله إلا الله',
-        TasbihSelection.allahuAkbar: 'الله أكبر',
-        TasbihSelection.astaghfirullah: 'أستغفر الله',
-        TasbihSelection.salawat: 'اللهم صل على محمد وآل محمد',
-      };
+    TasbihSelection.subhanAllah: 'سبحان الله',
+    TasbihSelection.alhamdulillah: 'الحمد لله',
+    TasbihSelection.laIlahaIllallah: 'لا إله إلا الله',
+    TasbihSelection.allahuAkbar: 'الله أكبر',
+    TasbihSelection.astaghfirullah: 'أستغفر الله',
+    TasbihSelection.salawat: 'اللهم صل على محمد وآل محمد',
+  };
 
   /// A first-time visitor enters Tasbih al-Zahra. A deliberate open-dhikr
   /// choice is retained for later visits as an explicit user preference.
@@ -85,9 +85,8 @@ class _TasbihSectionState extends State<TasbihSection> {
       prefs.getString('tasbih_selection'),
     );
     final isZahra = prefs.getBool('tasbih_zahra_mode') ?? true;
-    final savedStage = (prefs.getInt('tasbih_zahra_stage') ?? 0)
-        .clamp(0, 2)
-        .toInt();
+    final savedStage =
+        (prefs.getInt('tasbih_zahra_stage') ?? 0).clamp(0, 2).toInt();
     final savedCount = prefs.getInt('tasbih_zahra_count') ?? 0;
     final savedCycles = prefs.getInt('tasbih_zahra_completed_cycles') ?? 0;
     final selection = isZahra ? TasbihSelection.tasbihAlZahra : savedSelection;
@@ -102,8 +101,8 @@ class _TasbihSectionState extends State<TasbihSection> {
       _zahraStageIndex = savedStage;
       _counter = isZahra
           ? savedCount
-                .clamp(0, TasbihZahraState.stages[savedStage].target - 1)
-                .toInt()
+              .clamp(0, TasbihZahraState.stages[savedStage].target - 1)
+              .toInt()
           : 0;
       _completedCycles = savedCycles < 0 ? 0 : savedCycles;
       _lifetimeCounter = lifetime < 0 ? 0 : lifetime;
@@ -164,9 +163,8 @@ class _TasbihSectionState extends State<TasbihSection> {
     final generation = ++_loadGeneration;
     final prefs = await SharedPreferences.getInstance();
     if (value == TasbihSelection.tasbihAlZahra) {
-      final stage = (prefs.getInt('tasbih_zahra_stage') ?? 0)
-          .clamp(0, 2)
-          .toInt();
+      final stage =
+          (prefs.getInt('tasbih_zahra_stage') ?? 0).clamp(0, 2).toInt();
       final count = prefs.getInt('tasbih_zahra_count') ?? 0;
       final cycles = prefs.getInt('tasbih_zahra_completed_cycles') ?? 0;
       final lifetime = prefs.getInt('lifetime_tasbih_zahra') ?? 0;
@@ -175,9 +173,8 @@ class _TasbihSectionState extends State<TasbihSection> {
         _selection = value;
         _mode = TasbihMode.tasbihAlZahra;
         _zahraStageIndex = stage;
-        _counter = count
-            .clamp(0, TasbihZahraState.stages[stage].target - 1)
-            .toInt();
+        _counter =
+            count.clamp(0, TasbihZahraState.stages[stage].target - 1).toInt();
         _completedCycles = cycles < 0 ? 0 : cycles;
         _lifetimeCounter = lifetime < 0 ? 0 : lifetime;
       });

@@ -160,9 +160,8 @@ class DataManager {
         item['_normalized_title'] = item['title'].toString().normalizeArabic();
       }
       if (item['content'] != null) {
-        item['_normalized_content'] = item['content']
-            .toString()
-            .normalizeArabic();
+        item['_normalized_content'] =
+            item['content'].toString().normalizeArabic();
       }
       if (item.containsKey('items') && item['items'] is List) {
         for (var nestedItem in item['items']) {
@@ -248,15 +247,13 @@ class DataManager {
     final requestClient = client ?? httpClient ?? http.Client();
     try {
       // Add random component to fully bypass strict CDN caches
-      final timestamp =
-          DateTime.now().millisecondsSinceEpoch.toString() +
+      final timestamp = DateTime.now().millisecondsSinceEpoch.toString() +
           '_' +
           DateTime.now().microsecondsSinceEpoch.toString();
       final url = Uri.parse("$_repoUrl?t=$timestamp");
 
-      final response = await requestClient
-          .get(url)
-          .timeout(const Duration(seconds: 15));
+      final response =
+          await requestClient.get(url).timeout(const Duration(seconds: 15));
       if (response.statusCode == 200) {
         final content = utf8.decode(response.bodyBytes);
 
@@ -470,9 +467,8 @@ class DataManager {
         item['_normalized_title'] = item['title'].toString().normalizeArabic();
       }
       if (item['content'] != null) {
-        item['_normalized_content'] = item['content']
-            .toString()
-            .normalizeArabic();
+        item['_normalized_content'] =
+            item['content'].toString().normalizeArabic();
       }
       if (item.containsKey('items') && item['items'] is List) {
         for (var nestedItem in item['items']) {

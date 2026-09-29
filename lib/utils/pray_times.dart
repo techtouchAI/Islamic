@@ -61,7 +61,7 @@ class PrayTimes implements PrayerTimesEngine {
   late DateTime _calculationDate;
 
   PrayTimes([PrayerCalculationParameters? params])
-    : _params = params ?? PrayerCalculationParameters.jafari;
+      : _params = params ?? PrayerCalculationParameters.jafari;
 
   /// Calculate prayer times for a given date, coordinates, and timezone.
   /// returns a Map of string to DateTime
@@ -122,8 +122,7 @@ class PrayTimes implements PrayerTimesEngine {
     double denominator = _DMath.cos(decl) * _DMath.cos(_lat);
     if (denominator == 0) denominator = 0.00001; // zero-division safeguard
 
-    double t =
-        1 /
+    double t = 1 /
         15 *
         _DMath.arccos(
           (-_DMath.sin(angle) - _DMath.sin(decl) * _DMath.sin(_lat)) /
@@ -171,8 +170,7 @@ class PrayTimes implements PrayerTimesEngine {
     int A = (year / 100).floor();
     int B = 2 - A + (A / 4).floor();
 
-    double jd =
-        (365.25 * (year + 4716)).floor() +
+    double jd = (365.25 * (year + 4716)).floor() +
         (30.6001 * (month + 1)).floor() +
         day +
         B -
@@ -319,9 +317,8 @@ class PrayTimes implements PrayerTimesEngine {
     String direction,
   ) {
     double portion = _nightPortion(angle, night);
-    double timeDiff = (direction == 'ccw')
-        ? _timeDiff(time, base)
-        : _timeDiff(base, time);
+    double timeDiff =
+        (direction == 'ccw') ? _timeDiff(time, base) : _timeDiff(base, time);
 
     if (time.isNaN || timeDiff > portion) {
       time = base + (direction == 'ccw' ? -portion : portion);

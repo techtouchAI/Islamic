@@ -88,8 +88,8 @@ class OTAService {
       final File file = File(savePath);
 
       // SHA-256 validation must succeed before anything may be installed.
-      final fileChecksum = (await sha256.bind(file.openRead()).first)
-          .toString();
+      final fileChecksum =
+          (await sha256.bind(file.openRead()).first).toString();
       if (fileChecksum != checksum) {
         await file.delete();
         onError('تعذر التحديث: الملف لا يطابق بصمة التحقق.');

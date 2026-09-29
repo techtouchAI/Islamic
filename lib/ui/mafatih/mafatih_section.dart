@@ -68,7 +68,9 @@ class _MafatihSectionState extends State<MafatihSection> {
                       : const Color(0xFFFDFBF7),
                   border: Border(
                     bottom: BorderSide(
-                      color: Theme.of(context).colorScheme.primary
+                      color: Theme.of(context)
+                          .colorScheme
+                          .primary
                           .withValues(alpha: 0.2),
                     ),
                   ),
@@ -78,9 +80,8 @@ class _MafatihSectionState extends State<MafatihSection> {
                   tabAlignment: TabAlignment.center,
                   indicatorColor: Theme.of(context).colorScheme.primary,
                   labelColor: Theme.of(context).colorScheme.primary,
-                  unselectedLabelColor: isDark
-                      ? Colors.white70
-                      : Colors.black54,
+                  unselectedLabelColor:
+                      isDark ? Colors.white70 : Colors.black54,
                   tabs: categories.map((cat) {
                     return Tab(
                       child: Row(
@@ -309,8 +310,8 @@ class _MafatihCategoryListState extends State<_MafatihCategoryList> {
                                       color: isFav
                                           ? Colors.red
                                           : Theme.of(context)
-                                                .colorScheme
-                                                .primary,
+                                              .colorScheme
+                                              .primary,
                                     ),
                                     onPressed: () {
                                       final item = FavoriteItem(

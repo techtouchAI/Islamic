@@ -52,8 +52,7 @@ class SettingsProvider extends ChangeNotifier {
         : ThemeMode.dark;
     _fontSizeFactor = prefs.getDouble('fontSize') ?? 1.0;
     _primaryColor = Color(prefs.getInt('primaryColor') ?? defaultPrimary);
-    _uiOpacity =
-        prefs.getDouble('uiOpacity') ??
+    _uiOpacity = prefs.getDouble('uiOpacity') ??
         (dbSettings['ui_opacity']?.toDouble() ?? 1.0);
     _backgroundImagePath = prefs.getString('backgroundImage');
     _selectedBase64Bg = prefs.getString('custom_bg_base64_selected');
@@ -72,8 +71,7 @@ class SettingsProvider extends ChangeNotifier {
       _homeVisibility[key] =
           prefs.getBool('vis_$key') ?? (value['visible_home'] ?? true);
     });
-    _homeVisibility['inspiration'] =
-        prefs.getBool('vis_inspiration') ??
+    _homeVisibility['inspiration'] = prefs.getBool('vis_inspiration') ??
         (dbSettings['show_inspiration'] ?? true);
     _homeVisibility['day_dua'] = prefs.getBool('vis_day_dua') ?? true;
 
@@ -90,9 +88,8 @@ class SettingsProvider extends ChangeNotifier {
   }
 
   void toggleTheme() {
-    _themeMode = _themeMode == ThemeMode.light
-        ? ThemeMode.dark
-        : ThemeMode.light;
+    _themeMode =
+        _themeMode == ThemeMode.light ? ThemeMode.dark : ThemeMode.light;
     _saveSetting('theme', _themeMode == ThemeMode.light ? 'light' : 'dark');
     notifyListeners();
   }

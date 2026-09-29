@@ -35,8 +35,7 @@ class _FakeSearchRepository implements SearchRepository {
     required List<ContentItem> contentItems,
   }) async {
     loadMoreCalls++;
-    final state =
-        onLoadMore?.call(loadMoreCalls) ??
+    final state = onLoadMore?.call(loadMoreCalls) ??
         SearchSuccess(items: const [], hasMore: false);
     _hasMore = state is SearchSuccess && state.hasMore;
     return state;
@@ -48,17 +47,17 @@ class _FakeSearchRepository implements SearchRepository {
 
 void main() {
   ContentItem item(String id, {String section = 'dua'}) => ContentItem(
-    id: id,
-    title: 'ذكر $id',
-    subtitle: '',
-    content: 'محتوى $id',
-    sectionId: section,
-    sectionName: 'الأدعية',
-    category: 'dua',
-    normalizedTitle: 'ذكر $id',
-    normalizedContent: 'محتوى $id',
-    normalizedCategory: 'dua',
-  );
+        id: id,
+        title: 'ذكر $id',
+        subtitle: '',
+        content: 'محتوى $id',
+        sectionId: section,
+        sectionName: 'الأدعية',
+        category: 'dua',
+        normalizedTitle: 'ذكر $id',
+        normalizedContent: 'محتوى $id',
+        normalizedCategory: 'dua',
+      );
 
   Future<void> pumpScreen(
     WidgetTester tester,
@@ -97,8 +96,8 @@ void main() {
     tester,
   ) async {
     final repo = _FakeSearchRepository()
-      ..onSearch = (_) =>
-          SearchSuccess(items: [item('a'), item('b')], hasMore: false);
+      ..onSearch =
+          (_) => SearchSuccess(items: [item('a'), item('b')], hasMore: false);
 
     await pumpScreen(tester, repo);
     await runQuery(tester, 'ذكر');
@@ -115,10 +114,10 @@ void main() {
   ) async {
     final repo = _FakeSearchRepository()
       ..onSearch = (_) => SearchSuccess(
-        items: [item('a')],
-        hasMore: false,
-        failedSources: {SearchSource.quran},
-      );
+            items: [item('a')],
+            hasMore: false,
+            failedSources: {SearchSource.quran},
+          );
 
     await pumpScreen(tester, repo);
     await runQuery(tester, 'ذكر');
@@ -176,18 +175,16 @@ void main() {
     tester,
   ) async {
     final repo = _FakeSearchRepository()
-      ..onSearch = (_) =>
-          SearchSuccess(
-              items: [for (var i = 1; i <= 3; i++) item('b1-$i')],
-              hasMore: true,
-            )
-            ..onLoadMore = (_) => SearchSuccess(
-              items: [
-                for (var i = 1; i <= 3; i++) item('b1-$i'),
-                for (var i = 1; i <= 3; i++) item('b2-$i'),
-              ],
-              hasMore: false,
-            );
+      ..onSearch = (_) => SearchSuccess(
+            items: [for (var i = 1; i <= 3; i++) item('b1-$i')],
+            hasMore: true,
+          )..onLoadMore = (_) => SearchSuccess(
+                items: [
+                  for (var i = 1; i <= 3; i++) item('b1-$i'),
+                  for (var i = 1; i <= 3; i++) item('b2-$i'),
+                ],
+                hasMore: false,
+              );
 
     await pumpScreen(tester, repo);
     await runQuery(tester, 'ذكر');
@@ -211,18 +208,16 @@ void main() {
     tester,
   ) async {
     final repo = _FakeSearchRepository()
-      ..onSearch = (_) =>
-          SearchSuccess(
-              items: [for (var i = 1; i <= 20; i++) item('b1-$i')],
-              hasMore: true,
-            )
-            ..onLoadMore = (_) => SearchSuccess(
-              items: [
-                for (var i = 1; i <= 20; i++) item('b1-$i'),
-                for (var i = 1; i <= 20; i++) item('b2-$i'),
-              ],
-              hasMore: false,
-            );
+      ..onSearch = (_) => SearchSuccess(
+            items: [for (var i = 1; i <= 20; i++) item('b1-$i')],
+            hasMore: true,
+          )..onLoadMore = (_) => SearchSuccess(
+                items: [
+                  for (var i = 1; i <= 20; i++) item('b1-$i'),
+                  for (var i = 1; i <= 20; i++) item('b2-$i'),
+                ],
+                hasMore: false,
+              );
 
     await pumpScreen(tester, repo);
     await runQuery(tester, 'ذكر');

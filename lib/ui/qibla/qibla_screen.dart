@@ -195,8 +195,7 @@ class _QiblaScreenState extends State<QiblaScreen> {
                         ),
                       ),
                       Transform.rotate(
-                        angle:
-                            ((_qiblaDirection - _currentHeading) *
+                        angle: ((_qiblaDirection - _currentHeading) *
                             (math.pi / 180)),
                         child: Image.asset(
                           'assets/images/qibla_needle.png',

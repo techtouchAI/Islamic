@@ -80,36 +80,34 @@ class SettingsSection extends StatelessWidget {
             const SizedBox(height: 10),
             Wrap(
               spacing: 12,
-              children:
-                  [
-                        Colors.blue,
-                        Colors.red,
-                        Colors.black,
-                        Colors.cyan,
-                        const Color(0xFFD4AF37),
-                        Colors.blueGrey,
-                        Colors.teal,
-                        Colors.brown,
-                      ]
-                      .map(
-                        (c) => GestureDetector(
-                          onTap: () => settingsProvider.setPrimaryColor(c),
-                          child: CircleAvatar(
-                            backgroundColor: c,
-                            radius: 18,
-                            child:
-                                settingsProvider.primaryColor.toARGB32() ==
-                                    c.toARGB32()
-                                ? const Icon(
-                                    Icons.check,
-                                    color: Colors.white,
-                                    size: 16,
-                                  )
-                                : null,
-                          ),
-                        ),
-                      )
-                      .toList(),
+              children: [
+                Colors.blue,
+                Colors.red,
+                Colors.black,
+                Colors.cyan,
+                const Color(0xFFD4AF37),
+                Colors.blueGrey,
+                Colors.teal,
+                Colors.brown,
+              ]
+                  .map(
+                    (c) => GestureDetector(
+                      onTap: () => settingsProvider.setPrimaryColor(c),
+                      child: CircleAvatar(
+                        backgroundColor: c,
+                        radius: 18,
+                        child: settingsProvider.primaryColor.toARGB32() ==
+                                c.toARGB32()
+                            ? const Icon(
+                                Icons.check,
+                                color: Colors.white,
+                                size: 16,
+                              )
+                            : null,
+                      ),
+                    ),
+                  )
+                  .toList(),
             ),
           ]),
           _buildGroup(context, 'تخصيص البطاقات', [
@@ -128,8 +126,7 @@ class SettingsSection extends StatelessWidget {
                       child: CircleAvatar(
                         backgroundColor: c,
                         radius: 18,
-                        child:
-                            settingsProvider.cardColor.toARGB32() ==
+                        child: settingsProvider.cardColor.toARGB32() ==
                                 c.toARGB32()
                             ? Icon(
                                 Icons.check,
@@ -186,8 +183,9 @@ class SettingsSection extends StatelessWidget {
             _visToggle(context, 'inspiration', 'إلهام اليوم'),
             _visToggle(context, 'day_dua', 'دعاء اليوم'),
             ...DataManager.getSections().entries.map(
-              (e) => _visToggle(context, e.key, e.value['title'].toString()),
-            ),
+                  (e) =>
+                      _visToggle(context, e.key, e.value['title'].toString()),
+                ),
           ]),
         ],
       ),

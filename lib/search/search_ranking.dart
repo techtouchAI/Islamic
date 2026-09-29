@@ -28,10 +28,8 @@ class SearchRanking {
     if (content.contains(normalizedQuery)) score += 10;
 
     // Word-level signals: identical rules for every source.
-    final words = normalizedQuery
-        .split(' ')
-        .where((w) => w.isNotEmpty)
-        .toList();
+    final words =
+        normalizedQuery.split(' ').where((w) => w.isNotEmpty).toList();
     for (final word in words) {
       if (title == word) {
         score += 20;

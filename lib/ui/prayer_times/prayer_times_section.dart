@@ -79,20 +79,15 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
     final prefs = await SharedPreferences.getInstance();
     if (!mounted) return;
     setState(() {
-      _enabledPrayers['fajr'] =
-          prefs.getBool('adhan_fajr') ??
+      _enabledPrayers['fajr'] = prefs.getBool('adhan_fajr') ??
           PrayerTimesService.isAdhanEnabledByDefault('fajr');
-      _enabledPrayers['dhuhr'] =
-          prefs.getBool('adhan_dhuhr') ??
+      _enabledPrayers['dhuhr'] = prefs.getBool('adhan_dhuhr') ??
           PrayerTimesService.isAdhanEnabledByDefault('dhuhr');
-      _enabledPrayers['asr'] =
-          prefs.getBool('adhan_asr') ??
+      _enabledPrayers['asr'] = prefs.getBool('adhan_asr') ??
           PrayerTimesService.isAdhanEnabledByDefault('asr');
-      _enabledPrayers['maghrib'] =
-          prefs.getBool('adhan_maghrib') ??
+      _enabledPrayers['maghrib'] = prefs.getBool('adhan_maghrib') ??
           PrayerTimesService.isAdhanEnabledByDefault('maghrib');
-      _enabledPrayers['isha'] =
-          prefs.getBool('adhan_isha') ??
+      _enabledPrayers['isha'] = prefs.getBool('adhan_isha') ??
           PrayerTimesService.isAdhanEnabledByDefault('isha');
       _fullScreenPrayers['fajr'] = prefs.getBool('fullscreen_fajr') ?? false;
       _fullScreenPrayers['dhuhr'] = prefs.getBool('fullscreen_dhuhr') ?? false;
@@ -207,8 +202,8 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
           Container(
             padding: const EdgeInsets.all(15),
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primary
-                  .withValues(alpha: 0.1),
+              color:
+                  Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(15),
             ),
             child: Column(
@@ -266,8 +261,8 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
                     _prayerLocation == null
                         ? 'استخدام الموقع الحالي (GPS)'
                         : _prayerLocation!.isGps
-                        ? 'GPS حي (${_prayerLocation!.accuracyMeters!.round()}م)'
-                        : 'استخدام ${_prayerLocation!.displayName}',
+                            ? 'GPS حي (${_prayerLocation!.accuracyMeters!.round()}م)'
+                            : 'استخدام ${_prayerLocation!.displayName}',
                   ),
                 ),
               ],
@@ -292,7 +287,13 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
                 children: [
                   SwitchListTile(
                     title: Text(
-                      'تفعيل أذان ${{'fajr': 'الفجر', 'dhuhr': 'الظهر', 'asr': 'العصر', 'maghrib': 'المغرب', 'isha': 'العشاء'}[k]}',
+                      'تفعيل أذان ${{
+                        'fajr': 'الفجر',
+                        'dhuhr': 'الظهر',
+                        'asr': 'العصر',
+                        'maghrib': 'المغرب',
+                        'isha': 'العشاء'
+                      }[k]}',
                       style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                     value: _enabledPrayers[k] ?? true,
@@ -330,22 +331,21 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
                               if (location != null) {
                                 await _prayerService
                                     .rescheduleSinglePrayerForLocation(
-                                      k,
-                                      location,
-                                    );
+                                  k,
+                                  location,
+                                );
                               }
                             },
                             child: Card(
                               color: (_fullScreenPrayers[k] ?? false)
                                   ? Theme.of(context)
-                                        .colorScheme
-                                        .surfaceContainerHighest
+                                      .colorScheme
+                                      .surfaceContainerHighest
                                   : Theme.of(context)
-                                        .colorScheme
-                                        .primaryContainer,
-                              elevation: (_fullScreenPrayers[k] ?? false)
-                                  ? 0
-                                  : 2,
+                                      .colorScheme
+                                      .primaryContainer,
+                              elevation:
+                                  (_fullScreenPrayers[k] ?? false) ? 0 : 2,
                               child: Padding(
                                 padding: const EdgeInsets.all(10.0),
                                 child: Column(
@@ -355,8 +355,8 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
                                       color: (_fullScreenPrayers[k] ?? false)
                                           ? Colors.grey
                                           : Theme.of(context)
-                                                .colorScheme
-                                                .primary,
+                                              .colorScheme
+                                              .primary,
                                     ),
                                     const SizedBox(height: 5),
                                     Text(
@@ -366,8 +366,8 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
                                         color: (_fullScreenPrayers[k] ?? false)
                                             ? Colors.grey
                                             : Theme.of(context)
-                                                  .colorScheme
-                                                  .primary,
+                                                .colorScheme
+                                                .primary,
                                       ),
                                     ),
                                   ],
@@ -389,22 +389,21 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
                               if (location != null) {
                                 await _prayerService
                                     .rescheduleSinglePrayerForLocation(
-                                      k,
-                                      location,
-                                    );
+                                  k,
+                                  location,
+                                );
                               }
                             },
                             child: Card(
                               color: (_fullScreenPrayers[k] ?? false)
                                   ? Theme.of(context)
-                                        .colorScheme
-                                        .primaryContainer
+                                      .colorScheme
+                                      .primaryContainer
                                   : Theme.of(context)
-                                        .colorScheme
-                                        .surfaceContainerHighest,
-                              elevation: (_fullScreenPrayers[k] ?? false)
-                                  ? 2
-                                  : 0,
+                                      .colorScheme
+                                      .surfaceContainerHighest,
+                              elevation:
+                                  (_fullScreenPrayers[k] ?? false) ? 2 : 0,
                               child: Padding(
                                 padding: const EdgeInsets.all(10.0),
                                 child: Column(
@@ -413,8 +412,8 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
                                       Icons.fullscreen,
                                       color: (_fullScreenPrayers[k] ?? false)
                                           ? Theme.of(context)
-                                                .colorScheme
-                                                .primary
+                                              .colorScheme
+                                              .primary
                                           : Colors.grey,
                                     ),
                                     const SizedBox(height: 5),
@@ -424,8 +423,8 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
                                         fontSize: 14,
                                         color: (_fullScreenPrayers[k] ?? false)
                                             ? Theme.of(context)
-                                                  .colorScheme
-                                                  .primary
+                                                .colorScheme
+                                                .primary
                                             : Colors.grey,
                                       ),
                                     ),
@@ -580,8 +579,7 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
                       await prefs.setBool('ignore_battery_optimizations', v);
                       if (v) {
                         if (await Permission
-                            .ignoreBatteryOptimizations
-                            .isDenied) {
+                            .ignoreBatteryOptimizations.isDenied) {
                           await Permission.ignoreBatteryOptimizations.request();
                         }
                       }

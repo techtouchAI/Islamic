@@ -29,7 +29,9 @@ class AboutSection extends StatelessWidget {
             ),
             boxShadow: [
               BoxShadow(
-                color: Theme.of(context).colorScheme.primary
+                color: Theme.of(context)
+                    .colorScheme
+                    .primary
                     .withValues(alpha: 0.1),
                 blurRadius: 20,
                 offset: const Offset(0, 10),
@@ -41,30 +43,30 @@ class AboutSection extends StatelessWidget {
             children: [
               CircleAvatar(
                 radius: 50,
-                backgroundColor: Theme.of(context).colorScheme.primary
+                backgroundColor: Theme.of(context)
+                    .colorScheme
+                    .primary
                     .withValues(alpha: 0.1),
-                backgroundImage:
-                    about['developer_image'] != null &&
+                backgroundImage: about['developer_image'] != null &&
                         about['developer_image'].toString().isNotEmpty
                     ? (about['developer_image'].toString().startsWith('http')
-                          ? NetworkImage(about['developer_image'].toString())
-                          : (about['developer_image'].toString().startsWith(
+                        ? NetworkImage(about['developer_image'].toString())
+                        : (about['developer_image'].toString().startsWith(
                                   'data:image',
                                 )
-                                ? MemoryImage(
-                                    base64Decode(
-                                      about['developer_image']
-                                          .toString()
-                                          .split(',')
-                                          .last,
-                                    ),
-                                  )
-                                : AssetImage(
-                                    about['developer_image'].toString(),
-                                  ) as ImageProvider))
+                            ? MemoryImage(
+                                base64Decode(
+                                  about['developer_image']
+                                      .toString()
+                                      .split(',')
+                                      .last,
+                                ),
+                              )
+                            : AssetImage(
+                                about['developer_image'].toString(),
+                              ) as ImageProvider))
                     : null,
-                child:
-                    (about['developer_image'] == null ||
+                child: (about['developer_image'] == null ||
                         about['developer_image'].toString().isEmpty)
                     ? Icon(
                         getMaterialIcon(

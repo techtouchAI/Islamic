@@ -121,10 +121,8 @@ class HijriMonthData {
         year: 1446,
         month: 1,
         totalDays: 30,
-        expectedGregorianStart: DateTime.now()
-            .toIso8601String()
-            .split('T')
-            .first,
+        expectedGregorianStart:
+            DateTime.now().toIso8601String().split('T').first,
         days: [],
       );
     }
@@ -152,8 +150,7 @@ class HijriMonthData {
       totalDays: json['total_days'] is int
           ? json['total_days']
           : int.tryParse(json['total_days']?.toString() ?? '30') ?? 30,
-      expectedGregorianStart:
-          json['expected_gregorian_start']?.toString() ??
+      expectedGregorianStart: json['expected_gregorian_start']?.toString() ??
           DateTime.now().toIso8601String().split('T').first,
       days: parsedDays,
     );
@@ -320,10 +317,8 @@ class CalendarRepository {
         year: year,
         month: month,
         totalDays: totalDays,
-        expectedGregorianStart: gregorianStart
-            .toIso8601String()
-            .split('T')
-            .first,
+        expectedGregorianStart:
+            gregorianStart.toIso8601String().split('T').first,
         days: [],
       );
     } catch (e) {
@@ -331,10 +326,8 @@ class CalendarRepository {
         year: year,
         month: month,
         totalDays: 30,
-        expectedGregorianStart: DateTime.now()
-            .toIso8601String()
-            .split('T')
-            .first,
+        expectedGregorianStart:
+            DateTime.now().toIso8601String().split('T').first,
         days: [],
       );
     }

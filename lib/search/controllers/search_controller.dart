@@ -37,9 +37,9 @@ class SearchController extends ChangeNotifier {
     required List<ContentItem> allItems,
     required List<String> availableSections,
     SearchRepository? repository,
-  }) : _allItems = allItems,
-       _availableSections = availableSections,
-       _repository = repository ?? HybridSearchRepository() {
+  })  : _allItems = allItems,
+        _availableSections = availableSections,
+        _repository = repository ?? HybridSearchRepository() {
     SearchEngine.instance.isIndexingNotifier.addListener(
       _onIndexingStateChanged,
     );

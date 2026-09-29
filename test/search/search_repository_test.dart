@@ -13,11 +13,11 @@ void main() {
   );
 
   Map<String, dynamic> ayah(int sid, int anum) => {
-    'surah_number': sid,
-    'ayah_number': anum,
-    'surah_name': 'الفاتحة',
-    'ayah_text': 'بسم الله الرحمن الرحيم',
-  };
+        'surah_number': sid,
+        'ayah_number': anum,
+        'surah_name': 'الفاتحة',
+        'ayah_text': 'بسم الله الرحمن الرحيم',
+      };
 
   test('no matches resolves to SearchEmpty', () async {
     final repo = HybridSearchRepository(

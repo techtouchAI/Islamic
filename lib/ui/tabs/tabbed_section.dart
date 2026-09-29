@@ -33,7 +33,9 @@ class TabbedSection extends StatelessWidget {
                   : const Color(0xFFFDFBF7),
               border: Border(
                 bottom: BorderSide(
-                  color: Theme.of(context).colorScheme.primary
+                  color: Theme.of(context)
+                      .colorScheme
+                      .primary
                       .withValues(alpha: 0.2),
                 ),
               ),

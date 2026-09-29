@@ -245,8 +245,8 @@ class _HomeSectionState extends State<HomeSection> {
           borderRadius: BorderRadius.circular(25),
           boxShadow: [
             BoxShadow(
-              color: Theme.of(context).colorScheme.primary
-                  .withValues(alpha: 0.15),
+              color:
+                  Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
               blurRadius: 15,
               offset: const Offset(0, 8),
             ),
@@ -266,7 +266,9 @@ class _HomeSectionState extends State<HomeSection> {
                       ),
                       borderRadius: BorderRadius.circular(25),
                       border: Border.all(
-                        color: Theme.of(context).colorScheme.primary
+                        color: Theme.of(context)
+                            .colorScheme
+                            .primary
                             .withValues(alpha: 0.5),
                         width: 1.5,
                       ),
@@ -302,7 +304,9 @@ class _HomeSectionState extends State<HomeSection> {
                         Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: Theme.of(context).colorScheme.primary
+                            color: Theme.of(context)
+                                .colorScheme
+                                .primary
                                 .withValues(alpha: 0.1),
                             shape: BoxShape.circle,
                           ),
@@ -346,7 +350,9 @@ class _HomeSectionState extends State<HomeSection> {
                       ),
                       decoration: BoxDecoration(
                         border: Border.all(
-                          color: Theme.of(context).colorScheme.primary
+                          color: Theme.of(context)
+                              .colorScheme
+                              .primary
                               .withValues(alpha: 0.2),
                         ),
                         borderRadius: BorderRadius.circular(15),
@@ -374,8 +380,7 @@ class _HomeSectionState extends State<HomeSection> {
   Widget build(BuildContext context) {
     final settingsProvider = context.watch<SettingsProvider>();
     _loadDailyDua();
-    final nowTime =
-        _prayerSchedule?.nowAsLocalCivil() ??
+    final nowTime = _prayerSchedule?.nowAsLocalCivil() ??
         DateTime.utc(
           DateTime.now().year,
           DateTime.now().month,
@@ -402,8 +407,7 @@ class _HomeSectionState extends State<HomeSection> {
     List<MapEntry<String, dynamic>> currentRow = [];
 
     for (var e in items.entries) {
-      bool isFullWidth =
-          e.key.contains('علي') ||
+      bool isFullWidth = e.key.contains('علي') ||
           e.key.contains('موسوعة') ||
           e.key.contains('istikhara');
       if (isFullWidth) {
@@ -530,9 +534,8 @@ class _HomeSectionState extends State<HomeSection> {
                                   '${hijri.day} ${hijri.monthName} ${hijri.year} هـ'
                                       .toEasternArabic(),
                                   style: TextStyle(
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .primary,
+                                    color:
+                                        Theme.of(context).colorScheme.primary,
                                     fontSize: 20,
                                     fontWeight: FontWeight.bold,
                                   ),
@@ -546,7 +549,9 @@ class _HomeSectionState extends State<HomeSection> {
                                     'ar_SA',
                                   ).format(now).toEasternArabic(),
                                   style: TextStyle(
-                                    color: Theme.of(context).colorScheme.primary
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .primary
                                         .withValues(alpha: 0.8),
                                     fontSize: 14,
                                     fontWeight: FontWeight.w500,
@@ -603,8 +608,8 @@ class _HomeSectionState extends State<HomeSection> {
             ),
           ),
           SliverPadding(
-            padding: const EdgeInsets.symmetric(horizontal: 16)
-                .copyWith(bottom: 20),
+            padding:
+                const EdgeInsets.symmetric(horizontal: 16).copyWith(bottom: 20),
             sliver: SliverList.builder(
               itemCount: groupedRows.length,
               itemBuilder: (context, index) {
@@ -614,18 +619,16 @@ class _HomeSectionState extends State<HomeSection> {
                   return RepaintBoundary(
                     child: _HomeSmallCard(
                       tag: e.key,
-                      title:
-                          e.value['sectionKey']?.toString().contains(
-                                'imam_ali',
-                              ) ==
+                      title: e.value['sectionKey']?.toString().contains(
+                                    'imam_ali',
+                                  ) ==
                               true
                           ? 'قال أمير المؤمنين علي (عليه السلام)'
                           : e.value['title'].toString(),
                       uiOpacity: settingsProvider.uiOpacity,
                       cardColor: settingsProvider.cardColor,
                       watermarkPath: getExactWatermark(e.key),
-                      isFullWidth:
-                          e.key.contains('علي') ||
+                      isFullWidth: e.key.contains('علي') ||
                           e.key.contains('موسوعة') ||
                           e.key.contains('istikhara'),
                       onTap: () async {
@@ -667,9 +670,9 @@ class _HomeSectionState extends State<HomeSection> {
                               isImamAli: sectionKey.contains('imam_ali'),
                               surahName: isQuran
                                   ? e.value['title'].toString().replaceAll(
-                                      'سورة ',
-                                      '',
-                                    )
+                                        'سورة ',
+                                        '',
+                                      )
                                   : null,
                               ayahs: ayahs,
                               surahId: isQuran ? e.value['id'] : null,
@@ -754,8 +757,7 @@ class _HomeSmallCard extends StatelessWidget {
                 opacity: 0.5,
                 child: Image.asset(
                   watermarkPath,
-                  width:
-                      (tag.contains('قرآن') ||
+                  width: (tag.contains('قرآن') ||
                           tag.contains('قرأن') ||
                           tag.contains('سجادي') ||
                           tag.contains('صحيفة') ||
@@ -763,8 +765,7 @@ class _HomeSmallCard extends StatelessWidget {
                           tag.contains('أحلام'))
                       ? 60
                       : 80,
-                  height:
-                      (tag.contains('قرآن') ||
+                  height: (tag.contains('قرآن') ||
                           tag.contains('قرأن') ||
                           tag.contains('سجادي') ||
                           tag.contains('صحيفة') ||

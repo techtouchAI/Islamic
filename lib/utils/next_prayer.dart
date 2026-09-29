@@ -23,13 +23,12 @@ String nextPrayerKeyForHome({
   required bool isRamadan,
 }) {
   final displayKeys = <String>[if (isRamadan) 'imsak', ..._dailyPrayerKeys];
-  final upcoming =
-      displayKeys
-          .where((key) => localCivilTimes[key] != null)
-          .map((key) => MapEntry<String, DateTime>(key, localCivilTimes[key]!))
-          .where((entry) => now.isBefore(entry.value))
-          .toList()
-        ..sort((left, right) => left.value.compareTo(right.value));
+  final upcoming = displayKeys
+      .where((key) => localCivilTimes[key] != null)
+      .map((key) => MapEntry<String, DateTime>(key, localCivilTimes[key]!))
+      .where((entry) => now.isBefore(entry.value))
+      .toList()
+    ..sort((left, right) => left.value.compareTo(right.value));
 
   if (upcoming.isNotEmpty) return upcoming.first.key;
 

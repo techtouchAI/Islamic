@@ -29,10 +29,8 @@ class SearchResultTile extends StatelessWidget {
       backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.3),
     );
 
-    final queryWords = normalizedQuery
-        .split(' ')
-        .where((w) => w.isNotEmpty)
-        .toList();
+    final queryWords =
+        normalizedQuery.split(' ').where((w) => w.isNotEmpty).toList();
     if (queryWords.isEmpty) return Text(originalText, style: baseStyle);
 
     List<TextSpan> spans = [];

@@ -202,8 +202,7 @@ class PrayerTimesService with WidgetsBindingObserver {
       displayName: 'آخر موقع GPS محفوظ',
       accuracyMeters: prefs.getDouble(_lastGpsAccuracyKey),
       capturedAt: capturedAt,
-      timeZoneOffsetHours:
-          prefs.getDouble(_lastGpsTimezoneKey) ??
+      timeZoneOffsetHours: prefs.getDouble(_lastGpsTimezoneKey) ??
           PrayerTimeZonePolicy.forGpsDevice(DateTime.now()),
     );
   }
@@ -692,8 +691,7 @@ class PrayerTimesService with WidgetsBindingObserver {
       name,
       localCivilTime: localCivilTime,
       timezoneOffsetMinutes: (location.timeZoneOffsetHours * 60).round(),
-      timezoneUsesDevice:
-          location.source == PrayerLocationSource.gps ||
+      timezoneUsesDevice: location.source == PrayerLocationSource.gps ||
           location.source == PrayerLocationSource.cachedLocation,
       fullScreen: prefs.getBool('fullscreen_$key') ?? false,
       volume: prefs.getDouble('adhan_volume') ?? 1.0,

@@ -9,25 +9,25 @@ void main() {
   });
 
   List<Map<String, dynamic>> ayahs(int count) => [
-    for (var i = 1; i <= count; i++)
-      {'ar_text': 'الآية رقم $i', 'anum': i, 'ayah_surah_index': '$i'},
-  ];
+        for (var i = 1; i <= count; i++)
+          {'ar_text': 'الآية رقم $i', 'anum': i, 'ayah_surah_index': '$i'},
+      ];
 
   Widget buildPage({int? targetAyahNumber}) => MaterialApp(
-    home: Directionality(
-      textDirection: TextDirection.rtl,
-      child: ReaderPage(
-        title: 'البقرة',
-        content: '',
-        fontSizeFactor: 1.0,
-        isQuran: true,
-        surahName: 'البقرة',
-        surahId: 3,
-        ayahs: ayahs(60),
-        targetAyahNumber: targetAyahNumber,
-      ),
-    ),
-  );
+        home: Directionality(
+          textDirection: TextDirection.rtl,
+          child: ReaderPage(
+            title: 'البقرة',
+            content: '',
+            fontSizeFactor: 1.0,
+            isQuran: true,
+            surahName: 'البقرة',
+            surahId: 3,
+            ayahs: ayahs(60),
+            targetAyahNumber: targetAyahNumber,
+          ),
+        ),
+      );
 
   testWidgets('scrolls to the searched ayah and highlights it', (tester) async {
     await tester.pumpWidget(buildPage(targetAyahNumber: 40));

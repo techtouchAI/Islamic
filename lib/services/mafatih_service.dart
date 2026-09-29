@@ -107,8 +107,7 @@ class MafatihService {
           '%${ArabicNormalizer.escapeLike(ArabicNormalizer.normalize(query))}%';
       final maps = await _db!.query(
         'articles',
-        where:
-            r"title LIKE ? ESCAPE '\' OR text LIKE ? ESCAPE '\' "
+        where: r"title LIKE ? ESCAPE '\' OR text LIKE ? ESCAPE '\' "
             r"OR title LIKE ? ESCAPE '\' OR text LIKE ? ESCAPE '\'",
         whereArgs: [
           rawPattern,
@@ -142,7 +141,8 @@ class MafatihService {
       // group_id can be exact '10', start with '10@@', end with '@@10', or contain '@@10@@'
       final maps = await _db!.query(
         'articles',
-        where: 'group_id = ? OR group_id LIKE ? OR group_id LIKE ? OR group_id LIKE ?',
+        where:
+            'group_id = ? OR group_id LIKE ? OR group_id LIKE ? OR group_id LIKE ?',
         whereArgs: [idStr, '$idStr@@%', '%@@$idStr', '%@@$idStr@@%'],
       );
       return maps.map((m) => MafatihArticle.fromMap(m)).toList();

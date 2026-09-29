@@ -80,7 +80,8 @@ class _DynamicListSectionState extends State<DynamicListSection> {
             itemBuilder: (context, index) {
               final surah = data[index];
               return Card(
-                color: Theme.of(context).cardColor
+                color: Theme.of(context)
+                    .cardColor
                     .withValues(alpha: widget.uiOpacity),
                 margin: const EdgeInsets.symmetric(
                   horizontal: 4.0,
@@ -127,8 +128,7 @@ class _DynamicListSectionState extends State<DynamicListSection> {
                             child: Builder(
                               builder: (context) {
                                 final surahId = surah['id'] as int;
-                                final color =
-                                    Theme.of(context).brightness ==
+                                final color = Theme.of(context).brightness ==
                                         Brightness.dark
                                     ? Colors.white
                                     : Colors.black;
@@ -140,8 +140,7 @@ class _DynamicListSectionState extends State<DynamicListSection> {
                                 // Kafirun: id=111, surah_index=109
                                 // Nas: id=116, surah_index=114
                                 // So surah_index perfectly maps to 1..114 matching the images.
-                                int imageId =
-                                    (surah['surah_index'] as int?) ??
+                                int imageId = (surah['surah_index'] as int?) ??
                                     (surahId >= 110
                                         ? surahId - 2
                                         : (surahId == 108 ? 107 : surahId - 1));
@@ -162,11 +161,15 @@ class _DynamicListSectionState extends State<DynamicListSection> {
                             vertical: 6,
                           ),
                           decoration: BoxDecoration(
-                            color: Theme.of(context).colorScheme.primary
+                            color: Theme.of(context)
+                                .colorScheme
+                                .primary
                                 .withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(20),
                             border: Border.all(
-                              color: Theme.of(context).colorScheme.primary
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .primary
                                   .withValues(alpha: 0.3),
                               width: 1,
                             ),
@@ -208,7 +211,8 @@ class _DynamicListSectionState extends State<DynamicListSection> {
               itemCount: data.length,
               itemBuilder: (context, index) => Container(
                 decoration: BoxDecoration(
-                  color: Theme.of(context).cardColor
+                  color: Theme.of(context)
+                      .cardColor
                       .withValues(alpha: widget.uiOpacity * 0.8),
                   borderRadius: BorderRadius.circular(15),
                   border: Border.all(
@@ -265,13 +269,12 @@ class _DynamicListSectionState extends State<DynamicListSection> {
 
                               String displayTitle;
                               TextStyle titleStyle;
-                              Color dynamicTextColor = Theme.of(context)
-                                  .cardColor
-                                  .contrastTextColor;
+                              Color dynamicTextColor =
+                                  Theme.of(context).cardColor.contrastTextColor;
 
                               if (widget.sectionKey == 'prophets_stories') {
-                                String rawTitle = data[index]['title']
-                                    .toString();
+                                String rawTitle =
+                                    data[index]['title'].toString();
                                 String cleanName = rawTitle
                                     .replaceAll(
                                       RegExp(
@@ -323,15 +326,15 @@ class _DynamicListSectionState extends State<DynamicListSection> {
                                   MaterialPageRoute(
                                     builder: (c) => ReaderPage(
                                       title: data[index]['title'].toString(),
-                                      content: data[index]['content']
-                                          .toString(),
+                                      content:
+                                          data[index]['content'].toString(),
                                       fontSizeFactor: widget.fontSizeFactor,
                                       isQuran: false,
                                       isImamAli: widget.sectionKey.contains(
                                         'imam_ali',
                                       ),
-                                      titleColor: data[index]['color']
-                                          ?.toString(),
+                                      titleColor:
+                                          data[index]['color']?.toString(),
                                     ),
                                   ),
                                 ),
@@ -345,11 +348,9 @@ class _DynamicListSectionState extends State<DynamicListSection> {
                               builder: (context) {
                                 final itemId = data[index]['title'].toString();
                                 return ValueListenableBuilder<
-                                  List<FavoriteItem>
-                                >(
+                                    List<FavoriteItem>>(
                                   valueListenable: FavoritesService
-                                      .instance
-                                      .favoritesNotifier,
+                                      .instance.favoritesNotifier,
                                   builder: (context, favorites, _) {
                                     final isFav = FavoritesService.instance
                                         .isFavorite(itemId);
@@ -361,16 +362,16 @@ class _DynamicListSectionState extends State<DynamicListSection> {
                                         color: isFav
                                             ? Colors.red
                                             : Theme.of(context)
-                                                  .cardColor
-                                                  .contrastTextColor,
+                                                .cardColor
+                                                .contrastTextColor,
                                       ),
                                       onPressed: () {
                                         final item = FavoriteItem(
                                           id: itemId,
-                                          title: data[index]['title']
-                                              .toString(),
-                                          content: data[index]['content']
-                                              .toString(),
+                                          title:
+                                              data[index]['title'].toString(),
+                                          content:
+                                              data[index]['content'].toString(),
                                           sourceSection: widget.sectionKey,
                                           timestamp: DateTime.now(),
                                           isCustom: false,

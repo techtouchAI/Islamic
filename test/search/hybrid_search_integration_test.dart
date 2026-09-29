@@ -7,21 +7,21 @@ import 'package:flutter_test/flutter_test.dart';
 /// the REAL isolate-based JSON scorer, unified ranking and lazy batching.
 void main() {
   ContentItem contentItem(String id, String title) => ContentItem(
-    id: id,
-    title: title,
-    subtitle: '',
-    content: 'محتوى $title',
-    sectionId: 'dua',
-    sectionName: 'الأدعية',
-    category: 'dua',
-  );
+        id: id,
+        title: title,
+        subtitle: '',
+        content: 'محتوى $title',
+        sectionId: 'dua',
+        sectionName: 'الأدعية',
+        category: 'dua',
+      );
 
   Map<String, dynamic> ayah(int sid, int anum, String text, String surah) => {
-    'surah_number': sid,
-    'ayah_number': anum,
-    'surah_name': surah,
-    'ayah_text': text,
-  };
+        'surah_number': sid,
+        'ayah_number': anum,
+        'surah_name': surah,
+        'ayah_text': text,
+      };
 
   test(
     'merges SQL rows and JSON hits under a single relevance order',

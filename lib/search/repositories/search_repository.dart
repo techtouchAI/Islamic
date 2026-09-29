@@ -13,10 +13,10 @@ enum SearchSource { quran, mafatih, content }
 
 /// Human-readable name used in warnings/retry messages.
 String sourceDisplayName(SearchSource source) => switch (source) {
-  SearchSource.quran => 'القرآن',
-  SearchSource.mafatih => 'مفاتيح الجنان',
-  SearchSource.content => 'المحتوى المحلي',
-};
+      SearchSource.quran => 'القرآن',
+      SearchSource.mafatih => 'مفاتيح الجنان',
+      SearchSource.content => 'المحتوى المحلي',
+    };
 
 /// Strict search state contract. Every repository call resolves to exactly
 /// one of these states — consumers must render them consistently:
@@ -127,15 +127,13 @@ class HybridSearchRepository extends SearchRepository {
     MafatihPageLoader? searchMafatih,
     ContentPageLoader? searchContent,
     this.batchSize = defaultBatchSize,
-  }) : _searchQuran =
-           searchQuran ??
-           ((q, l, o) =>
-               QuranService.searchVersesPaged(q, limit: l, offset: o)),
-       _searchMafatih =
-           searchMafatih ??
-           ((q, l, o) =>
-               MafatihService.searchArticlesPaged(q, limit: l, offset: o)),
-       _searchContent = searchContent ?? searchContentInIsolate;
+  })  : _searchQuran = searchQuran ??
+            ((q, l, o) =>
+                QuranService.searchVersesPaged(q, limit: l, offset: o)),
+        _searchMafatih = searchMafatih ??
+            ((q, l, o) =>
+                MafatihService.searchArticlesPaged(q, limit: l, offset: o)),
+        _searchContent = searchContent ?? searchContentInIsolate;
 
   // ─── Session state ───
   String _query = '';
@@ -331,14 +329,14 @@ class HybridSearchRepository extends SearchRepository {
   }
 
   static ContentItem _mapMafatihArticle(MafatihArticle article) => ContentItem(
-    id: 'mafatih_${article.id}',
-    title: article.title,
-    subtitle: 'مفاتيح الجنان',
-    content: article.text,
-    sectionId: 'mafatih',
-    sectionName: 'مفاتيح الجنان',
-    category: 'mafatih',
-  );
+        id: 'mafatih_${article.id}',
+        title: article.title,
+        subtitle: 'مفاتيح الجنان',
+        content: article.text,
+        sectionId: 'mafatih',
+        sectionName: 'مفاتيح الجنان',
+        category: 'mafatih',
+      );
 
   // ─── Default JSON source: isolate scoring with LIMIT/OFFSET ───
 
@@ -347,12 +345,13 @@ class HybridSearchRepository extends SearchRepository {
     String query,
     int limit,
     int offset,
-  ) => compute(_performContentSearch, {
-    'items': items,
-    'query': query,
-    'limit': limit,
-    'offset': offset,
-  });
+  ) =>
+      compute(_performContentSearch, {
+        'items': items,
+        'query': query,
+        'limit': limit,
+        'offset': offset,
+      });
 
   /// Scores every candidate with the single [ArabicNormalizer], keeps items
   /// matching ALL query words (or the full phrase), sorts deterministically
@@ -364,10 +363,8 @@ class HybridSearchRepository extends SearchRepository {
     final int offset = params['offset'];
 
     final normalizedQuery = ArabicNormalizer.normalize(query);
-    final queryWords = normalizedQuery
-        .split(' ')
-        .where((w) => w.isNotEmpty)
-        .toList();
+    final queryWords =
+        normalizedQuery.split(' ').where((w) => w.isNotEmpty).toList();
 
     if (queryWords.isEmpty || items.isEmpty) {
       return const ContentSearchPage(items: [], totalMatches: 0);
@@ -383,8 +380,7 @@ class HybridSearchRepository extends SearchRepository {
           item.normalizedTitle ?? ArabicNormalizer.normalize(item.title);
       final normalizedContent =
           item.normalizedContent ?? ArabicNormalizer.normalize(item.content);
-      final normalizedCategory =
-          item.normalizedCategory ??
+      final normalizedCategory = item.normalizedCategory ??
           ArabicNormalizer.normalize(item.category ?? '');
 
       // Tokenize strings once per document.
@@ -463,8 +459,8 @@ class HybridSearchRepository extends SearchRepository {
       final scoreCompare = (b['score'] as int).compareTo(a['score'] as int);
       if (scoreCompare != 0) return scoreCompare;
       return (a['item'] as ContentItem).title.compareTo(
-        (b['item'] as ContentItem).title,
-      );
+            (b['item'] as ContentItem).title,
+          );
     });
 
     final total = scored.length;
@@ -473,9 +469,9 @@ class HybridSearchRepository extends SearchRepository {
     final end = requestedEnd > total ? total : requestedEnd;
     final page = start < end
         ? scored
-              .sublist(start, end)
-              .map((e) => e['item'] as ContentItem)
-              .toList()
+            .sublist(start, end)
+            .map((e) => e['item'] as ContentItem)
+            .toList()
         : <ContentItem>[];
     return ContentSearchPage(items: page, totalMatches: total);
   }

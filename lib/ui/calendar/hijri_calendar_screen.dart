@@ -323,9 +323,8 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
                     fontSize: 14,
                     height: 1.3,
                     wordSpacing: 1.5,
-                    fontWeight: isImportant
-                        ? FontWeight.bold
-                        : FontWeight.normal,
+                    fontWeight:
+                        isImportant ? FontWeight.bold : FontWeight.normal,
                   ),
                 ),
                 if (description != null && description.isNotEmpty)
@@ -454,8 +453,7 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
                   final DateTime cellGregorianDate = adjustedGregorianStart.add(
                     Duration(days: hDay - 1),
                   );
-                  final bool isToday =
-                      cellGregorianDate.year == realNow.year &&
+                  final bool isToday = cellGregorianDate.year == realNow.year &&
                       cellGregorianDate.month == realNow.month &&
                       cellGregorianDate.day == realNow.day;
 
@@ -467,12 +465,10 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
                     }
                   }
 
-                  final bool hasEvent =
-                      dayData != null &&
+                  final bool hasEvent = dayData != null &&
                       (dayData.events.isNotEmpty ||
                           dayData.astronomicalEvents.isNotEmpty);
-                  final bool isSelected =
-                      _selectedDay == hDay &&
+                  final bool isSelected = _selectedDay == hDay &&
                       _displayedHijri.month == monthHijri.month &&
                       _displayedHijri.year == monthHijri.year;
 
@@ -489,8 +485,8 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
                       decoration: BoxDecoration(
                         color: isToday
                             ? (hasEvent
-                                  ? Colors.teal.shade700
-                                  : Colors.teal.withValues(alpha: 0.6))
+                                ? Colors.teal.shade700
+                                : Colors.teal.withValues(alpha: 0.6))
                             : null,
                         shape: BoxShape.rectangle,
                         borderRadius: BorderRadius.circular(8),
@@ -498,10 +494,10 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
                           color: isToday
                               ? Colors.amber
                               : (isSelected
-                                    ? Colors.green
-                                    : (hasEvent
-                                          ? Colors.amber.withValues(alpha: 0.8)
-                                          : Colors.white12)),
+                                  ? Colors.green
+                                  : (hasEvent
+                                      ? Colors.amber.withValues(alpha: 0.8)
+                                      : Colors.white12)),
                           width: isToday || isSelected
                               ? 2.0
                               : (hasEvent ? 1.5 : 1.0),
@@ -513,16 +509,15 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
                         style: TextStyle(
                           fontFamily: 'Cairo',
                           fontSize: 18,
-                          fontWeight: isToday
-                              ? FontWeight.bold
-                              : FontWeight.normal,
+                          fontWeight:
+                              isToday ? FontWeight.bold : FontWeight.normal,
                           color: isToday
                               ? (hasEvent
-                                    ? Colors.amber.shade200
-                                    : Colors.white)
+                                  ? Colors.amber.shade200
+                                  : Colors.white)
                               : (hasEvent
-                                    ? Colors.amber.shade300
-                                    : Colors.white70),
+                                  ? Colors.amber.shade300
+                                  : Colors.white70),
                         ),
                       ),
                     ),

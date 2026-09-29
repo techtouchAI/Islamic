@@ -213,8 +213,8 @@ class _AlDhakereenAppState extends State<AlDhakereenApp> {
       debugShowCheckedModeBanner: false,
       builder: (context, child) => MediaQuery(
         data: MediaQuery.of(context).copyWith(
-          textScaler: MediaQuery.of(context)
-              .textScaler, // Respects system font scaling
+          textScaler:
+              MediaQuery.of(context).textScaler, // Respects system font scaling
         ),
         child: child!,
       ),
@@ -279,13 +279,11 @@ class _MainScaffoldState extends State<MainScaffold> {
 
   void _setupUpdateListener() {
     // Sync cloud data asynchronously
-    DataManager.syncCloudData()
-        .then((changed) async {
-          if (changed) await SearchEngine.instance.init(force: true);
-        })
-        .catchError((Object e) {
-          debugPrint("Cloud sync or search indexing failed: $e");
-        });
+    DataManager.syncCloudData().then((changed) async {
+      if (changed) await SearchEngine.instance.init(force: true);
+    }).catchError((Object e) {
+      debugPrint("Cloud sync or search indexing failed: $e");
+    });
   }
 
   Future<void> _checkForUpdatesSafe() async {
@@ -436,7 +434,9 @@ class _MainScaffoldState extends State<MainScaffold> {
               ),
               centerTitle: true,
               elevation: 0,
-              backgroundColor: Theme.of(context).appBarTheme.backgroundColor
+              backgroundColor: Theme.of(context)
+                  .appBarTheme
+                  .backgroundColor
                   ?.withValues(alpha: settingsProvider.uiOpacity),
               leading: Builder(
                 builder: (context) => IconButton(
@@ -589,9 +589,8 @@ class _MainScaffoldState extends State<MainScaffold> {
         return TabbedSection(
           key: const ValueKey('imam_ali'),
           tabs: imamAliCats.map((c) => c['title'].toString()).toList(),
-          sectionKeys: imamAliCats
-              .map((c) => 'imam_ali_cat_${c['id']}')
-              .toList(),
+          sectionKeys:
+              imamAliCats.map((c) => 'imam_ali_cat_${c['id']}').toList(),
           fontSizeFactor: settingsProvider.fontSizeFactor,
           uiOpacity: settingsProvider.uiOpacity,
         );

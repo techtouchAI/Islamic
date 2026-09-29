@@ -267,10 +267,8 @@ class SearchEngine {
     if (query.isEmpty || !_isIndexed) return [];
 
     final normalizedQuery = normalizeArabic(query);
-    final queryWords = normalizedQuery
-        .split(' ')
-        .where((w) => w.isNotEmpty)
-        .toList();
+    final queryWords =
+        normalizedQuery.split(' ').where((w) => w.isNotEmpty).toList();
     if (queryWords.isEmpty) return [];
 
     final List<SearchResult> results = [];

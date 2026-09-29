@@ -127,8 +127,7 @@ class _SearchScreenState extends State<SearchScreen> {
     // Fallback to Arabic string matching if category comes as raw Arabic
     if (category.contains('دعاء') ||
         category.contains('أدعية') ||
-        category.contains('مناجاة'))
-      return 'dua';
+        category.contains('مناجاة')) return 'dua';
     if (category.contains('زيارة') || category.contains('زيارات')) {
       return 'ziyarat';
     }
@@ -141,8 +140,7 @@ class _SearchScreenState extends State<SearchScreen> {
     }
     if (category.contains('حلم') ||
         category.contains('أحلام') ||
-        category.contains('تفسير'))
-      return 'dreams';
+        category.contains('تفسير')) return 'dreams';
     if (category.contains('أنبياء') || category.contains('نبي')) {
       return 'prophets_stories';
     }
@@ -343,8 +341,7 @@ class _SearchScreenState extends State<SearchScreen> {
       return const _EmptyState();
     }
 
-    final bool showFooter =
-        snapshot.isLoadingMore ||
+    final bool showFooter = snapshot.isLoadingMore ||
         snapshot.hasMore ||
         items.length >= HybridSearchRepository.defaultBatchSize;
     final Widget? footer = showFooter
@@ -432,10 +429,8 @@ class _SearchScreenState extends State<SearchScreen> {
       if (item.surahNumber != null) {
         final ayahs = await QuranService.getAyahs(item.surahNumber!);
         if (mounted) {
-          final surahName = item.title
-              .split(' - آية')
-              .first
-              .replaceFirst('سورة ', '');
+          final surahName =
+              item.title.split(' - آية').first.replaceFirst('سورة ', '');
           Navigator.push(
             context,
             MaterialPageRoute(
@@ -456,7 +451,7 @@ class _SearchScreenState extends State<SearchScreen> {
     } else {
       final isImamAli =
           (item.category != null && item.category!.contains('علي')) ||
-          item.id.startsWith('imam_ali');
+              item.id.startsWith('imam_ali');
       Navigator.push(
         context,
         MaterialPageRoute(

@@ -194,7 +194,8 @@ class _FavoritesSectionState extends State<FavoritesSection> {
         return Container(
           margin: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
           decoration: BoxDecoration(
-            color: Theme.of(context).cardColor
+            color: Theme.of(context)
+                .cardColor
                 .withValues(alpha: widget.uiOpacity * 0.8),
             borderRadius: BorderRadius.circular(15),
             border: Border.all(
@@ -246,7 +247,8 @@ class _FavoritesSectionState extends State<FavoritesSection> {
         return Container(
           margin: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
           decoration: BoxDecoration(
-            color: Theme.of(context).cardColor
+            color: Theme.of(context)
+                .cardColor
                 .withValues(alpha: widget.uiOpacity * 0.8),
             borderRadius: BorderRadius.circular(15),
             border: Border.all(
@@ -319,9 +321,8 @@ class _FavoritesSectionState extends State<FavoritesSection> {
         body: ValueListenableBuilder<List<FavoriteItem>>(
           valueListenable: FavoritesService.instance.favoritesNotifier,
           builder: (context, favorites, _) {
-            final referential = favorites
-                .where((item) => !item.isCustom)
-                .toList();
+            final referential =
+                favorites.where((item) => !item.isCustom).toList();
             final custom = favorites.where((item) => item.isCustom).toList();
 
             return TabBarView(

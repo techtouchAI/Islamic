@@ -79,9 +79,7 @@ class AppDrawer extends StatelessWidget {
                   'المسبحة الإلكترونية',
                   Icons.vibration,
                 ),
-                ...sections.entries
-                    .where((e) => e.key != 'istikhara')
-                    .map(
+                ...sections.entries.where((e) => e.key != 'istikhara').map(
                       (e) => _buildItem(
                         context,
                         e.key,
@@ -160,8 +158,8 @@ class AppDrawer extends StatelessWidget {
       if (id == 'fatawa' || id == 'imam_ali' || id == 'dreams') {
         final cats = DataManager.getItems(id);
         for (var cat in cats) {
-          count += DataManager.getItems('${id}_cat_${cat["id"]?.toString()}')
-              .length;
+          count +=
+              DataManager.getItems('${id}_cat_${cat["id"]?.toString()}').length;
         }
       } else {
         count = DataManager.getItems(id).length;
@@ -193,8 +191,8 @@ class AppDrawer extends StatelessWidget {
       ),
       trailing: trailingWidget,
       selected: active,
-      selectedTileColor: Theme.of(context).colorScheme.primary
-          .withValues(alpha: 0.1),
+      selectedTileColor:
+          Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
       onTap: () => onNavigate(id),
     );
   }

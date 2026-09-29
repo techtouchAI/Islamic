@@ -206,9 +206,8 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
   Widget build(BuildContext context) {
     final primary = Theme.of(context).colorScheme.primary;
     final dynamicBgColor = _customBgColor ?? Theme.of(context).cardColor;
-    final dynamicTextColor = dynamicBgColor.computeLuminance() > 0.5
-        ? Colors.black87
-        : Colors.white;
+    final dynamicTextColor =
+        dynamicBgColor.computeLuminance() > 0.5 ? Colors.black87 : Colors.white;
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.title, style: const TextStyle(fontSize: 16)),
@@ -309,11 +308,9 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
                                   textDirection: TextDirection.rtl,
                                   alignment: WrapAlignment.center,
                                   children: widget.ayahs!.map((a) {
-                                    String text = a['ar_text']
-                                        .toString()
-                                        .trim();
-                                    final index =
-                                        a['anum']?.toString() ??
+                                    String text =
+                                        a['ar_text'].toString().trim();
+                                    final index = a['anum']?.toString() ??
                                         a['ayah_surah_index'].toString();
                                     final arabicIndex = _convertToArabicNumber(
                                       index,
@@ -323,8 +320,7 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
                                         .replaceAll(_trailingNumbersRegex, '')
                                         .trim();
 
-                                    final ayahIdxStr =
-                                        a['anum']?.toString() ??
+                                    final ayahIdxStr = a['anum']?.toString() ??
                                         a['ayah_surah_index'].toString();
                                     final int ayahIndex =
                                         int.tryParse(ayahIdxStr) ?? 0;
@@ -337,8 +333,8 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
                                           : null,
                                       behavior: HitTestBehavior.opaque,
                                       onTap: () async {
-                                        final prefs =
-                                            await SharedPreferences.getInstance();
+                                        final prefs = await SharedPreferences
+                                            .getInstance();
                                         setState(() {
                                           if (_bookmarkedLineIndex
                                                   ?.toString() ==
@@ -406,24 +402,21 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
                                                         style: TextStyle(
                                                           fontFamily:
                                                               'UthmanicHafs',
-                                                          color:
-                                                              _bookmarkedLineIndex
+                                                          color: _bookmarkedLineIndex
                                                                       ?.toString() ==
                                                                   ayahIndex
                                                                       .toString()
-                                                              ? Colors
-                                                                    .green
-                                                                    .shade900
+                                                              ? Colors.green
+                                                                  .shade900
                                                               : Colors
-                                                                    .amber[700],
-                                                          fontWeight:
-                                                              _bookmarkedLineIndex
+                                                                  .amber[700],
+                                                          fontWeight: _bookmarkedLineIndex
                                                                       ?.toString() ==
                                                                   ayahIndex
                                                                       .toString()
                                                               ? FontWeight.bold
                                                               : FontWeight
-                                                                    .normal,
+                                                                  .normal,
                                                           fontSize:
                                                               24 * _factor,
                                                         ),
@@ -493,20 +486,20 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
                                       builder: (context) {
                                         final baseStyle =
                                             widget.isImamAli || widget.isQuran
-                                            ? TextStyle(
-                                                fontFamily: widget.isQuran
-                                                    ? 'UthmanicHafs'
-                                                    : 'me_quran',
-                                                fontSize: 26 * _factor,
-                                                height: 1.8,
-                                                color: dynamicTextColor,
-                                              )
-                                            : TextStyle(
-                                                fontFamily: 'OmarNaskh',
-                                                fontSize: 20 * _factor,
-                                                height: 2.2,
-                                                color: dynamicTextColor,
-                                              );
+                                                ? TextStyle(
+                                                    fontFamily: widget.isQuran
+                                                        ? 'UthmanicHafs'
+                                                        : 'me_quran',
+                                                    fontSize: 26 * _factor,
+                                                    height: 1.8,
+                                                    color: dynamicTextColor,
+                                                  )
+                                                : TextStyle(
+                                                    fontFamily: 'OmarNaskh',
+                                                    fontSize: 20 * _factor,
+                                                    height: 2.2,
+                                                    color: dynamicTextColor,
+                                                  );
 
                                         String cleanContent = widget.content;
                                         cleanContent = cleanContent.replaceAll(
@@ -548,7 +541,8 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
                                           bookmarkedIndex: _bookmarkedLineIndex,
                                           onParagraphTapped: (index) async {
                                             final prefs =
-                                                await SharedPreferences.getInstance();
+                                                await SharedPreferences
+                                                    .getInstance();
                                             setState(() {
                                               if (_bookmarkedLineIndex
                                                       ?.toString() ==
