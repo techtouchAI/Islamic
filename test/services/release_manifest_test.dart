@@ -44,14 +44,12 @@ void main() {
     });
 
     test('rejects non-HTTPS apk_url', () {
-      final values = validValues()
-        ..['apk_url'] = 'http://example.com/app.apk';
+      final values = validValues()..['apk_url'] = 'http://example.com/app.apk';
       expect(() => ReleaseManifest.parse(values), throwsFormatException);
     });
 
     test('rejects apk_url that does not end with .apk', () {
-      final values = validValues()
-        ..['apk_url'] = 'https://example.com/app.zip';
+      final values = validValues()..['apk_url'] = 'https://example.com/app.zip';
       expect(() => ReleaseManifest.parse(values), throwsFormatException);
     });
 
