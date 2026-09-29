@@ -40,7 +40,6 @@ import 'package:provider/provider.dart';
 
 import 'package:package_info_plus/package_info_plus.dart';
 
-import 'dart:convert';
 
 import 'services/release_manifest.dart';
 import 'services/ota_service.dart';
