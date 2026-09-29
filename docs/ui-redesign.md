@@ -34,3 +34,11 @@ New automated coverage includes real shell navigation, drawer roots, RTL orderin
 manual offsets for tomorrow, loading/failure/retry/disposal, and dhikr persistence.
 `UI verification` runs analyzer, all Flutter tests and a release web build on CI.
 Native compass/GPS/permissions/adhan still require an Android/iOS device smoke test.
+
+### Confirmed CI result
+On 2026-09-30, [UI verification run 36645750300](https://github.com/techtouchAI/Islamic/actions/runs/36645750300)
+passed Flutter analysis, the complete test suite, and the release web build.
+The SDK used was Flutter 3.47.5, matching this repository's existing build jobs.
+Testing caught and corrected progress-bar accessibility semantics and verified
+that the drawer has finished opening before navigation is hit-tested.
+No native-device runtime verification was performed in the sandbox.
