@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import '../../providers/settings_provider.dart';
 import '../../data/repositories/calendar_repository.dart';
 
@@ -41,8 +42,12 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
   ];
 
   AppHijriDate? _todayHijri;
-  AppHijriDate _displayedHijri =
-      AppHijriDate(day: 1, month: 1, year: 1446, monthName: 'محرم');
+  AppHijriDate _displayedHijri = AppHijriDate(
+    day: 1,
+    month: 1,
+    year: 1446,
+    monthName: 'محرم',
+  );
   PageController? _pageController;
 
   int? _realTodayHDay;
@@ -199,14 +204,19 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
       if (dayData != null) {
         if (dayData.events.isNotEmpty) {
           return _UpcomingEventInfo(
-              event: dayData.events.first, hDay: d, hMonth: m, hYear: y);
+            event: dayData.events.first,
+            hDay: d,
+            hMonth: m,
+            hYear: y,
+          );
         }
         if (dayData.astronomicalEvents.isNotEmpty) {
           return _UpcomingEventInfo(
-              astroEvent: dayData.astronomicalEvents.first,
-              hDay: d,
-              hMonth: m,
-              hYear: y);
+            astroEvent: dayData.astronomicalEvents.first,
+            hDay: d,
+            hMonth: m,
+            hYear: y,
+          );
         }
       }
       d++;
@@ -233,8 +243,10 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
       child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(14),
-          border:
-              Border.all(color: Colors.amber.withValues(alpha: 0.15), width: 1),
+          border: Border.all(
+            color: Colors.amber.withValues(alpha: 0.15),
+            width: 1,
+          ),
         ),
         padding: const EdgeInsets.all(12),
         child: Column(
@@ -579,20 +591,11 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
         icon: Icons.event_available,
         children: [
           ..._selectedDayData!.events.map(
-            (e) => _buildEventItem(
-              e.title,
-              e.description,
-              e.isImportant,
-              false,
-            ),
+            (e) =>
+                _buildEventItem(e.title, e.description, e.isImportant, false),
           ),
           ..._selectedDayData!.astronomicalEvents.map(
-            (e) => _buildEventItem(
-              e.title,
-              e.description,
-              false,
-              true,
-            ),
+            (e) => _buildEventItem(e.title, e.description, false, true),
           ),
         ],
       );

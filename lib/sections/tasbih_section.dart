@@ -81,8 +81,9 @@ class _TasbihSectionState extends State<TasbihSection> {
   Future<void> _loadState() async {
     final generation = ++_loadGeneration;
     final prefs = await SharedPreferences.getInstance();
-    final savedSelection =
-        _selectionFromName(prefs.getString('tasbih_selection'));
+    final savedSelection = _selectionFromName(
+      prefs.getString('tasbih_selection'),
+    );
     final isZahra = prefs.getBool('tasbih_zahra_mode') ?? true;
     final savedStage =
         (prefs.getInt('tasbih_zahra_stage') ?? 0).clamp(0, 2).toInt();
@@ -252,8 +253,9 @@ class _TasbihSectionState extends State<TasbihSection> {
         child: Dialog(
           alignment: Alignment.topCenter,
           insetPadding: const EdgeInsets.fromLTRB(28, 88, 28, 24),
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(34)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(34),
+          ),
           child: Padding(
             padding: const EdgeInsets.fromLTRB(28, 32, 28, 22),
             child: Column(
@@ -279,8 +281,10 @@ class _TasbihSectionState extends State<TasbihSection> {
                 Text(
                   'تقبّل الله منكم صالح الأعمال',
                   textAlign: TextAlign.center,
-                  style:
-                      TextStyle(color: scheme.onSurfaceVariant, fontSize: 17),
+                  style: TextStyle(
+                    color: scheme.onSurfaceVariant,
+                    fontSize: 17,
+                  ),
                 ),
                 const SizedBox(height: 26),
                 Row(
@@ -523,9 +527,7 @@ class _TasbihStageRail extends StatelessWidget {
         return Expanded(
           child: Container(
             height: 5,
-            margin: EdgeInsetsDirectional.only(
-              start: index == 0 ? 0 : 4,
-            ),
+            margin: EdgeInsetsDirectional.only(start: index == 0 ? 0 : 4),
             decoration: BoxDecoration(
               color: active
                   ? scheme.primary
@@ -589,14 +591,20 @@ class _TasbihCountPanel extends StatelessWidget {
       width: 210,
       decoration: BoxDecoration(
         border: Border.all(
-            color: scheme.primary.withValues(alpha: 0.7), width: 1.5),
+          color: scheme.primary.withValues(alpha: 0.7),
+          width: 1.5,
+        ),
         borderRadius: BorderRadius.circular(18),
       ),
       child: Row(
         children: [
-          Expanded(child: _CounterCell(value: count, label: 'العدد')),
+          Expanded(
+            child: _CounterCell(value: count, label: 'العدد'),
+          ),
           Container(width: 1, height: 52, color: scheme.outlineVariant),
-          Expanded(child: _CounterCell(value: target, label: 'الهدف')),
+          Expanded(
+            child: _CounterCell(value: target, label: 'الهدف'),
+          ),
         ],
       ),
     );
@@ -624,8 +632,10 @@ class _CounterCell extends StatelessWidget {
               color: scheme.onSurface,
             ),
           ),
-          Text(label,
-              style: TextStyle(fontSize: 11, color: scheme.onSurfaceVariant)),
+          Text(
+            label,
+            style: TextStyle(fontSize: 11, color: scheme.onSurfaceVariant),
+          ),
         ],
       ),
     );
@@ -649,14 +659,17 @@ class _TasbihTapTarget extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        customBorder:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(83)),
+        customBorder: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(83),
+        ),
         child: Ink(
           width: 218,
           height: 218,
           decoration: BoxDecoration(
             border: Border.all(
-                color: primaryColor.withValues(alpha: 0.75), width: 2),
+              color: primaryColor.withValues(alpha: 0.75),
+              width: 2,
+            ),
             borderRadius: BorderRadius.circular(83),
           ),
           child: Padding(
@@ -710,12 +723,18 @@ class _TasbihStat extends StatelessWidget {
       ),
       child: Column(
         children: [
-          Text(label,
-              style: TextStyle(fontSize: 11, color: scheme.onSurfaceVariant)),
+          Text(
+            label,
+            style: TextStyle(fontSize: 11, color: scheme.onSurfaceVariant),
+          ),
           const SizedBox(height: 2),
-          Text(value,
-              style: TextStyle(
-                  fontWeight: FontWeight.bold, color: scheme.primary)),
+          Text(
+            value,
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: scheme.primary,
+            ),
+          ),
         ],
       ),
     );

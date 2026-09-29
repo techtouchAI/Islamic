@@ -75,7 +75,9 @@ class ReleaseManifest {
   }
 
   static Future<ReleaseManifest> fetchVerified(
-      Dio dio, List<int> publicKey) async {
+    Dio dio,
+    List<int> publicKey,
+  ) async {
     if (publicKey.length != 32) {
       throw StateError('OTA signing public key is not configured');
     }

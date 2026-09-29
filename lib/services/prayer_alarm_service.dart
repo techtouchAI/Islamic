@@ -2,8 +2,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
 class PrayerAlarmService {
-  static const MethodChannel _channel =
-      MethodChannel('com.techtouchai.islamic/adhan');
+  static const MethodChannel _channel = MethodChannel(
+    'com.techtouchai.islamic/adhan',
+  );
 
   /// Native alarms are initialized lazily by the MethodChannel manager.
   /// Kept as an async compatibility entry point for the application bootstrap.

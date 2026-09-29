@@ -2,16 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/services.dart';
 import 'package:firebase_core/firebase_core.dart';
+
 import 'services/analytics_service.dart';
 
 import 'sections/tasbih_section.dart';
+
 import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'data/data_manager.dart';
 import 'services/favorites_service.dart';
 import 'services/prayer_alarm_service.dart';
 import 'sections/favorites_section.dart';
+
 import 'package:hive_flutter/hive_flutter.dart';
+
 import 'services/search_engine.dart';
 import 'search/screens/search_screen.dart';
 import 'ui/calendar/hijri_calendar_screen.dart';
@@ -29,12 +33,15 @@ import 'ui/mafatih/mafatih_section.dart';
 
 import 'dart:math' hide log;
 import 'dart:io';
+
 import 'presentation/screens/istikhara_screen.dart';
+
 import 'package:provider/provider.dart';
 
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:dio/dio.dart';
+
 import 'dart:convert';
+
 import 'services/release_manifest.dart';
 import 'services/ota_service.dart';
 
@@ -206,9 +213,8 @@ class _AlDhakereenAppState extends State<AlDhakereenApp> {
       debugShowCheckedModeBanner: false,
       builder: (context, child) => MediaQuery(
         data: MediaQuery.of(context).copyWith(
-          textScaler: MediaQuery.of(
-            context,
-          ).textScaler, // Respects system font scaling
+          textScaler:
+              MediaQuery.of(context).textScaler, // Respects system font scaling
         ),
         child: child!,
       ),
@@ -286,22 +292,28 @@ class _MainScaffoldState extends State<MainScaffold> {
     try {
       const publicKeyBase64 = String.fromEnvironment('OTA_PUBLIC_KEY_B64');
       if (kIsWeb || !Platform.isAndroid || publicKeyBase64.isEmpty) return;
-      final manifest = await ReleaseManifest.fetchVerified(
-          Dio(), base64Decode(publicKeyBase64));
+      // Fetch + verify release_manifest.json through the OTA service.
+      final manifest = await OTAService.instance.fetchManifest(
+        base64Decode(publicKeyBase64),
+      );
       if (!mounted) return;
       final info = await PackageInfo.fromPlatform();
       final currentBuild = int.tryParse(info.buildNumber) ?? 0;
       if (currentBuild < manifest.buildNumber) {
-        _showSignedUpdateDialog(manifest,
-            mandatory: currentBuild < manifest.minSupportedBuild);
+        _showSignedUpdateDialog(
+          manifest,
+          mandatory: currentBuild < manifest.minSupportedBuild,
+        );
       }
     } catch (e) {
       debugPrint('OTA_Update Error: $e');
     }
   }
 
-  void _showSignedUpdateDialog(ReleaseManifest manifest,
-      {required bool mandatory}) {
+  void _showSignedUpdateDialog(
+    ReleaseManifest manifest, {
+    required bool mandatory,
+  }) {
     final context = navigatorKey.currentContext;
     if (context == null) return;
     final progress = OTAService.instance.downloadProgress;
@@ -310,40 +322,63 @@ class _MainScaffoldState extends State<MainScaffold> {
       barrierDismissible: false,
       builder: (dialogContext) => ValueListenableBuilder<double>(
         valueListenable: progress,
-        builder: (context, value, _) => PopScope(
-          canPop: !mandatory && value < 0,
-          child: AlertDialog(
-            title: const Text('تحديث موثّق متوفر'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text('الإصدار ${manifest.version}'),
-                if (value >= 0) LinearProgressIndicator(value: value),
+        builder: (context, value, _) {
+          // value >= 0 -> download/install in progress: unskippable dialog.
+          final bool downloading = value >= 0;
+          return PopScope(
+            canPop: !mandatory && !downloading,
+            child: AlertDialog(
+              title: const Text('تحديث موثّق متوفر'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text('الإصدار ${manifest.version}'),
+                  if (downloading) ...[
+                    const SizedBox(height: 16),
+                    // Determinate bar when the byte total is known,
+                    // indeterminate otherwise. Either way it cannot be skipped.
+                    LinearProgressIndicator(value: value > 0 ? value : null),
+                    const SizedBox(height: 8),
+                    Text(
+                      value > 0
+                          ? 'جارٍ التحميل... ${(value * 100).toStringAsFixed(0)}٪'
+                          : 'جارٍ التحميل...',
+                      style: Theme.of(context).textTheme.bodySmall,
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ],
+              ),
+              actions: [
+                if (!mandatory && !downloading)
+                  TextButton(
+                    onPressed: () => Navigator.of(dialogContext).pop(),
+                    child: const Text('لاحقاً'),
+                  ),
+                if (!downloading)
+                  FilledButton(
+                    onPressed: () => OTAService.instance.downloadAndInstallApk(
+                      manifest.apkUrl.toString(),
+                      manifest.sha256Hex,
+                      onError: (message) {
+                        if (dialogContext.mounted) {
+                          ScaffoldMessenger.of(dialogContext)
+                              .showSnackBar(SnackBar(content: Text(message)));
+                        }
+                      },
+                      onSuccess: () {
+                        // Hand over to the system installer, then dismiss.
+                        if (dialogContext.mounted) {
+                          Navigator.of(dialogContext).pop();
+                        }
+                      },
+                    ),
+                    child: const Text('تنزيل وتثبيت'),
+                  ),
               ],
             ),
-            actions: [
-              if (!mandatory && value < 0)
-                TextButton(
-                  onPressed: () => Navigator.of(dialogContext).pop(),
-                  child: const Text('لاحقاً'),
-                ),
-              if (value < 0)
-                FilledButton(
-                  onPressed: () => OTAService.instance.downloadAndInstallApk(
-                    manifest.apkUrl.toString(),
-                    manifest.sha256Hex,
-                    onError: (message) {
-                      if (dialogContext.mounted) {
-                        ScaffoldMessenger.of(dialogContext)
-                            .showSnackBar(SnackBar(content: Text(message)));
-                      }
-                    },
-                  ),
-                  child: const Text('تنزيل وتثبيت'),
-                ),
-            ],
-          ),
-        ),
+          );
+        },
       ),
     );
   }

@@ -28,6 +28,8 @@ void main() {
     values['apk_url'] =
         'https://github.com/techtouchAI/Islamic/releases/download/other/app-release.apk';
     expect(
-        await ReleaseManifest.parse(values).verify(publicKey.bytes), isFalse);
+      await ReleaseManifest.parse(values).verify(publicKey.bytes),
+      isFalse,
+    );
   });
 }

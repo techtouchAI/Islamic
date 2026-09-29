@@ -196,10 +196,7 @@ class MockClient extends _i1.Mock implements _i2.Client {
       (super.noSuchMethod(
         Invocation.method(#send, [request]),
         returnValue: _i3.Future<_i2.StreamedResponse>.value(
-          _FakeStreamedResponse_1(
-            this,
-            Invocation.method(#send, [request]),
-          ),
+          _FakeStreamedResponse_1(this, Invocation.method(#send, [request])),
         ),
       ) as _i3.Future<_i2.StreamedResponse>);
 

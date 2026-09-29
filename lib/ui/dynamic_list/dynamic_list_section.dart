@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+
 import 'dart:async';
 import 'dart:ui';
+
 import 'package:flutter/services.dart';
 
 import '../../data/data_manager.dart';
@@ -51,10 +53,7 @@ class _DynamicListSectionState extends State<DynamicListSection> {
             return const Center(
               child: Text(
                 "اللَّهُمَّ صَلِّ عَلَى مُحَمَّدٍ وَعَلَى آلِ مُحَمَّدٍ",
-                style: TextStyle(
-                  fontFamily: 'me_quran',
-                  fontSize: 24,
-                ),
+                style: TextStyle(fontFamily: 'me_quran', fontSize: 24),
                 textAlign: TextAlign.center,
               ),
             );
@@ -84,8 +83,10 @@ class _DynamicListSectionState extends State<DynamicListSection> {
                 color: Theme.of(context)
                     .cardColor
                     .withValues(alpha: widget.uiOpacity),
-                margin:
-                    const EdgeInsets.symmetric(horizontal: 4.0, vertical: 8.0),
+                margin: const EdgeInsets.symmetric(
+                  horizontal: 4.0,
+                  vertical: 8.0,
+                ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(15),
                   side: BorderSide(
@@ -156,7 +157,9 @@ class _DynamicListSectionState extends State<DynamicListSection> {
                         ),
                         Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 6),
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
                           decoration: BoxDecoration(
                             color: Theme.of(context)
                                 .colorScheme
@@ -208,9 +211,9 @@ class _DynamicListSectionState extends State<DynamicListSection> {
               itemCount: data.length,
               itemBuilder: (context, index) => Container(
                 decoration: BoxDecoration(
-                  color: Theme.of(
-                    context,
-                  ).cardColor.withValues(alpha: widget.uiOpacity * 0.8),
+                  color: Theme.of(context)
+                      .cardColor
+                      .withValues(alpha: widget.uiOpacity * 0.8),
                   borderRadius: BorderRadius.circular(15),
                   border: Border.all(
                     color: Theme.of(context).colorScheme.primary,
@@ -249,120 +252,138 @@ class _DynamicListSectionState extends State<DynamicListSection> {
                       customPadding: EdgeInsets.zero,
                       child: Stack(
                         children: [
-                          Builder(builder: (context) {
-                            String rawText = data[index]['content']
-                                .toString()
-                                .trim()
-                                .replaceAll(
-                                    RegExp(r'<html>|<html|^html\b',
-                                        caseSensitive: false),
-                                    ' ')
-                                .trim();
-                            String cleanSubtitle = rawText.cleanSnippet();
-
-                            String displayTitle;
-                            TextStyle titleStyle;
-                            Color dynamicTextColor =
-                                Theme.of(context).cardColor.contrastTextColor;
-
-                            if (widget.sectionKey == 'prophets_stories') {
-                              String rawTitle = data[index]['title'].toString();
-                              String cleanName = rawTitle
+                          Builder(
+                            builder: (context) {
+                              String rawText = data[index]['content']
+                                  .toString()
+                                  .trim()
                                   .replaceAll(
-                                      RegExp(r'قصة\s*|\s*\(?عليه السلام\)?',
-                                          caseSensitive: false),
-                                      '')
+                                    RegExp(
+                                      r'<html>|<html|^html\b',
+                                      caseSensitive: false,
+                                    ),
+                                    ' ',
+                                  )
                                   .trim();
-                              displayTitle = '$cleanName ﴿عليه السلام﴾';
-                            } else if (widget.sectionKey.contains('imam_ali')) {
-                              displayTitle =
-                                  'قال أمير المؤمنين علي (عليه السلام)';
-                            } else {
-                              displayTitle = data[index]['title'].toString();
-                            }
+                              String cleanSubtitle = rawText.cleanSnippet();
 
-                            titleStyle = TextStyle(
-                              fontFamily: AppCardTheme.fontFamily,
-                              fontSize: 18 * widget.fontSizeFactor,
-                              fontWeight: FontWeight.bold,
-                              color: dynamicTextColor,
-                            );
+                              String displayTitle;
+                              TextStyle titleStyle;
+                              Color dynamicTextColor =
+                                  Theme.of(context).cardColor.contrastTextColor;
 
-                            return ListTile(
-                              contentPadding: AppCardTheme.padding,
-                              title: Text(
-                                displayTitle,
-                                style: titleStyle,
-                              ),
-                              subtitle: widget.sectionKey.contains('imam_ali')
-                                  ? Padding(
-                                      padding: const EdgeInsets.only(top: 4.0),
-                                      child: Text(
-                                        cleanSubtitle,
-                                        style: TextStyle(
-                                          fontSize: 14 * widget.fontSizeFactor,
-                                          color: dynamicTextColor.withValues(
-                                              alpha: 0.8),
-                                        ),
+                              if (widget.sectionKey == 'prophets_stories') {
+                                String rawTitle =
+                                    data[index]['title'].toString();
+                                String cleanName = rawTitle
+                                    .replaceAll(
+                                      RegExp(
+                                        r'قصة\s*|\s*\(?عليه السلام\)?',
+                                        caseSensitive: false,
                                       ),
+                                      '',
                                     )
-                                  : null,
-                              onTap: () => Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (c) => ReaderPage(
-                                    title: data[index]['title'].toString(),
-                                    content: data[index]['content'].toString(),
-                                    fontSizeFactor: widget.fontSizeFactor,
-                                    isQuran: false,
-                                    isImamAli:
-                                        widget.sectionKey.contains('imam_ali'),
-                                    titleColor:
-                                        data[index]['color']?.toString(),
+                                    .trim();
+                                displayTitle = '$cleanName ﴿عليه السلام﴾';
+                              } else if (widget.sectionKey.contains(
+                                'imam_ali',
+                              )) {
+                                displayTitle =
+                                    'قال أمير المؤمنين علي (عليه السلام)';
+                              } else {
+                                displayTitle = data[index]['title'].toString();
+                              }
+
+                              titleStyle = TextStyle(
+                                fontFamily: AppCardTheme.fontFamily,
+                                fontSize: 18 * widget.fontSizeFactor,
+                                fontWeight: FontWeight.bold,
+                                color: dynamicTextColor,
+                              );
+
+                              return ListTile(
+                                contentPadding: AppCardTheme.padding,
+                                title: Text(displayTitle, style: titleStyle),
+                                subtitle: widget.sectionKey.contains('imam_ali')
+                                    ? Padding(
+                                        padding: const EdgeInsets.only(
+                                          top: 4.0,
+                                        ),
+                                        child: Text(
+                                          cleanSubtitle,
+                                          style: TextStyle(
+                                            fontSize:
+                                                14 * widget.fontSizeFactor,
+                                            color: dynamicTextColor.withValues(
+                                              alpha: 0.8,
+                                            ),
+                                          ),
+                                        ),
+                                      )
+                                    : null,
+                                onTap: () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (c) => ReaderPage(
+                                      title: data[index]['title'].toString(),
+                                      content:
+                                          data[index]['content'].toString(),
+                                      fontSizeFactor: widget.fontSizeFactor,
+                                      isQuran: false,
+                                      isImamAli: widget.sectionKey.contains(
+                                        'imam_ali',
+                                      ),
+                                      titleColor:
+                                          data[index]['color']?.toString(),
+                                    ),
                                   ),
                                 ),
-                              ),
-                            );
-                          }),
+                              );
+                            },
+                          ),
                           Positioned(
                             top: 0,
                             left: 0,
-                            child: Builder(builder: (context) {
-                              final itemId = data[index]['title'].toString();
-                              return ValueListenableBuilder<List<FavoriteItem>>(
-                                valueListenable:
-                                    FavoritesService.instance.favoritesNotifier,
-                                builder: (context, favorites, _) {
-                                  final isFav = FavoritesService.instance
-                                      .isFavorite(itemId);
-                                  return IconButton(
-                                    icon: Icon(
-                                      isFav
-                                          ? Icons.favorite
-                                          : Icons.favorite_border,
-                                      color: isFav
-                                          ? Colors.red
-                                          : Theme.of(context)
-                                              .cardColor
-                                              .contrastTextColor,
-                                    ),
-                                    onPressed: () {
-                                      final item = FavoriteItem(
-                                        id: itemId,
-                                        title: data[index]['title'].toString(),
-                                        content:
-                                            data[index]['content'].toString(),
-                                        sourceSection: widget.sectionKey,
-                                        timestamp: DateTime.now(),
-                                        isCustom: false,
-                                      );
-                                      FavoritesService.instance
-                                          .toggleFavorite(item);
-                                    },
-                                  );
-                                },
-                              );
-                            }),
+                            child: Builder(
+                              builder: (context) {
+                                final itemId = data[index]['title'].toString();
+                                return ValueListenableBuilder<
+                                    List<FavoriteItem>>(
+                                  valueListenable: FavoritesService
+                                      .instance.favoritesNotifier,
+                                  builder: (context, favorites, _) {
+                                    final isFav = FavoritesService.instance
+                                        .isFavorite(itemId);
+                                    return IconButton(
+                                      icon: Icon(
+                                        isFav
+                                            ? Icons.favorite
+                                            : Icons.favorite_border,
+                                        color: isFav
+                                            ? Colors.red
+                                            : Theme.of(context)
+                                                .cardColor
+                                                .contrastTextColor,
+                                      ),
+                                      onPressed: () {
+                                        final item = FavoriteItem(
+                                          id: itemId,
+                                          title:
+                                              data[index]['title'].toString(),
+                                          content:
+                                              data[index]['content'].toString(),
+                                          sourceSection: widget.sectionKey,
+                                          timestamp: DateTime.now(),
+                                          isCustom: false,
+                                        );
+                                        FavoritesService.instance
+                                            .toggleFavorite(item);
+                                      },
+                                    );
+                                  },
+                                );
+                              },
+                            ),
                           ),
                         ],
                       ),

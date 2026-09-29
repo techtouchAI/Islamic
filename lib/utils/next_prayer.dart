@@ -22,10 +22,7 @@ String nextPrayerKeyForHome({
   required DateTime now,
   required bool isRamadan,
 }) {
-  final displayKeys = <String>[
-    if (isRamadan) 'imsak',
-    ..._dailyPrayerKeys,
-  ];
+  final displayKeys = <String>[if (isRamadan) 'imsak', ..._dailyPrayerKeys];
   final upcoming = displayKeys
       .where((key) => localCivilTimes[key] != null)
       .map((key) => MapEntry<String, DateTime>(key, localCivilTimes[key]!))

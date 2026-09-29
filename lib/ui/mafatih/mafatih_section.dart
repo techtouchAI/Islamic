@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../services/mafatih_service.dart';
 import '../../models/mafatih_category.dart';
 import '../../models/mafatih_article.dart';
@@ -89,8 +90,9 @@ class _MafatihSectionState extends State<MafatihSection> {
                           Text(cat.title),
                           const SizedBox(width: 12),
                           FutureBuilder<int>(
-                            future:
-                                MafatihService.getCategoryArticlesCount(cat.id),
+                            future: MafatihService.getCategoryArticlesCount(
+                              cat.id,
+                            ),
                             builder: (context, snapshot) {
                               if (!snapshot.hasData) return const SizedBox();
                               return CountBadge(count: snapshot.data!);
@@ -185,7 +187,8 @@ class _MafatihCategoryListState extends State<_MafatihCategoryList> {
 
         if (subCatSnapshot.hasError) {
           return Center(
-              child: Text('تعذر تحميل الأقسام: ${subCatSnapshot.error}'));
+            child: Text('تعذر تحميل الأقسام: ${subCatSnapshot.error}'),
+          );
         }
         if (_hasSubCategories) {
           final subCategories = subCatSnapshot.data!;
@@ -213,8 +216,9 @@ class _MafatihCategoryListState extends State<_MafatihCategoryList> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       FutureBuilder<int>(
-                        future:
-                            MafatihService.getCategoryArticlesCount(subCat.id),
+                        future: MafatihService.getCategoryArticlesCount(
+                          subCat.id,
+                        ),
                         builder: (context, snapshot) {
                           if (!snapshot.hasData) return const SizedBox();
                           return CountBadge(count: snapshot.data!);
@@ -256,9 +260,7 @@ class _MafatihCategoryListState extends State<_MafatihCategoryList> {
                 return const Center(child: CircularProgressIndicator());
               }
               if (articleSnapshot.hasError) {
-                return Center(
-                  child: Text('خطأ: ${articleSnapshot.error}'),
-                );
+                return Center(child: Text('خطأ: ${articleSnapshot.error}'));
               }
               if (!articleSnapshot.hasData || articleSnapshot.data!.isEmpty) {
                 return const Center(child: Text('لا توجد نصوص في هذا القسم'));
@@ -291,39 +293,44 @@ class _MafatihCategoryListState extends State<_MafatihCategoryList> {
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Builder(builder: (context) {
-                            final itemId = article.id.toString();
-                            return ValueListenableBuilder<List<FavoriteItem>>(
-                              valueListenable:
-                                  FavoritesService.instance.favoritesNotifier,
-                              builder: (context, favorites, _) {
-                                final isFav = FavoritesService.instance
-                                    .isFavorite(itemId);
-                                return IconButton(
-                                  icon: Icon(
-                                    isFav
-                                        ? Icons.favorite
-                                        : Icons.favorite_border,
-                                    color: isFav
-                                        ? Colors.red
-                                        : Theme.of(context).colorScheme.primary,
-                                  ),
-                                  onPressed: () {
-                                    final item = FavoriteItem(
-                                      id: itemId,
-                                      title: title,
-                                      content: text,
-                                      sourceSection: 'mafatih',
-                                      timestamp: DateTime.now(),
-                                      isCustom: false,
-                                    );
-                                    FavoritesService.instance
-                                        .toggleFavorite(item);
-                                  },
-                                );
-                              },
-                            );
-                          }),
+                          Builder(
+                            builder: (context) {
+                              final itemId = article.id.toString();
+                              return ValueListenableBuilder<List<FavoriteItem>>(
+                                valueListenable:
+                                    FavoritesService.instance.favoritesNotifier,
+                                builder: (context, favorites, _) {
+                                  final isFav = FavoritesService.instance
+                                      .isFavorite(itemId);
+                                  return IconButton(
+                                    icon: Icon(
+                                      isFav
+                                          ? Icons.favorite
+                                          : Icons.favorite_border,
+                                      color: isFav
+                                          ? Colors.red
+                                          : Theme.of(context)
+                                              .colorScheme
+                                              .primary,
+                                    ),
+                                    onPressed: () {
+                                      final item = FavoriteItem(
+                                        id: itemId,
+                                        title: title,
+                                        content: text,
+                                        sourceSection: 'mafatih',
+                                        timestamp: DateTime.now(),
+                                        isCustom: false,
+                                      );
+                                      FavoritesService.instance.toggleFavorite(
+                                        item,
+                                      );
+                                    },
+                                  );
+                                },
+                              );
+                            },
+                          ),
                           Icon(
                             Icons.arrow_forward_ios,
                             size: 16,

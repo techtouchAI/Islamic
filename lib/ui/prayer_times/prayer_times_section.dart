@@ -148,7 +148,8 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-            content: Text('تعذر تحديد الموقع الحالي. تحقق من GPS والصلاحية.')),
+          content: Text('تعذر تحديد الموقع الحالي. تحقق من GPS والصلاحية.'),
+        ),
       );
       setState(() => _loading = false);
       return;
@@ -164,8 +165,8 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
     if (!location.isGps) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-            content:
-                Text('تعذر تحديث GPS؛ تم استخدام ${location.displayName}.')),
+          content: Text('تعذر تحديث GPS؛ تم استخدام ${location.displayName}.'),
+        ),
       );
     }
   }
@@ -189,10 +190,7 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
       return const Center(
         child: Text(
           "اللَّهُمَّ صَلِّ عَلَى مُحَمَّدٍ وَعَلَى آلِ مُحَمَّدٍ",
-          style: TextStyle(
-            fontFamily: 'me_quran',
-            fontSize: 24,
-          ),
+          style: TextStyle(fontFamily: 'me_quran', fontSize: 24),
           textAlign: TextAlign.center,
         ),
       );
@@ -204,9 +202,8 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
           Container(
             padding: const EdgeInsets.all(15),
             decoration: BoxDecoration(
-              color: Theme.of(
-                context,
-              ).colorScheme.primary.withValues(alpha: 0.1),
+              color:
+                  Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(15),
             ),
             child: Column(
@@ -308,13 +305,17 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
                       final location = await _resolveLocationForAction();
                       if (location != null) {
                         await _prayerService.rescheduleSinglePrayerForLocation(
-                            k, location);
+                          k,
+                          location,
+                        );
                       }
                     },
                   ),
                   Padding(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 5,
+                    ),
                     child: Row(
                       children: [
                         Expanded(
@@ -330,7 +331,9 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
                               if (location != null) {
                                 await _prayerService
                                     .rescheduleSinglePrayerForLocation(
-                                        k, location);
+                                  k,
+                                  location,
+                                );
                               }
                             },
                             child: Card(
@@ -347,22 +350,26 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
                                 padding: const EdgeInsets.all(10.0),
                                 child: Column(
                                   children: [
-                                    Icon(Icons.notifications,
+                                    Icon(
+                                      Icons.notifications,
+                                      color: (_fullScreenPrayers[k] ?? false)
+                                          ? Colors.grey
+                                          : Theme.of(context)
+                                              .colorScheme
+                                              .primary,
+                                    ),
+                                    const SizedBox(height: 5),
+                                    Text(
+                                      'إشعار',
+                                      style: TextStyle(
+                                        fontSize: 14,
                                         color: (_fullScreenPrayers[k] ?? false)
                                             ? Colors.grey
                                             : Theme.of(context)
                                                 .colorScheme
-                                                .primary),
-                                    const SizedBox(height: 5),
-                                    Text('إشعار',
-                                        style: TextStyle(
-                                            fontSize: 14,
-                                            color:
-                                                (_fullScreenPrayers[k] ?? false)
-                                                    ? Colors.grey
-                                                    : Theme.of(context)
-                                                        .colorScheme
-                                                        .primary)),
+                                                .primary,
+                                      ),
+                                    ),
                                   ],
                                 ),
                               ),
@@ -382,7 +389,9 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
                               if (location != null) {
                                 await _prayerService
                                     .rescheduleSinglePrayerForLocation(
-                                        k, location);
+                                  k,
+                                  location,
+                                );
                               }
                             },
                             child: Card(
@@ -399,22 +408,26 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
                                 padding: const EdgeInsets.all(10.0),
                                 child: Column(
                                   children: [
-                                    Icon(Icons.fullscreen,
+                                    Icon(
+                                      Icons.fullscreen,
+                                      color: (_fullScreenPrayers[k] ?? false)
+                                          ? Theme.of(context)
+                                              .colorScheme
+                                              .primary
+                                          : Colors.grey,
+                                    ),
+                                    const SizedBox(height: 5),
+                                    Text(
+                                      'شاشة كاملة',
+                                      style: TextStyle(
+                                        fontSize: 14,
                                         color: (_fullScreenPrayers[k] ?? false)
                                             ? Theme.of(context)
                                                 .colorScheme
                                                 .primary
-                                            : Colors.grey),
-                                    const SizedBox(height: 5),
-                                    Text('شاشة كاملة',
-                                        style: TextStyle(
-                                            fontSize: 14,
-                                            color:
-                                                (_fullScreenPrayers[k] ?? false)
-                                                    ? Theme.of(context)
-                                                        .colorScheme
-                                                        .primary
-                                                    : Colors.grey)),
+                                            : Colors.grey,
+                                      ),
+                                    ),
                                   ],
                                 ),
                               ),
@@ -430,9 +443,13 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('مستوى الصوت',
-                            style: TextStyle(
-                                fontSize: 14, fontWeight: FontWeight.bold)),
+                        const Text(
+                          'مستوى الصوت',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                         Slider(
                           value: _adhanVolume,
                           onChanged: (v) async {
@@ -447,11 +464,17 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
                   ),
                   const Divider(),
                   ListTile(
-                    title: const Text('تنبيه قبل الأذان',
-                        style: TextStyle(
-                            fontSize: 14, fontWeight: FontWeight.bold)),
-                    subtitle:
-                        const Text('دقائق', style: TextStyle(fontSize: 12)),
+                    title: const Text(
+                      'تنبيه قبل الأذان',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    subtitle: const Text(
+                      'دقائق',
+                      style: TextStyle(fontSize: 12),
+                    ),
                     trailing: DropdownButton<int>(
                       value: _adhanPreAlert,
                       items: [0, 5, 10, 15, 20, 30].map((int value) {
@@ -472,9 +495,13 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
                   ),
                   const Divider(),
                   ListTile(
-                    title: const Text('المنبه الدقيق',
-                        style: TextStyle(
-                            fontSize: 14, fontWeight: FontWeight.bold)),
+                    title: const Text(
+                      'المنبه الدقيق',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                     subtitle: Text(
                       _exactAlarmAvailable == true
                           ? 'مفعّل: يمكن تشغيل الأذان في الموعد بدقة أعلى'
@@ -493,9 +520,13 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
                           ),
                   ),
                   ListTile(
-                    title: const Text('الشاشة الكاملة',
-                        style: TextStyle(
-                            fontSize: 14, fontWeight: FontWeight.bold)),
+                    title: const Text(
+                      'الشاشة الكاملة',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                     subtitle: Text(
                       _fullScreenAvailable == true
                           ? 'مسموح به من النظام'
@@ -513,11 +544,17 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
                   ),
                   const Divider(),
                   ListTile(
-                    title: const Text('قناة الإشعارات',
-                        style: TextStyle(
-                            fontSize: 14, fontWeight: FontWeight.bold)),
-                    subtitle: const Text('إعدادات النظام للإشعارات',
-                        style: TextStyle(fontSize: 12)),
+                    title: const Text(
+                      'قناة الإشعارات',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    subtitle: const Text(
+                      'إعدادات النظام للإشعارات',
+                      style: TextStyle(fontSize: 12),
+                    ),
                     trailing: const Icon(Icons.settings),
                     onTap: () async {
                       // Launch native Android notification settings for the app channel
@@ -527,10 +564,14 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
                   ),
                   const Divider(),
                   SwitchListTile(
-                    title: const Text('تخطي وضع توفير الطاقة (Doze Mode)',
-                        style: TextStyle(fontSize: 14)),
-                    subtitle: const Text('مطلوب لضمان عمل الأذان في وقته بدقة',
-                        style: TextStyle(fontSize: 12)),
+                    title: const Text(
+                      'تخطي وضع توفير الطاقة (Doze Mode)',
+                      style: TextStyle(fontSize: 14),
+                    ),
+                    subtitle: const Text(
+                      'مطلوب لضمان عمل الأذان في وقته بدقة',
+                      style: TextStyle(fontSize: 12),
+                    ),
                     value: _ignoreBatteryOptimizations,
                     onChanged: (v) async {
                       setState(() => _ignoreBatteryOptimizations = v);
@@ -543,7 +584,7 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
                         }
                       }
                     },
-                  )
+                  ),
                 ],
               ),
             ),
@@ -605,8 +646,11 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
             final diff = pickedDateTimeLocal.difference(localTime).inMinutes;
 
             // التحقق من الإزاحة الجديدة لضمان عدم التداخل
-            final validatedDiff =
-                _prayerService.validateOffset(key, diff, _prayerTimes!);
+            final validatedDiff = _prayerService.validateOffset(
+              key,
+              diff,
+              _prayerTimes!,
+            );
 
             if (!mounted) return;
             setState(() {
@@ -620,8 +664,10 @@ class _PrayerTimesSectionState extends State<PrayerTimesSection> {
               if (!mounted) return;
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
-                    content: Text(
-                        'تم ضبط الوقت لأقرب قيمة مسموح بها لمنع التداخل مع الصلاة المجاورة')),
+                  content: Text(
+                    'تم ضبط الوقت لأقرب قيمة مسموح بها لمنع التداخل مع الصلاة المجاورة',
+                  ),
+                ),
               );
             }
           }

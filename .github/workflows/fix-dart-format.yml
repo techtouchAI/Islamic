@@ -1,0 +1,55 @@
+name: Fix Dart formatting
+
+# Runs `dart format` on every PR push and commits the result back to the
+# PR head branch (same-repo branches only). The commit uses [skip ci] and a
+# GITHUB_TOKEN push, so it never re-triggers workflows — no loops.
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    # Only same-repo PRs; never push into forks.
+    if: github.event_name == 'workflow_dispatch' ||
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # PR events check out the merge ref; push to the real head branch.
+          ref: ${{ github.event.pull_request.head.ref || github.ref_name }}
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.5'
+          channel: stable
+          cache: true
+
+      # dart_style picks its style from the package's language version, which
+      # lives in .dart_tool/package_config.json — without pub get the formatter
+      # would assume the SDK's latest language and disagree with CI (whose
+      # format step always runs after `flutter pub get`).
+      - name: Resolve packages
+        run: flutter pub get
+
+      - name: Apply dart format
+        run: |
+          echo "::notice title=dart version::$(dart --version 2>&1)"
+          dart format .
+
+      - name: Commit formatting changes
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add -A
+            git commit -m "style: apply dart format [skip ci]"
+            git push
+          else
+            echo "Repository is already formatted."
+          fi

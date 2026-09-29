@@ -18,17 +18,16 @@ import '../../data/repositories/calendar_repository.dart';
 import '../reader/reader_page.dart';
 
 import '../../presentation/screens/istikhara_screen.dart';
+
 import 'package:provider/provider.dart';
+
 import '../../providers/settings_provider.dart';
 import '../widgets/app_standard_card.dart';
 import '../../theme/app_card_theme.dart';
 
 class HomeSection extends StatefulWidget {
   final VoidCallback? onPrayerCardTap;
-  const HomeSection({
-    super.key,
-    this.onPrayerCardTap,
-  });
+  const HomeSection({super.key, this.onPrayerCardTap});
 
   @override
   State<HomeSection> createState() => _HomeSectionState();
@@ -71,8 +70,9 @@ class _HomeSectionState extends State<HomeSection> {
   Map<String, dynamic>? _inspirationDua;
   Map<String, dynamic>? _dayDua;
   PrayerSchedule? _prayerSchedule;
-  final ValueNotifier<String> _currentPrayerNotifier =
-      ValueNotifier<String>("");
+  final ValueNotifier<String> _currentPrayerNotifier = ValueNotifier<String>(
+    "",
+  );
   Timer? _prayerTimer;
 
   @override
@@ -245,9 +245,8 @@ class _HomeSectionState extends State<HomeSection> {
           borderRadius: BorderRadius.circular(25),
           boxShadow: [
             BoxShadow(
-              color: Theme.of(
-                context,
-              ).colorScheme.primary.withValues(alpha: 0.15),
+              color:
+                  Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
               blurRadius: 15,
               offset: const Offset(0, 8),
             ),
@@ -267,9 +266,10 @@ class _HomeSectionState extends State<HomeSection> {
                       ),
                       borderRadius: BorderRadius.circular(25),
                       border: Border.all(
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.primary.withValues(alpha: 0.5),
+                        color: Theme.of(context)
+                            .colorScheme
+                            .primary
+                            .withValues(alpha: 0.5),
                         width: 1.5,
                       ),
                     ),
@@ -304,9 +304,10 @@ class _HomeSectionState extends State<HomeSection> {
                         Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.primary.withValues(alpha: 0.1),
+                            color: Theme.of(context)
+                                .colorScheme
+                                .primary
+                                .withValues(alpha: 0.1),
                             shape: BoxShape.circle,
                           ),
                           child: Icon(
@@ -349,9 +350,10 @@ class _HomeSectionState extends State<HomeSection> {
                       ),
                       decoration: BoxDecoration(
                         border: Border.all(
-                          color: Theme.of(
-                            context,
-                          ).colorScheme.primary.withValues(alpha: 0.2),
+                          color: Theme.of(context)
+                              .colorScheme
+                              .primary
+                              .withValues(alpha: 0.2),
                         ),
                         borderRadius: BorderRadius.circular(15),
                       ),
@@ -380,7 +382,10 @@ class _HomeSectionState extends State<HomeSection> {
     _loadDailyDua();
     final nowTime = _prayerSchedule?.nowAsLocalCivil() ??
         DateTime.utc(
-            DateTime.now().year, DateTime.now().month, DateTime.now().day);
+          DateTime.now().year,
+          DateTime.now().month,
+          DateTime.now().day,
+        );
     bool isDayTime = false;
     final sunrise = _prayerSchedule?['sunrise']?.localCivilTime;
     final maghrib = _prayerSchedule?['maghrib']?.localCivilTime;
@@ -440,10 +445,12 @@ class _HomeSectionState extends State<HomeSection> {
                     elevation: 10,
                     clipBehavior: Clip.antiAlias,
                     color: Theme.of(context).brightness == Brightness.dark
-                        ? Colors.white
-                            .withValues(alpha: settingsProvider.uiOpacity)
-                        : Colors.black
-                            .withValues(alpha: settingsProvider.uiOpacity),
+                        ? Colors.white.withValues(
+                            alpha: settingsProvider.uiOpacity,
+                          )
+                        : Colors.black.withValues(
+                            alpha: settingsProvider.uiOpacity,
+                          ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(25),
                       side: BorderSide(
@@ -490,14 +497,13 @@ class _HomeSectionState extends State<HomeSection> {
                                           vertical: 4,
                                         ),
                                         decoration: BoxDecoration(
-                                          color: Theme.of(
-                                            context,
-                                          )
+                                          color: Theme.of(context)
                                               .colorScheme
                                               .primary
                                               .withValues(alpha: 0.2),
-                                          borderRadius:
-                                              BorderRadius.circular(10),
+                                          borderRadius: BorderRadius.circular(
+                                            10,
+                                          ),
                                         ),
                                         child: FittedBox(
                                           fit: BoxFit.scaleDown,
@@ -543,9 +549,7 @@ class _HomeSectionState extends State<HomeSection> {
                                     'ar_SA',
                                   ).format(now).toEasternArabic(),
                                   style: TextStyle(
-                                    color: Theme.of(
-                                      context,
-                                    )
+                                    color: Theme.of(context)
                                         .colorScheme
                                         .primary
                                         .withValues(alpha: 0.8),
@@ -615,9 +619,9 @@ class _HomeSectionState extends State<HomeSection> {
                   return RepaintBoundary(
                     child: _HomeSmallCard(
                       tag: e.key,
-                      title: e.value['sectionKey']
-                                  ?.toString()
-                                  .contains('imam_ali') ==
+                      title: e.value['sectionKey']?.toString().contains(
+                                    'imam_ali',
+                                  ) ==
                               true
                           ? 'قال أمير المؤمنين علي (عليه السلام)'
                           : e.value['title'].toString(),
@@ -695,14 +699,10 @@ class _HomeSectionState extends State<HomeSection> {
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(
-                        child: buildCard(rowItems[0]),
-                      ),
+                      Expanded(child: buildCard(rowItems[0])),
                       const SizedBox(width: 12.0),
                       if (rowItems.length > 1)
-                        Expanded(
-                          child: buildCard(rowItems[1]),
-                        )
+                        Expanded(child: buildCard(rowItems[1]))
                       else
                         const Expanded(child: SizedBox.shrink()),
                     ],

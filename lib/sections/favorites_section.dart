@@ -1,7 +1,11 @@
 import 'dart:convert';
+
 import 'package:flutter/material.dart';
+
 import '../ui/reader/reader_page.dart';
+
 import 'package:file_picker/file_picker.dart';
+
 import 'dart:io';
 
 import '../services/favorites_service.dart';
@@ -40,8 +44,9 @@ class _FavoritesSectionState extends State<FavoritesSection> {
         final file = File(result.files.single.path!);
         final jsonString = await file.readAsString(encoding: utf8);
 
-        final success =
-            await FavoritesService.instance.importFavorites(jsonString);
+        final success = await FavoritesService.instance.importFavorites(
+          jsonString,
+        );
 
         if (mounted) {
           if (success) {
@@ -57,18 +62,20 @@ class _FavoritesSectionState extends State<FavoritesSection> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('حدث خطأ أثناء الاستيراد: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('حدث خطأ أثناء الاستيراد: $e')));
       }
     }
   }
 
   void _showAddNoteSheet([FavoriteItem? existingNote]) {
-    final titleController =
-        TextEditingController(text: existingNote?.title ?? '');
-    final contentController =
-        TextEditingController(text: existingNote?.content ?? '');
+    final titleController = TextEditingController(
+      text: existingNote?.title ?? '',
+    );
+    final contentController = TextEditingController(
+      text: existingNote?.content ?? '',
+    );
 
     showModalBottomSheet(
       context: context,
@@ -86,8 +93,10 @@ class _FavoritesSectionState extends State<FavoritesSection> {
             children: [
               Text(
                 existingNote == null ? 'إضافة ملاحظة جديدة' : 'تعديل الملاحظة',
-                style:
-                    const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               const SizedBox(height: 16),
               TextField(
@@ -115,8 +124,11 @@ class _FavoritesSectionState extends State<FavoritesSection> {
                     if (existingNote == null) {
                       FavoritesService.instance.addCustomNote(title, content);
                     } else {
-                      FavoritesService.instance
-                          .updateCustomNote(existingNote.id, title, content);
+                      FavoritesService.instance.updateCustomNote(
+                        existingNote.id,
+                        title,
+                        content,
+                      );
                     }
                     Navigator.pop(context);
                   }

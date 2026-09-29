@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+
 import '../../ui/reader/reader_page.dart';
 import '../controllers/search_controller.dart' as app_search;
 import '../controllers/search_notifier.dart';
 import '../models/search_models.dart';
+import '../repositories/search_repository.dart';
 import '../widgets/category_filter_bar.dart';
-import '../widgets/pagination_footer.dart';
+import '../widgets/lazy_load_footer.dart';
 import '../widgets/search_result_tile.dart';
 import '../widgets/section_header.dart';
 import '../../services/search_engine.dart';
@@ -13,7 +15,15 @@ import '../../services/quran_service.dart';
 class SearchScreen extends StatefulWidget {
   final double fontSizeFactor;
 
-  const SearchScreen({super.key, required this.fontSizeFactor});
+  /// Optional override so tests can drive the exact [SearchState] sequences
+  /// the UI must render (loading / success / empty / error / partial).
+  final SearchRepository? repository;
+
+  const SearchScreen({
+    super.key,
+    required this.fontSizeFactor,
+    this.repository,
+  });
 
   @override
   State<SearchScreen> createState() => _SearchScreenState();
@@ -26,12 +36,18 @@ class _SearchScreenState extends State<SearchScreen> {
   final FocusNode _searchFocusNode = FocusNode();
   final ScrollController _scrollController = ScrollController();
 
+  /// Distance from the bottom that triggers fetching the next batch.
+  static const double _lazyLoadThreshold = 300;
+
+  String _lastResultsKey = '';
+
   @override
   void initState() {
     super.initState();
 
     _controller = app_search.SearchController(
       allItems: _loadContentItems(),
+      repository: widget.repository,
       availableSections: const [
         'quran',
         'mafatih',
@@ -45,9 +61,11 @@ class _SearchScreenState extends State<SearchScreen> {
       ],
     );
 
+    _lastResultsKey = '${_controller.query}|${_controller.selectedCategory}';
     _notifier = SearchNotifier(_controller);
     _controller.addListener(_onControllerChanged);
     SearchEngine.instance.isIndexingNotifier.addListener(_onIndexChanged);
+    _scrollController.addListener(_onScroll);
     _searchFocusNode.requestFocus();
   }
 
@@ -58,8 +76,10 @@ class _SearchScreenState extends State<SearchScreen> {
 
     final docs = SearchEngine.instance.allDocuments;
     return docs.map((doc) {
-      final String mappedSectionId =
-          _mapCategoryToSectionId(doc.category, doc.type);
+      final String mappedSectionId = _mapCategoryToSectionId(
+        doc.category,
+        doc.type,
+      );
       return ContentItem(
         id: doc.id,
         title: doc.title,
@@ -108,18 +128,22 @@ class _SearchScreenState extends State<SearchScreen> {
     if (category.contains('دعاء') ||
         category.contains('أدعية') ||
         category.contains('مناجاة')) return 'dua';
-    if (category.contains('زيارة') || category.contains('زيارات'))
+    if (category.contains('زيارة') || category.contains('زيارات')) {
       return 'ziyarat';
+    }
     if (category.contains('أعمال') || category.contains('عمل')) return 'amal';
-    if (category.contains('استفتاء') || category.contains('فتاوى'))
+    if (category.contains('استفتاء') || category.contains('فتاوى')) {
       return 'fatawa';
-    if (category.contains('علي') || category.contains('امام'))
+    }
+    if (category.contains('علي') || category.contains('امام')) {
       return 'imam_ali';
+    }
     if (category.contains('حلم') ||
         category.contains('أحلام') ||
         category.contains('تفسير')) return 'dreams';
-    if (category.contains('أنبياء') || category.contains('نبي'))
+    if (category.contains('أنبياء') || category.contains('نبي')) {
       return 'prophets_stories';
+    }
 
     return 'amal';
   }
@@ -134,13 +158,28 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   void _onControllerChanged() {
-    // Auto-scroll to top when page/category/query changes
-    if (_scrollController.hasClients && _scrollController.offset > 0) {
-      _scrollController.animateTo(
-        0,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeOut,
-      );
+    if (!mounted) return;
+    // Auto-scroll to top only when the query/category actually changes —
+    // lazy load-more notifications must not jump the user back up.
+    final key = '${_controller.query}|${_controller.selectedCategory}';
+    if (key != _lastResultsKey) {
+      _lastResultsKey = key;
+      if (_scrollController.hasClients && _scrollController.offset > 0) {
+        _scrollController.animateTo(
+          0,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      }
+    }
+  }
+
+  /// Lazy pagination: fetch the next batch when reaching the bottom.
+  void _onScroll() {
+    if (!_scrollController.hasClients) return;
+    final position = _scrollController.position;
+    if (position.pixels >= position.maxScrollExtent - _lazyLoadThreshold) {
+      _controller.loadMore();
     }
   }
 
@@ -148,6 +187,7 @@ class _SearchScreenState extends State<SearchScreen> {
   void dispose() {
     SearchEngine.instance.isIndexingNotifier.removeListener(_onIndexChanged);
     _controller.removeListener(_onControllerChanged);
+    _scrollController.removeListener(_onScroll);
     _notifier.dispose();
     _searchFieldController.dispose();
     _searchFocusNode.dispose();
@@ -198,9 +238,6 @@ class _SearchScreenState extends State<SearchScreen> {
           preferredSize: const Size.fromHeight(56),
           child: ValueListenableBuilder<SearchSnapshot>(
             valueListenable: _notifier,
-            // Only rebuilds when category/filters change significantly.
-            // (We could optimize this further to listen to just category if needed,
-            // but isolating it from the body is already a massive improvement).
             builder: (context, snapshot, child) {
               return CategoryFilterBar(
                 categories: _controller.availableSections,
@@ -218,18 +255,24 @@ class _SearchScreenState extends State<SearchScreen> {
             children: [
               // Results Count Indicator
               _buildResultsHeader(snapshot),
-              if (snapshot.warning != null)
+              // Partial-coverage warning with a consistent Retry action.
+              if (snapshot.state is SearchSuccess && snapshot.warning != null)
                 Semantics(
                   liveRegion: true,
                   child: Padding(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
                     child: Row(
                       children: [
                         Expanded(
-                          child: Text(snapshot.warning!,
-                              style: TextStyle(
-                                  color: Theme.of(context).colorScheme.error)),
+                          child: Text(
+                            snapshot.warning!,
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.error,
+                            ),
+                          ),
                         ),
                         TextButton(
                           onPressed: _controller.retry,
@@ -241,18 +284,7 @@ class _SearchScreenState extends State<SearchScreen> {
                 ),
 
               // Main Results List
-              Expanded(
-                child: _buildResultsList(snapshot),
-              ),
-
-              // Pagination Footer
-              if (snapshot.pagination.totalPages > 1)
-                PaginationFooter(
-                  currentPage: snapshot.pagination.currentPage,
-                  totalPages: snapshot.pagination.totalPages,
-                  onPrevious: _controller.previousPage,
-                  onNext: _controller.nextPage,
-                ),
+              Expanded(child: _buildResultsList(snapshot)),
             ],
           );
         },
@@ -261,8 +293,8 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   Widget _buildResultsHeader(SearchSnapshot snapshot) {
-    final total = snapshot.pagination.totalItems;
     final query = snapshot.query;
+    final total = snapshot.loadedCount;
 
     if (query.isEmpty && total == 0) return const SizedBox.shrink();
 
@@ -273,7 +305,7 @@ class _SearchScreenState extends State<SearchScreen> {
       child: Text(
         query.isEmpty
             ? 'إجمالي المحتوى: $total'
-            : 'تم العثور على $total نتيجة لـ "$query"',
+            : 'تم العثور على $total${snapshot.hasMore ? '+' : ''} نتيجة لـ "$query"',
         style: TextStyle(
           fontSize: 13,
           color: Colors.grey[600],
@@ -297,18 +329,42 @@ class _SearchScreenState extends State<SearchScreen> {
       return const Center(child: Text('ابدأ البحث الآن...'));
     }
 
+    // Strict state contract: Error -> message + consistent Retry button.
+    if (snapshot.state is SearchError) {
+      return _ErrorState(
+        message: snapshot.warning ?? (snapshot.state as SearchError).message,
+        onRetry: _controller.retry,
+      );
+    }
+
     if (items.isEmpty && groups.isEmpty) {
       return const _EmptyState();
     }
+
+    final bool showFooter = snapshot.isLoadingMore ||
+        snapshot.hasMore ||
+        items.length >= HybridSearchRepository.defaultBatchSize;
+    final Widget? footer = showFooter
+        ? LazyLoadFooter(
+            isLoadingMore: snapshot.isLoadingMore,
+            hasMore: snapshot.hasMore,
+            loadedCount: snapshot.loadedCount,
+            onLoadMore: _controller.loadMore,
+          )
+        : null;
 
     // Grouped View (الكل)
     if (isAll) {
       return ListView.builder(
         controller: _scrollController,
         padding: const EdgeInsets.only(top: 8, bottom: 16),
-        itemCount: _computeGroupedListItemCount(groups),
-        itemBuilder: (context, index) =>
-            _buildGroupedItem(context, index, groups, snapshot.query),
+        itemCount:
+            _computeGroupedListItemCount(groups) + (footer != null ? 1 : 0),
+        itemBuilder: (context, index) {
+          final groupCount = _computeGroupedListItemCount(groups);
+          if (index >= groupCount) return footer!;
+          return _buildGroupedItem(context, index, groups, snapshot.query);
+        },
       );
     }
 
@@ -316,8 +372,9 @@ class _SearchScreenState extends State<SearchScreen> {
     return ListView.builder(
       controller: _scrollController,
       padding: const EdgeInsets.only(top: 8, bottom: 16),
-      itemCount: items.length,
+      itemCount: items.length + (footer != null ? 1 : 0),
       itemBuilder: (context, index) {
+        if (index >= items.length) return footer!;
         return SearchResultTile(
           item: items[index],
           highlightQuery: snapshot.query,
@@ -338,8 +395,12 @@ class _SearchScreenState extends State<SearchScreen> {
     return count;
   }
 
-  Widget _buildGroupedItem(BuildContext context, int index,
-      List<SectionGroup> groups, String query) {
+  Widget _buildGroupedItem(
+    BuildContext context,
+    int index,
+    List<SectionGroup> groups,
+    String query,
+  ) {
     int currentIndex = 0;
     for (final group in groups) {
       // Header index
@@ -448,10 +509,48 @@ class _SearchTextField extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
         ),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 12,
+        ),
       ),
       onChanged: onChanged,
+    );
+  }
+}
+
+/// Error view for the SearchError state: always offers a Retry action so
+/// any failed source can be retried consistently.
+class _ErrorState extends StatelessWidget {
+  final String message;
+  final VoidCallback onRetry;
+
+  const _ErrorState({required this.message, required this.onRetry});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.error_outline, size: 64, color: Colors.grey[400]),
+            const SizedBox(height: 16),
+            Text(
+              message,
+              style: TextStyle(fontSize: 15, color: Colors.grey[700]),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 20),
+            FilledButton.icon(
+              onPressed: onRetry,
+              icon: const Icon(Icons.refresh, size: 18),
+              label: const Text('إعادة المحاولة'),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -478,10 +577,7 @@ class _EmptyState extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             'جرب البحث بكلمات مختلفة',
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[400],
-            ),
+            style: TextStyle(fontSize: 14, color: Colors.grey[400]),
           ),
         ],
       ),

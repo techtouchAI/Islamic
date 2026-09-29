@@ -1,10 +1,12 @@
 import 'dart:convert';
 import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 import 'package:hive/hive.dart';
 import 'package:uuid/uuid.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
+
 import '../models/favorite_item.dart';
 
 class FavoritesService {
@@ -167,8 +169,9 @@ class FavoritesService {
       await file.writeAsString(jsonString, encoding: utf8);
 
       // 4. Trigger the native Share dialog
-      await Share.shareXFiles([XFile(file.path)],
-          text: 'نسخة احتياطية لتطبيق الذاكرين');
+      await Share.shareXFiles([
+        XFile(file.path),
+      ], text: 'نسخة احتياطية لتطبيق الذاكرين');
 
       if (kDebugMode) {
         print('Export share dialog opened.');

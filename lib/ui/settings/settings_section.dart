@@ -2,13 +2,16 @@ import 'package:flutter/material.dart';
 
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:image_picker/image_picker.dart';
+
 import 'dart:io';
 
 import '../../data/data_manager.dart';
 
 import 'package:provider/provider.dart';
+
 import '../../providers/settings_provider.dart';
 import '../../main.dart';
+
 import 'package:path_provider/path_provider.dart';
 
 class SettingsSection extends StatelessWidget {
@@ -44,7 +47,8 @@ class SettingsSection extends StatelessWidget {
                     IconButton(
                       icon: const Icon(Icons.remove_circle_outline),
                       onPressed: () => settingsProvider.setHijriAdjustment(
-                          settingsProvider.hijriAdjustment - 1),
+                        settingsProvider.hijriAdjustment - 1,
+                      ),
                     ),
                     Text(
                       '${settingsProvider.hijriAdjustment}',
@@ -53,7 +57,8 @@ class SettingsSection extends StatelessWidget {
                     IconButton(
                       icon: const Icon(Icons.add_circle_outline),
                       onPressed: () => settingsProvider.setHijriAdjustment(
-                          settingsProvider.hijriAdjustment + 1),
+                        settingsProvider.hijriAdjustment + 1,
+                      ),
                     ),
                   ],
                 ),
@@ -232,8 +237,10 @@ class SettingsSection extends StatelessWidget {
             width: 80,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(10),
-              border:
-                  Border.all(color: settingsProvider.primaryColor, width: 1),
+              border: Border.all(
+                color: settingsProvider.primaryColor,
+                width: 1,
+              ),
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(9),

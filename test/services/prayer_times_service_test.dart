@@ -13,18 +13,24 @@ void main() {
       SharedPreferences.setMockInitialValues({});
     });
 
-    test('selected city is stable and does not depend on device timezone',
-        () async {
-      final service = PrayerTimesService();
-      final location = await service.resolveLocation(
-          selectedCity: 'بغداد', refreshGps: false);
+    test(
+      'selected city is stable and does not depend on device timezone',
+      () async {
+        final service = PrayerTimesService();
+        final location = await service.resolveLocation(
+          selectedCity: 'بغداد',
+          refreshGps: false,
+        );
 
-      expect(location, isNotNull);
-      expect(location!.source, PrayerLocationSource.selectedCity);
-      expect(location.latitude, closeTo(33.3128, 0.0001));
-      expect(
-          location.timeZoneOffsetHours, PrayerTimeZonePolicy.iraqOffsetHours);
-    });
+        expect(location, isNotNull);
+        expect(location!.source, PrayerLocationSource.selectedCity);
+        expect(location.latitude, closeTo(33.3128, 0.0001));
+        expect(
+          location.timeZoneOffsetHours,
+          PrayerTimeZonePolicy.iraqOffsetHours,
+        );
+      },
+    );
 
     test('GPS failure is explicit and never mislabeled as live GPS', () async {
       final service = PrayerTimesService();
@@ -75,12 +81,7 @@ void main() {
     test('Jafari midnight is halfway between sunset and next-day Fajr', () {
       final engine = PrayTimes(PrayerCalculationParameters.jafari);
       final date = DateTime.utc(2026, 8, 22);
-      final current = engine.getTimesAsHours(
-        date,
-        33.3128,
-        44.3615,
-        3,
-      );
+      final current = engine.getTimesAsHours(date, 33.3128, 44.3615, 3);
       final next = engine.getTimesAsHours(
         date.add(const Duration(days: 1)),
         33.3128,
@@ -95,26 +96,28 @@ void main() {
     });
 
     test(
-        'invalid high-latitude values are omitted rather than converted to 00:00',
-        () {
-      final service = PrayerTimesService();
-      final position = const PrayerLocation(
-        latitude: 69.6492,
-        longitude: 18.9553,
-        source: PrayerLocationSource.selectedCity,
-        displayName: 'Tromsø',
-        timeZoneOffsetHours: 2,
-      ).toPosition();
-      final times = service.calculatePrayerTimes(
-        position,
-        date: DateTime.utc(2026, 6, 21),
-        timeZoneOffsetHours: 2,
-      );
+      'invalid high-latitude values are omitted rather than converted to 00:00',
+      () {
+        final service = PrayerTimesService();
+        final position = const PrayerLocation(
+          latitude: 69.6492,
+          longitude: 18.9553,
+          source: PrayerLocationSource.selectedCity,
+          displayName: 'Tromsø',
+          timeZoneOffsetHours: 2,
+        ).toPosition();
+        final times = service.calculatePrayerTimes(
+          position,
+          date: DateTime.utc(2026, 6, 21),
+          timeZoneOffsetHours: 2,
+        );
 
-      expect(times.values.every((value) => value.isUtc), isTrue);
-      expect(
+        expect(times.values.every((value) => value.isUtc), isTrue);
+        expect(
           times.values.every((value) => value.hour != 0 || value.minute != 0),
-          isTrue);
-    });
+          isTrue,
+        );
+      },
+    );
   });
 }

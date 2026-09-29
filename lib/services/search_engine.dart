@@ -1,6 +1,9 @@
 import "../services/quran_service.dart";
+
 import 'dart:math';
+
 import 'package:flutter/foundation.dart';
+
 import '../data/data_manager.dart';
 import '../utils/arabic_normalizer.dart';
 
@@ -95,8 +98,11 @@ class SearchEngine {
     return v0[t.length];
   }
 
-  static bool fuzzyMatch(String queryWord, String targetText,
-      {required bool isFuzzy}) {
+  static bool fuzzyMatch(
+    String queryWord,
+    String targetText, {
+    required bool isFuzzy,
+  }) {
     if (queryWord.isEmpty) return false;
     if (!isFuzzy) {
       return targetText.contains(queryWord);
@@ -107,7 +113,10 @@ class SearchEngine {
 
   /// Reuses tokenized words when a document is scored for several query terms.
   static bool fuzzyMatchWords(
-      String queryWord, String targetText, Iterable<String> targetWords) {
+    String queryWord,
+    String targetText,
+    Iterable<String> targetWords,
+  ) {
     if (queryWord.isEmpty) return false;
     // Substrings are cheaper than edit distance and cover partial searches.
     if (targetText.contains(queryWord)) return true;
@@ -174,7 +183,7 @@ class SearchEngine {
           contentItems.add({
             ...item,
             '_search_section_key': 'dua',
-            '_category_title': 'الأدعية'
+            '_category_title': 'الأدعية',
           });
         }
 
@@ -183,7 +192,7 @@ class SearchEngine {
           contentItems.add({
             ...item,
             '_search_section_key': 'ziyarat',
-            '_category_title': 'الزيارات'
+            '_category_title': 'الزيارات',
           });
         }
 
@@ -192,7 +201,7 @@ class SearchEngine {
           contentItems.add({
             ...item,
             '_search_section_key': 'amal',
-            '_category_title': 'الأعمال'
+            '_category_title': 'الأعمال',
           });
         }
       }
@@ -202,15 +211,12 @@ class SearchEngine {
 
       // 3. Build index via isolate
       try {
-        _index = await compute(_buildIndex, {
-          'contentItems': contentItems,
-        });
+        _index = await compute(_buildIndex, {'contentItems': contentItems});
       } catch (computeError) {
         debugPrint(
-            "SearchEngine Isolate Error: $computeError. Fallback to synchronous indexing.");
-        _index = _buildIndex({
-          'contentItems': contentItems,
-        });
+          "SearchEngine Isolate Error: $computeError. Fallback to synchronous indexing.",
+        );
+        _index = _buildIndex({'contentItems': contentItems});
       }
 
       _isIndexed = true;
@@ -238,18 +244,20 @@ class SearchEngine {
         tags = (item['tags'] as List).map((e) => e.toString()).toList();
       }
 
-      index.add(SearchDocument(
-        id: id,
-        title: title,
-        content: content,
-        category: category,
-        tags: tags,
-        type: 'content',
-        normalizedTitle: normalizeArabic(title),
-        normalizedContent: normalizeArabic(content),
-        normalizedCategory: normalizeArabic(category),
-        normalizedTags: tags.map((e) => normalizeArabic(e)).toList(),
-      ));
+      index.add(
+        SearchDocument(
+          id: id,
+          title: title,
+          content: content,
+          category: category,
+          tags: tags,
+          type: 'content',
+          normalizedTitle: normalizeArabic(title),
+          normalizedContent: normalizeArabic(content),
+          normalizedCategory: normalizeArabic(category),
+          normalizedTags: tags.map((e) => normalizeArabic(e)).toList(),
+        ),
+      );
     }
 
     return index;
@@ -278,8 +286,11 @@ class SearchEngine {
         if (doc.normalizedTitle == word || doc.normalizedTitle.contains(word)) {
           wordMatched = true;
           wordScore += 10;
-        } else if (fuzzyMatch(word, doc.normalizedTitle,
-            isFuzzy: isWordFuzzy)) {
+        } else if (fuzzyMatch(
+          word,
+          doc.normalizedTitle,
+          isFuzzy: isWordFuzzy,
+        )) {
           wordMatched = true;
           wordScore += 6;
         }
@@ -304,8 +315,11 @@ class SearchEngine {
             doc.normalizedContent.contains(word)) {
           wordMatched = true;
           wordScore += 2;
-        } else if (fuzzyMatch(word, doc.normalizedContent,
-            isFuzzy: isWordFuzzy)) {
+        } else if (fuzzyMatch(
+          word,
+          doc.normalizedContent,
+          isFuzzy: isWordFuzzy,
+        )) {
           wordMatched = true;
           wordScore += 1;
         }
@@ -332,4 +346,37 @@ class SearchEngine {
 
     return results;
   }
+
+  /// JSON index search with `LIMIT`/`OFFSET`: scores the full result set
+  /// (needed for a stable global order) and returns only the requested
+  /// window plus the total number of matches.
+  SearchPage searchPaged(
+    String query, {
+    required int limit,
+    required int offset,
+  }) {
+    final all = search(query);
+    final total = all.length;
+    final start = offset <= 0 ? 0 : (offset > total ? total : offset);
+    final requestedEnd = start + (limit <= 0 ? 0 : limit);
+    final end = requestedEnd > total ? total : requestedEnd;
+    return SearchPage(
+      results: start < end ? all.sublist(start, end) : const <SearchResult>[],
+      totalMatches: total,
+      hasMore: end < total,
+    );
+  }
+}
+
+/// One window of JSON search results produced by [SearchEngine.searchPaged].
+class SearchPage {
+  final List<SearchResult> results;
+  final int totalMatches;
+  final bool hasMore;
+
+  const SearchPage({
+    required this.results,
+    required this.totalMatches,
+    required this.hasMore,
+  });
 }

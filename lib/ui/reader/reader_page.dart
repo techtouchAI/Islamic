@@ -1,17 +1,30 @@
 import 'package:flutter/material.dart';
+
 import 'dart:math';
+
 import 'package:share_plus/share_plus.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../sections/html_content_renderer.dart';
 
+/// The framed surah-name strip drawn at the top of every Quran page.
+/// Precached before scrolling to a target ayah so its late decode cannot
+/// shift the layout under the viewport.
+const AssetImage _surahFrameAsset = AssetImage(
+  'assets/images/quran_surah_name_frame.png',
+);
+
 class SurahHeader extends StatelessWidget {
   final String title;
   final Color color;
   final int? surahId;
-  const SurahHeader(
-      {super.key, required this.title, required this.color, this.surahId});
+  const SurahHeader({
+    super.key,
+    required this.title,
+    required this.color,
+    this.surahId,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -30,6 +43,9 @@ class SurahHeader extends StatelessWidget {
                 ? Colors.white
                 : Colors.black,
             colorBlendMode: BlendMode.srcIn,
+            // A missing asset must never crash the reader or break scrolling.
+            errorBuilder: (context, error, stackTrace) =>
+                const SizedBox(width: double.infinity, height: 72),
           ),
           // Layer 2: The Surah Name
           if (surahId != null)
@@ -53,6 +69,8 @@ class SurahHeader extends StatelessWidget {
                   fit: BoxFit.contain,
                   color: color,
                   colorBlendMode: BlendMode.srcIn,
+                  errorBuilder: (context, error, stackTrace) =>
+                      const SizedBox(height: 32),
                 );
               },
             ),
@@ -72,6 +90,13 @@ class ReaderPage extends StatefulWidget {
   final String? titleColor;
   final int? surahId;
   final int? targetAyahNumber;
+
+  /// Key of the container that highlights [targetAyahNumber] after the
+  /// reader scrolls to it (also used by widget tests).
+  static const Key targetAyahHighlightKey = ValueKey<String>(
+    'target_ayah_highlight',
+  );
+
   const ReaderPage({
     super.key,
     required this.title,
@@ -91,6 +116,7 @@ class ReaderPage extends StatefulWidget {
 
 class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
   final GlobalKey _targetAyahKey = GlobalKey();
+  final ScrollController _scrollController = ScrollController();
   late double _factor;
   Color? _customBgColor;
   int? _bookmarkedLineIndex;
@@ -122,21 +148,58 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
     super.initState();
     _factor = widget.fontSizeFactor;
 
-    if (widget.targetAyahNumber != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        final target = _targetAyahKey.currentContext;
-        if (mounted && target != null) {
-          Scrollable.ensureVisible(target,
-              duration: const Duration(milliseconds: 350), alignment: 0.25);
-        }
-      });
-    }
+    _scrollToTargetAyah();
     SharedPreferences.getInstance().then((prefs) {
       if (!mounted) return;
       setState(() {
         _bookmarkedLineIndex = prefs.getInt('bookmark_line_${widget.title}');
       });
     });
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  /// Jumps the viewport to [ReaderPage.targetAyahNumber].
+  ///
+  /// The sequence is deliberately frame-driven:
+  /// 1. wait for the first full layout (the scroll view needs real metrics),
+  /// 2. decode the surah frame first — if it decodes *after* the scroll it
+  ///    would push every ayah below it down and leave us above the target,
+  /// 3. wait one more frame for that final layout, then scroll.
+  Future<void> _scrollToTargetAyah() async {
+    if (widget.targetAyahNumber == null) return;
+
+    await WidgetsBinding.instance.endOfFrame;
+    if (!mounted) return;
+
+    if (widget.isQuran) {
+      try {
+        await precacheImage(
+          _surahFrameAsset,
+          context,
+        ).timeout(const Duration(seconds: 2));
+      } catch (_) {
+        // A missing or slow asset must never block navigation to the ayah.
+      }
+    }
+    if (!mounted) return;
+
+    await WidgetsBinding.instance.endOfFrame;
+    if (!mounted || !_scrollController.hasClients) return;
+
+    final target = _targetAyahKey.currentContext;
+    if (target == null) return; // target ayah not part of this page
+
+    await Scrollable.ensureVisible(
+      target,
+      duration: const Duration(milliseconds: 350),
+      curve: Curves.easeOutCubic,
+      alignment: 0.25,
+    );
   }
 
   @override
@@ -158,9 +221,8 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
             icon: const Icon(Icons.content_copy),
             onPressed: () {
               Clipboard.setData(ClipboardData(text: widget.content));
-              ScaffoldMessenger.of(
-                context,
-              ).showSnackBar(const SnackBar(content: Text('تم نسخ النص')));
+              ScaffoldMessenger.of(context)
+                  .showSnackBar(const SnackBar(content: Text('تم نسخ النص')));
             },
           ),
           IconButton(
@@ -173,8 +235,11 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
         children: [
           Expanded(
             child: SingleChildScrollView(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 4.0, vertical: 8.0),
+              controller: _scrollController,
+              padding: const EdgeInsets.symmetric(
+                horizontal: 4.0,
+                vertical: 8.0,
+              ),
               child: Container(
                 width: double.infinity,
                 decoration: BoxDecoration(
@@ -198,13 +263,16 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
                           topRight: Radius.circular(24),
                         ),
                         child: SurahHeader(
-                            title: widget.title,
-                            color: primary,
-                            surahId: widget.surahId),
+                          title: widget.title,
+                          color: primary,
+                          surahId: widget.surahId,
+                        ),
                       ),
                     Padding(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 4.0, vertical: 8.0),
+                        horizontal: 4.0,
+                        vertical: 8.0,
+                      ),
                       child: Column(
                         children: [
                           if (widget.isQuran &&
@@ -244,8 +312,9 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
                                         a['ar_text'].toString().trim();
                                     final index = a['anum']?.toString() ??
                                         a['ayah_surah_index'].toString();
-                                    final arabicIndex =
-                                        _convertToArabicNumber(index);
+                                    final arabicIndex = _convertToArabicNumber(
+                                      index,
+                                    );
 
                                     text = text
                                         .replaceAll(_trailingNumbersRegex, '')
@@ -256,8 +325,10 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
                                     final int ayahIndex =
                                         int.tryParse(ayahIdxStr) ?? 0;
 
+                                    final bool isSearchTarget =
+                                        widget.targetAyahNumber == ayahIndex;
                                     return GestureDetector(
-                                      key: widget.targetAyahNumber == ayahIndex
+                                      key: isSearchTarget
                                           ? _targetAyahKey
                                           : null,
                                       behavior: HitTestBehavior.opaque,
@@ -270,74 +341,106 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
                                               ayahIndex.toString()) {
                                             _bookmarkedLineIndex = null;
                                             prefs.remove(
-                                                'bookmark_line_${widget.title}');
+                                              'bookmark_line_${widget.title}',
+                                            );
                                           } else {
                                             _bookmarkedLineIndex = ayahIndex;
                                             prefs.setInt(
-                                                'bookmark_line_${widget.title}',
-                                                ayahIndex);
+                                              'bookmark_line_${widget.title}',
+                                              ayahIndex,
+                                            );
                                           }
                                         });
                                       },
-                                      child: Text.rich(
-                                        TextSpan(
-                                          style: TextStyle(
-                                            fontFamily: 'UthmanicHafs',
-                                            fontSize: 32 * _factor,
-                                            height: 1.8,
-                                            color: dynamicTextColor,
-                                          ),
-                                          children: [
-                                            TextSpan(text: '$text '),
-                                            if (arabicIndex.isNotEmpty)
-                                              WidgetSpan(
-                                                alignment:
-                                                    PlaceholderAlignment.middle,
-                                                child: Stack(
-                                                  clipBehavior: Clip.none,
-                                                  alignment: Alignment.center,
-                                                  children: [
-                                                    Text(
-                                                      '﴿$arabicIndex﴾',
-                                                      style: TextStyle(
-                                                        fontFamily:
-                                                            'UthmanicHafs',
-                                                        color: _bookmarkedLineIndex
-                                                                    ?.toString() ==
-                                                                ayahIndex
-                                                                    .toString()
-                                                            ? Colors
-                                                                .green.shade900
-                                                            : Colors.amber[700],
-                                                        fontWeight:
-                                                            _bookmarkedLineIndex
-                                                                        ?.toString() ==
-                                                                    ayahIndex
-                                                                        .toString()
-                                                                ? FontWeight
-                                                                    .bold
-                                                                : FontWeight
-                                                                    .normal,
-                                                        fontSize: 24 * _factor,
-                                                      ),
-                                                    ),
-                                                    if (_bookmarkedLineIndex
-                                                            ?.toString() ==
-                                                        ayahIndex.toString())
-                                                      const Positioned(
-                                                        top: -12,
-                                                        child: Icon(Icons.star,
-                                                            color: Colors.green,
-                                                            size: 14),
-                                                      ),
-                                                  ],
+                                      child: Container(
+                                        key: isSearchTarget
+                                            ? ReaderPage.targetAyahHighlightKey
+                                            : null,
+                                        padding: isSearchTarget
+                                            ? const EdgeInsets.symmetric(
+                                                horizontal: 6,
+                                                vertical: 2,
+                                              )
+                                            : EdgeInsets.zero,
+                                        decoration: isSearchTarget
+                                            ? BoxDecoration(
+                                                color: Theme.of(context)
+                                                    .colorScheme
+                                                    .primary
+                                                    .withValues(alpha: 0.16),
+                                                borderRadius:
+                                                    BorderRadius.circular(12),
+                                                border: Border.all(
+                                                  color: Theme.of(context)
+                                                      .colorScheme
+                                                      .primary
+                                                      .withValues(alpha: 0.45),
                                                 ),
-                                              ),
-                                            const TextSpan(text: ' '),
-                                          ],
+                                              )
+                                            : null,
+                                        child: Text.rich(
+                                          TextSpan(
+                                            style: TextStyle(
+                                              fontFamily: 'UthmanicHafs',
+                                              fontSize: 32 * _factor,
+                                              height: 1.8,
+                                              color: dynamicTextColor,
+                                            ),
+                                            children: [
+                                              TextSpan(text: '$text '),
+                                              if (arabicIndex.isNotEmpty)
+                                                WidgetSpan(
+                                                  alignment:
+                                                      PlaceholderAlignment
+                                                          .middle,
+                                                  child: Stack(
+                                                    clipBehavior: Clip.none,
+                                                    alignment: Alignment.center,
+                                                    children: [
+                                                      Text(
+                                                        '﴿$arabicIndex﴾',
+                                                        style: TextStyle(
+                                                          fontFamily:
+                                                              'UthmanicHafs',
+                                                          color: _bookmarkedLineIndex
+                                                                      ?.toString() ==
+                                                                  ayahIndex
+                                                                      .toString()
+                                                              ? Colors.green
+                                                                  .shade900
+                                                              : Colors
+                                                                  .amber[700],
+                                                          fontWeight: _bookmarkedLineIndex
+                                                                      ?.toString() ==
+                                                                  ayahIndex
+                                                                      .toString()
+                                                              ? FontWeight.bold
+                                                              : FontWeight
+                                                                  .normal,
+                                                          fontSize:
+                                                              24 * _factor,
+                                                        ),
+                                                      ),
+                                                      if (_bookmarkedLineIndex
+                                                              ?.toString() ==
+                                                          ayahIndex.toString())
+                                                        const Positioned(
+                                                          top: -12,
+                                                          child: Icon(
+                                                            Icons.star,
+                                                            color: Colors.green,
+                                                            size: 14,
+                                                          ),
+                                                        ),
+                                                    ],
+                                                  ),
+                                                ),
+                                              const TextSpan(text: ' '),
+                                            ],
+                                          ),
+                                          textAlign: TextAlign.center,
+                                          textDirection: TextDirection.rtl,
                                         ),
-                                        textAlign: TextAlign.center,
-                                        textDirection: TextDirection.rtl,
                                       ),
                                     );
                                   }).toList(),
@@ -399,8 +502,10 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
                                                   );
 
                                         String cleanContent = widget.content;
-                                        cleanContent =
-                                            cleanContent.replaceAll('### ', '');
+                                        cleanContent = cleanContent.replaceAll(
+                                          '### ',
+                                          '',
+                                        );
                                         if (cleanContent
                                             .trim()
                                             .toLowerCase()
@@ -411,19 +516,25 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
                                               .trim();
                                         }
                                         cleanContent = cleanContent
-                                            .replaceAll('\uFDFA',
-                                                '(صلى الله عليه وآله)')
+                                            .replaceAll(
+                                              '\uFDFA',
+                                              '(صلى الله عليه وآله)',
+                                            )
                                             .replaceAll('\uFDFB', '(جل جلاله)')
                                             .replaceAll('!', '(عليه السلام)');
                                         cleanContent = cleanContent
                                             .replaceAll(
-                                                RegExp(r'<html>|<html|\bhtml\b',
-                                                    caseSensitive: false),
-                                                '')
+                                              RegExp(
+                                                r'<html>|<html|\bhtml\b',
+                                                caseSensitive: false,
+                                              ),
+                                              '',
+                                            )
                                             .trim();
 
                                         debugPrint(
-                                            'HtmlContentRenderer built for section: ${widget.title} with bookmark: $_bookmarkedLineIndex');
+                                          'HtmlContentRenderer built for section: ${widget.title} with bookmark: $_bookmarkedLineIndex',
+                                        );
                                         return HtmlContentRenderer(
                                           content: cleanContent,
                                           baseStyle: baseStyle,
@@ -438,12 +549,14 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
                                                   index.toString()) {
                                                 _bookmarkedLineIndex = null;
                                                 prefs.remove(
-                                                    'bookmark_line_${widget.title}');
+                                                  'bookmark_line_${widget.title}',
+                                                );
                                               } else {
                                                 _bookmarkedLineIndex = index;
                                                 prefs.setInt(
-                                                    'bookmark_line_${widget.title}',
-                                                    index);
+                                                  'bookmark_line_${widget.title}',
+                                                  index,
+                                                );
                                               }
                                             });
                                           },

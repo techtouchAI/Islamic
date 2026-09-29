@@ -102,8 +102,11 @@ class PrayerTimesService with WidgetsBindingObserver {
         source: PrayerLocationSource.cachedLocation,
         displayName: 'آخر موقع GPS محفوظ',
       );
-      await _persistLocationSelection(prefs, cachedLocation,
-          city: gpsLocationName);
+      await _persistLocationSelection(
+        prefs,
+        cachedLocation,
+        city: gpsLocationName,
+      );
       return cachedLocation;
     }
 
@@ -113,8 +116,11 @@ class PrayerTimesService with WidgetsBindingObserver {
       source: PrayerLocationSource.defaultLocation,
       displayName: 'الموقع الافتراضي: $defaultCityName',
     );
-    await _persistLocationSelection(prefs, defaultLocation,
-        city: gpsLocationName);
+    await _persistLocationSelection(
+      prefs,
+      defaultLocation,
+      city: gpsLocationName,
+    );
     return defaultLocation;
   }
 
@@ -276,10 +282,7 @@ class PrayerTimesService with WidgetsBindingObserver {
           ? PrayerLocationSource.gps.storageValue
           : PrayerLocationSource.cachedLocation.storageValue,
     );
-    await prefs.setString(
-      _capturedAtKey,
-      DateTime.now().toIso8601String(),
-    );
+    await prefs.setString(_capturedAtKey, DateTime.now().toIso8601String());
     await prefs.setString(
       _lastGpsCapturedAtKey,
       DateTime.now().toIso8601String(),
@@ -306,8 +309,10 @@ class PrayerTimesService with WidgetsBindingObserver {
     final result = <String, DateTime>{};
     for (final entry in raw.entries) {
       if (!entry.value.isFinite) continue;
-      final localCivil =
-          _hoursToCivilDateTime(date ?? DateTime.now(), entry.value);
+      final localCivil = _hoursToCivilDateTime(
+        date ?? DateTime.now(),
+        entry.value,
+      );
       result[entry.key] = PrayerTimeZonePolicy.localCivilToUtc(
         localCivil,
         timeZoneOffsetHours,

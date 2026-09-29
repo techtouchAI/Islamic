@@ -14,10 +14,7 @@ class SectionHeader extends StatelessWidget {
         color: Theme.of(context).primaryColor.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(8),
         border: Border(
-          right: BorderSide(
-            color: Theme.of(context).primaryColor,
-            width: 3,
-          ),
+          right: BorderSide(color: Theme.of(context).primaryColor, width: 3),
         ),
       ),
       child: Row(

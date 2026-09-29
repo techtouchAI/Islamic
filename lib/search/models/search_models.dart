@@ -51,20 +51,3 @@ class SectionGroup {
     required this.items,
   });
 }
-
-class PaginationMetadata {
-  final int currentPage;
-  final int totalPages;
-  final int totalItems;
-  final int itemsPerPage;
-
-  const PaginationMetadata({
-    required this.currentPage,
-    required this.totalPages,
-    required this.totalItems,
-    required this.itemsPerPage,
-  });
-
-  bool get hasPrevious => currentPage > 1;
-  bool get hasNext => currentPage < totalPages;
-}

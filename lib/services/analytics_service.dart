@@ -14,15 +14,14 @@ class AnalyticsService {
         // Log the new device registration event
         await FirebaseAnalytics.instance.logEvent(
           name: 'new_device_registered',
-          parameters: {
-            'timestamp': DateTime.now().toIso8601String(),
-          },
+          parameters: {'timestamp': DateTime.now().toIso8601String()},
         );
 
         // Update the local storage so it won't track again
         await prefs.setBool(_deviceTrackedKey, true);
         debugPrint(
-            'AnalyticsService: new_device_registered event logged successfully.');
+          'AnalyticsService: new_device_registered event logged successfully.',
+        );
       } else {
         debugPrint('AnalyticsService: Device already tracked.');
       }

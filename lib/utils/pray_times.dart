@@ -67,8 +67,12 @@ class PrayTimes implements PrayerTimesEngine {
   /// returns a Map of string to DateTime
   @override
   Map<String, DateTime> getTimes(
-      DateTime date, double lat, double lng, double timeZone,
-      {double elevation = 0}) {
+    DateTime date,
+    double lat,
+    double lng,
+    double timeZone, {
+    double elevation = 0,
+  }) {
     final times = getTimesAsHours(
       date,
       lat,
@@ -87,8 +91,12 @@ class PrayTimes implements PrayerTimesEngine {
 
   @override
   Map<String, double> getTimesAsHours(
-      DateTime date, double lat, double lng, double timeZone,
-      {double elevation = 0}) {
+    DateTime date,
+    double lat,
+    double lng,
+    double timeZone, {
+    double elevation = 0,
+  }) {
     _lat = lat;
     _lng = lng;
     _elv = elevation;
@@ -117,8 +125,9 @@ class PrayTimes implements PrayerTimesEngine {
     double t = 1 /
         15 *
         _DMath.arccos(
-            (-_DMath.sin(angle) - _DMath.sin(decl) * _DMath.sin(_lat)) /
-                denominator);
+          (-_DMath.sin(angle) - _DMath.sin(decl) * _DMath.sin(_lat)) /
+              denominator,
+        );
 
     return noon + (direction == 'ccw' ? -t : t);
   }
@@ -136,8 +145,9 @@ class PrayTimes implements PrayerTimesEngine {
     double D = jd - 2451545.0;
     double g = _DMath.fixAngle(357.529 + 0.98560028 * D);
     double q = _DMath.fixAngle(280.459 + 0.98564736 * D);
-    double L =
-        _DMath.fixAngle(q + 1.915 * _DMath.sin(g) + 0.020 * _DMath.sin(2 * g));
+    double L = _DMath.fixAngle(
+      q + 1.915 * _DMath.sin(g) + 0.020 * _DMath.sin(2 * g),
+    );
 
     // double R = 1.00014 - 0.01671 * _DMath.cos(g) - 0.00014 * _DMath.cos(2 * g);
     double e = 23.439 - 0.00000036 * D;
@@ -179,8 +189,11 @@ class PrayTimes implements PrayerTimesEngine {
     double dhuhr = _midDay(times['dhuhr']!);
     double asr = _asrTime(1, times['asr']!); // Standard factor = 1
     double sunset = _sunAngleTime(_riseSetAngle(), times['sunset']!, 'cw');
-    double maghrib =
-        _sunAngleTime(_params.maghribAngle, times['maghrib']!, 'cw');
+    double maghrib = _sunAngleTime(
+      _params.maghribAngle,
+      times['maghrib']!,
+      'cw',
+    );
     double isha = _sunAngleTime(_params.ishaAngle, times['isha']!, 'cw');
 
     return {
@@ -190,7 +203,7 @@ class PrayTimes implements PrayerTimesEngine {
       'asr': asr,
       'sunset': sunset,
       'maghrib': maghrib,
-      'isha': isha
+      'isha': isha,
     };
   }
 
@@ -204,7 +217,7 @@ class PrayTimes implements PrayerTimesEngine {
       'asr': 13,
       'sunset': 18,
       'maghrib': 18,
-      'isha': 18
+      'isha': 18,
     };
 
     // main iterations
@@ -264,24 +277,45 @@ class PrayTimes implements PrayerTimesEngine {
     double nightTime = _timeDiff(times['sunset']!, times['sunrise']!);
 
     times['imsak'] = _adjustHLTime(
-        times['imsak'] ?? times['fajr']!,
-        times['sunrise']!,
-        _params.fajrAngle,
-        nightTime,
-        'ccw'); // fallback for imsak since it might not be in the map in this port
+      times['imsak'] ?? times['fajr']!,
+      times['sunrise']!,
+      _params.fajrAngle,
+      nightTime,
+      'ccw',
+    ); // fallback for imsak since it might not be in the map in this port
     times['fajr'] = _adjustHLTime(
-        times['fajr']!, times['sunrise']!, _params.fajrAngle, nightTime, 'ccw');
+      times['fajr']!,
+      times['sunrise']!,
+      _params.fajrAngle,
+      nightTime,
+      'ccw',
+    );
     times['isha'] = _adjustHLTime(
-        times['isha']!, times['sunset']!, _params.ishaAngle, nightTime, 'cw');
-    times['maghrib'] = _adjustHLTime(times['maghrib']!, times['sunset']!,
-        _params.maghribAngle, nightTime, 'cw');
+      times['isha']!,
+      times['sunset']!,
+      _params.ishaAngle,
+      nightTime,
+      'cw',
+    );
+    times['maghrib'] = _adjustHLTime(
+      times['maghrib']!,
+      times['sunset']!,
+      _params.maghribAngle,
+      nightTime,
+      'cw',
+    );
 
     return times;
   }
 
   // adjust a time for higher latitudes
   double _adjustHLTime(
-      double time, double base, double angle, double night, String direction) {
+    double time,
+    double base,
+    double angle,
+    double night,
+    String direction,
+  ) {
     double portion = _nightPortion(angle, night);
     double timeDiff =
         (direction == 'ccw') ? _timeDiff(time, base) : _timeDiff(base, time);
@@ -337,12 +371,11 @@ class PrayTimes implements PrayerTimesEngine {
     // Add days if time crossed past midnight
     int daysToAdd = (time / 24).floor();
 
-    return DateTime.utc(
-      date.year,
-      date.month,
-      date.day,
-    ).add(Duration(days: daysToAdd, hours: hours, minutes: minutes)).subtract(
-        Duration(minutes: (_timeZone * 60).round())); // convert back to UTC
+    return DateTime.utc(date.year, date.month, date.day)
+        .add(Duration(days: daysToAdd, hours: hours, minutes: minutes))
+        .subtract(
+          Duration(minutes: (_timeZone * 60).round()),
+        ); // convert back to UTC
   }
 }
 
