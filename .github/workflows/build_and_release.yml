@@ -117,7 +117,7 @@ jobs:
           if [ -f "$RUNNER_TEMP/ota-signing.pem" ]; then
             python3 scripts/sign_release_manifest.py \
               --version "$VERSION_NAME" --build "$VERSION_CODE" \
-              --min-build 0 --tag "v${VERSION_NAME}-${VERSION_CODE}" \
+              --min-build "${{ vars.OTA_MIN_SUPPORTED_BUILD || '0' }}" --tag "v${VERSION_NAME}-${VERSION_CODE}" \
               --apk build/app/outputs/flutter-apk/app-release.apk \
               --key "$RUNNER_TEMP/ota-signing.pem" \
               --output build/app/outputs/flutter-apk/release_manifest.json
