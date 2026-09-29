@@ -87,8 +87,8 @@ class MafatihService {
 
   static Future<List<MafatihArticle>> searchArticles(String query) async {
     try {
-      if (query.isEmpty) return [];
-      if (kIsWeb || _db == null) {
+      if (kIsWeb || query.isEmpty) return [];
+      if (_db == null) {
         throw StateError('قاعدة مفاتيح الجنان غير متاحة');
       }
       final rawPattern = '%${ArabicNormalizer.escapeLike(query.trim())}%';

@@ -106,7 +106,7 @@ class QuranService {
   }
 
   static Future<List<Map<String, dynamic>>> searchVerses(String query) async {
-    if (query.isEmpty) return [];
+    if (kIsWeb || query.isEmpty) return [];
     if (_db == null) throw StateError('قاعدة القرآن غير متاحة');
 
     try {

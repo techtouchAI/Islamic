@@ -164,9 +164,14 @@ class SearchController extends ChangeNotifier {
       final currentQuery = _query;
 
       try {
-        final failedSources = <String>[];
+        final failedSources = <String>[
+          if (kIsWeb && (category == 'all' || category == 'quran'))
+            'بحث الآيات على المتصفح',
+          if (kIsWeb && (category == 'all' || category == 'mafatih'))
+            'مفاتيح الجنان على المتصفح',
+        ];
         // 2a. Search in SQLite DBs if category matches 'all', 'quran', or 'mafatih'
-        final quranFuture = (category == 'all' || category == 'quran')
+        final quranFuture = (!kIsWeb && (category == 'all' || category == 'quran'))
             ? _searchQuran(currentQuery).then<List<Map<String, dynamic>>>(
                 (rows) => rows,
                 onError: (Object e, StackTrace stack) {
@@ -177,7 +182,7 @@ class SearchController extends ChangeNotifier {
               )
             : Future.value(<Map<String, dynamic>>[]);
 
-        final mafatihFuture = (category == 'all' || category == 'mafatih')
+        final mafatihFuture = (!kIsWeb && (category == 'all' || category == 'mafatih'))
             ? _searchMafatih(currentQuery).then<List<MafatihArticle>>(
                 (rows) => rows,
                 onError: (Object e, StackTrace stack) {
