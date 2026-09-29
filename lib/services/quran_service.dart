@@ -1,9 +1,8 @@
 import 'package:sqflite/sqflite.dart';
-import 'package:path/path.dart';
-import 'package:flutter/services.dart';
-import 'dart:io';
 import 'package:flutter/foundation.dart';
+import 'bundled_database.dart';
 import '../data/data_manager.dart';
+import '../utils/arabic_normalizer.dart';
 
 class QuranService {
   static Database? _db;
@@ -13,23 +12,7 @@ class QuranService {
   static Future<void> initDB() async {
     if (kIsWeb) return;
     try {
-      final dbPath = await getDatabasesPath();
-      final path = join(dbPath, "quran_db.db");
-
-      // Ensure directory exists
-      await Directory(dirname(path)).create(recursive: true);
-
-      if (!await File(path).exists()) {
-        await Directory(dirname(path)).create(recursive: true);
-        ByteData data = await rootBundle.load("assets/data/quran_db.db");
-        List<int> bytes = data.buffer.asUint8List(
-          data.offsetInBytes,
-          data.lengthInBytes,
-        );
-        await File(path).writeAsBytes(bytes);
-        rootBundle.evict("assets/data/quran_db.db");
-      }
-      _db = await openDatabase(path, readOnly: true);
+      _db = await BundledDatabase.open('assets/data/quran_db.db');
     } catch (e) {
       debugPrint("QuranService Init Error: $e");
     }
@@ -123,21 +106,22 @@ class QuranService {
   }
 
   static Future<List<Map<String, dynamic>>> searchVerses(String query) async {
-    if (_db == null || query.isEmpty) return [];
+    if (kIsWeb || query.isEmpty) return [];
+    if (_db == null) throw StateError('قاعدة القرآن غير متاحة');
 
     try {
-      // Removing diacritics for SQLite matching since the DB has the text with diacritics
-      // SQLite doesn't natively support ignoring diacritics easily without custom extensions,
-      // but in standard query we can look for raw text matches if the DB contains clean text,
-      // or we just use normal LIKE. Let's try normal LIKE first.
-      final String safeQuery = '%$query%';
-      final List<Map<String, dynamic>> result = await _db!.rawQuery('''
+      // Search the unvowelled database column; keep the original text for display.
+      final rawPattern = '%${ArabicNormalizer.escapeLike(query.trim())}%';
+      final normalizedPattern =
+          '%${ArabicNormalizer.escapeLike(ArabicNormalizer.normalize(query))}%';
+      final result = await _db!.rawQuery('''
         SELECT a.anum, a.text, a.sid, s.name as surah_name
         FROM ayah a
         JOIN surah s ON a.sid = s.id
-        WHERE a.text LIKE ? OR s.name LIKE ?
-        LIMIT 50
-      ''', [safeQuery, safeQuery]);
+        WHERE a.ar_text LIKE ? ESCAPE '\' OR s.name LIKE ? ESCAPE '\'
+           OR a.ar_text LIKE ? ESCAPE '\' OR s.name LIKE ? ESCAPE '\'
+        ORDER BY a.sid ASC, a.anum ASC
+      ''', [rawPattern, rawPattern, normalizedPattern, normalizedPattern]);
 
       return result
           .map(
@@ -150,8 +134,8 @@ class QuranService {
           )
           .toList();
     } catch (e) {
-      debugPrint("QuranService searchVerses Error: \$e");
-      return [];
+      debugPrint("QuranService searchVerses Error: $e");
+      rethrow;
     }
   }
 

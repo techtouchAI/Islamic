@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/services.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'services/analytics_service.dart';
@@ -33,9 +34,11 @@ import 'package:provider/provider.dart';
 
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:dio/dio.dart';
+import 'dart:convert';
+import 'services/release_manifest.dart';
+import 'services/ota_service.dart';
 
 import 'providers/settings_provider.dart';
-import 'services/ota_service.dart';
 
 class IslamicPatternPainter extends CustomPainter {
   final Color color;
@@ -270,9 +273,10 @@ class _MainScaffoldState extends State<MainScaffold> {
 
   void _setupUpdateListener() {
     // Sync cloud data asynchronously
-    DataManager.syncCloudData().catchError((e) {
-      debugPrint("Cloud sync failed during deferred tasks: $e");
-      return false;
+    DataManager.syncCloudData().then((changed) async {
+      if (changed) await SearchEngine.instance.init(force: true);
+    }).catchError((Object e) {
+      debugPrint("Cloud sync or search indexing failed: $e");
     });
   }
 
@@ -280,174 +284,67 @@ class _MainScaffoldState extends State<MainScaffold> {
     if (!mounted) return;
 
     try {
-      final String timestamp = DateTime.now().millisecondsSinceEpoch.toString();
-      final String apiUrl = 'https://api.github.com/repos/techtouchAI/Islamic/releases/latest?t=$timestamp';
-
-      final response = await Dio().get(
-        apiUrl,
-        options: Options(headers: {'Cache-Control': 'no-cache', 'Pragma': 'no-cache'}),
-      );
-
+      const publicKeyBase64 = String.fromEnvironment('OTA_PUBLIC_KEY_B64');
+      if (kIsWeb || !Platform.isAndroid || publicKeyBase64.isEmpty) return;
+      final manifest = await ReleaseManifest.fetchVerified(
+          Dio(), base64Decode(publicKeyBase64));
       if (!mounted) return;
-
-      if (response.statusCode == 200) {
-        final data = response.data;
-        final String tagName = data['tag_name']?.toString() ?? '';
-
-        // Robust SemVer Parsing using Regex
-        // Match patterns like "v1.2.3-45", "1.2.3+45", "v1.0.41-671", etc.
-        final RegExp versionRegExp = RegExp(r'[-+](\d+)$');
-        final Match? match = versionRegExp.firstMatch(tagName);
-
-        int? latestVersionCode;
-        if (match != null && match.groupCount >= 1) {
-          latestVersionCode = int.tryParse(match.group(1)!);
-        }
-
-        // Fallback robust digits only if specific format isn't matched
-        if (latestVersionCode == null) {
-             final RegExp allDigits = RegExp(r'\d+');
-             final matches = allDigits.allMatches(tagName);
-             if (matches.isNotEmpty) {
-                 latestVersionCode = int.tryParse(matches.last.group(0)!);
-             }
-        }
-
-        if (latestVersionCode == null) {
-          throw Exception("لم أتمكن من قراءة رقم الإصدار من: '$tagName'");
-        }
-
-        final PackageInfo info = await PackageInfo.fromPlatform();
-        final currentVersionCode = int.tryParse(info.buildNumber) ?? 1;
-
-
-
-        const String releaseNotes =
-            '✨ يتوفر الآن تحديث جديد للتطبيق!\n\nقمنا بإضافة تحسينات وإصلاحات جديدة لضمان أفضل تجربة لك. يرجى التحديث الآن.';
-        String updateUrl = '';
-        final assets = data['assets'];
-        if (assets != null && assets is List && assets.isNotEmpty) {
-          updateUrl = assets[0]['browser_download_url']?.toString() ?? '';
-        }
-
-        if (updateUrl.isEmpty) {
-          throw Exception("رابط التحميل (APK) غير موجود في جيت هاب");
-        }
-
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                'نجاح الاتصال | إصدار التطبيق: $currentVersionCode | إصدار السيرفر: $latestVersionCode',
-                style: const TextStyle(color: Colors.white),
-              ),
-              backgroundColor: Colors.green,
-              duration: const Duration(seconds: 3),
-            ),
-          );
-        }
-
-        // التحقق من الشرط الرياضي وإظهار النافذة
-        if (currentVersionCode < latestVersionCode) {
-          // Force update to be strictly mandatory
-          _showUpdateDialogWithRetry(true, updateUrl, releaseNotes, null);
-        }
-      } else {
-        throw Exception("فشل الاتصال، رمز الخطأ: ${response.statusCode}");
+      final info = await PackageInfo.fromPlatform();
+      final currentBuild = int.tryParse(info.buildNumber) ?? 0;
+      if (currentBuild < manifest.buildNumber) {
+        _showSignedUpdateDialog(manifest,
+            mandatory: currentBuild < manifest.minSupportedBuild);
       }
     } catch (e) {
       debugPrint('OTA_Update Error: $e');
     }
   }
 
-  void _showUpdateDialogWithRetry(
-    bool forceUpdate,
-    String updateUrl,
-    String releaseNotes,
-    String? checksum,
-    [int retryCount = 0]
-  ) {
-    final rootContext = navigatorKey.currentContext;
-    if (rootContext == null) {
-      if (retryCount < 20) {
-         // Retry up to 20 times (10 seconds total), waiting 500ms each time for the context to become available
-         Future.delayed(const Duration(milliseconds: 500), () {
-            _showUpdateDialogWithRetry(forceUpdate, updateUrl, releaseNotes, checksum, retryCount + 1);
-         });
-      } else {
-          debugPrint("Failed to show update dialog: context is still null after 10 seconds of retries.");
-      }
-      return;
-    }
-
-    _showUpdateDialog(forceUpdate, updateUrl, releaseNotes, checksum);
-  }
-
-  void _showUpdateDialog(
-    bool forceUpdate,
-    String updateUrl,
-    String releaseNotes,
-    String? checksum,
-  ) {
-    final rootContext = navigatorKey.currentContext;
-    if (rootContext == null) return;
-
-    showDialog(
-      context: rootContext,
-      barrierDismissible: false, // Strictly mandatory, cannot dismiss
-      builder: (contextBuilder) {
-        return ValueListenableBuilder<double>(
-          valueListenable: OTAService.instance.downloadProgress,
-          builder: (context, downloadProgress, child) {
-            final isDownloading = downloadProgress >= 0;
-            return PopScope(
-              canPop: false, // Strictly mandatory, block back button
-              child: AlertDialog(
-                title: const Text('تحديث متوفر', textAlign: TextAlign.right),
-                content: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(releaseNotes, textAlign: TextAlign.right),
-                    if (isDownloading) ...[
-                      const SizedBox(height: 20),
-                      LinearProgressIndicator(value: downloadProgress),
-                      const SizedBox(height: 10),
-                      Text('${(downloadProgress * 100).toStringAsFixed(0)}%'),
-                    ],
-                  ],
+  void _showSignedUpdateDialog(ReleaseManifest manifest,
+      {required bool mandatory}) {
+    final context = navigatorKey.currentContext;
+    if (context == null) return;
+    final progress = OTAService.instance.downloadProgress;
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => ValueListenableBuilder<double>(
+        valueListenable: progress,
+        builder: (context, value, _) => PopScope(
+          canPop: !mandatory && value < 0,
+          child: AlertDialog(
+            title: const Text('تحديث موثّق متوفر'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('الإصدار ${manifest.version}'),
+                if (value >= 0) LinearProgressIndicator(value: value),
+              ],
+            ),
+            actions: [
+              if (!mandatory && value < 0)
+                TextButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(),
+                  child: const Text('لاحقاً'),
                 ),
-                actions: [
-                  if (!isDownloading)
-                    TextButton(
-                      onPressed: () => SystemNavigator.pop(),
-                      child: const Text('خروج'),
-                    ),
-                  if (!isDownloading)
-                    ElevatedButton(
-                      onPressed: () {
-                        OTAService.instance.downloadAndInstallApk(
-                          updateUrl,
-                          checksum,
-                          onError: (errorMessage) {
-                            ScaffoldMessenger.of(contextBuilder).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  errorMessage,
-                                  textAlign: TextAlign.center,
-                                ),
-                              ),
-                            );
-                          },
-                        );
-                      },
-                      child: const Text('تحديث الآن'),
-                    ),
-                ],
-              ),
-            );
-          },
-        );
-      },
+              if (value < 0)
+                FilledButton(
+                  onPressed: () => OTAService.instance.downloadAndInstallApk(
+                    manifest.apkUrl.toString(),
+                    manifest.sha256Hex,
+                    onError: (message) {
+                      if (dialogContext.mounted) {
+                        ScaffoldMessenger.of(dialogContext)
+                            .showSnackBar(SnackBar(content: Text(message)));
+                      }
+                    },
+                  ),
+                  child: const Text('تنزيل وتثبيت'),
+                ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -502,7 +399,9 @@ class _MainScaffoldState extends State<MainScaffold> {
               ),
               centerTitle: true,
               elevation: 0,
-              backgroundColor: Theme.of(context).appBarTheme.backgroundColor
+              backgroundColor: Theme.of(context)
+                  .appBarTheme
+                  .backgroundColor
                   ?.withValues(alpha: settingsProvider.uiOpacity),
               leading: Builder(
                 builder: (context) => IconButton(
@@ -655,9 +554,8 @@ class _MainScaffoldState extends State<MainScaffold> {
         return TabbedSection(
           key: const ValueKey('imam_ali'),
           tabs: imamAliCats.map((c) => c['title'].toString()).toList(),
-          sectionKeys: imamAliCats
-              .map((c) => 'imam_ali_cat_${c['id']}')
-              .toList(),
+          sectionKeys:
+              imamAliCats.map((c) => 'imam_ali_cat_${c['id']}').toList(),
           fontSizeFactor: settingsProvider.fontSizeFactor,
           uiOpacity: settingsProvider.uiOpacity,
         );

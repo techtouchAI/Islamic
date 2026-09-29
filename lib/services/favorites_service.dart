@@ -9,14 +9,16 @@ import '../models/favorite_item.dart';
 
 class FavoritesService {
   FavoritesService._privateConstructor();
-  static final FavoritesService _instance = FavoritesService._privateConstructor();
+  static final FavoritesService _instance =
+      FavoritesService._privateConstructor();
   static FavoritesService get instance => _instance;
 
   static const String _boxName = 'favoritesBox';
   Box<FavoriteItem>? _favoritesBox;
 
   // State notifier to update the UI
-  final ValueNotifier<List<FavoriteItem>> favoritesNotifier = ValueNotifier<List<FavoriteItem>>([]);
+  final ValueNotifier<List<FavoriteItem>> favoritesNotifier =
+      ValueNotifier<List<FavoriteItem>>([]);
 
   /// Initializes the Hive database, registers the adapter,
   /// opens the necessary box, and updates the notifier.
@@ -165,10 +167,8 @@ class FavoritesService {
       await file.writeAsString(jsonString, encoding: utf8);
 
       // 4. Trigger the native Share dialog
-      await Share.shareXFiles(
-        [XFile(file.path)], 
-        text: 'نسخة احتياطية لتطبيق الذاكرين'
-      );
+      await Share.shareXFiles([XFile(file.path)],
+          text: 'نسخة احتياطية لتطبيق الذاكرين');
 
       if (kDebugMode) {
         print('Export share dialog opened.');

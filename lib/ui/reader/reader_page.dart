@@ -71,6 +71,7 @@ class ReaderPage extends StatefulWidget {
   final String? surahName;
   final String? titleColor;
   final int? surahId;
+  final int? targetAyahNumber;
   const ReaderPage({
     super.key,
     required this.title,
@@ -82,12 +83,14 @@ class ReaderPage extends StatefulWidget {
     this.surahName,
     this.ayahs,
     this.surahId,
+    this.targetAyahNumber,
   });
   @override
   State<ReaderPage> createState() => _ReaderPageState();
 }
 
 class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
+  final GlobalKey _targetAyahKey = GlobalKey();
   late double _factor;
   Color? _customBgColor;
   int? _bookmarkedLineIndex;
@@ -119,7 +122,17 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
     super.initState();
     _factor = widget.fontSizeFactor;
 
+    if (widget.targetAyahNumber != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final target = _targetAyahKey.currentContext;
+        if (mounted && target != null) {
+          Scrollable.ensureVisible(target,
+              duration: const Duration(milliseconds: 350), alignment: 0.25);
+        }
+      });
+    }
     SharedPreferences.getInstance().then((prefs) {
+      if (!mounted) return;
       setState(() {
         _bookmarkedLineIndex = prefs.getInt('bookmark_line_${widget.title}');
       });
@@ -244,6 +257,9 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
                                         int.tryParse(ayahIdxStr) ?? 0;
 
                                     return GestureDetector(
+                                      key: widget.targetAyahNumber == ayahIndex
+                                          ? _targetAyahKey
+                                          : null,
                                       behavior: HitTestBehavior.opaque,
                                       onTap: () async {
                                         final prefs = await SharedPreferences
@@ -284,7 +300,8 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
                                                     Text(
                                                       '﴿$arabicIndex﴾',
                                                       style: TextStyle(
-                                                        fontFamily: 'UthmanicHafs',
+                                                        fontFamily:
+                                                            'UthmanicHafs',
                                                         color: _bookmarkedLineIndex
                                                                     ?.toString() ==
                                                                 ayahIndex
@@ -367,7 +384,9 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
                                         final baseStyle =
                                             widget.isImamAli || widget.isQuran
                                                 ? TextStyle(
-                                                    fontFamily: widget.isQuran ? 'UthmanicHafs' : 'me_quran',
+                                                    fontFamily: widget.isQuran
+                                                        ? 'UthmanicHafs'
+                                                        : 'me_quran',
                                                     fontSize: 26 * _factor,
                                                     height: 1.8,
                                                     color: dynamicTextColor,
@@ -380,8 +399,8 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
                                                   );
 
                                         String cleanContent = widget.content;
-                                        cleanContent = cleanContent
-                                            .replaceAll('### ', '');
+                                        cleanContent =
+                                            cleanContent.replaceAll('### ', '');
                                         if (cleanContent
                                             .trim()
                                             .toLowerCase()
@@ -394,13 +413,11 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
                                         cleanContent = cleanContent
                                             .replaceAll('\uFDFA',
                                                 '(صلى الله عليه وآله)')
-                                            .replaceAll(
-                                                '\uFDFB', '(جل جلاله)')
+                                            .replaceAll('\uFDFB', '(جل جلاله)')
                                             .replaceAll('!', '(عليه السلام)');
                                         cleanContent = cleanContent
                                             .replaceAll(
-                                                RegExp(
-                                                    r'<html>|<html|\bhtml\b',
+                                                RegExp(r'<html>|<html|\bhtml\b',
                                                     caseSensitive: false),
                                                 '')
                                             .trim();

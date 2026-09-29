@@ -2,6 +2,7 @@ import "../services/quran_service.dart";
 import 'dart:math';
 import 'package:flutter/foundation.dart';
 import '../data/data_manager.dart';
+import '../utils/arabic_normalizer.dart';
 
 class SearchDocument {
   final String id;
@@ -51,6 +52,7 @@ class SearchEngine {
 
   List<SearchDocument> _index = [];
   bool _isIndexed = false;
+  Future<void>? _pendingIndex;
   final ValueNotifier<bool> isIndexingNotifier = ValueNotifier<bool>(false);
 
   @visibleForTesting
@@ -62,21 +64,8 @@ class SearchEngine {
   bool get isIndexed => _isIndexed;
   List<SearchDocument> get allDocuments => _index;
 
-  // Arabic Normalization
-  static final _diacriticsRegExp = RegExp(r'[\u064B-\u065F\u0670]');
-
-  static String normalizeArabic(String text) {
-    return text
-        .replaceAll(_diacriticsRegExp, '')
-        .replaceAll('أ', 'ا')
-        .replaceAll('إ', 'ا')
-        .replaceAll('آ', 'ا')
-        .replaceAll('ٱ', 'ا')
-        .replaceAll('ة', 'ه')
-        .replaceAll('ى', 'ي')
-        .replaceAll(RegExp(r'\s+'), ' ')
-        .trim();
-  }
+  static String normalizeArabic(String text) =>
+      ArabicNormalizer.normalize(text);
 
   // Levenshtein distance calculation
   static int levenshteinDistance(String s, String t) {
@@ -113,20 +102,36 @@ class SearchEngine {
       return targetText.contains(queryWord);
     }
 
-    List<String> targetWords = targetText.split(' ');
-    for (String targetWord in targetWords) {
-      if ((targetWord.length - queryWord.length).abs() > 1) continue;
-
-      if (levenshteinDistance(queryWord, targetWord) <= 1) {
-        return true;
-      }
-    }
-    return targetText.contains(queryWord);
+    return fuzzyMatchWords(queryWord, targetText, targetText.split(' '));
   }
 
-  Future<void> init() async {
-    if (_isIndexed) return;
+  /// Reuses tokenized words when a document is scored for several query terms.
+  static bool fuzzyMatchWords(
+      String queryWord, String targetText, Iterable<String> targetWords) {
+    if (queryWord.isEmpty) return false;
+    // Substrings are cheaper than edit distance and cover partial searches.
+    if (targetText.contains(queryWord)) return true;
+    if (queryWord.length < 4) return false;
+    for (final targetWord in targetWords) {
+      if ((targetWord.length - queryWord.length).abs() > 1) continue;
+      if (levenshteinDistance(queryWord, targetWord) <= 1) return true;
+    }
+    return false;
+  }
 
+  Future<void> init({bool force = false}) async {
+    if (_pendingIndex != null) await _pendingIndex;
+    if (_isIndexed && !force) return;
+    final pending = _buildCurrentIndex();
+    _pendingIndex = pending;
+    try {
+      await pending;
+    } finally {
+      if (identical(_pendingIndex, pending)) _pendingIndex = null;
+    }
+  }
+
+  Future<void> _buildCurrentIndex() async {
     isIndexingNotifier.value = true;
     try {
       // Ensure DBs are open before querying
@@ -212,9 +217,8 @@ class SearchEngine {
       debugPrint("SearchEngine: Indexed ${_index.length} items.");
     } catch (e) {
       debugPrint("SearchEngine Init Error: $e");
-      // Fallback in case Data prep failed
-      _index = [];
-      _isIndexed = true;
+      // Preserve the last usable index; allow retry on next initialization.
+      if (!_isIndexed) _index = [];
     } finally {
       isIndexingNotifier.value = false;
     }
@@ -326,6 +330,6 @@ class SearchEngine {
       return a.document.title.compareTo(b.document.title);
     });
 
-    return results.take(50).toList();
+    return results;
   }
 }

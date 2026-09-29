@@ -41,7 +41,8 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
   ];
 
   AppHijriDate? _todayHijri;
-  AppHijriDate _displayedHijri = AppHijriDate(day: 1, month: 1, year: 1446, monthName: 'محرم');
+  AppHijriDate _displayedHijri =
+      AppHijriDate(day: 1, month: 1, year: 1446, monthName: 'محرم');
   PageController? _pageController;
 
   int? _realTodayHDay;
@@ -98,7 +99,8 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
   }
 
   AppHijriDate _getHijriMonthForPage(int pageIndex) {
-    if (_todayHijri == null) return AppHijriDate(day: 1, month: 1, year: 1446, monthName: 'محرم');
+    if (_todayHijri == null)
+      return AppHijriDate(day: 1, month: 1, year: 1446, monthName: 'محرم');
     int monthOffset = pageIndex - _initialPage;
 
     int newMonth = _todayHijri!.month + monthOffset;
@@ -231,7 +233,8 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
       child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: Colors.amber.withValues(alpha: 0.15), width: 1),
+          border:
+              Border.all(color: Colors.amber.withValues(alpha: 0.15), width: 1),
         ),
         padding: const EdgeInsets.all(12),
         child: Column(
@@ -699,7 +702,8 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
     final screenWidth = MediaQuery.of(context).size.width;
     final cellWidth = (screenWidth - 32) / 7;
     final cellHeight = cellWidth * 0.9;
-    final double pageViewHeight = (cellHeight * 6) + 120; // 6 rows + header space
+    final double pageViewHeight =
+        (cellHeight * 6) + 120; // 6 rows + header space
 
     return Scaffold(
       backgroundColor: const Color(0xFF121212),
@@ -733,8 +737,8 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
                 children: [
                   Text(
                     _selectedDay != null
-                      ? '$_selectedDay ${_getHijriMonthName(_displayedHijri.month)} ${_displayedHijri.year} هـ'
-                      : '${_getHijriMonthName(_displayedHijri.month)} ${_displayedHijri.year} هـ',
+                        ? '$_selectedDay ${_getHijriMonthName(_displayedHijri.month)} ${_displayedHijri.year} هـ'
+                        : '${_getHijriMonthName(_displayedHijri.month)} ${_displayedHijri.year} هـ',
                     style: const TextStyle(
                       fontSize: 14,
                       color: Colors.amber,

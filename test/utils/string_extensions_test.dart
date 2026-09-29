@@ -35,6 +35,10 @@ void main() {
       );
     });
 
+    test('uses the same canonical form for Quranic alef and whitespace', () {
+      expect('  ٱلرَّحْمَٰنِ\n  '.normalizeArabic(), 'الرحمن');
+    });
+
     test('should handle empty strings', () {
       expect(''.normalizeArabic(), '');
     });

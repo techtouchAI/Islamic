@@ -43,6 +43,7 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
+          flutter-version: '3.47.5'
           channel: stable
           cache: true
 
@@ -56,7 +57,7 @@ jobs:
         run: flutter pub get
 
       - name: Format Dart sources
-        run: dart format lib test
+        run: dart format --output=none --set-exit-if-changed .
 
       - name: Analyze Dart sources
         run: flutter analyze --no-fatal-infos
@@ -85,17 +86,51 @@ jobs:
           storeFile=upload-keystore.jks
           EOF
 
+      - name: Prepare OTA signing key
+        env:
+          OTA_SIGNING_KEY: ${{ secrets.OTA_MANIFEST_SIGNING_KEY }}
+        run: |
+          if [ -n "$OTA_SIGNING_KEY" ]; then
+            umask 077
+            printf '%s\n' "$OTA_SIGNING_KEY" > "$RUNNER_TEMP/ota-signing.pem"
+            openssl pkey -in "$RUNNER_TEMP/ota-signing.pem" -pubout -outform DER \
+              | tail -c 32 | base64 -w 0 > "$RUNNER_TEMP/ota-public.b64"
+          fi
+
       - name: Build APK
-        run: flutter build apk --release --target-platform android-arm64 --obfuscate --split-debug-info=build/app/outputs/symbols
+        run: |
+          if [ -f "$RUNNER_TEMP/ota-public.b64" ]; then
+            public_key=$(cat "$RUNNER_TEMP/ota-public.b64")
+            flutter build apk --release --target-platform android-arm64 \
+              --obfuscate --split-debug-info=build/app/outputs/symbols \
+              --dart-define="OTA_PUBLIC_KEY_B64=$public_key"
+          else
+            flutter build apk --release --target-platform android-arm64 \
+              --obfuscate --split-debug-info=build/app/outputs/symbols
+          fi
         env:
           KEYSTORE_STOREPASS: ${{ secrets.KEYSTORE_STOREPASS }}
           KEYSTORE_KEYPASS: ${{ secrets.KEYSTORE_KEYPASS }}
+
+      - name: Sign release manifest
+        run: |
+          if [ -f "$RUNNER_TEMP/ota-signing.pem" ]; then
+            python3 scripts/sign_release_manifest.py \
+              --version "$VERSION_NAME" --build "$VERSION_CODE" \
+              --min-build "${{ vars.OTA_MIN_SUPPORTED_BUILD || '0' }}" --tag "v${VERSION_NAME}-${VERSION_CODE}" \
+              --apk build/app/outputs/flutter-apk/app-release.apk \
+              --key "$RUNNER_TEMP/ota-signing.pem" \
+              --output build/app/outputs/flutter-apk/release_manifest.json
+            rm -f "$RUNNER_TEMP/ota-signing.pem"
+          fi
 
       - name: Create Release and Upload APK
         id: create_release
         uses: softprops/action-gh-release@v1
         with:
-          files: build/app/outputs/flutter-apk/app-release.apk
+          files: |
+            build/app/outputs/flutter-apk/app-release.apk
+            build/app/outputs/flutter-apk/release_manifest.json
           name: Release ${{ env.VERSION_NAME }} (Build ${{ env.VERSION_CODE }})
           tag_name: v${{ env.VERSION_NAME }}-${{ env.VERSION_CODE }}
           generate_release_notes: true

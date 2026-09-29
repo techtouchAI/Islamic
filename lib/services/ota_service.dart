@@ -3,7 +3,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:crypto/crypto.dart';
-import 'package:open_file/open_file.dart';
+import 'package:open_filex/open_filex.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 class OTAService {
@@ -21,6 +21,19 @@ class OTAService {
     required Function(String) onError,
   }) async {
     if (_isDownloading) return;
+    if (kIsWeb || !Platform.isAndroid) {
+      onError('التحديث الداخلي مدعوم على أندرويد فقط.');
+      return;
+    }
+    final uri = Uri.tryParse(url);
+    final checksum = expectedChecksum?.toLowerCase();
+    if (uri == null ||
+        uri.scheme != 'https' ||
+        checksum == null ||
+        !RegExp(r'^[0-9a-f]{64}$').hasMatch(checksum)) {
+      onError('لا يمكن تثبيت تحديث دون رابط آمن وبصمة تحقق موثوقة.');
+      return;
+    }
 
     if (Platform.isAndroid) {
       var installStatus = await Permission.requestInstallPackages.status;
@@ -53,32 +66,26 @@ class OTAService {
         },
       );
 
-      downloadProgress.value = -1.0; // Reset progress after download
-
       final File file = File(savePath);
 
-      // تأمين التثبيت (File Checksum Validation)
-      if (expectedChecksum != null && expectedChecksum.isNotEmpty) {
-        final List<int> bytes = await file.readAsBytes();
-        final String fileChecksum = sha256.convert(bytes).toString();
-
-        if (fileChecksum != expectedChecksum) {
-          await file.delete();
-          debugPrint("OTA ERROR: Checksum mismatch. Expected: $expectedChecksum, Got: $fileChecksum");
-          onError('تعذر التحديث: ملف التنزيل تالف أو تم التلاعب به.');
-          _isDownloading = false;
-          return;
-        }
+      final fileChecksum =
+          (await sha256.bind(file.openRead()).first).toString();
+      if (fileChecksum != checksum) {
+        await file.delete();
+        onError('تعذر التحديث: الملف لا يطابق بصمة التحقق.');
+        return;
       }
 
-      final result = await OpenFile.open(savePath);
-      debugPrint("OpenFile result: ${result.message}");
-
+      final result = await OpenFilex.open(savePath);
+      if (result.type != ResultType.done) {
+        onError('تعذر فتح مُثبّت التحديث: ${result.message}');
+      }
     } catch (e) {
       debugPrint("Download/Install error: $e");
       downloadProgress.value = -1.0;
       onError('فشل تحميل التحديث');
     } finally {
+      downloadProgress.value = -1.0;
       _isDownloading = false;
     }
   }

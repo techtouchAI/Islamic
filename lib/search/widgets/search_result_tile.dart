@@ -14,8 +14,10 @@ class SearchResultTile extends StatelessWidget {
     required this.onTap,
   });
 
-  Widget _buildHighlightedText(String originalText, BuildContext context, {TextStyle? baseStyle}) {
-    if (highlightQuery == null || highlightQuery!.isEmpty) return Text(originalText, style: baseStyle);
+  Widget _buildHighlightedText(String originalText, BuildContext context,
+      {TextStyle? baseStyle}) {
+    if (highlightQuery == null || highlightQuery!.isEmpty)
+      return Text(originalText, style: baseStyle);
 
     final normalizedQuery = SearchEngine.normalizeArabic(highlightQuery!);
     final theme = Theme.of(context);
@@ -23,7 +25,8 @@ class SearchResultTile extends StatelessWidget {
       backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.3),
     );
 
-    final queryWords = normalizedQuery.split(' ').where((w) => w.isNotEmpty).toList();
+    final queryWords =
+        normalizedQuery.split(' ').where((w) => w.isNotEmpty).toList();
     if (queryWords.isEmpty) return Text(originalText, style: baseStyle);
 
     List<TextSpan> spans = [];
@@ -35,7 +38,9 @@ class SearchResultTile extends StatelessWidget {
 
       bool isHighlighted = false;
       for (var qWord in queryWords) {
-        if (normWord.contains(qWord) || SearchEngine.fuzzyMatch(qWord, normWord, isFuzzy: qWord.length >= 4)) {
+        if (normWord.contains(qWord) ||
+            SearchEngine.fuzzyMatch(qWord, normWord,
+                isFuzzy: qWord.length >= 4)) {
           isHighlighted = true;
           break;
         }

@@ -47,6 +47,7 @@ class _SearchScreenState extends State<SearchScreen> {
 
     _notifier = SearchNotifier(_controller);
     _controller.addListener(_onControllerChanged);
+    SearchEngine.instance.isIndexingNotifier.addListener(_onIndexChanged);
     _searchFocusNode.requestFocus();
   }
 
@@ -67,6 +68,9 @@ class _SearchScreenState extends State<SearchScreen> {
         sectionId: mappedSectionId,
         sectionName: _getSectionName(mappedSectionId),
         category: doc.category,
+        normalizedTitle: doc.normalizedTitle,
+        normalizedContent: doc.normalizedContent,
+        normalizedCategory: doc.normalizedCategory,
         surahNumber: doc.surahNumber,
         ayahNumber: doc.ayahNumber,
         type: doc.type,
@@ -120,6 +124,15 @@ class _SearchScreenState extends State<SearchScreen> {
     return 'amal';
   }
 
+  void _onIndexChanged() {
+    if (!mounted) return;
+    if (!SearchEngine.instance.isIndexingNotifier.value &&
+        SearchEngine.instance.isIndexed) {
+      _controller.replaceItems(_loadContentItems());
+    }
+    setState(() {});
+  }
+
   void _onControllerChanged() {
     // Auto-scroll to top when page/category/query changes
     if (_scrollController.hasClients && _scrollController.offset > 0) {
@@ -133,6 +146,8 @@ class _SearchScreenState extends State<SearchScreen> {
 
   @override
   void dispose() {
+    SearchEngine.instance.isIndexingNotifier.removeListener(_onIndexChanged);
+    _controller.removeListener(_onControllerChanged);
     _notifier.dispose();
     _searchFieldController.dispose();
     _searchFocusNode.dispose();
@@ -143,8 +158,21 @@ class _SearchScreenState extends State<SearchScreen> {
   @override
   Widget build(BuildContext context) {
     if (!SearchEngine.instance.isIndexed) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
+      return Scaffold(
+        body: Center(
+          child: SearchEngine.instance.isIndexingNotifier.value
+              ? const CircularProgressIndicator()
+              : Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text('تعذر إعداد البحث'),
+                    TextButton(
+                      onPressed: () => SearchEngine.instance.init(),
+                      child: const Text('إعادة المحاولة'),
+                    ),
+                  ],
+                ),
+        ),
       );
     }
 
@@ -190,6 +218,27 @@ class _SearchScreenState extends State<SearchScreen> {
             children: [
               // Results Count Indicator
               _buildResultsHeader(snapshot),
+              if (snapshot.warning != null)
+                Semantics(
+                  liveRegion: true,
+                  child: Padding(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(snapshot.warning!,
+                              style: TextStyle(
+                                  color: Theme.of(context).colorScheme.error)),
+                        ),
+                        TextButton(
+                          onPressed: _controller.retry,
+                          child: const Text('إعادة المحاولة'),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
 
               // Main Results List
               Expanded(
@@ -319,14 +368,18 @@ class _SearchScreenState extends State<SearchScreen> {
       if (item.surahNumber != null) {
         final ayahs = await QuranService.getAyahs(item.surahNumber!);
         if (mounted) {
+          final surahName =
+              item.title.split(' - آية').first.replaceFirst('سورة ', '');
           Navigator.push(
             context,
             MaterialPageRoute(
               builder: (context) => ReaderPage(
-                title: item.title,
+                title: surahName,
                 content: '',
                 isQuran: true,
-                surahName: item.title,
+                surahName: surahName,
+                surahId: item.surahNumber,
+                targetAyahNumber: item.ayahNumber,
                 ayahs: ayahs,
                 fontSizeFactor: widget.fontSizeFactor,
               ),

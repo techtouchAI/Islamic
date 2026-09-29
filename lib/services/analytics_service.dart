@@ -21,7 +21,8 @@ class AnalyticsService {
 
         // Update the local storage so it won't track again
         await prefs.setBool(_deviceTrackedKey, true);
-        debugPrint('AnalyticsService: new_device_registered event logged successfully.');
+        debugPrint(
+            'AnalyticsService: new_device_registered event logged successfully.');
       } else {
         debugPrint('AnalyticsService: Device already tracked.');
       }

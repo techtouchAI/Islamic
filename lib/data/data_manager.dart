@@ -26,6 +26,20 @@ class DataManager {
 
   static Map<String, dynamic> _decodeAndNormalizeJson(String source) {
     final db = json.decode(source) as Map<String, dynamic>;
+    if (db['content'] is! Map || db['sections'] is! Map) {
+      throw const FormatException(
+          'Content document is missing required sections');
+    }
+    final content = db['content'] as Map;
+    final sections = db['sections'] as Map;
+    if (sections.keys.any((key) => key is! String) ||
+        sections.values.any((value) => value is! Map) ||
+        content.keys.any((key) => key is! String) ||
+        content.values.any(
+            (value) => value is! List || value.any((item) => item is! Map))) {
+      throw const FormatException(
+          'Content document has an invalid section shape');
+    }
     _normalizeDBLocal(db);
     return db;
   }
@@ -83,22 +97,25 @@ class DataManager {
 
   static Future<void> loadContent() async {
     try {
-      final localFile = await _getLocalFile();
+      // Browser storage has no dart:io file; load the same bundled content.
+      final localFile = kIsWeb ? null : await _getLocalFile();
 
       // 1. Try to load from local storage first
-      if (await localFile.exists()) {
-        final content = await localFile.readAsString(encoding: utf8);
-        _db = await compute(_decodeAndNormalizeJson, content);
-        debugPrint("DataManager: Loaded from local storage.");
-      } else {
-        // 2. Fallback to bundled assets
-        final String response = await rootBundle.loadString(
-          'assets/data/content.json',
-        );
-        _db = await compute(_decodeAndNormalizeJson, response);
-        rootBundle.evict('assets/data/content.json');
-        debugPrint("DataManager: Loaded from bundled assets.");
+      if (localFile != null && await localFile.exists()) {
+        try {
+          final content = await localFile.readAsString(encoding: utf8);
+          _db = await compute(_decodeAndNormalizeJson, content);
+          debugPrint("DataManager: Loaded from local storage.");
+          return;
+        } catch (e) {
+          debugPrint(
+              "DataManager: Invalid local content, using bundled asset: $e");
+        }
       }
+      final response = await rootBundle.loadString('assets/data/content.json');
+      _db = await compute(_decodeAndNormalizeJson, response);
+      rootBundle.evict('assets/data/content.json');
+      debugPrint("DataManager: Loaded from bundled assets.");
     } catch (e) {
       debugPrint("DataManager Error: $e");
       _db = {
@@ -111,8 +128,9 @@ class DataManager {
   }
 
   static Future<bool> syncCloudData({http.Client? client}) async {
+    final ownsClient = client == null && httpClient == null;
+    final requestClient = client ?? httpClient ?? http.Client();
     try {
-      client = client ?? httpClient ?? http.Client();
       // Add random component to fully bypass strict CDN caches
       final timestamp = DateTime.now().millisecondsSinceEpoch.toString() +
           '_' +
@@ -120,9 +138,16 @@ class DataManager {
       final url = Uri.parse("$_repoUrl?t=$timestamp");
 
       final response =
-          await client.get(url).timeout(const Duration(seconds: 15));
+          await requestClient.get(url).timeout(const Duration(seconds: 15));
       if (response.statusCode == 200) {
         final content = utf8.decode(response.bodyBytes);
+
+        if (kIsWeb) {
+          final newDb = await compute(_decodeAndNormalizeJson, content);
+          _db = newDb;
+          dbNotifier.value++;
+          return true;
+        }
 
         // التحقق من وجود تغييرات فعلية
         final localFile = await _getLocalFile();
@@ -133,16 +158,20 @@ class DataManager {
 
         try {
           final newDb = await compute(_decodeAndNormalizeJson, content);
-          await localFile.writeAsString(content, encoding: utf8);
+          // Rename in the same directory so a failed write cannot corrupt the last good copy.
+          final temporary = File('${localFile.path}.pending');
+          try {
+            await temporary.writeAsString(content, encoding: utf8, flush: true);
+            await temporary.rename(localFile.path);
+          } finally {
+            if (await temporary.exists()) await temporary.delete();
+          }
           _db = Map<String, dynamic>.from(newDb);
           dbNotifier.value++;
           debugPrint("DataManager: Cloud sync successful.");
           return true;
         } catch (parseError) {
-          debugPrint(
-              "CRITICAL JSON ERROR: Invalid JSON Syntax in the remote file. $parseError");
-          assert(false,
-              "CRITICAL JSON ERROR: Failed to parse remote content.json. $parseError");
+          debugPrint("DataManager: Unable to apply cloud content: $parseError");
         }
       } else {
         debugPrint(
@@ -150,6 +179,8 @@ class DataManager {
       }
     } catch (e) {
       debugPrint("DataManager Sync Error (Network/Timeout): $e");
+    } finally {
+      if (ownsClient) requestClient.close();
     }
     return false;
   }

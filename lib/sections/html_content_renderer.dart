@@ -132,7 +132,8 @@ class _HtmlContentRendererState extends State<HtmlContentRenderer> {
                   Positioned(
                     top: -10,
                     right: 0,
-                    child: const Icon(Icons.star, color: Colors.green, size: 12),
+                    child:
+                        const Icon(Icons.star, color: Colors.green, size: 12),
                   ),
                 ],
               ),
