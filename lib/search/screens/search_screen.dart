@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../ui/reader/reader_page.dart';
 import '../controllers/search_controller.dart' as app_search;
 import '../controllers/search_notifier.dart';
@@ -75,8 +76,10 @@ class _SearchScreenState extends State<SearchScreen> {
 
     final docs = SearchEngine.instance.allDocuments;
     return docs.map((doc) {
-      final String mappedSectionId =
-          _mapCategoryToSectionId(doc.category, doc.type);
+      final String mappedSectionId = _mapCategoryToSectionId(
+        doc.category,
+        doc.type,
+      );
       return ContentItem(
         id: doc.id,
         title: doc.title,
@@ -124,7 +127,8 @@ class _SearchScreenState extends State<SearchScreen> {
     // Fallback to Arabic string matching if category comes as raw Arabic
     if (category.contains('دعاء') ||
         category.contains('أدعية') ||
-        category.contains('مناجاة')) return 'dua';
+        category.contains('مناجاة'))
+      return 'dua';
     if (category.contains('زيارة') || category.contains('زيارات')) {
       return 'ziyarat';
     }
@@ -137,7 +141,8 @@ class _SearchScreenState extends State<SearchScreen> {
     }
     if (category.contains('حلم') ||
         category.contains('أحلام') ||
-        category.contains('تفسير')) return 'dreams';
+        category.contains('تفسير'))
+      return 'dreams';
     if (category.contains('أنبياء') || category.contains('نبي')) {
       return 'prophets_stories';
     }
@@ -253,19 +258,23 @@ class _SearchScreenState extends State<SearchScreen> {
               // Results Count Indicator
               _buildResultsHeader(snapshot),
               // Partial-coverage warning with a consistent Retry action.
-              if (snapshot.state is SearchSuccess &&
-                  snapshot.warning != null)
+              if (snapshot.state is SearchSuccess && snapshot.warning != null)
                 Semantics(
                   liveRegion: true,
                   child: Padding(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
                     child: Row(
                       children: [
                         Expanded(
-                          child: Text(snapshot.warning!,
-                              style: TextStyle(
-                                  color: Theme.of(context).colorScheme.error)),
+                          child: Text(
+                            snapshot.warning!,
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.error,
+                            ),
+                          ),
                         ),
                         TextButton(
                           onPressed: _controller.retry,
@@ -277,9 +286,7 @@ class _SearchScreenState extends State<SearchScreen> {
                 ),
 
               // Main Results List
-              Expanded(
-                child: _buildResultsList(snapshot),
-              ),
+              Expanded(child: _buildResultsList(snapshot)),
             ],
           );
         },
@@ -327,8 +334,7 @@ class _SearchScreenState extends State<SearchScreen> {
     // Strict state contract: Error -> message + consistent Retry button.
     if (snapshot.state is SearchError) {
       return _ErrorState(
-        message: snapshot.warning ??
-            (snapshot.state as SearchError).message,
+        message: snapshot.warning ?? (snapshot.state as SearchError).message,
         onRetry: _controller.retry,
       );
     }
@@ -337,7 +343,8 @@ class _SearchScreenState extends State<SearchScreen> {
       return const _EmptyState();
     }
 
-    final bool showFooter = snapshot.isLoadingMore ||
+    final bool showFooter =
+        snapshot.isLoadingMore ||
         snapshot.hasMore ||
         items.length >= HybridSearchRepository.defaultBatchSize;
     final Widget? footer = showFooter
@@ -354,7 +361,8 @@ class _SearchScreenState extends State<SearchScreen> {
       return ListView.builder(
         controller: _scrollController,
         padding: const EdgeInsets.only(top: 8, bottom: 16),
-        itemCount: _computeGroupedListItemCount(groups) + (footer != null ? 1 : 0),
+        itemCount:
+            _computeGroupedListItemCount(groups) + (footer != null ? 1 : 0),
         itemBuilder: (context, index) {
           final groupCount = _computeGroupedListItemCount(groups);
           if (index >= groupCount) return footer!;
@@ -390,8 +398,12 @@ class _SearchScreenState extends State<SearchScreen> {
     return count;
   }
 
-  Widget _buildGroupedItem(BuildContext context, int index,
-      List<SectionGroup> groups, String query) {
+  Widget _buildGroupedItem(
+    BuildContext context,
+    int index,
+    List<SectionGroup> groups,
+    String query,
+  ) {
     int currentIndex = 0;
     for (final group in groups) {
       // Header index
@@ -420,8 +432,10 @@ class _SearchScreenState extends State<SearchScreen> {
       if (item.surahNumber != null) {
         final ayahs = await QuranService.getAyahs(item.surahNumber!);
         if (mounted) {
-          final surahName =
-              item.title.split(' - آية').first.replaceFirst('سورة ', '');
+          final surahName = item.title
+              .split(' - آية')
+              .first
+              .replaceFirst('سورة ', '');
           Navigator.push(
             context,
             MaterialPageRoute(
@@ -442,7 +456,7 @@ class _SearchScreenState extends State<SearchScreen> {
     } else {
       final isImamAli =
           (item.category != null && item.category!.contains('علي')) ||
-              item.id.startsWith('imam_ali');
+          item.id.startsWith('imam_ali');
       Navigator.push(
         context,
         MaterialPageRoute(
@@ -500,8 +514,10 @@ class _SearchTextField extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
         ),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 12,
+        ),
       ),
       onChanged: onChanged,
     );
@@ -566,10 +582,7 @@ class _EmptyState extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             'جرب البحث بكلمات مختلفة',
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[400],
-            ),
+            style: TextStyle(fontSize: 14, color: Colors.grey[400]),
           ),
         ],
       ),

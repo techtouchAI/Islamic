@@ -12,17 +12,19 @@ void main() {
   };
 
   group('next prayer for the home card', () {
-    test('skips imsak outside Ramadan even when it is the nearest raw time',
-        () {
-      expect(
-        nextPrayerKeyForHome(
-          localCivilTimes: morningTimes,
-          now: DateTime(2026, 8, 23, 2),
-          isRamadan: false,
-        ),
-        'fajr',
-      );
-    });
+    test(
+      'skips imsak outside Ramadan even when it is the nearest raw time',
+      () {
+        expect(
+          nextPrayerKeyForHome(
+            localCivilTimes: morningTimes,
+            now: DateTime(2026, 8, 23, 2),
+            isRamadan: false,
+          ),
+          'fajr',
+        );
+      },
+    );
 
     test('allows imsak during Ramadan and keeps its Arabic label', () {
       expect(

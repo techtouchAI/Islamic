@@ -19,8 +19,9 @@ void main() {
     DataManager.setDB(<String, dynamic>{'content': <String, dynamic>{}});
   });
 
-  testWidgets('prayer card remains within a narrow phone viewport',
-      (tester) async {
+  testWidgets('prayer card remains within a narrow phone viewport', (
+    tester,
+  ) async {
     await tester.binding.setSurfaceSize(const Size(320, 720));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     final settingsProvider = SettingsProvider();

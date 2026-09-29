@@ -39,18 +39,18 @@ class LazyLoadFooter extends StatelessWidget {
               ],
             )
           : hasMore
-              ? TextButton.icon(
-                  onPressed: onLoadMore,
-                  icon: const Icon(Icons.expand_more, size: 18),
-                  label: const Text('عرض المزيد من النتائج'),
-                )
-              : Text(
-                  'تم تحميل جميع النتائج ($loadedCount)',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: Colors.grey[600],
-                  ),
-                  textAlign: TextAlign.center,
-                ),
+          ? TextButton.icon(
+              onPressed: onLoadMore,
+              icon: const Icon(Icons.expand_more, size: 18),
+              label: const Text('عرض المزيد من النتائج'),
+            )
+          : Text(
+              'تم تحميل جميع النتائج ($loadedCount)',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: Colors.grey[600],
+              ),
+              textAlign: TextAlign.center,
+            ),
     );
   }
 }

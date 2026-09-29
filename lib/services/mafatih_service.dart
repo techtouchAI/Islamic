@@ -1,5 +1,6 @@
 import 'package:sqflite/sqflite.dart';
 import 'package:flutter/foundation.dart';
+
 import 'bundled_database.dart';
 import '../models/mafatih_category.dart';
 import '../models/mafatih_article.dart';
@@ -73,15 +74,12 @@ class MafatihService {
         return 0;
       }
       final String idStr = categoryId.toString();
-      final count = Sqflite.firstIntValue(await _db!.rawQuery(
-        'SELECT COUNT(*) FROM articles WHERE group_id = ? OR group_id LIKE ? OR group_id LIKE ? OR group_id LIKE ?',
-        [
-          idStr,
-          '$idStr@@%',
-          '%@@$idStr',
-          '%@@$idStr@@%',
-        ],
-      ));
+      final count = Sqflite.firstIntValue(
+        await _db!.rawQuery(
+          'SELECT COUNT(*) FROM articles WHERE group_id = ? OR group_id LIKE ? OR group_id LIKE ? OR group_id LIKE ?',
+          [idStr, '$idStr@@%', '%@@$idStr', '%@@$idStr@@%'],
+        ),
+      );
       return count ?? 0;
     } catch (e) {
       debugPrint("MafatihService getCategoryArticlesCount Error: $e");
@@ -109,13 +107,14 @@ class MafatihService {
           '%${ArabicNormalizer.escapeLike(ArabicNormalizer.normalize(query))}%';
       final maps = await _db!.query(
         'articles',
-        where: r"title LIKE ? ESCAPE '\' OR text LIKE ? ESCAPE '\' "
+        where:
+            r"title LIKE ? ESCAPE '\' OR text LIKE ? ESCAPE '\' "
             r"OR title LIKE ? ESCAPE '\' OR text LIKE ? ESCAPE '\'",
         whereArgs: [
           rawPattern,
           rawPattern,
           normalizedPattern,
-          normalizedPattern
+          normalizedPattern,
         ],
         orderBy: 'id ASC',
         limit: limit,
@@ -143,14 +142,8 @@ class MafatihService {
       // group_id can be exact '10', start with '10@@', end with '@@10', or contain '@@10@@'
       final maps = await _db!.query(
         'articles',
-        where:
-            'group_id = ? OR group_id LIKE ? OR group_id LIKE ? OR group_id LIKE ?',
-        whereArgs: [
-          idStr,
-          '$idStr@@%',
-          '%@@$idStr',
-          '%@@$idStr@@%',
-        ],
+        where: 'group_id = ? OR group_id LIKE ? OR group_id LIKE ? OR group_id LIKE ?',
+        whereArgs: [idStr, '$idStr@@%', '%@@$idStr', '%@@$idStr@@%'],
       );
       return maps.map((m) => MafatihArticle.fromMap(m)).toList();
     } catch (e) {

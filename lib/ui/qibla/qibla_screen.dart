@@ -15,8 +15,9 @@ class QiblaScreen extends StatefulWidget {
 }
 
 class _QiblaScreenState extends State<QiblaScreen> {
-  static const EventChannel _qiblaChannel =
-      EventChannel('com.techtouchai.islamic/qibla');
+  static const EventChannel _qiblaChannel = EventChannel(
+    'com.techtouchai.islamic/qibla',
+  );
   double _qiblaDirection = 0.0;
   bool _hasLocation = false;
   double _currentHeading = 0.0;
@@ -113,7 +114,8 @@ class _QiblaScreenState extends State<QiblaScreen> {
         return AlertDialog(
           title: Text("صلاحية الموقع مطلوبة"),
           content: Text(
-              "تطبيق الذاكرين يحتاج إلى صلاحية الوصول إلى الموقع لتحديد اتجاه القبلة. يرجى تفعيل الصلاحية من إعدادات التطبيق."),
+            "تطبيق الذاكرين يحتاج إلى صلاحية الوصول إلى الموقع لتحديد اتجاه القبلة. يرجى تفعيل الصلاحية من إعدادات التطبيق.",
+          ),
           actions: <Widget>[
             TextButton(
               child: Text("إلغاء"),
@@ -153,7 +155,8 @@ class _QiblaScreenState extends State<QiblaScreen> {
       return Scaffold(body: Center(child: CircularProgressIndicator()));
     if (!_hasSensors)
       return Scaffold(
-          body: Center(child: Text("جهازك لا يدعم مستشعر البوصلة")));
+        body: Center(child: Text("جهازك لا يدعم مستشعر البوصلة")),
+      );
 
     return Scaffold(
       extendBodyBehindAppBar: true,
@@ -170,10 +173,7 @@ class _QiblaScreenState extends State<QiblaScreen> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF4DE1FF),
-              Color(0xFF177AFB),
-            ],
+            colors: [Color(0xFF4DE1FF), Color(0xFF177AFB)],
           ),
         ),
         child: Column(
@@ -189,14 +189,19 @@ class _QiblaScreenState extends State<QiblaScreen> {
                     children: [
                       Transform.rotate(
                         angle: (_currentHeading * (math.pi / 180) * -1),
-                        child: Image.asset('assets/images/qibla_compass.png',
-                            width: 340),
+                        child: Image.asset(
+                          'assets/images/qibla_compass.png',
+                          width: 340,
+                        ),
                       ),
                       Transform.rotate(
-                        angle: ((_qiblaDirection - _currentHeading) *
+                        angle:
+                            ((_qiblaDirection - _currentHeading) *
                             (math.pi / 180)),
-                        child: Image.asset('assets/images/qibla_needle.png',
-                            width: 340),
+                        child: Image.asset(
+                          'assets/images/qibla_needle.png',
+                          width: 340,
+                        ),
                       ),
                     ],
                   ),
@@ -204,9 +209,10 @@ class _QiblaScreenState extends State<QiblaScreen> {
                   Text(
                     "${_currentHeading.toStringAsFixed(1)}°",
                     style: TextStyle(
-                        fontSize: 40,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white),
+                      fontSize: 40,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
                   ),
                   Text(
                     _getDirectionText(_currentHeading),

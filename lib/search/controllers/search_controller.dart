@@ -1,5 +1,7 @@
 import 'dart:async';
+
 import 'package:flutter/foundation.dart';
+
 import '../models/search_models.dart';
 import '../repositories/search_repository.dart';
 import '../../services/search_engine.dart';
@@ -35,11 +37,12 @@ class SearchController extends ChangeNotifier {
     required List<ContentItem> allItems,
     required List<String> availableSections,
     SearchRepository? repository,
-  })  : _allItems = allItems,
-        _availableSections = availableSections,
-        _repository = repository ?? HybridSearchRepository() {
-    SearchEngine.instance.isIndexingNotifier
-        .addListener(_onIndexingStateChanged);
+  }) : _allItems = allItems,
+       _availableSections = availableSections,
+       _repository = repository ?? HybridSearchRepository() {
+    SearchEngine.instance.isIndexingNotifier.addListener(
+      _onIndexingStateChanged,
+    );
     _indexing = SearchEngine.instance.isIndexingNotifier.value;
   }
 
@@ -50,8 +53,9 @@ class SearchController extends ChangeNotifier {
 
   @override
   void dispose() {
-    SearchEngine.instance.isIndexingNotifier
-        .removeListener(_onIndexingStateChanged);
+    SearchEngine.instance.isIndexingNotifier.removeListener(
+      _onIndexingStateChanged,
+    );
     _debounceTimer?.cancel();
     _disposed = true;
     _requestGeneration++;
@@ -85,8 +89,7 @@ class SearchController extends ChangeNotifier {
     final current = _state;
     if (current is SearchError) return current.message;
     if (current is SearchSuccess && current.failedSources.isNotEmpty) {
-      final names =
-          current.failedSources.map(sourceDisplayName).join('، ');
+      final names = current.failedSources.map(sourceDisplayName).join('، ');
       return 'تعذر البحث في: $names. النتائج جزئية.';
     }
     return null;

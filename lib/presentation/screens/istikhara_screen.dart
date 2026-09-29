@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+
 import 'dart:math';
+
 import 'package:share_plus/share_plus.dart';
 import 'package:flutter/services.dart';
+
 import '../../data/data_manager.dart';
 import '../../services/quran_service.dart';
 
@@ -153,18 +156,20 @@ class _IstikharaScreenState extends State<IstikharaScreen>
 
   void _copyResult() {
     final textToCopy = 'نتيجة الخيرة:\n$_resultText\n\n$_descriptionText';
-    Clipboard.setData(ClipboardData(text: textToCopy)).then((_) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('تم النسخ إلى الحافظة')),
-      );
-    }).catchError((error) {
-      debugPrint("Error copying: $error");
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('حدث خطأ أثناء النسخ')),
-      );
-    });
+    Clipboard.setData(ClipboardData(text: textToCopy))
+        .then((_) {
+          if (!mounted) return;
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('تم النسخ إلى الحافظة')));
+        })
+        .catchError((error) {
+          debugPrint("Error copying: $error");
+          if (!mounted) return;
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('حدث خطأ أثناء النسخ')));
+        });
   }
 
   void _shareResult() async {
@@ -175,9 +180,9 @@ class _IstikharaScreenState extends State<IstikharaScreen>
     } catch (e) {
       debugPrint("Error sharing: $e");
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('حدث خطأ أثناء المشاركة')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('حدث خطأ أثناء المشاركة')));
     }
   }
 
@@ -363,19 +368,12 @@ class _IstikharaScreenState extends State<IstikharaScreen>
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(
-                Icons.error_outline,
-                color: Colors.red,
-                size: 64,
-              ),
+              const Icon(Icons.error_outline, color: Colors.red, size: 64),
               const SizedBox(height: 16),
               Text(
                 _errorMessage!,
                 textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 18,
-                  color: Colors.red,
-                ),
+                style: const TextStyle(fontSize: 18, color: Colors.red),
               ),
               const SizedBox(height: 24),
               ElevatedButton.icon(
@@ -425,11 +423,13 @@ class _IstikharaScreenState extends State<IstikharaScreen>
     // ✅ حساب الآيات مرة واحدة فقط عند تغير البيانات
     String formattedVerses = '';
     if (_verses.isNotEmpty) {
-      formattedVerses = _verses.map((v) {
-        final text = v['ar_text'].toString().trim();
-        final num = v['anum'];
-        return '$text ﴿$num﴾';
-      }).join(' ');
+      formattedVerses = _verses
+          .map((v) {
+            final text = v['ar_text'].toString().trim();
+            final num = v['anum'];
+            return '$text ﴿$num﴾';
+          })
+          .join(' ');
     }
 
     return Column(

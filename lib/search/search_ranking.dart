@@ -28,8 +28,10 @@ class SearchRanking {
     if (content.contains(normalizedQuery)) score += 10;
 
     // Word-level signals: identical rules for every source.
-    final words =
-        normalizedQuery.split(' ').where((w) => w.isNotEmpty).toList();
+    final words = normalizedQuery
+        .split(' ')
+        .where((w) => w.isNotEmpty)
+        .toList();
     for (final word in words) {
       if (title == word) {
         score += 20;
@@ -49,9 +51,14 @@ class SearchRanking {
   /// Deterministic merged ordering: relevance first, then stable tie-breaks
   /// (title -> section -> id) so pagination windows never reshuffle.
   static int compareNormalized(
-      ContentItem a, ContentItem b, String normalizedQuery) {
-    final difference =
-        score(b, normalizedQuery).compareTo(score(a, normalizedQuery));
+    ContentItem a,
+    ContentItem b,
+    String normalizedQuery,
+  ) {
+    final difference = score(
+      b,
+      normalizedQuery,
+    ).compareTo(score(a, normalizedQuery));
     if (difference != 0) return difference;
     final title = a.title.compareTo(b.title);
     if (title != 0) return title;

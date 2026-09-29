@@ -13,11 +13,11 @@ void main() {
   );
 
   Map<String, dynamic> ayah(int sid, int anum) => {
-        'surah_number': sid,
-        'ayah_number': anum,
-        'surah_name': 'الفاتحة',
-        'ayah_text': 'بسم الله الرحمن الرحيم',
-      };
+    'surah_number': sid,
+    'ayah_number': anum,
+    'surah_name': 'الفاتحة',
+    'ayah_text': 'بسم الله الرحمن الرحيم',
+  };
 
   test('no matches resolves to SearchEmpty', () async {
     final repo = HybridSearchRepository(
@@ -34,47 +34,53 @@ void main() {
     expect(state, isA<SearchEmpty>());
   });
 
-  test('all sources failing resolves to SearchError with failed sources',
-      () async {
-    final repo = HybridSearchRepository(
-      searchQuran: (query, limit, offset) async => throw StateError('db'),
-      searchMafatih: (query, limit, offset) async => throw StateError('db'),
-      searchContent: (items, query, limit, offset) async =>
-          throw StateError('boom'),
-    );
-    final state = await repo.search(
-      query: 'دعاء',
-      category: 'all',
-      contentItems: [dua],
-    );
-    expect(state, isA<SearchError>());
-    final error = state as SearchError;
-    expect(
-      error.failedSources,
-      containsAll(
-        [SearchSource.quran, SearchSource.mafatih, SearchSource.content],
-      ),
-    );
-  });
+  test(
+    'all sources failing resolves to SearchError with failed sources',
+    () async {
+      final repo = HybridSearchRepository(
+        searchQuran: (query, limit, offset) async => throw StateError('db'),
+        searchMafatih: (query, limit, offset) async => throw StateError('db'),
+        searchContent: (items, query, limit, offset) async =>
+            throw StateError('boom'),
+      );
+      final state = await repo.search(
+        query: 'دعاء',
+        category: 'all',
+        contentItems: [dua],
+      );
+      expect(state, isA<SearchError>());
+      final error = state as SearchError;
+      expect(
+        error.failedSources,
+        containsAll([
+          SearchSource.quran,
+          SearchSource.mafatih,
+          SearchSource.content,
+        ]),
+      );
+    },
+  );
 
-  test('partial failure keeps successful results and reports the source',
-      () async {
-    final repo = HybridSearchRepository(
-      searchQuran: (query, limit, offset) async => throw StateError('db'),
-      searchMafatih: (query, limit, offset) async => [],
-      searchContent: (items, query, limit, offset) async =>
-          const ContentSearchPage(items: [dua], totalMatches: 1),
-    );
-    final state = await repo.search(
-      query: 'دعاء',
-      category: 'all',
-      contentItems: [dua],
-    );
-    expect(state, isA<SearchSuccess>());
-    final success = state as SearchSuccess;
-    expect(success.items.single.id, 'dua-1');
-    expect(success.failedSources, contains(SearchSource.quran));
-  });
+  test(
+    'partial failure keeps successful results and reports the source',
+    () async {
+      final repo = HybridSearchRepository(
+        searchQuran: (query, limit, offset) async => throw StateError('db'),
+        searchMafatih: (query, limit, offset) async => [],
+        searchContent: (items, query, limit, offset) async =>
+            const ContentSearchPage(items: [dua], totalMatches: 1),
+      );
+      final state = await repo.search(
+        query: 'دعاء',
+        category: 'all',
+        contentItems: [dua],
+      );
+      expect(state, isA<SearchSuccess>());
+      final success = state as SearchSuccess;
+      expect(success.items.single.id, 'dua-1');
+      expect(success.failedSources, contains(SearchSource.quran));
+    },
+  );
 
   test('loadMore fetches the next SQL batch through LIMIT/OFFSET', () async {
     final requestedCursors = <String>[];
@@ -87,7 +93,8 @@ void main() {
             ? <Map<String, dynamic>>[]
             : all.sublist(
                 offset,
-                offset + limit > all.length ? all.length : offset + limit);
+                offset + limit > all.length ? all.length : offset + limit,
+              );
         return window;
       },
       searchMafatih: (query, limit, offset) async => [],
@@ -118,24 +125,26 @@ void main() {
     expect(requestedCursors.length, 2);
   });
 
-  test('web-style SQLite absence (empty sources) falls back gracefully',
-      () async {
-    // Mirrors the kIsWeb behavior of QuranService/MafatihService: sources
-    // return empty batches instead of throwing native SQL errors.
-    final repo = HybridSearchRepository(
-      searchQuran: (query, limit, offset) async => [],
-      searchMafatih: (query, limit, offset) async => [],
-      searchContent: (items, query, limit, offset) async =>
-          const ContentSearchPage(items: [dua], totalMatches: 1),
-    );
-    final state = await repo.search(
-      query: 'دعاء',
-      category: 'all',
-      contentItems: [dua],
-    );
-    expect(state, isA<SearchSuccess>());
-    expect((state as SearchSuccess).failedSources, isEmpty);
-  });
+  test(
+    'web-style SQLite absence (empty sources) falls back gracefully',
+    () async {
+      // Mirrors the kIsWeb behavior of QuranService/MafatihService: sources
+      // return empty batches instead of throwing native SQL errors.
+      final repo = HybridSearchRepository(
+        searchQuran: (query, limit, offset) async => [],
+        searchMafatih: (query, limit, offset) async => [],
+        searchContent: (items, query, limit, offset) async =>
+            const ContentSearchPage(items: [dua], totalMatches: 1),
+      );
+      final state = await repo.search(
+        query: 'دعاء',
+        category: 'all',
+        contentItems: [dua],
+      );
+      expect(state, isA<SearchSuccess>());
+      expect((state as SearchSuccess).failedSources, isEmpty);
+    },
+  );
 
   test('reset discards the active session', () async {
     final repo = HybridSearchRepository(

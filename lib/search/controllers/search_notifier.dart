@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+
 import 'search_controller.dart';
 import '../models/search_models.dart';
 import '../repositories/search_repository.dart';

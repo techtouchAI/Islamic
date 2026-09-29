@@ -31,10 +31,12 @@ class _FakeSearchRepository implements SearchRepository {
   }
 
   @override
-  Future<SearchState> loadMore(
-      {required List<ContentItem> contentItems}) async {
+  Future<SearchState> loadMore({
+    required List<ContentItem> contentItems,
+  }) async {
     loadMoreCalls++;
-    final state = onLoadMore?.call(loadMoreCalls) ??
+    final state =
+        onLoadMore?.call(loadMoreCalls) ??
         SearchSuccess(items: const [], hasMore: false);
     _hasMore = state is SearchSuccess && state.hasMore;
     return state;
@@ -46,20 +48,22 @@ class _FakeSearchRepository implements SearchRepository {
 
 void main() {
   ContentItem item(String id, {String section = 'dua'}) => ContentItem(
-        id: id,
-        title: 'ذكر $id',
-        subtitle: '',
-        content: 'محتوى $id',
-        sectionId: section,
-        sectionName: 'الأدعية',
-        category: 'dua',
-        normalizedTitle: 'ذكر $id',
-        normalizedContent: 'محتوى $id',
-        normalizedCategory: 'dua',
-      );
+    id: id,
+    title: 'ذكر $id',
+    subtitle: '',
+    content: 'محتوى $id',
+    sectionId: section,
+    sectionName: 'الأدعية',
+    category: 'dua',
+    normalizedTitle: 'ذكر $id',
+    normalizedContent: 'محتوى $id',
+    normalizedCategory: 'dua',
+  );
 
   Future<void> pumpScreen(
-      WidgetTester tester, SearchRepository repository) async {
+    WidgetTester tester,
+    SearchRepository repository,
+  ) async {
     await tester.pumpWidget(
       MaterialApp(
         home: Directionality(
@@ -89,8 +93,9 @@ void main() {
     await tester.pumpWidget(const SizedBox());
   });
 
-  testWidgets('renders success results with the loaded-count header',
-      (tester) async {
+  testWidgets('renders success results with the loaded-count header', (
+    tester,
+  ) async {
     final repo = _FakeSearchRepository()
       ..onSearch = (_) =>
           SearchSuccess(items: [item('a'), item('b')], hasMore: false);
@@ -105,14 +110,15 @@ void main() {
     await tester.pumpWidget(const SizedBox());
   });
 
-  testWidgets('partial failure keeps results and offers a Retry banner',
-      (tester) async {
+  testWidgets('partial failure keeps results and offers a Retry banner', (
+    tester,
+  ) async {
     final repo = _FakeSearchRepository()
       ..onSearch = (_) => SearchSuccess(
-            items: [item('a')],
-            hasMore: false,
-            failedSources: {SearchSource.quran},
-          );
+        items: [item('a')],
+        hasMore: false,
+        failedSources: {SearchSource.quran},
+      );
 
     await pumpScreen(tester, repo);
     await runQuery(tester, 'ذكر');
@@ -125,12 +131,14 @@ void main() {
     await tester.pumpWidget(const SizedBox());
   });
 
-  testWidgets('full failure shows the error state and Retry recovers',
-      (tester) async {
+  testWidgets('full failure shows the error state and Retry recovers', (
+    tester,
+  ) async {
     final repo = _FakeSearchRepository()
       ..onSearch = (call) => call == 1
           ? const SearchError(
-              message: 'تعذر إكمال البحث. يرجى المحاولة مجددًا.')
+              message: 'تعذر إكمال البحث. يرجى المحاولة مجددًا.',
+            )
           : SearchSuccess(items: [item('a')], hasMore: false);
 
     await pumpScreen(tester, repo);
@@ -150,10 +158,10 @@ void main() {
     await tester.pumpWidget(const SizedBox());
   });
 
-  testWidgets('shows the empty state for a query without matches',
-      (tester) async {
-    final repo = _FakeSearchRepository()
-      ..onSearch = (_) => const SearchEmpty();
+  testWidgets('shows the empty state for a query without matches', (
+    tester,
+  ) async {
+    final repo = _FakeSearchRepository()..onSearch = (_) => const SearchEmpty();
 
     await pumpScreen(tester, repo);
     await runQuery(tester, 'غير موجود');
@@ -164,20 +172,22 @@ void main() {
     await tester.pumpWidget(const SizedBox());
   });
 
-  testWidgets('tapping the lazy-load footer fetches the next batch',
-      (tester) async {
+  testWidgets('tapping the lazy-load footer fetches the next batch', (
+    tester,
+  ) async {
     final repo = _FakeSearchRepository()
-      ..onSearch = (_) => SearchSuccess(
-            items: [for (var i = 1; i <= 3; i++) item('b1-$i')],
-            hasMore: true,
-          )
-      ..onLoadMore = (_) => SearchSuccess(
-            items: [
-              for (var i = 1; i <= 3; i++) item('b1-$i'),
-              for (var i = 1; i <= 3; i++) item('b2-$i'),
-            ],
-            hasMore: false,
-          );
+      ..onSearch = (_) =>
+          SearchSuccess(
+              items: [for (var i = 1; i <= 3; i++) item('b1-$i')],
+              hasMore: true,
+            )
+            ..onLoadMore = (_) => SearchSuccess(
+              items: [
+                for (var i = 1; i <= 3; i++) item('b1-$i'),
+                for (var i = 1; i <= 3; i++) item('b2-$i'),
+              ],
+              hasMore: false,
+            );
 
     await pumpScreen(tester, repo);
     await runQuery(tester, 'ذكر');
@@ -197,27 +207,32 @@ void main() {
     await tester.pumpWidget(const SizedBox());
   });
 
-  testWidgets('scrolling to the bottom auto-fetches the next batch',
-      (tester) async {
+  testWidgets('scrolling to the bottom auto-fetches the next batch', (
+    tester,
+  ) async {
     final repo = _FakeSearchRepository()
-      ..onSearch = (_) => SearchSuccess(
-            items: [for (var i = 1; i <= 20; i++) item('b1-$i')],
-            hasMore: true,
-          )
-      ..onLoadMore = (_) => SearchSuccess(
-            items: [
-              for (var i = 1; i <= 20; i++) item('b1-$i'),
-              for (var i = 1; i <= 20; i++) item('b2-$i'),
-            ],
-            hasMore: false,
-          );
+      ..onSearch = (_) =>
+          SearchSuccess(
+              items: [for (var i = 1; i <= 20; i++) item('b1-$i')],
+              hasMore: true,
+            )
+            ..onLoadMore = (_) => SearchSuccess(
+              items: [
+                for (var i = 1; i <= 20; i++) item('b1-$i'),
+                for (var i = 1; i <= 20; i++) item('b2-$i'),
+              ],
+              hasMore: false,
+            );
 
     await pumpScreen(tester, repo);
     await runQuery(tester, 'ذكر');
     expect(find.textContaining('20+'), findsOneWidget);
 
     // Long list: dragging past the threshold triggers the scroll listener.
-    await tester.drag(find.byType(SearchResultTile).first, const Offset(0, -2000));
+    await tester.drag(
+      find.byType(SearchResultTile).first,
+      const Offset(0, -2000),
+    );
     await tester.pump();
     await tester.pump();
 

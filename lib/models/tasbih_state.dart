@@ -75,16 +75,19 @@ class TasbihZahraState {
     int? completedCycles,
     int? lifetimeTotal,
   }) {
-    final nextStage =
-        (stageIndex ?? this.stageIndex).clamp(0, stages.length - 1).toInt();
+    final nextStage = (stageIndex ?? this.stageIndex)
+        .clamp(0, stages.length - 1)
+        .toInt();
     final nextTarget = stages[nextStage].target;
     return TasbihZahraState(
       stageIndex: nextStage,
       count: (count ?? this.count).clamp(0, nextTarget - 1).toInt(),
-      completedCycles:
-          (completedCycles ?? this.completedCycles).clamp(0, 1 << 31).toInt(),
-      lifetimeTotal:
-          (lifetimeTotal ?? this.lifetimeTotal).clamp(0, 1 << 31).toInt(),
+      completedCycles: (completedCycles ?? this.completedCycles)
+          .clamp(0, 1 << 31)
+          .toInt(),
+      lifetimeTotal: (lifetimeTotal ?? this.lifetimeTotal)
+          .clamp(0, 1 << 31)
+          .toInt(),
     );
   }
 }

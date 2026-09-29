@@ -23,69 +23,77 @@ void main() {
     sectionName: 'الأعمال',
   );
 
-  test('late results from another category cannot replace current results',
-      () async {
-    final oldRequest = Completer<ContentSearchPage>();
-    final newRequest = Completer<ContentSearchPage>();
-    final started = Completer<void>();
-    final repository = HybridSearchRepository(
-      searchQuran: (query, limit, offset) async => [],
-      searchMafatih: (query, limit, offset) async => [],
-      searchContent: (items, query, limit, offset) {
-        if (items.length == 2) {
-          if (!started.isCompleted) started.complete();
-          return oldRequest.future;
-        }
-        return newRequest.future;
-      },
-    );
-    final controller = app.SearchController(
-      allItems: [dua, amal],
-      availableSections: ['dua', 'amal'],
-      repository: repository,
-    );
-    addTearDown(controller.dispose);
+  test(
+    'late results from another category cannot replace current results',
+    () async {
+      final oldRequest = Completer<ContentSearchPage>();
+      final newRequest = Completer<ContentSearchPage>();
+      final started = Completer<void>();
+      final repository = HybridSearchRepository(
+        searchQuran: (query, limit, offset) async => [],
+        searchMafatih: (query, limit, offset) async => [],
+        searchContent: (items, query, limit, offset) {
+          if (items.length == 2) {
+            if (!started.isCompleted) started.complete();
+            return oldRequest.future;
+          }
+          return newRequest.future;
+        },
+      );
+      final controller = app.SearchController(
+        allItems: [dua, amal],
+        availableSections: ['dua', 'amal'],
+        repository: repository,
+      );
+      addTearDown(controller.dispose);
 
-    controller.updateQuery('دعاء');
-    await started.future.timeout(const Duration(seconds: 2));
-    controller.selectCategory('dua');
-    newRequest.complete(const ContentSearchPage(items: [dua], totalMatches: 1));
-    await Future<void>.delayed(const Duration(milliseconds: 10));
-    expect(controller.filteredItems.map((e) => e.id), ['dua-1']);
+      controller.updateQuery('دعاء');
+      await started.future.timeout(const Duration(seconds: 2));
+      controller.selectCategory('dua');
+      newRequest.complete(
+        const ContentSearchPage(items: [dua], totalMatches: 1),
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+      expect(controller.filteredItems.map((e) => e.id), ['dua-1']);
 
-    oldRequest.complete(const ContentSearchPage(items: [amal], totalMatches: 1));
-    await Future<void>.delayed(const Duration(milliseconds: 10));
-    expect(controller.filteredItems.map((e) => e.id), ['dua-1']);
-    expect(controller.selectedCategory, 'dua');
-  });
+      oldRequest.complete(
+        const ContentSearchPage(items: [amal], totalMatches: 1),
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+      expect(controller.filteredItems.map((e) => e.id), ['dua-1']);
+      expect(controller.selectedCategory, 'dua');
+    },
+  );
 
-  test('a failed source retains other results and reports partial coverage',
-      () async {
-    final repository = HybridSearchRepository(
-      searchQuran: (query, limit, offset) async => throw StateError('database unavailable'),
-      searchMafatih: (query, limit, offset) async => [],
-      searchContent: (items, query, limit, offset) async =>
-          const ContentSearchPage(items: [dua], totalMatches: 1),
-    );
-    final controller = app.SearchController(
-      allItems: [dua],
-      availableSections: ['dua'],
-      repository: repository,
-    );
-    addTearDown(controller.dispose);
-    controller.updateQuery('دعاء');
-    await Future<void>.delayed(const Duration(milliseconds: 450));
-    expect(controller.filteredItems.map((item) => item.id), ['dua-1']);
-    expect(controller.warning, contains('القرآن'));
-    expect(controller.state, isA<SearchSuccess>());
-    expect(
-      (controller.state as SearchSuccess).failedSources,
-      contains(SearchSource.quran),
-    );
-  });
+  test(
+    'a failed source retains other results and reports partial coverage',
+    () async {
+      final repository = HybridSearchRepository(
+        searchQuran: (query, limit, offset) async =>
+            throw StateError('database unavailable'),
+        searchMafatih: (query, limit, offset) async => [],
+        searchContent: (items, query, limit, offset) async =>
+            const ContentSearchPage(items: [dua], totalMatches: 1),
+      );
+      final controller = app.SearchController(
+        allItems: [dua],
+        availableSections: ['dua'],
+        repository: repository,
+      );
+      addTearDown(controller.dispose);
+      controller.updateQuery('دعاء');
+      await Future<void>.delayed(const Duration(milliseconds: 450));
+      expect(controller.filteredItems.map((item) => item.id), ['dua-1']);
+      expect(controller.warning, contains('القرآن'));
+      expect(controller.state, isA<SearchSuccess>());
+      expect(
+        (controller.state as SearchSuccess).failedSources,
+        contains(SearchSource.quran),
+      );
+    },
+  );
 
-  test('every source failing yields SearchError and retry recovers',
-      () async {
+  test('every source failing yields SearchError and retry recovers', () async {
     var shouldFail = true;
     final repository = HybridSearchRepository(
       searchQuran: (query, limit, offset) async => [],
@@ -116,8 +124,7 @@ void main() {
     expect(controller.warning, isNull);
   });
 
-  test('loadMore appends the next batch and keeps unified ordering',
-      () async {
+  test('loadMore appends the next batch and keeps unified ordering', () async {
     const batch1 = [
       ContentItem(
         id: 'a-1',

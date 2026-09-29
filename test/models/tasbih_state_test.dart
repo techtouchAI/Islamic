@@ -61,20 +61,21 @@ void main() {
     });
 
     test(
-        'reset clears current stage without deleting completed or lifetime data',
-        () {
-      const state = TasbihZahraState(
-        stageIndex: 1,
-        count: 12,
-        completedCycles: 3,
-        lifetimeTotal: 312,
-      );
-      final reset = state.resetStage();
+      'reset clears current stage without deleting completed or lifetime data',
+      () {
+        const state = TasbihZahraState(
+          stageIndex: 1,
+          count: 12,
+          completedCycles: 3,
+          lifetimeTotal: 312,
+        );
+        final reset = state.resetStage();
 
-      expect(reset.stageIndex, 1);
-      expect(reset.count, 0);
-      expect(reset.completedCycles, 3);
-      expect(reset.lifetimeTotal, 312);
-    });
+        expect(reset.stageIndex, 1);
+        expect(reset.count, 0);
+        expect(reset.completedCycles, 3);
+        expect(reset.lifetimeTotal, 312);
+      },
+    );
   });
 }

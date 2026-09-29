@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../data/data_manager.dart';
 import '../widgets/app_drawer.dart'; // For CountBadge
 import '../dynamic_list/dynamic_list_section.dart'; // For DynamicListSection
@@ -32,9 +33,8 @@ class TabbedSection extends StatelessWidget {
                   : const Color(0xFFFDFBF7),
               border: Border(
                 bottom: BorderSide(
-                  color: Theme.of(
-                    context,
-                  ).colorScheme.primary.withValues(alpha: 0.2),
+                  color: Theme.of(context).colorScheme.primary
+                      .withValues(alpha: 0.2),
                 ),
               ),
             ),

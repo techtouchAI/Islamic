@@ -13,10 +13,10 @@ enum SearchSource { quran, mafatih, content }
 
 /// Human-readable name used in warnings/retry messages.
 String sourceDisplayName(SearchSource source) => switch (source) {
-      SearchSource.quran => 'القرآن',
-      SearchSource.mafatih => 'مفاتيح الجنان',
-      SearchSource.content => 'المحتوى المحلي',
-    };
+  SearchSource.quran => 'القرآن',
+  SearchSource.mafatih => 'مفاتيح الجنان',
+  SearchSource.content => 'المحتوى المحلي',
+};
 
 /// Strict search state contract. Every repository call resolves to exactly
 /// one of these states — consumers must render them consistently:
@@ -58,10 +58,7 @@ final class SearchError extends SearchState {
   final String message;
   final Set<SearchSource> failedSources;
 
-  const SearchError({
-    required this.message,
-    this.failedSources = const {},
-  });
+  const SearchError({required this.message, this.failedSources = const {}});
 }
 
 /// One `LIMIT`/`OFFSET` window of JSON (in-memory) search results.
@@ -73,11 +70,21 @@ class ContentSearchPage {
 }
 
 typedef QuranPageLoader = Future<List<Map<String, dynamic>>> Function(
-    String query, int limit, int offset);
+  String query,
+  int limit,
+  int offset,
+);
 typedef MafatihPageLoader = Future<List<MafatihArticle>> Function(
-    String query, int limit, int offset);
+  String query,
+  int limit,
+  int offset,
+);
 typedef ContentPageLoader = Future<ContentSearchPage> Function(
-    List<ContentItem> items, String query, int limit, int offset);
+  List<ContentItem> items,
+  String query,
+  int limit,
+  int offset,
+);
 
 /// Strict interface every search consumer depends on.
 abstract class SearchRepository {
@@ -120,11 +127,15 @@ class HybridSearchRepository extends SearchRepository {
     MafatihPageLoader? searchMafatih,
     ContentPageLoader? searchContent,
     this.batchSize = defaultBatchSize,
-  })  : _searchQuran =
-            searchQuran ?? ((q, l, o) => QuranService.searchVersesPaged(q, limit: l, offset: o)),
-        _searchMafatih = searchMafatih ??
-            ((q, l, o) => MafatihService.searchArticlesPaged(q, limit: l, offset: o)),
-        _searchContent = searchContent ?? searchContentInIsolate;
+  }) : _searchQuran =
+           searchQuran ??
+           ((q, l, o) =>
+               QuranService.searchVersesPaged(q, limit: l, offset: o)),
+       _searchMafatih =
+           searchMafatih ??
+           ((q, l, o) =>
+               MafatihService.searchArticlesPaged(q, limit: l, offset: o)),
+       _searchContent = searchContent ?? searchContentInIsolate;
 
   // ─── Session state ───
   String _query = '';
@@ -176,7 +187,8 @@ class HybridSearchRepository extends SearchRepository {
 
     // Phase 6: SQLite sources are disabled on web — graceful empty fallback,
     // never a native SQL error.
-    final bool wantQuran = !kIsWeb && (category == 'all' || category == 'quran');
+    final bool wantQuran =
+        !kIsWeb && (category == 'all' || category == 'quran');
     final bool wantMafatih =
         !kIsWeb && (category == 'all' || category == 'mafatih');
     _quranDone = !wantQuran;
@@ -199,8 +211,9 @@ class HybridSearchRepository extends SearchRepository {
   }
 
   @override
-  Future<SearchState> loadMore(
-      {required List<ContentItem> contentItems}) async {
+  Future<SearchState> loadMore({
+    required List<ContentItem> contentItems,
+  }) async {
     if (!_sessionActive) return const SearchEmpty();
     if (!hasMore) return _buildState(const <SearchSource>{});
     _sessionContentItems = contentItems;
@@ -249,7 +262,11 @@ class HybridSearchRepository extends SearchRepository {
   Future<void> _loadContentBatch(Set<SearchSource> failed, int token) async {
     try {
       final page = await _searchContent(
-          _sessionContentItems, _query, batchSize, _contentOffset);
+        _sessionContentItems,
+        _query,
+        batchSize,
+        _contentOffset,
+      );
       if (token != _sessionToken) return;
       _contentOffset += page.items.length;
       if (_contentOffset >= page.totalMatches) _contentDone = true;
@@ -313,16 +330,15 @@ class HybridSearchRepository extends SearchRepository {
     );
   }
 
-  static ContentItem _mapMafatihArticle(MafatihArticle article) =>
-      ContentItem(
-        id: 'mafatih_${article.id}',
-        title: article.title,
-        subtitle: 'مفاتيح الجنان',
-        content: article.text,
-        sectionId: 'mafatih',
-        sectionName: 'مفاتيح الجنان',
-        category: 'mafatih',
-      );
+  static ContentItem _mapMafatihArticle(MafatihArticle article) => ContentItem(
+    id: 'mafatih_${article.id}',
+    title: article.title,
+    subtitle: 'مفاتيح الجنان',
+    content: article.text,
+    sectionId: 'mafatih',
+    sectionName: 'مفاتيح الجنان',
+    category: 'mafatih',
+  );
 
   // ─── Default JSON source: isolate scoring with LIMIT/OFFSET ───
 
@@ -331,13 +347,12 @@ class HybridSearchRepository extends SearchRepository {
     String query,
     int limit,
     int offset,
-  ) =>
-      compute(_performContentSearch, {
-        'items': items,
-        'query': query,
-        'limit': limit,
-        'offset': offset,
-      });
+  ) => compute(_performContentSearch, {
+    'items': items,
+    'query': query,
+    'limit': limit,
+    'offset': offset,
+  });
 
   /// Scores every candidate with the single [ArabicNormalizer], keeps items
   /// matching ALL query words (or the full phrase), sorts deterministically
@@ -349,8 +364,10 @@ class HybridSearchRepository extends SearchRepository {
     final int offset = params['offset'];
 
     final normalizedQuery = ArabicNormalizer.normalize(query);
-    final queryWords =
-        normalizedQuery.split(' ').where((w) => w.isNotEmpty).toList();
+    final queryWords = normalizedQuery
+        .split(' ')
+        .where((w) => w.isNotEmpty)
+        .toList();
 
     if (queryWords.isEmpty || items.isEmpty) {
       return const ContentSearchPage(items: [], totalMatches: 0);
@@ -367,7 +384,8 @@ class HybridSearchRepository extends SearchRepository {
       final normalizedContent =
           item.normalizedContent ?? ArabicNormalizer.normalize(item.content);
       final normalizedCategory =
-          item.normalizedCategory ?? ArabicNormalizer.normalize(item.category ?? '');
+          item.normalizedCategory ??
+          ArabicNormalizer.normalize(item.category ?? '');
 
       // Tokenize strings once per document.
       final titleWords = normalizedTitle.split(' ').toSet();
@@ -401,7 +419,10 @@ class HybridSearchRepository extends SearchRepository {
           wordMatched = true;
           wordScore += 2;
         } else if (SearchEngine.fuzzyMatchWords(
-            word, normalizedContent, contentWords)) {
+          word,
+          normalizedContent,
+          contentWords,
+        )) {
           wordMatched = true;
           wordScore += 1;
         }
@@ -441,9 +462,9 @@ class HybridSearchRepository extends SearchRepository {
     scored.sort((a, b) {
       final scoreCompare = (b['score'] as int).compareTo(a['score'] as int);
       if (scoreCompare != 0) return scoreCompare;
-      return (a['item'] as ContentItem)
-          .title
-          .compareTo((b['item'] as ContentItem).title);
+      return (a['item'] as ContentItem).title.compareTo(
+        (b['item'] as ContentItem).title,
+      );
     });
 
     final total = scored.length;
@@ -452,9 +473,9 @@ class HybridSearchRepository extends SearchRepository {
     final end = requestedEnd > total ? total : requestedEnd;
     final page = start < end
         ? scored
-            .sublist(start, end)
-            .map((e) => e['item'] as ContentItem)
-            .toList()
+              .sublist(start, end)
+              .map((e) => e['item'] as ContentItem)
+              .toList()
         : <ContentItem>[];
     return ContentSearchPage(items: page, totalMatches: total);
   }

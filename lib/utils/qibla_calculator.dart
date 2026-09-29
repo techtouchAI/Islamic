@@ -13,7 +13,8 @@ double calculateQiblaDirection({
   final longitudeDifferenceRadians =
       (kaabaLongitude - longitude) * (math.pi / 180.0);
   final y = math.sin(longitudeDifferenceRadians);
-  final x = math.cos(latitudeRadians) * math.tan(kaabaLatitudeRadians) -
+  final x =
+      math.cos(latitudeRadians) * math.tan(kaabaLatitudeRadians) -
       math.sin(latitudeRadians) * math.cos(longitudeDifferenceRadians);
   final direction = math.atan2(y, x) * (180.0 / math.pi);
   return (direction + 360.0) % 360.0;

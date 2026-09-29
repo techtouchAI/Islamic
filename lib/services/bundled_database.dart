@@ -38,8 +38,7 @@ class BundledDatabase {
 
     // The file name encodes the version of this copy: a newer db_version or
     // a newer app build produces a different name -> extracted again below.
-    final path =
-        p.join(directory, '${name}_v${assetVersion}_b$buildNumber.db');
+    final path = p.join(directory, '${name}_v${assetVersion}_b$buildNumber.db');
     final file = File(path);
 
     if (!await file.exists()) {
@@ -109,10 +108,12 @@ class BundledDatabase {
         if (value is int && value > 0) return value;
       }
       debugPrint(
-          'BundledDatabase: no version entry for $assetName, using build number.');
+        'BundledDatabase: no version entry for $assetName, using build number.',
+      );
     } catch (e) {
       debugPrint(
-          'BundledDatabase: db_version manifest unavailable ($e), using build number.');
+        'BundledDatabase: db_version manifest unavailable ($e), using build number.',
+      );
     }
     return fallback;
   }

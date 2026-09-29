@@ -1,4 +1,5 @@
 import 'dart:io';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
@@ -87,7 +88,8 @@ class OTAService {
       final File file = File(savePath);
 
       // SHA-256 validation must succeed before anything may be installed.
-      final fileChecksum = (await sha256.bind(file.openRead()).first).toString();
+      final fileChecksum = (await sha256.bind(file.openRead()).first)
+          .toString();
       if (fileChecksum != checksum) {
         await file.delete();
         onError('تعذر التحديث: الملف لا يطابق بصمة التحقق.');

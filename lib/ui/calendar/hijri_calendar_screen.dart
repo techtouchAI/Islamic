@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import '../../providers/settings_provider.dart';
 import '../../data/repositories/calendar_repository.dart';
 
@@ -41,8 +42,12 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
   ];
 
   AppHijriDate? _todayHijri;
-  AppHijriDate _displayedHijri =
-      AppHijriDate(day: 1, month: 1, year: 1446, monthName: 'محرم');
+  AppHijriDate _displayedHijri = AppHijriDate(
+    day: 1,
+    month: 1,
+    year: 1446,
+    monthName: 'محرم',
+  );
   PageController? _pageController;
 
   int? _realTodayHDay;
@@ -199,14 +204,19 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
       if (dayData != null) {
         if (dayData.events.isNotEmpty) {
           return _UpcomingEventInfo(
-              event: dayData.events.first, hDay: d, hMonth: m, hYear: y);
+            event: dayData.events.first,
+            hDay: d,
+            hMonth: m,
+            hYear: y,
+          );
         }
         if (dayData.astronomicalEvents.isNotEmpty) {
           return _UpcomingEventInfo(
-              astroEvent: dayData.astronomicalEvents.first,
-              hDay: d,
-              hMonth: m,
-              hYear: y);
+            astroEvent: dayData.astronomicalEvents.first,
+            hDay: d,
+            hMonth: m,
+            hYear: y,
+          );
         }
       }
       d++;
@@ -233,8 +243,10 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
       child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(14),
-          border:
-              Border.all(color: Colors.amber.withValues(alpha: 0.15), width: 1),
+          border: Border.all(
+            color: Colors.amber.withValues(alpha: 0.15),
+            width: 1,
+          ),
         ),
         padding: const EdgeInsets.all(12),
         child: Column(
@@ -311,8 +323,9 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
                     fontSize: 14,
                     height: 1.3,
                     wordSpacing: 1.5,
-                    fontWeight:
-                        isImportant ? FontWeight.bold : FontWeight.normal,
+                    fontWeight: isImportant
+                        ? FontWeight.bold
+                        : FontWeight.normal,
                   ),
                 ),
                 if (description != null && description.isNotEmpty)
@@ -441,7 +454,8 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
                   final DateTime cellGregorianDate = adjustedGregorianStart.add(
                     Duration(days: hDay - 1),
                   );
-                  final bool isToday = cellGregorianDate.year == realNow.year &&
+                  final bool isToday =
+                      cellGregorianDate.year == realNow.year &&
                       cellGregorianDate.month == realNow.month &&
                       cellGregorianDate.day == realNow.day;
 
@@ -453,10 +467,12 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
                     }
                   }
 
-                  final bool hasEvent = dayData != null &&
+                  final bool hasEvent =
+                      dayData != null &&
                       (dayData.events.isNotEmpty ||
                           dayData.astronomicalEvents.isNotEmpty);
-                  final bool isSelected = _selectedDay == hDay &&
+                  final bool isSelected =
+                      _selectedDay == hDay &&
                       _displayedHijri.month == monthHijri.month &&
                       _displayedHijri.year == monthHijri.year;
 
@@ -473,8 +489,8 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
                       decoration: BoxDecoration(
                         color: isToday
                             ? (hasEvent
-                                ? Colors.teal.shade700
-                                : Colors.teal.withValues(alpha: 0.6))
+                                  ? Colors.teal.shade700
+                                  : Colors.teal.withValues(alpha: 0.6))
                             : null,
                         shape: BoxShape.rectangle,
                         borderRadius: BorderRadius.circular(8),
@@ -482,10 +498,10 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
                           color: isToday
                               ? Colors.amber
                               : (isSelected
-                                  ? Colors.green
-                                  : (hasEvent
-                                      ? Colors.amber.withValues(alpha: 0.8)
-                                      : Colors.white12)),
+                                    ? Colors.green
+                                    : (hasEvent
+                                          ? Colors.amber.withValues(alpha: 0.8)
+                                          : Colors.white12)),
                           width: isToday || isSelected
                               ? 2.0
                               : (hasEvent ? 1.5 : 1.0),
@@ -497,15 +513,16 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
                         style: TextStyle(
                           fontFamily: 'Cairo',
                           fontSize: 18,
-                          fontWeight:
-                              isToday ? FontWeight.bold : FontWeight.normal,
+                          fontWeight: isToday
+                              ? FontWeight.bold
+                              : FontWeight.normal,
                           color: isToday
                               ? (hasEvent
-                                  ? Colors.amber.shade200
-                                  : Colors.white)
+                                    ? Colors.amber.shade200
+                                    : Colors.white)
                               : (hasEvent
-                                  ? Colors.amber.shade300
-                                  : Colors.white70),
+                                    ? Colors.amber.shade300
+                                    : Colors.white70),
                         ),
                       ),
                     ),
@@ -579,20 +596,11 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
         icon: Icons.event_available,
         children: [
           ..._selectedDayData!.events.map(
-            (e) => _buildEventItem(
-              e.title,
-              e.description,
-              e.isImportant,
-              false,
-            ),
+            (e) =>
+                _buildEventItem(e.title, e.description, e.isImportant, false),
           ),
           ..._selectedDayData!.astronomicalEvents.map(
-            (e) => _buildEventItem(
-              e.title,
-              e.description,
-              false,
-              true,
-            ),
+            (e) => _buildEventItem(e.title, e.description, false, true),
           ),
         ],
       );

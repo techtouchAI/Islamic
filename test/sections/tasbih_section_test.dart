@@ -12,8 +12,9 @@ void main() {
     SharedPreferences.setMockInitialValues({});
   });
 
-  testWidgets('completion dialog requires an explicit action to close',
-      (tester) async {
+  testWidgets('completion dialog requires an explicit action to close', (
+    tester,
+  ) async {
     final completionCalls = <MethodCall>[];
     tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
       const MethodChannel(TasbihFeedbackService.channelName),
@@ -30,9 +31,7 @@ void main() {
     });
 
     await tester.pumpWidget(
-      const MaterialApp(
-        home: Scaffold(body: TasbihSection()),
-      ),
+      const MaterialApp(home: Scaffold(body: TasbihSection())),
     );
     await tester.pumpAndSettle();
 
@@ -55,14 +54,11 @@ void main() {
     expect(find.text('الحمد لله'), findsOneWidget);
     expect(find.byIcon(Icons.auto_awesome_rounded), findsNothing);
     expect(completionCalls, hasLength(3));
-    expect(
-      completionCalls.map((call) => call.method),
-      <String>[
-        'vibrateStageCompletion',
-        'vibrateStageCompletion',
-        'vibrateStageCompletion',
-      ],
-    );
+    expect(completionCalls.map((call) => call.method), <String>[
+      'vibrateStageCompletion',
+      'vibrateStageCompletion',
+      'vibrateStageCompletion',
+    ]);
     expect(tester.getRect(find.byType(Dialog)).top, lessThan(180));
     await tester.tapAt(const Offset(4, 4));
     await tester.pumpAndSettle();

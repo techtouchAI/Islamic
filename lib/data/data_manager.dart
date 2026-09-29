@@ -1,9 +1,11 @@
 import 'dart:convert';
 import 'dart:io';
+
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter/foundation.dart';
+
 import '../utils/string_extensions.dart';
 
 class DataManager {
@@ -56,7 +58,8 @@ class DataManager {
     if (sections.keys.any((key) => key is! String) ||
         sections.values.any((value) => value is! Map)) {
       throw const FormatException(
-          'Schema: "sections" entries must be string -> object');
+        'Schema: "sections" entries must be string -> object',
+      );
     }
 
     final content = db['content'];
@@ -69,8 +72,7 @@ class DataManager {
       }
       final value = entry.value;
       if (value is! List) {
-        throw FormatException(
-            'Schema: content.${entry.key} must be an array');
+        throw FormatException('Schema: content.${entry.key} must be an array');
       }
       _validateItems(value, 'content.${entry.key}');
     }
@@ -118,14 +120,16 @@ class DataManager {
         }
         if (title == null && name == null && nested.isEmpty) {
           throw FormatException(
-              'Schema: $path[$i] has no "title", "name" or nested "items"');
+            'Schema: $path[$i] has no "title", "name" or nested "items"',
+          );
         }
         _validateItems(nested, '$path[$i].items');
         continue;
       }
       if (title == null && name == null) {
         throw FormatException(
-            'Schema: $path[$i] has no "title", "name" or nested "items"');
+          'Schema: $path[$i] has no "title", "name" or nested "items"',
+        );
       }
     }
   }
@@ -156,8 +160,9 @@ class DataManager {
         item['_normalized_title'] = item['title'].toString().normalizeArabic();
       }
       if (item['content'] != null) {
-        item['_normalized_content'] =
-            item['content'].toString().normalizeArabic();
+        item['_normalized_content'] = item['content']
+            .toString()
+            .normalizeArabic();
       }
       if (item.containsKey('items') && item['items'] is List) {
         for (var nestedItem in item['items']) {
@@ -214,7 +219,8 @@ class DataManager {
             return;
           } catch (e) {
             debugPrint(
-                "DataManager: Invalid local content, using bundled asset: $e");
+              "DataManager: Invalid local content, using bundled asset: $e",
+            );
             // Policy: a local copy that fails parsing/validation is corrupt.
             // Remove it so it is not re-read on every launch — the bundled
             // asset (and the next successful cloud sync) replaces it.
@@ -242,13 +248,15 @@ class DataManager {
     final requestClient = client ?? httpClient ?? http.Client();
     try {
       // Add random component to fully bypass strict CDN caches
-      final timestamp = DateTime.now().millisecondsSinceEpoch.toString() +
+      final timestamp =
+          DateTime.now().millisecondsSinceEpoch.toString() +
           '_' +
           DateTime.now().microsecondsSinceEpoch.toString();
       final url = Uri.parse("$_repoUrl?t=$timestamp");
 
-      final response =
-          await requestClient.get(url).timeout(const Duration(seconds: 15));
+      final response = await requestClient
+          .get(url)
+          .timeout(const Duration(seconds: 15));
       if (response.statusCode == 200) {
         final content = utf8.decode(response.bodyBytes);
 
@@ -273,7 +281,8 @@ class DataManager {
           newDb = await compute(_decodeAndNormalizeJson, content);
         } catch (parseError) {
           debugPrint(
-              "DataManager: Rejected cloud content (schema/validation): $parseError");
+            "DataManager: Rejected cloud content (schema/validation): $parseError",
+          );
           return false;
         }
 
@@ -286,8 +295,10 @@ class DataManager {
           await temporary.writeAsString(content, encoding: utf8, flush: true);
           await temporary.rename(localFile.path);
         } catch (writeError) {
-          debugPrint("DataManager: Failed to persist cloud content, keeping "
-              "previous copy: $writeError");
+          debugPrint(
+            "DataManager: Failed to persist cloud content, keeping "
+            "previous copy: $writeError",
+          );
           return false;
         } finally {
           await _deleteIfExists(temporary);
@@ -299,7 +310,8 @@ class DataManager {
         return true;
       } else {
         debugPrint(
-            "DataManager Sync Error: HTTP Status ${response.statusCode}");
+          "DataManager Sync Error: HTTP Status ${response.statusCode}",
+        );
       }
     } catch (e) {
       debugPrint("DataManager Sync Error (Network/Timeout): $e");
@@ -458,8 +470,9 @@ class DataManager {
         item['_normalized_title'] = item['title'].toString().normalizeArabic();
       }
       if (item['content'] != null) {
-        item['_normalized_content'] =
-            item['content'].toString().normalizeArabic();
+        item['_normalized_content'] = item['content']
+            .toString()
+            .normalizeArabic();
       }
       if (item.containsKey('items') && item['items'] is List) {
         for (var nestedItem in item['items']) {

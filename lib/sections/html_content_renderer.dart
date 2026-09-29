@@ -28,14 +28,18 @@ class _HtmlContentRendererState extends State<HtmlContentRenderer> {
     try {
       if (colorString.startsWith('#')) {
         return Color(
-            int.parse(colorString.substring(1), radix: 16) + 0xFF000000);
+          int.parse(colorString.substring(1), radix: 16) + 0xFF000000,
+        );
       }
     } catch (_) {}
     return null;
   }
 
   List<Widget> _parseContentRobust(
-      String content, TextStyle baseStyle, TextAlign textAlign) {
+    String content,
+    TextStyle baseStyle,
+    TextAlign textAlign,
+  ) {
     String processed = content.replaceAll('<html>', '').replaceAll('//', '');
     processed = processed
         .replaceAll(RegExp(r'<\/?p>', caseSensitive: false), '\n\n')
@@ -57,8 +61,10 @@ class _HtmlContentRendererState extends State<HtmlContentRenderer> {
     final List<Widget> paragraphWidgets = [];
     final paragraphs = processed.split('\n');
 
-    final RegExp tagRegex =
-        RegExp(r'(<b>|</b>|<c=(#[a-zA-Z0-9]{6})>|</c>)', caseSensitive: false);
+    final RegExp tagRegex = RegExp(
+      r'(<b>|</b>|<c=(#[a-zA-Z0-9]{6})>|</c>)',
+      caseSensitive: false,
+    );
 
     bool isBold = false;
     Color? currentColor;
@@ -132,8 +138,11 @@ class _HtmlContentRendererState extends State<HtmlContentRenderer> {
                   Positioned(
                     top: -10,
                     right: 0,
-                    child:
-                        const Icon(Icons.star, color: Colors.green, size: 12),
+                    child: const Icon(
+                      Icons.star,
+                      color: Colors.green,
+                      size: 12,
+                    ),
                   ),
                 ],
               ),
@@ -150,10 +159,7 @@ class _HtmlContentRendererState extends State<HtmlContentRenderer> {
             child: RichText(
               textDirection: TextDirection.rtl,
               textAlign: textAlign,
-              text: TextSpan(
-                style: baseStyle,
-                children: spans,
-              ),
+              text: TextSpan(style: baseStyle, children: spans),
             ),
           ),
         );
@@ -166,8 +172,12 @@ class _HtmlContentRendererState extends State<HtmlContentRenderer> {
   @override
   Widget build(BuildContext context) {
     return Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: _parseContentRobust(
-            widget.content, widget.baseStyle, widget.textAlign));
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: _parseContentRobust(
+        widget.content,
+        widget.baseStyle,
+        widget.textAlign,
+      ),
+    );
   }
 }

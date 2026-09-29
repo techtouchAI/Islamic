@@ -2,16 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/services.dart';
 import 'package:firebase_core/firebase_core.dart';
+
 import 'services/analytics_service.dart';
 
 import 'sections/tasbih_section.dart';
+
 import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'data/data_manager.dart';
 import 'services/favorites_service.dart';
 import 'services/prayer_alarm_service.dart';
 import 'sections/favorites_section.dart';
+
 import 'package:hive_flutter/hive_flutter.dart';
+
 import 'services/search_engine.dart';
 import 'search/screens/search_screen.dart';
 import 'ui/calendar/hijri_calendar_screen.dart';
@@ -29,11 +33,15 @@ import 'ui/mafatih/mafatih_section.dart';
 
 import 'dart:math' hide log;
 import 'dart:io';
+
 import 'presentation/screens/istikhara_screen.dart';
+
 import 'package:provider/provider.dart';
 
 import 'package:package_info_plus/package_info_plus.dart';
+
 import 'dart:convert';
+
 import 'services/release_manifest.dart';
 import 'services/ota_service.dart';
 
@@ -205,9 +213,8 @@ class _AlDhakereenAppState extends State<AlDhakereenApp> {
       debugShowCheckedModeBanner: false,
       builder: (context, child) => MediaQuery(
         data: MediaQuery.of(context).copyWith(
-          textScaler: MediaQuery.of(
-            context,
-          ).textScaler, // Respects system font scaling
+          textScaler: MediaQuery.of(context)
+              .textScaler, // Respects system font scaling
         ),
         child: child!,
       ),
@@ -272,11 +279,13 @@ class _MainScaffoldState extends State<MainScaffold> {
 
   void _setupUpdateListener() {
     // Sync cloud data asynchronously
-    DataManager.syncCloudData().then((changed) async {
-      if (changed) await SearchEngine.instance.init(force: true);
-    }).catchError((Object e) {
-      debugPrint("Cloud sync or search indexing failed: $e");
-    });
+    DataManager.syncCloudData()
+        .then((changed) async {
+          if (changed) await SearchEngine.instance.init(force: true);
+        })
+        .catchError((Object e) {
+          debugPrint("Cloud sync or search indexing failed: $e");
+        });
   }
 
   Future<void> _checkForUpdatesSafe() async {
@@ -286,22 +295,27 @@ class _MainScaffoldState extends State<MainScaffold> {
       const publicKeyBase64 = String.fromEnvironment('OTA_PUBLIC_KEY_B64');
       if (kIsWeb || !Platform.isAndroid || publicKeyBase64.isEmpty) return;
       // Fetch + verify release_manifest.json through the OTA service.
-      final manifest = await OTAService.instance
-          .fetchManifest(base64Decode(publicKeyBase64));
+      final manifest = await OTAService.instance.fetchManifest(
+        base64Decode(publicKeyBase64),
+      );
       if (!mounted) return;
       final info = await PackageInfo.fromPlatform();
       final currentBuild = int.tryParse(info.buildNumber) ?? 0;
       if (currentBuild < manifest.buildNumber) {
-        _showSignedUpdateDialog(manifest,
-            mandatory: currentBuild < manifest.minSupportedBuild);
+        _showSignedUpdateDialog(
+          manifest,
+          mandatory: currentBuild < manifest.minSupportedBuild,
+        );
       }
     } catch (e) {
       debugPrint('OTA_Update Error: $e');
     }
   }
 
-  void _showSignedUpdateDialog(ReleaseManifest manifest,
-      {required bool mandatory}) {
+  void _showSignedUpdateDialog(
+    ReleaseManifest manifest, {
+    required bool mandatory,
+  }) {
     final context = navigatorKey.currentContext;
     if (context == null) return;
     final progress = OTAService.instance.downloadProgress;
@@ -422,9 +436,7 @@ class _MainScaffoldState extends State<MainScaffold> {
               ),
               centerTitle: true,
               elevation: 0,
-              backgroundColor: Theme.of(context)
-                  .appBarTheme
-                  .backgroundColor
+              backgroundColor: Theme.of(context).appBarTheme.backgroundColor
                   ?.withValues(alpha: settingsProvider.uiOpacity),
               leading: Builder(
                 builder: (context) => IconButton(
@@ -577,8 +589,9 @@ class _MainScaffoldState extends State<MainScaffold> {
         return TabbedSection(
           key: const ValueKey('imam_ali'),
           tabs: imamAliCats.map((c) => c['title'].toString()).toList(),
-          sectionKeys:
-              imamAliCats.map((c) => 'imam_ali_cat_${c['id']}').toList(),
+          sectionKeys: imamAliCats
+              .map((c) => 'imam_ali_cat_${c['id']}')
+              .toList(),
           fontSizeFactor: settingsProvider.fontSizeFactor,
           uiOpacity: settingsProvider.uiOpacity,
         );

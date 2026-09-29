@@ -1,12 +1,7 @@
 import 'package:geolocator/geolocator.dart';
 
 /// Origin of the coordinates used by the prayer-time pipeline.
-enum PrayerLocationSource {
-  gps,
-  selectedCity,
-  cachedLocation,
-  defaultLocation,
-}
+enum PrayerLocationSource { gps, selectedCity, cachedLocation, defaultLocation }
 
 extension PrayerLocationSourceLabel on PrayerLocationSource {
   String get storageValue {
