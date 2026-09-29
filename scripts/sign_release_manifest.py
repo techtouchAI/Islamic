@@ -4,6 +4,7 @@ import base64
 import hashlib
 import json
 import subprocess
+import tempfile
 from pathlib import Path
 
 
@@ -22,10 +23,14 @@ def main() -> None:
     url = f'https://github.com/techtouchAI/Islamic/releases/download/{args.tag}/{args.apk.name}'
     checksum = hashlib.sha256(args.apk.read_bytes()).hexdigest()
     payload = f'{args.version}\n{args.build}\n{args.min_build}\n{url}\n{checksum}'.encode()
-    signature = subprocess.run(
-        ['openssl', 'pkeyutl', '-sign', '-rawin', '-inkey', str(args.key)],
-        input=payload, stdout=subprocess.PIPE, check=True,
-    ).stdout
+    with tempfile.NamedTemporaryFile() as payload_file:
+        payload_file.write(payload)
+        payload_file.flush()
+        signature = subprocess.run(
+            ['openssl', 'pkeyutl', '-sign', '-rawin', '-inkey', str(args.key),
+             '-in', payload_file.name],
+            stdout=subprocess.PIPE, check=True,
+        ).stdout
     args.output.write_text(json.dumps({
         'version': args.version,
         'build_number': args.build,
