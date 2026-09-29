@@ -30,8 +30,17 @@ jobs:
           channel: stable
           cache: true
 
+      # dart_style picks its style from the package's language version, which
+      # lives in .dart_tool/package_config.json — without pub get the formatter
+      # would assume the SDK's latest language and disagree with CI (whose
+      # format step always runs after `flutter pub get`).
+      - name: Resolve packages
+        run: flutter pub get
+
       - name: Apply dart format
-        run: dart format .
+        run: |
+          echo "::notice title=dart version::$(dart --version 2>&1)"
+          dart format .
 
       - name: Commit formatting changes
         run: |
