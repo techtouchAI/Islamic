@@ -143,7 +143,8 @@ void main() {
     await pumpScreen(tester, repo);
     await runQuery(tester, 'ذكر');
 
-    expect(find.text('تعذر إكمال البحث. يرجى المحاولة مجددًا'), findsOneWidget);
+    expect(
+      find.text('تعذر إكمال البحث. يرجى المحاولة مجددًا.'), findsOneWidget);
     expect(find.byType(SearchResultTile), findsNothing);
 
     await tester.tap(find.byType(FilledButton));
