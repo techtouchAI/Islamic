@@ -144,7 +144,7 @@ void main() {
     await runQuery(tester, 'ذكر');
 
     expect(
-      find.text('تعذر إكمال البحث. يرجى المحاولة مجددًا.'), findsOneWidget);
+        find.text('تعذر إكمال البحث. يرجى المحاولة مجددًا.'), findsOneWidget);
     expect(find.byType(SearchResultTile), findsNothing);
 
     await tester.tap(find.byType(FilledButton));
