@@ -25,24 +25,124 @@ class DataManager {
   }
 
   static Map<String, dynamic> _decodeAndNormalizeJson(String source) {
-    final db = json.decode(source) as Map<String, dynamic>;
-    if (db['content'] is! Map || db['sections'] is! Map) {
-      throw const FormatException(
-          'Content document is missing required sections');
+    final dynamic decoded = json.decode(source);
+    if (decoded is! Map<String, dynamic>) {
+      throw const FormatException('Content document must be a JSON object');
     }
-    final content = db['content'] as Map;
-    final sections = db['sections'] as Map;
-    if (sections.keys.any((key) => key is! String) ||
-        sections.values.any((value) => value is! Map) ||
-        content.keys.any((key) => key is! String) ||
-        content.values.any(
-            (value) => value is! List || value.any((item) => item is! Map))) {
-      throw const FormatException(
-          'Content document has an invalid section shape');
-    }
+    final Map<String, dynamic> db = decoded;
+    _validateSchema(db);
     _normalizeDBLocal(db);
     return db;
   }
+
+  /// Schema policy — every document (bundled asset, local cache, cloud sync)
+  /// is validated here BEFORE it is adopted. Rejecting a document keeps the
+  /// previously loaded copy in place. Rules:
+  ///
+  /// 1. Root is a JSON object.
+  /// 2. `sections`: object of string -> object (UI section descriptors).
+  /// 3. `content`: object of string -> array of objects; every item exposes a
+  ///    string `title` or `name`, or nests further `items` (recursively) —
+  ///    search, indexing and rendering all depend on a displayable title.
+  /// 4. Legacy collections (`fatawa_categories`, `dreams_categories`,
+  ///    `prophets_stories`, `imam_ali`), when present, are arrays of objects
+  ///    following the same item rules.
+  /// 5. `about` / `settings`, when present, are objects.
+  static void _validateSchema(Map<String, dynamic> db) {
+    final sections = db['sections'];
+    if (sections is! Map) {
+      throw const FormatException('Schema: "sections" must be an object');
+    }
+    if (sections.keys.any((key) => key is! String) ||
+        sections.values.any((value) => value is! Map)) {
+      throw const FormatException(
+          'Schema: "sections" entries must be string -> object');
+    }
+
+    final content = db['content'];
+    if (content is! Map) {
+      throw const FormatException('Schema: "content" must be an object');
+    }
+    for (final entry in content.entries) {
+      if (entry.key is! String) {
+        throw const FormatException('Schema: "content" keys must be strings');
+      }
+      final value = entry.value;
+      if (value is! List) {
+        throw FormatException(
+            'Schema: content.${entry.key} must be an array');
+      }
+      _validateItems(value, 'content.${entry.key}');
+    }
+
+    for (final key in const [
+      'fatawa_categories',
+      'dreams_categories',
+      'prophets_stories',
+      'imam_ali',
+    ]) {
+      final value = db[key];
+      if (value == null) continue;
+      if (value is! List) {
+        throw FormatException('Schema: "$key" must be an array when present');
+      }
+      _validateItems(value, key);
+    }
+
+    for (final key in const ['about', 'settings']) {
+      final value = db[key];
+      if (value != null && value is! Map) {
+        throw FormatException('Schema: "$key" must be an object when present');
+      }
+    }
+  }
+
+  static void _validateItems(List<dynamic> items, String path) {
+    for (var i = 0; i < items.length; i++) {
+      final item = items[i];
+      if (item is! Map) {
+        throw FormatException('Schema: $path[$i] must be an object');
+      }
+      final title = item['title'];
+      final name = item['name'];
+      final nested = item['items'];
+      if (title != null && title is! String) {
+        throw FormatException('Schema: $path[$i].title must be a string');
+      }
+      if (name != null && name is! String) {
+        throw FormatException('Schema: $path[$i].name must be a string');
+      }
+      if (nested != null) {
+        if (nested is! List) {
+          throw FormatException('Schema: $path[$i].items must be an array');
+        }
+        if (title == null && name == null && nested.isEmpty) {
+          throw FormatException(
+              'Schema: $path[$i] has no "title", "name" or nested "items"');
+        }
+        _validateItems(nested, '$path[$i].items');
+        continue;
+      }
+      if (title == null && name == null) {
+        throw FormatException(
+            'Schema: $path[$i] has no "title", "name" or nested "items"');
+      }
+    }
+  }
+
+  /// Deletes [file] if it exists, swallowing IO errors — cleanup must never
+  /// break the loading path.
+  static Future<void> _deleteIfExists(File file) async {
+    try {
+      if (await file.exists()) await file.delete();
+    } on FileSystemException catch (e) {
+      debugPrint('DataManager: unable to remove ${file.path}: $e');
+    }
+  }
+
+  /// Removes `.pending` leftovers from a previously interrupted write.
+  static Future<void> _cleanupOrphanedPending(File localFile) =>
+      _deleteIfExists(File('${localFile.path}.pending'));
 
   static void _normalizeDBLocal(Map<String, dynamic>? db) {
     if (db == null) return;
@@ -100,16 +200,26 @@ class DataManager {
       // Browser storage has no dart:io file; load the same bundled content.
       final localFile = kIsWeb ? null : await _getLocalFile();
 
-      // 1. Try to load from local storage first
-      if (localFile != null && await localFile.exists()) {
-        try {
-          final content = await localFile.readAsString(encoding: utf8);
-          _db = await compute(_decodeAndNormalizeJson, content);
-          debugPrint("DataManager: Loaded from local storage.");
-          return;
-        } catch (e) {
-          debugPrint(
-              "DataManager: Invalid local content, using bundled asset: $e");
+      if (localFile != null) {
+        // Sweep `.pending` leftovers from a previously interrupted write so
+        // they can never accumulate across launches.
+        await _cleanupOrphanedPending(localFile);
+
+        // 1. Try to load from local storage first
+        if (await localFile.exists()) {
+          try {
+            final content = await localFile.readAsString(encoding: utf8);
+            _db = await compute(_decodeAndNormalizeJson, content);
+            debugPrint("DataManager: Loaded from local storage.");
+            return;
+          } catch (e) {
+            debugPrint(
+                "DataManager: Invalid local content, using bundled asset: $e");
+            // Policy: a local copy that fails parsing/validation is corrupt.
+            // Remove it so it is not re-read on every launch — the bundled
+            // asset (and the next successful cloud sync) replaces it.
+            await _deleteIfExists(localFile);
+          }
         }
       }
       final response = await rootBundle.loadString('assets/data/content.json');
@@ -156,23 +266,37 @@ class DataManager {
           if (oldContent == content) return false;
         }
 
+        // Schema policy: decode + validate BEFORE the document is adopted or
+        // written. A rejected document keeps the previous copy untouched.
+        final Map<String, dynamic> newDb;
         try {
-          final newDb = await compute(_decodeAndNormalizeJson, content);
-          // Rename in the same directory so a failed write cannot corrupt the last good copy.
-          final temporary = File('${localFile.path}.pending');
-          try {
-            await temporary.writeAsString(content, encoding: utf8, flush: true);
-            await temporary.rename(localFile.path);
-          } finally {
-            if (await temporary.exists()) await temporary.delete();
-          }
-          _db = Map<String, dynamic>.from(newDb);
-          dbNotifier.value++;
-          debugPrint("DataManager: Cloud sync successful.");
-          return true;
+          newDb = await compute(_decodeAndNormalizeJson, content);
         } catch (parseError) {
-          debugPrint("DataManager: Unable to apply cloud content: $parseError");
+          debugPrint(
+              "DataManager: Rejected cloud content (schema/validation): $parseError");
+          return false;
         }
+
+        // Persist atomically: write `<file>.pending`, then rename it over the
+        // live file so a failed/interrupted write can never corrupt the last
+        // good copy. Any failure cleans the temp file up and keeps the old data.
+        final temporary = File('${localFile.path}.pending');
+        try {
+          await _cleanupOrphanedPending(localFile);
+          await temporary.writeAsString(content, encoding: utf8, flush: true);
+          await temporary.rename(localFile.path);
+        } catch (writeError) {
+          debugPrint("DataManager: Failed to persist cloud content, keeping "
+              "previous copy: $writeError");
+          return false;
+        } finally {
+          await _deleteIfExists(temporary);
+        }
+
+        _db = Map<String, dynamic>.from(newDb);
+        dbNotifier.value++;
+        debugPrint("DataManager: Cloud sync successful.");
+        return true;
       } else {
         debugPrint(
             "DataManager Sync Error: HTTP Status ${response.statusCode}");

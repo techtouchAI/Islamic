@@ -1,0 +1,5 @@
+{
+  "_note": "Integer version per bundled database asset. Bump the number whenever quran_db.db or mafatih.ar2.db ship a corrected/updated copy; BundledDatabase re-extracts any asset whose device version is older.",
+  "assets/data/quran_db.db": 1,
+  "assets/data/maftiha.ar2.db": 1
+}

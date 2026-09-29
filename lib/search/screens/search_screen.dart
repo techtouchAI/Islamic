@@ -14,7 +14,15 @@ import '../../services/quran_service.dart';
 class SearchScreen extends StatefulWidget {
   final double fontSizeFactor;
 
-  const SearchScreen({super.key, required this.fontSizeFactor});
+  /// Optional override so tests can drive the exact [SearchState] sequences
+  /// the UI must render (loading / success / empty / error / partial).
+  final SearchRepository? repository;
+
+  const SearchScreen({
+    super.key,
+    required this.fontSizeFactor,
+    this.repository,
+  });
 
   @override
   State<SearchScreen> createState() => _SearchScreenState();
@@ -38,6 +46,7 @@ class _SearchScreenState extends State<SearchScreen> {
 
     _controller = app_search.SearchController(
       allItems: _loadContentItems(),
+      repository: widget.repository,
       availableSections: const [
         'quran',
         'mafatih',

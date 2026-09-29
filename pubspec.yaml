@@ -60,6 +60,7 @@ flutter:
   uses-material-design: true
   assets:
     - assets/data/content.json
+    - assets/data/db_version.json
     - assets/images/
     - assets/images/quran/
     - assets/images/Mscreen/
