@@ -255,8 +255,8 @@ class SearchController extends ChangeNotifier {
             ...quranItems,
             ...mafatihItems,
             ...memoryResults,
-          ]..sort((a, b) =>
-              SearchRanking.compareNormalized(a, b, normalizedQuery));
+          ]..sort(
+              (a, b) => SearchRanking.compareNormalized(a, b, normalizedQuery));
         } else {
           return; // Query changed during await
         }

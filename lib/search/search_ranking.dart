@@ -6,8 +6,10 @@ class SearchRanking {
   SearchRanking._();
 
   static int score(ContentItem item, String normalizedQuery) {
-    final title = item.normalizedTitle ?? ArabicNormalizer.normalize(item.title);
-    final content = item.normalizedContent ?? ArabicNormalizer.normalize(item.content);
+    final title =
+        item.normalizedTitle ?? ArabicNormalizer.normalize(item.title);
+    final content =
+        item.normalizedContent ?? ArabicNormalizer.normalize(item.content);
     if (normalizedQuery.isEmpty) return 0;
     var score = 0;
     if (title == normalizedQuery) {
@@ -21,8 +23,8 @@ class SearchRanking {
 
   static int compareNormalized(
       ContentItem a, ContentItem b, String normalizedQuery) {
-    final difference = score(b, normalizedQuery)
-        .compareTo(score(a, normalizedQuery));
+    final difference =
+        score(b, normalizedQuery).compareTo(score(a, normalizedQuery));
     if (difference != 0) return difference;
     final title = a.title.compareTo(b.title);
     if (title != 0) return title;
