@@ -32,7 +32,24 @@ jobs:
       - name: Analyze
         run: flutter analyze --no-fatal-infos
       - name: Test
-        run: flutter test --reporter expanded
+        run: |
+          set +e
+          flutter test --reporter expanded 2>&1 | tee /tmp/ui-tests.log
+          result=${PIPESTATUS[0]}
+          if [ "$result" -ne 0 ]; then
+            python3 - <<'PYTHON'
+          import re
+          from pathlib import Path
+          text = Path('/tmp/ui-tests.log').read_text()
+          chunks = re.split(r'(?=══╡ EXCEPTION|\d\d:\d\d .*?\[E\])', text)
+          for chunk in chunks:
+              if 'EXCEPTION' not in chunk[:100] and '[E]' not in chunk[:300]:
+                  continue
+              message = chunk[:7000].replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A')
+              print('::error title=UI test failure::' + message)
+          PYTHON
+          fi
+          exit "$result"
       - name: Build web
         run: flutter build web --release
       - uses: actions/upload-artifact@v4
