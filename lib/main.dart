@@ -37,7 +37,6 @@ import 'package:dio/dio.dart';
 import 'dart:convert';
 import 'services/release_manifest.dart';
 import 'services/ota_service.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import 'providers/settings_provider.dart';
 
@@ -286,110 +285,15 @@ class _MainScaffoldState extends State<MainScaffold> {
 
     try {
       const publicKeyBase64 = String.fromEnvironment('OTA_PUBLIC_KEY_B64');
-      if (!kIsWeb && Platform.isAndroid && publicKeyBase64.isNotEmpty) {
-        final manifest = await ReleaseManifest.fetchVerified(
-            Dio(), base64Decode(publicKeyBase64));
-        if (!mounted) return;
-        final info = await PackageInfo.fromPlatform();
-        final currentBuild = int.tryParse(info.buildNumber) ?? 0;
-        if (currentBuild < manifest.buildNumber) {
-          _showSignedUpdateDialog(manifest,
-              mandatory: currentBuild < manifest.minSupportedBuild);
-        }
-        return; // Never fall back to unsigned metadata once a key is configured.
-      }
-      final String timestamp = DateTime.now().millisecondsSinceEpoch.toString();
-      final String apiUrl =
-          'https://api.github.com/repos/techtouchAI/Islamic/releases/latest?t=$timestamp';
-
-      final response = await Dio().get(
-        apiUrl,
-        options: Options(
-            headers: {'Cache-Control': 'no-cache', 'Pragma': 'no-cache'}),
-      );
-
+      if (kIsWeb || !Platform.isAndroid || publicKeyBase64.isEmpty) return;
+      final manifest = await ReleaseManifest.fetchVerified(
+          Dio(), base64Decode(publicKeyBase64));
       if (!mounted) return;
-
-      if (response.statusCode == 200) {
-        final data = response.data;
-        final String tagName = data['tag_name']?.toString() ?? '';
-
-        // Robust SemVer Parsing using Regex
-        // Match patterns like "v1.2.3-45", "1.2.3+45", "v1.0.41-671", etc.
-        final RegExp versionRegExp = RegExp(r'[-+](\d+)$');
-        final Match? match = versionRegExp.firstMatch(tagName);
-
-        int? latestVersionCode;
-        if (match != null && match.groupCount >= 1) {
-          latestVersionCode = int.tryParse(match.group(1)!);
-        }
-
-        // Fallback robust digits only if specific format isn't matched
-        if (latestVersionCode == null) {
-          final RegExp allDigits = RegExp(r'\d+');
-          final matches = allDigits.allMatches(tagName);
-          if (matches.isNotEmpty) {
-            latestVersionCode = int.tryParse(matches.last.group(0)!);
-          }
-        }
-
-        if (latestVersionCode == null) {
-          throw Exception("لم أتمكن من قراءة رقم الإصدار من: '$tagName'");
-        }
-
-        final PackageInfo info = await PackageInfo.fromPlatform();
-        final currentVersionCode = int.tryParse(info.buildNumber) ?? 1;
-
-        const String releaseNotes =
-            '✨ يتوفر الآن تحديث جديد للتطبيق!\n\nقمنا بإضافة تحسينات وإصلاحات جديدة لضمان أفضل تجربة لك. يرجى التحديث الآن.';
-        // Never treat the first arbitrary release asset as an installable APK.
-        final assets = data['assets'];
-        final apkAssets = assets is List
-            ? assets.where((asset) {
-                if (asset is! Map) return false;
-                final name = asset['name']?.toString().toLowerCase() ?? '';
-                final url = Uri.tryParse(
-                    asset['browser_download_url']?.toString() ?? '');
-                return name.endsWith('.apk') && url?.scheme == 'https';
-              }).toList()
-            : [];
-        final releaseUrl = Uri.tryParse(data['html_url']?.toString() ?? '');
-
-        if (currentVersionCode < latestVersionCode &&
-            mounted &&
-            releaseUrl != null &&
-            releaseUrl.scheme == 'https' &&
-            releaseUrl.host == 'github.com' &&
-            apkAssets.isNotEmpty) {
-          // Releases currently provide no authenticated checksum manifest.
-          // Offer the official release page rather than forcing an unverified install.
-          final context = navigatorKey.currentContext;
-          if (context != null) {
-            showDialog<void>(
-              context: context,
-              builder: (dialogContext) => AlertDialog(
-                title: const Text('تحديث متوفر'),
-                content: Text(releaseNotes),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.of(dialogContext).pop(),
-                    child: const Text('لاحقاً'),
-                  ),
-                  TextButton(
-                    onPressed: () async {
-                      Navigator.of(dialogContext).pop();
-                      await launchUrl(releaseUrl,
-                          mode: LaunchMode.externalApplication);
-                    },
-                    child: const Text('صفحة الإصدار الرسمية'),
-                  ),
-                ],
-              ),
-            );
-          }
-        }
-      } else {
-        throw Exception("فشل الاتصال، رمز الخطأ: ${response.statusCode}");
+      final info = await PackageInfo.fromPlatform();
+      final currentBuild = int.tryParse(info.buildNumber) ?? 0;
+      if (currentBuild < manifest.buildNumber) {
+        _showSignedUpdateDialog(manifest,
+            mandatory: currentBuild < manifest.minSupportedBuild);
       }
     } catch (e) {
       debugPrint('OTA_Update Error: $e');

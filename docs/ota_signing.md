@@ -22,5 +22,5 @@ default is 0, which leaves updates optional. Rotate the key only with a staged
 rollout that accepts the previous verification key until old clients have
 upgraded. Do not remove the older update path before that rollout succeeds.
 
-Without a provisioned signing secret, existing optional release discovery
-continues, but the app does not claim or attempt a signed in-app update.
+Without a provisioned signing secret, the installer is disabled. The app must
+never redirect to an unsigned release or claim it has a verified update.

@@ -3,7 +3,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:crypto/crypto.dart';
-import 'package:open_file/open_file.dart';
+import 'package:open_filex/open_filex.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 class OTAService {
@@ -76,7 +76,7 @@ class OTAService {
         return;
       }
 
-      final result = await OpenFile.open(savePath);
+      final result = await OpenFilex.open(savePath);
       if (result.type != ResultType.done) {
         onError('تعذر فتح مُثبّت التحديث: ${result.message}');
       }
