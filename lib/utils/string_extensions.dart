@@ -1,20 +1,7 @@
-final _diacriticsRegExp = RegExp(r'[\u064B-\u065F\u0670]');
-final _whitespaceRegExp = RegExp(r'\s+');
-
-/// Canonical search form; never use this value to render sacred text.
-String normalizeArabicForSearch(String value) => value
-    .replaceAll(_diacriticsRegExp, '')
-    .replaceAll('أ', 'ا')
-    .replaceAll('إ', 'ا')
-    .replaceAll('آ', 'ا')
-    .replaceAll('ٱ', 'ا')
-    .replaceAll('ة', 'ه')
-    .replaceAll('ى', 'ي')
-    .replaceAll(_whitespaceRegExp, ' ')
-    .trim();
+import 'arabic_normalizer.dart';
 
 extension ArabicStringNormalization on String {
-  String normalizeArabic() => normalizeArabicForSearch(this);
+  String normalizeArabic() => ArabicNormalizer.normalize(this);
 
   String toEasternArabic() {
     const english = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];

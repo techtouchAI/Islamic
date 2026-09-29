@@ -2,7 +2,7 @@ import "../services/quran_service.dart";
 import 'dart:math';
 import 'package:flutter/foundation.dart';
 import '../data/data_manager.dart';
-import '../utils/string_extensions.dart';
+import '../utils/arabic_normalizer.dart';
 
 class SearchDocument {
   final String id;
@@ -64,7 +64,7 @@ class SearchEngine {
   bool get isIndexed => _isIndexed;
   List<SearchDocument> get allDocuments => _index;
 
-  static String normalizeArabic(String text) => normalizeArabicForSearch(text);
+  static String normalizeArabic(String text) => ArabicNormalizer.normalize(text);
 
   // Levenshtein distance calculation
   static int levenshteinDistance(String s, String t) {

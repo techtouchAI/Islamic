@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'bundled_database.dart';
 import '../models/mafatih_category.dart';
 import '../models/mafatih_article.dart';
+import '../utils/arabic_normalizer.dart';
 
 class MafatihService {
   static Database? _db;
@@ -90,15 +91,14 @@ class MafatihService {
       if (kIsWeb || _db == null) {
         throw StateError('قاعدة مفاتيح الجنان غير متاحة');
       }
-      final escaped = query
-          .replaceAll('\\', '\\\\')
-          .replaceAll('%', '\\%')
-          .replaceAll('_', '\\_');
-      final String safeQuery = '%$escaped%';
+      final rawPattern = '%${ArabicNormalizer.escapeLike(query.trim())}%';
+      final normalizedPattern =
+          '%${ArabicNormalizer.escapeLike(ArabicNormalizer.normalize(query))}%';
       final maps = await _db!.query(
         'articles',
-        where: r"title LIKE ? ESCAPE '\' OR text LIKE ? ESCAPE '\'",
-        whereArgs: [safeQuery, safeQuery],
+        where: r"title LIKE ? ESCAPE '\' OR text LIKE ? ESCAPE '\' "
+            r"OR title LIKE ? ESCAPE '\' OR text LIKE ? ESCAPE '\'",
+        whereArgs: [rawPattern, rawPattern, normalizedPattern, normalizedPattern],
         orderBy: 'id ASC',
       );
       return maps.map((m) => MafatihArticle.fromMap(m)).toList();

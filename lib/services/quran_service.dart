@@ -2,6 +2,7 @@ import 'package:sqflite/sqflite.dart';
 import 'package:flutter/foundation.dart';
 import 'bundled_database.dart';
 import '../data/data_manager.dart';
+import '../utils/arabic_normalizer.dart';
 
 class QuranService {
   static Database? _db;
@@ -110,18 +111,17 @@ class QuranService {
 
     try {
       // Search the unvowelled database column; keep the original text for display.
-      final escaped = query
-          .replaceAll('\\', '\\\\')
-          .replaceAll('%', '\\%')
-          .replaceAll('_', '\\_');
-      final String safeQuery = '%$escaped%';
-      final List<Map<String, dynamic>> result = await _db!.rawQuery('''
+      final rawPattern = '%${ArabicNormalizer.escapeLike(query.trim())}%';
+      final normalizedPattern =
+          '%${ArabicNormalizer.escapeLike(ArabicNormalizer.normalize(query))}%';
+      final result = await _db!.rawQuery('''
         SELECT a.anum, a.text, a.sid, s.name as surah_name
         FROM ayah a
         JOIN surah s ON a.sid = s.id
         WHERE a.ar_text LIKE ? ESCAPE '\' OR s.name LIKE ? ESCAPE '\'
+           OR a.ar_text LIKE ? ESCAPE '\' OR s.name LIKE ? ESCAPE '\'
         ORDER BY a.sid ASC, a.anum ASC
-      ''', [safeQuery, safeQuery]);
+      ''', [rawPattern, rawPattern, normalizedPattern, normalizedPattern]);
 
       return result
           .map(
