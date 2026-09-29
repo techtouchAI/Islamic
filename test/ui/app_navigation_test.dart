@@ -112,14 +112,17 @@ void main() {
     // Opening a bottom-tab destination through the drawer keeps the bar and
     // selects the same tab, rather than incorrectly creating a detail page.
     await tester.tap(find.byTooltip('القائمة'));
-    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(find.byKey(const ValueKey('drawer-quran')).hitTestable(), findsOneWidget);
     await tester.tap(find.byKey(const ValueKey('drawer-quran')));
     await tester.pumpAndSettle();
     expect(
         tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex,
         1);
     await tester.tap(find.byTooltip('القائمة'));
-    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
     await tester.binding.handlePopRoute();
     await tester.pumpAndSettle();
     expect(
