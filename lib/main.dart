@@ -378,6 +378,7 @@ class _MainScaffoldState extends State<MainScaffold> {
     );
   }
 
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final AppNavigationController _navigation = AppNavigationController();
   String get _currentSection => _navigation.currentSection;
 
@@ -406,13 +407,19 @@ class _MainScaffoldState extends State<MainScaffold> {
           canPop: !_navigation.canGoBack,
           onPopInvokedWithResult: (didPop, result) {
             if (didPop) return;
+            final scaffold = _scaffoldKey.currentState;
+            if (scaffold?.isDrawerOpen ?? false) {
+              scaffold!.closeDrawer();
+              return;
+            }
             _onBack();
           },
           child: Scaffold(
+            key: _scaffoldKey,
             drawer: AppDrawer(
               currentSection: _currentSection,
               onNavigate: (section) {
-                Navigator.pop(context);
+                _scaffoldKey.currentState?.closeDrawer();
                 _navigateTo(section);
               },
             ),

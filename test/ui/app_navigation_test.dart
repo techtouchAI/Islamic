@@ -113,11 +113,17 @@ void main() {
     // selects the same tab, rather than incorrectly creating a detail page.
     await tester.tap(find.byTooltip('القائمة'));
     await tester.pump(const Duration(milliseconds: 300));
-    await tester.tap(find.text('القرآن الكريم').last);
+    await tester.tap(find.byKey(const ValueKey('drawer-quran')));
     await tester.pumpAndSettle();
     expect(
         tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex,
         1);
+    await tester.tap(find.byTooltip('القائمة'));
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex, 1);
+    expect(tester.state<ScaffoldState>(find.byType(Scaffold).first).isDrawerOpen, isFalse);
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox());
     await tester.pumpAndSettle();
