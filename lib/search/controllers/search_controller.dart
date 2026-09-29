@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import '../models/search_models.dart';
+import '../search_ranking.dart';
 import '../../services/search_engine.dart'; // To use fuzzyMatch if needed
 import '../../services/quran_service.dart';
 import '../../services/mafatih_service.dart';
@@ -249,11 +250,13 @@ class SearchController extends ChangeNotifier {
             );
           }).toList();
 
+          final normalizedQuery = SearchEngine.normalizeArabic(currentQuery);
           _filteredItems = [
             ...quranItems,
             ...mafatihItems,
             ...memoryResults,
-          ];
+          ]..sort((a, b) =>
+              SearchRanking.compareNormalized(a, b, normalizedQuery));
         } else {
           return; // Query changed during await
         }
