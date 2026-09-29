@@ -114,7 +114,8 @@ void main() {
     await tester.tap(find.byTooltip('القائمة'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
-    expect(find.byKey(const ValueKey('drawer-quran')).hitTestable(), findsOneWidget);
+    expect(find.byKey(const ValueKey('drawer-quran')).hitTestable(),
+        findsOneWidget);
     await tester.tap(find.byKey(const ValueKey('drawer-quran')));
     await tester.pumpAndSettle();
     expect(
