@@ -32,12 +32,20 @@ class ReleaseManifest {
     final url = Uri.tryParse(json['apk_url']?.toString() ?? '');
     final checksum = json['sha256'];
     final signature = json['signature'];
-    if (version is! String || version.isEmpty || version.contains('\n') ||
-        buildNumber is! int || buildNumber <= 0 ||
-        minimum is! int || minimum < 0 || minimum > buildNumber ||
-        url == null || url.scheme != 'https' || url.host != 'github.com' ||
+    if (version is! String ||
+        version.isEmpty ||
+        version.contains('\n') ||
+        buildNumber is! int ||
+        buildNumber <= 0 ||
+        minimum is! int ||
+        minimum < 0 ||
+        minimum > buildNumber ||
+        url == null ||
+        url.scheme != 'https' ||
+        url.host != 'github.com' ||
         !url.path.endsWith('.apk') ||
-        checksum is! String || !RegExp(r'^[0-9a-f]{64}$').hasMatch(checksum) ||
+        checksum is! String ||
+        !RegExp(r'^[0-9a-f]{64}$').hasMatch(checksum) ||
         signature is! String) {
       throw const FormatException('Invalid release manifest');
     }
@@ -66,7 +74,8 @@ class ReleaseManifest {
     }
   }
 
-  static Future<ReleaseManifest> fetchVerified(Dio dio, List<int> publicKey) async {
+  static Future<ReleaseManifest> fetchVerified(
+      Dio dio, List<int> publicKey) async {
     if (publicKey.length != 32) {
       throw StateError('OTA signing public key is not configured');
     }

@@ -430,8 +430,8 @@ class _MainScaffoldState extends State<MainScaffold> {
                     manifest.sha256Hex,
                     onError: (message) {
                       if (dialogContext.mounted) {
-                        ScaffoldMessenger.of(dialogContext).showSnackBar(
-                            SnackBar(content: Text(message)));
+                        ScaffoldMessenger.of(dialogContext)
+                            .showSnackBar(SnackBar(content: Text(message)));
                       }
                     },
                   ),
