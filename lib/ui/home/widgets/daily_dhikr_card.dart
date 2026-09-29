@@ -122,7 +122,6 @@ class _DailyDhikrCardState extends State<DailyDhikrCard> {
               minHeight: 5,
               borderRadius: BorderRadius.circular(8),
               semanticsLabel: 'تقدم هدف الذكر الشخصي',
-              semanticsValue: '$_count من $_target'.toEasternArabic(),
             ),
             const SizedBox(height: 12),
             FilledButton.tonalIcon(

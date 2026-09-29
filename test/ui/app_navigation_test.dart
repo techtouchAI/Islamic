@@ -92,7 +92,7 @@ void main() {
             .widget<DynamicListSection>(find.byType(DynamicListSection))
             .sectionKey,
         'quran');
-    expect(find.text('الإخلاص'), findsWidgets);
+    expect(find.bySemanticsLabel('الإخلاص'), findsWidgets);
     await tester.tap(find.byKey(const ValueKey('nav-adhkar')));
     await tester.pumpAndSettle();
     expect(tester.widget<TabbedSection>(find.byType(TabbedSection)).sectionKeys,
