@@ -125,7 +125,8 @@ class _HomePrayerCardState extends State<HomePrayerCard>
                             _controller.today?.location.displayName ??
                                 'مواقيت الصلاة بحسب الموقع المختار',
                             textAlign: TextAlign.center,
-                            style: const TextStyle(color: Colors.white70, fontSize: 12),
+                            style: const TextStyle(
+                                color: Colors.white70, fontSize: 12),
                           ),
                           const SizedBox(height: 8),
                           Text(title,
@@ -158,16 +159,21 @@ class _HomePrayerCardState extends State<HomePrayerCard>
                                       color: Colors.white,
                                       fontSize: 38,
                                       fontWeight: FontWeight.w700,
-                                      fontFeatures: [FontFeature.tabularFigures()],
+                                      fontFeatures: [
+                                        FontFeature.tabularFigures()
+                                      ],
                                     ),
                                   ),
                                 ),
                               ),
                             ),
                             Text(
-                              upcoming!.key == 'imsak' ? 'المتبقي للإمساك' : 'المتبقي للأذان',
+                              upcoming!.key == 'imsak'
+                                  ? 'المتبقي للإمساك'
+                                  : 'المتبقي للأذان',
                               textAlign: TextAlign.center,
-                              style: const TextStyle(color: Colors.white70, fontSize: 13),
+                              style: const TextStyle(
+                                  color: Colors.white70, fontSize: 13),
                             ),
                           ] else if (!_controller.failed)
                             const Text('لا توجد مواقيت متاحة حالياً',
@@ -177,20 +183,25 @@ class _HomePrayerCardState extends State<HomePrayerCard>
                             TextButton.icon(
                               onPressed: _controller.refresh,
                               icon: const Icon(Icons.refresh),
-                              label: const Text('تعذّر تحديث المواقيت · إعادة المحاولة'),
-                              style: TextButton.styleFrom(foregroundColor: Colors.white),
+                              label: const Text(
+                                  'تعذّر تحديث المواقيت · إعادة المحاولة'),
+                              style: TextButton.styleFrom(
+                                  foregroundColor: Colors.white),
                             ),
                           const SizedBox(height: 16),
                           PrayerTimesStrip(
                             schedule: _controller.today,
                             nextKey: upcoming != null &&
-                                    _controller.today?[upcoming.key]?.utcTime == upcoming.utcTime
-                                ? upcoming.key : null,
+                                    _controller.today?[upcoming.key]?.utcTime ==
+                                        upcoming.utcTime
+                                ? upcoming.key
+                                : null,
                           ),
                           const SizedBox(height: 8),
                           const Text('عرض المواقيت وإعدادات الأذان  ‹',
                               textAlign: TextAlign.center,
-                              style: TextStyle(color: Colors.white70, fontSize: 11)),
+                              style: TextStyle(
+                                  color: Colors.white70, fontSize: 11)),
                         ],
                       ),
                     ),
@@ -230,7 +241,8 @@ class PrayerTimesStrip extends StatelessWidget {
   Widget build(BuildContext context) => LayoutBuilder(
         builder: (context, constraints) {
           final scale = MediaQuery.textScalerOf(context).scale(13) / 13;
-          final columns = (constraints.maxWidth / (48 * scale)).floor().clamp(1, 5);
+          final columns =
+              (constraints.maxWidth / (48 * scale)).floor().clamp(1, 5);
           return DecoratedBox(
             decoration: BoxDecoration(
               color: Colors.white.withValues(alpha: .07),
@@ -241,36 +253,56 @@ class PrayerTimesStrip extends StatelessWidget {
               children: List.generate(keys.length, (i) {
                 final key = keys[i];
                 final value = schedule?[key];
-                final time = value?.isAvailable == true ? value!.localCivilTime : null;
+                final time =
+                    value?.isAvailable == true ? value!.localCivilTime : null;
                 final label = prayerDisplayNameAr(key);
                 final active = key == nextKey;
                 return SizedBox(
                   key: ValueKey('prayer-time-$key'),
                   width: constraints.maxWidth / columns,
                   child: Semantics(
-                    label: '$label ${time == null ? 'غير متاح' : intl.DateFormat('HH:mm').format(time).toEasternArabic()}',
+                    label:
+                        '$label ${time == null ? 'غير متاح' : intl.DateFormat('HH:mm').format(time).toEasternArabic()}',
                     selected: active,
                     child: ExcludeSemantics(
                       child: Container(
                         margin: const EdgeInsets.all(3),
-                        padding: const EdgeInsets.symmetric(vertical: 9, horizontal: 2),
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 9, horizontal: 2),
                         decoration: BoxDecoration(
                           color: active ? AppPalette.gold : Colors.transparent,
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Column(children: [
-                          Icon(icons[i], size: 19,
-                              color: active ? AppPalette.forest : AppPalette.gold),
+                          Icon(icons[i],
+                              size: 19,
+                              color:
+                                  active ? AppPalette.forest : AppPalette.gold),
                           const SizedBox(height: 5),
-                          Text(label, textAlign: TextAlign.center,
-                              style: TextStyle(fontSize: 12,
-                                  color: active ? AppPalette.forest : Colors.white)),
+                          Text(label,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                  fontSize: 12,
+                                  color: active
+                                      ? AppPalette.forest
+                                      : Colors.white)),
                           const SizedBox(height: 4),
-                          Text(time == null ? '—' : intl.DateFormat('HH:mm').format(time).toEasternArabic(),
+                          Text(
+                              time == null
+                                  ? '—'
+                                  : intl.DateFormat('HH:mm')
+                                      .format(time)
+                                      .toEasternArabic(),
                               textDirection: TextDirection.ltr,
-                              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700,
-                                  fontFeatures: const [FontFeature.tabularFigures()],
-                                  color: active ? AppPalette.forest : Colors.white)),
+                              style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                  fontFeatures: const [
+                                    FontFeature.tabularFigures()
+                                  ],
+                                  color: active
+                                      ? AppPalette.forest
+                                      : Colors.white)),
                         ]),
                       ),
                     ),

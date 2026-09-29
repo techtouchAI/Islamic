@@ -37,16 +37,17 @@ abstract final class AppTheme {
         scrolledUnderElevation: 0,
       ),
       navigationBarTheme: NavigationBarThemeData(
-        backgroundColor: dark ? const Color(0xFF18221D) : const Color(0xFFFFFEFB),
+        backgroundColor:
+            dark ? const Color(0xFF18221D) : const Color(0xFFFFFEFB),
         indicatorColor: scheme.primaryContainer,
         labelTextStyle: WidgetStateProperty.resolveWith((states) => TextStyle(
-          fontFamily: 'Cairo',
-          color: scheme.onSurface,
-          fontSize: 12,
-          fontWeight: states.contains(WidgetState.selected)
-              ? FontWeight.w700
-              : FontWeight.w500,
-        )),
+              fontFamily: 'Cairo',
+              color: scheme.onSurface,
+              fontSize: 12,
+              fontWeight: states.contains(WidgetState.selected)
+                  ? FontWeight.w700
+                  : FontWeight.w500,
+            )),
       ),
       dividerTheme: DividerThemeData(color: scheme.outlineVariant),
     );

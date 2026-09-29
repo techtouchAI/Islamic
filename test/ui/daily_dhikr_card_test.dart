@@ -4,7 +4,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
-  testWidgets('rapid taps persist and restore without changing tasbih state', (tester) async {
+  testWidgets('rapid taps persist and restore without changing tasbih state',
+      (tester) async {
     SharedPreferences.setMockInitialValues({'tasbih_zahra_count': 17});
     Widget app() => const MaterialApp(home: Scaffold(body: DailyDhikrCard()));
     await tester.pumpWidget(app());
@@ -26,7 +27,8 @@ void main() {
 
   testWidgets('old day resets and malformed count is bounded', (tester) async {
     SharedPreferences.setMockInitialValues({'home_daily_dhikr': '2000-1-1|99'});
-    await tester.pumpWidget(const MaterialApp(home: Scaffold(body: DailyDhikrCard())));
+    await tester
+        .pumpWidget(const MaterialApp(home: Scaffold(body: DailyDhikrCard())));
     await tester.pumpAndSettle();
     expect(find.text('تسبيح · ٠ / ١٠٠'), findsOneWidget);
     await tester.pumpWidget(const SizedBox());

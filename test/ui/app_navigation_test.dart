@@ -17,7 +17,8 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
-  test('tabs are roots; details return to their origin; Android back goes home', () {
+  test('tabs are roots; details return to their origin; Android back goes home',
+      () {
     final nav = AppNavigationController();
     addTearDown(nav.dispose);
     expect(nav.canGoBack, isFalse);
@@ -40,7 +41,9 @@ void main() {
     expect(nav.canGoBack, isFalse);
   });
 
-  testWidgets('real shell switches Quran, adhkar, favorites, home and drawer roots', (tester) async {
+  testWidgets(
+      'real shell switches Quran, adhkar, favorites, home and drawer roots',
+      (tester) async {
     await initializeDateFormatting('ar_SA');
     SharedPreferences.setMockInitialValues({});
     DataManager.setDB({
@@ -49,12 +52,19 @@ void main() {
         'adhkar': {'title': 'الأذكار'},
       },
       'content': {
-        'quran': [{'id': 112, 'title': 'سورة الإخلاص', 'content': 'قل هو الله أحد'}],
-        'adhkar_munajat': [{'id': 1, 'title': 'مناجاة للاختبار', 'content': 'ذكر'}],
+        'quran': [
+          {'id': 112, 'title': 'سورة الإخلاص', 'content': 'قل هو الله أحد'}
+        ],
+        'adhkar_munajat': [
+          {'id': 1, 'title': 'مناجاة للاختبار', 'content': 'ذكر'}
+        ],
       },
     });
     DataManager.httpClient = MockClient((_) async => http.Response('', 304));
-    addTearDown(() { DataManager.httpClient?.close(); DataManager.httpClient = null; });
+    addTearDown(() {
+      DataManager.httpClient?.close();
+      DataManager.httpClient = null;
+    });
     // Pre-initialize the actual index outside fake-async; no network/SQLite is
     // required for this shell integration test (CMS fallback is exercised).
     await tester.runAsync(() => SearchEngine.instance.init(force: true));
@@ -74,18 +84,28 @@ void main() {
     expect(find.byType(HomeSection), findsOneWidget);
     await tester.tap(find.byKey(const ValueKey('nav-quran')));
     await tester.pumpAndSettle();
-    expect(tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex, 1);
-    expect(tester.widget<DynamicListSection>(find.byType(DynamicListSection)).sectionKey, 'quran');
+    expect(
+        tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex,
+        1);
+    expect(
+        tester
+            .widget<DynamicListSection>(find.byType(DynamicListSection))
+            .sectionKey,
+        'quran');
     expect(find.text('الإخلاص'), findsWidgets);
     await tester.tap(find.byKey(const ValueKey('nav-adhkar')));
     await tester.pumpAndSettle();
     expect(tester.widget<TabbedSection>(find.byType(TabbedSection)).sectionKeys,
         ['adhkar_munajat', 'adhkar_tasbihs']);
-    expect(tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex, 2);
+    expect(
+        tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex,
+        2);
     await tester.tap(find.byKey(const ValueKey('nav-favorites')));
     await tester.pumpAndSettle();
     expect(find.byType(FavoritesSection), findsOneWidget);
-    expect(tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex, 3);
+    expect(
+        tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex,
+        3);
     await tester.binding.handlePopRoute();
     await tester.pump(const Duration(milliseconds: 300));
     expect(find.byType(HomeSection), findsOneWidget);
@@ -95,7 +115,9 @@ void main() {
     await tester.pump(const Duration(milliseconds: 300));
     await tester.tap(find.text('القرآن الكريم').last);
     await tester.pumpAndSettle();
-    expect(tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex, 1);
+    expect(
+        tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex,
+        1);
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox());
     await tester.pumpAndSettle();

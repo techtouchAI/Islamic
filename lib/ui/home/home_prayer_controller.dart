@@ -23,9 +23,10 @@ UpcomingPrayer? findUpcomingPrayer(
   final upcoming = <UpcomingPrayer>[];
   for (final schedule in schedules) {
     final ramadan = CalendarRepository.getTodayHijri(
-      schedule.date,
-      hijriAdjustment,
-    ).month == 9;
+          schedule.date,
+          hijriAdjustment,
+        ).month ==
+        9;
     for (final key in prayerDisplayNamesAr.keys) {
       if (key == 'imsak' && !ramadan) continue;
       final value = schedule[key];
@@ -129,17 +130,19 @@ class HomePrayerController extends ChangeNotifier {
   }
 
   DateTime _civilNow(PrayerSchedule schedule) => nowUtc.add(Duration(
-    minutes: (schedule.location.timeZoneOffsetHours * 60).round(),
-  ));
+        minutes: (schedule.location.timeZoneOffsetHours * 60).round(),
+      ));
 
   bool _sameDate(DateTime a, DateTime b) =>
       a.year == b.year && a.month == b.month && a.day == b.day;
 
   bool _discardStaleSchedules() {
     final current = today;
-    if (current == null || _sameDate(current.date, _civilNow(current))) return false;
+    if (current == null || _sameDate(current.date, _civilNow(current)))
+      return false;
     final next = tomorrow;
-    today = next != null && _sameDate(next.date, _civilNow(current)) ? next : null;
+    today =
+        next != null && _sameDate(next.date, _civilNow(current)) ? next : null;
     tomorrow = null;
     return true;
   }
@@ -148,7 +151,8 @@ class HomePrayerController extends ChangeNotifier {
     _timer ??= Timer.periodic(const Duration(seconds: 1), (_) {
       final newDate = _discardStaleSchedules();
       final retryDue = failed &&
-          (_lastAttempt == null || nowUtc.difference(_lastAttempt!) >= const Duration(minutes: 1));
+          (_lastAttempt == null ||
+              nowUtc.difference(_lastAttempt!) >= const Duration(minutes: 1));
       if (newDate || retryDue) {
         unawaited(refresh());
       }

@@ -33,7 +33,10 @@ class _DailyDhikrCardState extends State<DailyDhikrCard> {
     _load();
     _dayTimer = Timer.periodic(const Duration(minutes: 1), (_) {
       if (_prefs != null && _date != _today && mounted) {
-        setState(() { _date = _today; _count = 0; });
+        setState(() {
+          _date = _today;
+          _count = 0;
+        });
       }
     });
   }
@@ -100,11 +103,19 @@ class _DailyDhikrCardState extends State<DailyDhikrCard> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('ذكر اليوم', style: TextStyle(color: theme.cardColor.computeLuminance() > .5 ? const Color(0xFF123C32) : Colors.white70)),
+            Text('ذكر اليوم',
+                style: TextStyle(
+                    color: theme.cardColor.computeLuminance() > .5
+                        ? const Color(0xFF123C32)
+                        : Colors.white70)),
             const SizedBox(height: 8),
             Text('سبحان الله وبحمده',
-              style: TextStyle(fontFamily: 'OmarNaskh', fontSize: 26,
-                  color: theme.cardColor.computeLuminance() > .5 ? Colors.black87 : Colors.white)),
+                style: TextStyle(
+                    fontFamily: 'OmarNaskh',
+                    fontSize: 26,
+                    color: theme.cardColor.computeLuminance() > .5
+                        ? Colors.black87
+                        : Colors.white)),
             const SizedBox(height: 14),
             LinearProgressIndicator(
               value: _count / _target,
@@ -116,18 +127,26 @@ class _DailyDhikrCardState extends State<DailyDhikrCard> {
             const SizedBox(height: 12),
             FilledButton.tonalIcon(
               key: const ValueKey('daily-dhikr-increment'),
-              onPressed: _prefs == null || (_count == _target && _date == _today)
-                  ? null : _increment,
-              icon: Icon(_count == _target ? Icons.check_circle_outline : Icons.add),
+              onPressed:
+                  _prefs == null || (_count == _target && _date == _today)
+                      ? null
+                      : _increment,
+              icon: Icon(
+                  _count == _target ? Icons.check_circle_outline : Icons.add),
               label: Text(_count == _target
                   ? 'أتممت هدف اليوم · ١٠٠'
                   : 'تسبيح · $_count / $_target'.toEasternArabic()),
             ),
-            Text('هدف يومي شخصي', textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 11,
-                    color: theme.cardColor.computeLuminance() > .5 ? Colors.black54 : Colors.white70)),
+            Text('هدف يومي شخصي',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                    fontSize: 11,
+                    color: theme.cardColor.computeLuminance() > .5
+                        ? Colors.black54
+                        : Colors.white70)),
             if (_failed)
-              TextButton(onPressed: _prefs == null ? _load : _persist,
+              TextButton(
+                  onPressed: _prefs == null ? _load : _persist,
                   child: const Text('تعذّر حفظ التقدم · إعادة المحاولة')),
           ],
         ),

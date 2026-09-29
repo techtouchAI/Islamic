@@ -15,13 +15,15 @@ void main() {
   for (final width in [320.0, 390.0, 768.0]) {
     for (final scale in [1.0, 2.0]) {
       for (final brightness in Brightness.values) {
-        testWidgets('prayer card RTL $width scale $scale $brightness', (tester) async {
+        testWidgets('prayer card RTL $width scale $scale $brightness',
+            (tester) async {
           await tester.binding.setSurfaceSize(Size(width, 1800));
           addTearDown(() => tester.binding.setSurfaceSize(null));
           final date = DateTime.utc(2026, 9, 30);
           final controller = HomePrayerController(
             loadToday: () async => scheduleFor(date),
-            loadTomorrow: (_) async => scheduleFor(date.add(const Duration(days: 1))),
+            loadTomorrow: (_) async =>
+                scheduleFor(date.add(const Duration(days: 1))),
             clock: () => DateTime.utc(2026, 9, 30, 8),
           );
           addTearDown(controller.dispose);
@@ -30,12 +32,21 @@ void main() {
             locale: const Locale('ar', 'SA'),
             supportedLocales: const [Locale('ar', 'SA')],
             localizationsDelegates: GlobalMaterialLocalizations.delegates,
-            theme: AppTheme.build(brightness: brightness, primary: AppPalette.forest, card: Colors.white),
+            theme: AppTheme.build(
+                brightness: brightness,
+                primary: AppPalette.forest,
+                card: Colors.white),
             home: MediaQuery(
-              data: MediaQueryData(size: Size(width, 1800), textScaler: TextScaler.linear(scale)),
-              child: Scaffold(body: SingleChildScrollView(
+              data: MediaQueryData(
+                  size: Size(width, 1800),
+                  textScaler: TextScaler.linear(scale)),
+              child: Scaffold(
+                  body: SingleChildScrollView(
                 padding: const EdgeInsets.all(16),
-                child: HomePrayerCard(controller: controller, hijriAdjustment: 0, onTap: () => tapped = true),
+                child: HomePrayerCard(
+                    controller: controller,
+                    hijriAdjustment: 0,
+                    onTap: () => tapped = true),
               )),
             ),
           ));
@@ -48,8 +59,10 @@ void main() {
             expect(find.byKey(ValueKey('prayer-time-$key')), findsOneWidget);
           }
           if (scale == 1) {
-            final fajr = tester.getCenter(find.byKey(const ValueKey('prayer-time-fajr')));
-            final isha = tester.getCenter(find.byKey(const ValueKey('prayer-time-isha')));
+            final fajr = tester
+                .getCenter(find.byKey(const ValueKey('prayer-time-fajr')));
+            final isha = tester
+                .getCenter(find.byKey(const ValueKey('prayer-time-isha')));
             expect(fajr.dx, greaterThan(isha.dx));
             expect(fajr.dy, isha.dy);
           }
@@ -61,16 +74,23 @@ void main() {
     }
   }
 
-  testWidgets('missing times and failure have no fabricated countdown, retry works', (tester) async {
+  testWidgets(
+      'missing times and failure have no fabricated countdown, retry works',
+      (tester) async {
     var fail = true;
     final date = DateTime.utc(2026, 9, 30);
     final controller = HomePrayerController(
-      loadToday: () async { if (fail) throw StateError('unavailable'); return scheduleFor(date); },
+      loadToday: () async {
+        if (fail) throw StateError('unavailable');
+        return scheduleFor(date);
+      },
       loadTomorrow: (_) async => scheduleFor(date.add(const Duration(days: 1))),
       clock: () => DateTime.utc(2026, 9, 30, 8),
     );
     addTearDown(controller.dispose);
-    await tester.pumpWidget(MaterialApp(home: Scaffold(body: SingleChildScrollView(
+    await tester.pumpWidget(MaterialApp(
+        home: Scaffold(
+            body: SingleChildScrollView(
       child: HomePrayerCard(controller: controller, hijriAdjustment: 0),
     ))));
     await tester.pump();
@@ -83,10 +103,14 @@ void main() {
     await tester.pumpWidget(const SizedBox());
   });
 
-  testWidgets('quick actions respect visibility and all route keys', (tester) async {
+  testWidgets('quick actions respect visibility and all route keys',
+      (tester) async {
     String? selected;
-    await tester.pumpWidget(MaterialApp(home: Scaffold(body: DailyWorshipActions(
-      onNavigate: (key) => selected = key, visibility: const {'adhkar': false},
+    await tester.pumpWidget(MaterialApp(
+        home: Scaffold(
+            body: DailyWorshipActions(
+      onNavigate: (key) => selected = key,
+      visibility: const {'adhkar': false},
     ))));
     expect(find.byKey(const ValueKey('quick-adhkar')), findsNothing);
     for (final key in ['quran', 'tasbih', 'qibla']) {
