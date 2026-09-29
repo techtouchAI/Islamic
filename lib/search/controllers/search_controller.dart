@@ -1,72 +1,46 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import '../models/search_models.dart';
-import '../search_ranking.dart';
-import '../../services/search_engine.dart'; // To use fuzzyMatch if needed
-import '../../services/quran_service.dart';
-import '../../services/mafatih_service.dart';
-import '../../models/mafatih_article.dart';
+import '../repositories/search_repository.dart';
+import '../../services/search_engine.dart';
 
+/// Search facade for the UI.
+///
+/// All queries flow through the strict [SearchRepository] contract
+/// ([SearchLoading] / [SearchSuccess] / [SearchEmpty] / [SearchError]) and
+/// results are lazily extended in batches of 20 through [loadMore].
 class SearchController extends ChangeNotifier {
   // ─── Dependencies ───
+  final SearchRepository _repository;
   List<ContentItem> _allItems;
   final List<String> _availableSections;
-  final Future<List<Map<String, dynamic>>> Function(String) _searchQuran;
-  final Future<List<MafatihArticle>> Function(String) _searchMafatih;
-  final Future<List<ContentItem>> Function(List<ContentItem>, String)
-      _searchMemory;
 
   // ─── State ───
   String _query = '';
-  String? _warning;
   String _selectedCategory = 'all'; // 'all' = الكل
-  int _currentPage = 1;
-  static const int _itemsPerPage = 10;
+  SearchState _state = const SearchEmpty();
   bool _isLoading = false;
+  bool _isLoadingMore = false;
   bool _indexing = false;
 
   Timer? _debounceTimer;
   int _requestGeneration = 0;
   bool _disposed = false;
 
-  // ─── Cached Results ───
+  // ─── Cached Results (all batches loaded so far) ───
   List<ContentItem> _filteredItems = [];
   List<SectionGroup> _groupedItems = [];
-  PaginationMetadata _pagination = const PaginationMetadata(
-    currentPage: 1,
-    totalPages: 0,
-    totalItems: 0,
-    itemsPerPage: _itemsPerPage,
-  );
-
-  // ─── Public Getters ───
-  String get query => _query;
-  String? get warning => _warning;
-  String get selectedCategory => _selectedCategory;
-  int get currentPage => _currentPage;
-  bool get isLoading => _isLoading || _indexing;
-  List<ContentItem> get filteredItems => List.unmodifiable(_filteredItems);
-  List<SectionGroup> get groupedItems => List.unmodifiable(_groupedItems);
-  PaginationMetadata get pagination => _pagination;
-  List<String> get availableSections => ['all', ..._availableSections];
-
-  bool get isAllCategory => _selectedCategory == 'all';
 
   SearchController({
     required List<ContentItem> allItems,
     required List<String> availableSections,
-    Future<List<Map<String, dynamic>>> Function(String)? searchQuran,
-    Future<List<MafatihArticle>> Function(String)? searchMafatih,
-    Future<List<ContentItem>> Function(List<ContentItem>, String)? searchMemory,
+    SearchRepository? repository,
   })  : _allItems = allItems,
         _availableSections = availableSections,
-        _searchQuran = searchQuran ?? QuranService.searchVerses,
-        _searchMafatih = searchMafatih ?? MafatihService.searchArticles,
-        _searchMemory = searchMemory ?? _searchInIsolate {
+        _repository = repository ?? HybridSearchRepository() {
     SearchEngine.instance.isIndexingNotifier
         .addListener(_onIndexingStateChanged);
     _indexing = SearchEngine.instance.isIndexingNotifier.value;
-    _computeResults();
   }
 
   void _onIndexingStateChanged() {
@@ -84,17 +58,49 @@ class SearchController extends ChangeNotifier {
     super.dispose();
   }
 
+  // ─── Public Getters ───
+  String get query => _query;
+  String get selectedCategory => _selectedCategory;
+  SearchState get state => _state;
+  bool get isLoading => _isLoading || _indexing;
+  bool get isLoadingMore => _isLoadingMore;
+  bool get indexing => _indexing;
+  List<ContentItem> get filteredItems => List.unmodifiable(_filteredItems);
+  List<SectionGroup> get groupedItems => List.unmodifiable(_groupedItems);
+  List<String> get availableSections => ['all', ..._availableSections];
+  bool get isAllCategory => _selectedCategory == 'all';
+
+  /// Number of results loaded so far (batches accumulate lazily).
+  int get totalLoaded => _filteredItems.length;
+
+  /// Whether another batch may still be fetched for the current query.
+  bool get hasMore =>
+      _state is SearchSuccess && (_state as SearchSuccess).hasMore;
+
+  /// Consistent warning contract:
+  /// * [SearchError]      -> its message (full failure, Retry required)
+  /// * partial [SearchSuccess] -> names of failed sources (Retry required)
+  /// * otherwise          -> null
+  String? get warning {
+    final current = _state;
+    if (current is SearchError) return current.message;
+    if (current is SearchSuccess && current.failedSources.isNotEmpty) {
+      final names =
+          current.failedSources.map(sourceDisplayName).join('، ');
+      return 'تعذر البحث في: $names. النتائج جزئية.';
+    }
+    return null;
+  }
+
   // ─── Actions ───
 
   void updateQuery(String value) {
     final normalized = value.trim();
     if (_query == normalized) return;
     _query = normalized;
-    _warning = null;
     _requestGeneration++;
-    _currentPage = 1; // Reset pagination on query change
-
     _isLoading = true;
+    _isLoadingMore = false;
     notifyListeners();
 
     _debounceTimer?.cancel();
@@ -105,7 +111,6 @@ class SearchController extends ChangeNotifier {
 
   void replaceItems(List<ContentItem> items) {
     _allItems = items;
-    _currentPage = 1;
     _debounceTimer?.cancel();
     _computeResults();
   }
@@ -113,285 +118,100 @@ class SearchController extends ChangeNotifier {
   void selectCategory(String category) {
     if (_selectedCategory == category) return;
     _selectedCategory = category;
-    _warning = null;
     _requestGeneration++;
-    _currentPage = 1; // Reset pagination on category change
-
     _isLoading = true;
+    _isLoadingMore = false;
     notifyListeners();
 
     _computeResults();
-  }
-
-  void goToPage(int page) {
-    if (page < 1 || page > _pagination.totalPages || page == _currentPage)
-      return;
-    _currentPage = page;
-    _computePagination(); // Only re-slice, no need to re-filter
-    notifyListeners();
   }
 
   void retry() {
     _debounceTimer?.cancel();
-    _currentPage = 1;
     _computeResults();
   }
 
-  void nextPage() => goToPage(_currentPage + 1);
-  void previousPage() => goToPage(_currentPage - 1);
+  /// Lazily fetches the next batch (20 results) when the UI list reaches
+  /// its bottom. Stale responses from previous queries are discarded.
+  Future<void> loadMore() async {
+    if (_disposed || _query.isEmpty) return;
+    if (_isLoading || _isLoadingMore || _indexing) return;
+    if (!hasMore) return;
+
+    final generation = _requestGeneration;
+    _isLoadingMore = true;
+    notifyListeners();
+
+    try {
+      final state = await _repository.loadMore(
+        contentItems: _categoryFilteredItems(),
+      );
+      if (_disposed) return;
+      if (generation != _requestGeneration) return;
+      _applyState(state);
+    } finally {
+      // Only the still-current request may release the flag; a superseding
+      // query already owns _isLoadingMore/_isLoading at this point.
+      if (!_disposed && generation == _requestGeneration) {
+        _isLoadingMore = false;
+        notifyListeners();
+      }
+    }
+  }
 
   // ─── Core Logic ───
 
   Future<void> _computeResults() async {
     final generation = ++_requestGeneration;
-    final category = _selectedCategory;
     _isLoading = true;
+    _isLoadingMore = false;
     notifyListeners();
 
-    // 1. Filter by category
-    List<ContentItem> categoryFiltered;
-    if (category == 'all') {
-      categoryFiltered = _allItems;
-    } else {
-      categoryFiltered =
-          _allItems.where((i) => i.sectionId == category).toList();
-    }
-
-    // 2. Filter by search query (Hybrid Search)
-    if (_query.isEmpty) {
-      _warning = null;
+    if (_query.trim().isEmpty) {
+      _repository.reset();
+      _state = const SearchEmpty();
       _filteredItems = [];
-    } else {
-      final currentQuery = _query;
-
-      try {
-        final failedSources = <String>[
-          if (kIsWeb && (category == 'all' || category == 'quran'))
-            'بحث الآيات على المتصفح',
-          if (kIsWeb && (category == 'all' || category == 'mafatih'))
-            'مفاتيح الجنان على المتصفح',
-        ];
-        // 2a. Search in SQLite DBs if category matches 'all', 'quran', or 'mafatih'
-        final quranFuture =
-            (!kIsWeb && (category == 'all' || category == 'quran'))
-                ? _searchQuran(currentQuery).then<List<Map<String, dynamic>>>(
-                    (rows) => rows,
-                    onError: (Object e, StackTrace stack) {
-                      debugPrint('Quran search failed: $e');
-                      failedSources.add('القرآن');
-                      return <Map<String, dynamic>>[];
-                    },
-                  )
-                : Future.value(<Map<String, dynamic>>[]);
-
-        final mafatihFuture =
-            (!kIsWeb && (category == 'all' || category == 'mafatih'))
-                ? _searchMafatih(currentQuery).then<List<MafatihArticle>>(
-                    (rows) => rows,
-                    onError: (Object e, StackTrace stack) {
-                      debugPrint('Mafatih search failed: $e');
-                      failedSources.add('مفاتيح الجنان');
-                      return <MafatihArticle>[];
-                    },
-                  )
-                : Future.value(<MafatihArticle>[]);
-
-        // 2b. Search JSON data in isolate
-        final memorySearchFuture = _searchMemory(categoryFiltered, currentQuery)
-            .then<List<ContentItem>>(
-          (rows) => rows,
-          onError: (Object e, StackTrace stack) {
-            debugPrint('Local content search failed: $e');
-            failedSources.add('المحتوى المحلي');
-            return <ContentItem>[];
-          },
-        );
-
-        // Run all futures concurrently
-        final results =
-            await Future.wait([quranFuture, mafatihFuture, memorySearchFuture]);
-
-        if (!_disposed && generation == _requestGeneration) {
-          _warning = failedSources.isEmpty
-              ? null
-              : 'تعذر البحث في: ${failedSources.join('، ')}. النتائج جزئية.';
-          final quranResultsRaw = results[0] as List<Map<String, dynamic>>;
-          final mafatihResultsRaw = results[1] as List<MafatihArticle>;
-          final memoryResults = results[2] as List<ContentItem>;
-
-          // Map Quran results
-          final quranItems = quranResultsRaw.map((ayah) {
-            return ContentItem(
-              id: '${ayah['surah_number']}_${ayah['ayah_number']}',
-              title: 'سورة ${ayah['surah_name']} - آية ${ayah['ayah_number']}',
-              subtitle: 'القرآن الكريم',
-              content: ayah['ayah_text'].toString(),
-              sectionId: 'quran',
-              sectionName: 'القرآن الكريم',
-              category: 'quran',
-              surahNumber: ayah['surah_number'] as int,
-              ayahNumber: ayah['ayah_number'] is String
-                  ? int.tryParse(ayah['ayah_number'])
-                  : ayah['ayah_number'],
-              type: 'quran',
-            );
-          }).toList();
-
-          // Map Mafatih results
-          final mafatihItems = mafatihResultsRaw.map((article) {
-            return ContentItem(
-              id: 'mafatih_${article.id}',
-              title: article.title,
-              subtitle: 'مفاتيح الجنان',
-              content: article.text,
-              sectionId: 'mafatih',
-              sectionName: 'مفاتيح الجنان',
-              category: 'mafatih',
-            );
-          }).toList();
-
-          final normalizedQuery = SearchEngine.normalizeArabic(currentQuery);
-          _filteredItems = [
-            ...quranItems,
-            ...mafatihItems,
-            ...memoryResults,
-          ]..sort(
-              (a, b) => SearchRanking.compareNormalized(a, b, normalizedQuery));
-        } else {
-          return; // Query changed during await
-        }
-      } catch (e) {
-        if (_disposed || generation != _requestGeneration) return;
-        debugPrint("Hybrid search error: $e");
-        _warning = 'تعذر إكمال البحث. يرجى المحاولة مجددًا.';
-        _filteredItems = [];
-      }
+      _groupedItems = [];
+      _isLoading = false;
+      if (!_disposed && generation == _requestGeneration) notifyListeners();
+      return;
     }
+
+    // Strict contract: the UI observes SearchLoading while the repository
+    // resolves the new session.
+    _state = const SearchLoading();
+    final state = await _repository.search(
+      query: _query,
+      category: _selectedCategory,
+      contentItems: _categoryFilteredItems(),
+    );
 
     if (_disposed || generation != _requestGeneration) return;
-
-    // 3. Group if "All" category
-    if (isAllCategory) {
-      _groupedItems = _buildSectionGroups(_filteredItems);
-    } else {
-      _groupedItems = [];
-    }
-
-    // 4. Compute pagination
-    _computePagination();
-
+    _applyState(state);
     _isLoading = false;
     notifyListeners();
   }
 
-  static Future<List<ContentItem>> _searchInIsolate(
-          List<ContentItem> items, String query) =>
-      compute(_performSearch, {'items': items, 'query': query});
-
-  static List<ContentItem> _performSearch(Map<String, dynamic> params) {
-    final List<ContentItem> categoryFiltered = params['items'];
-    final String query = params['query'];
-
-    final normalizedQuery = SearchEngine.normalizeArabic(query);
-    final queryWords =
-        normalizedQuery.split(' ').where((w) => w.isNotEmpty).toList();
-
-    if (queryWords.isEmpty) {
-      return categoryFiltered;
+  void _applyState(SearchState state) {
+    _state = state;
+    if (state is SearchSuccess) {
+      _filteredItems = List<ContentItem>.of(state.items);
+    } else if (state is SearchError) {
+      _filteredItems = [];
     }
+    // SearchEmpty keeps any already-loaded list empty as well.
+    if (state is SearchEmpty) _filteredItems = [];
 
-    List<Map<String, dynamic>> scoredItems = [];
-
-    // Using a simple split ' ' since normalizeArabic collapses whitespace.
-    // This avoids heavy Regex parsing for millions of words.
-    for (var item in categoryFiltered) {
-      bool allWordsMatched = true;
-      int docScore = 0;
-
-      final normalizedTitle =
-          item.normalizedTitle ?? SearchEngine.normalizeArabic(item.title);
-      final normalizedContent =
-          item.normalizedContent ?? SearchEngine.normalizeArabic(item.content);
-      final normalizedCategory = item.normalizedCategory ??
-          SearchEngine.normalizeArabic(item.category ?? '');
-
-      // Tokenize strings once per document
-      final titleWords = normalizedTitle.split(' ').toSet();
-      final contentWords = normalizedContent.split(' ').toSet();
-      final categoryWords = normalizedCategory.split(' ').toSet();
-
-      for (var word in queryWords) {
-        bool wordMatched = false;
-        int wordScore = 0;
-
-        // Title Matching
-        if (normalizedTitle == word) {
-          wordMatched = true;
-          wordScore += 20; // Exact match bonus
-        } else if (titleWords.contains(word)) {
-          wordMatched = true;
-          wordScore += 10;
-        }
-
-        // Category Matching
-        if (normalizedCategory == word || categoryWords.contains(word)) {
-          wordMatched = true;
-          wordScore += 4;
-        }
-
-        // Content Matching
-        if (normalizedContent == word) {
-          wordMatched = true;
-          wordScore += 5;
-        } else if (contentWords.contains(word)) {
-          wordMatched = true;
-          wordScore += 2;
-        } else if (SearchEngine.fuzzyMatchWords(
-            word, normalizedContent, contentWords)) {
-          wordMatched = true;
-          wordScore += 1;
-        }
-
-        if (!wordMatched && word.length >= 4) {
-          if (SearchEngine.fuzzyMatchWords(word, normalizedTitle, titleWords)) {
-            wordMatched = true;
-            wordScore += 6;
-          }
-        }
-
-        if (!wordMatched) {
-          allWordsMatched = false;
-          break;
-        }
-
-        docScore += wordScore;
-      }
-
-      // Allow full exact phrase matches even if individual words failed (e.g. phrases with stop words)
-      if (!allWordsMatched) {
-        if (normalizedTitle.contains(normalizedQuery)) {
-          allWordsMatched = true;
-          docScore += 30;
-        } else if (normalizedContent.contains(normalizedQuery)) {
-          allWordsMatched = true;
-          docScore += 5;
-        }
-      }
-
-      if (allWordsMatched && docScore > 0) {
-        scoredItems.add({'item': item, 'score': docScore});
-      }
+    if (isAllCategory && _filteredItems.isNotEmpty) {
+      _groupedItems = _buildSectionGroups(_filteredItems);
+    } else {
+      _groupedItems = [];
     }
+  }
 
-    scoredItems.sort((a, b) {
-      int scoreCompare = (b['score'] as int).compareTo(a['score'] as int);
-      if (scoreCompare != 0) return scoreCompare;
-      return (a['item'] as ContentItem)
-          .title
-          .compareTo((b['item'] as ContentItem).title);
-    });
-
-    return scoredItems.map((e) => e['item'] as ContentItem).toList();
+  List<ContentItem> _categoryFilteredItems() {
+    if (_selectedCategory == 'all') return _allItems;
+    return _allItems.where((i) => i.sectionId == _selectedCategory).toList();
   }
 
   List<SectionGroup> _buildSectionGroups(List<ContentItem> items) {
@@ -399,53 +219,14 @@ class SearchController extends ChangeNotifier {
     for (final item in items) {
       map.putIfAbsent(item.sectionId, () => []).add(item);
     }
-    return map.entries.map((e) {
-      final sectionName = _allItems
-          .firstWhere((i) => i.sectionId == e.key, orElse: () => items.first)
-          .sectionName;
-      return SectionGroup(
-        sectionId: e.key,
-        sectionName: sectionName,
-        items: e.value,
-      );
-    }).toList();
-  }
-
-  void _computePagination() {
-    final totalItems = _filteredItems.length;
-    final totalPages = (totalItems / _itemsPerPage).ceil();
-    final safeTotalPages = totalPages == 0 ? 1 : totalPages;
-
-    // Clamp current page
-    if (_currentPage > safeTotalPages) {
-      _currentPage = safeTotalPages;
-    }
-
-    final startIndex = (_currentPage - 1) * _itemsPerPage;
-    final endIndex = (startIndex + _itemsPerPage).clamp(0, totalItems);
-
-    // Slice the flattened list for current page
-    final paginatedItems = _filteredItems.sublist(startIndex, endIndex);
-
-    // Rebuild groups from paginated items if in "All" mode
-    if (isAllCategory) {
-      _groupedItems = _buildSectionGroups(paginatedItems);
-    }
-
-    // Let's safely handle this by updating the pagination logic
-    _pagination = PaginationMetadata(
-      currentPage: _currentPage,
-      totalPages: safeTotalPages,
-      totalItems: totalItems,
-      itemsPerPage: _itemsPerPage,
-    );
-  }
-
-  // Expose paginated items safely without destroying the filtered cache
-  List<ContentItem> get paginatedFilteredItems {
-    final startIndex = (_currentPage - 1) * _itemsPerPage;
-    final endIndex =
-        (startIndex + _itemsPerPage).clamp(0, _filteredItems.length);
-    return _filteredItems.sublist(startIndex, endIndex);
+    return map.entries
+        .map(
+          (e) => SectionGroup(
+            sectionId: e.key,
+            sectionName: e.value.first.sectionName,
+            items: e.value,
+          ),
+        )
+        .toList();
   }
 }

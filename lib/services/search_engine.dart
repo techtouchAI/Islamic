@@ -332,4 +332,37 @@ class SearchEngine {
 
     return results;
   }
+
+  /// JSON index search with `LIMIT`/`OFFSET`: scores the full result set
+  /// (needed for a stable global order) and returns only the requested
+  /// window plus the total number of matches.
+  SearchPage searchPaged(
+    String query, {
+    required int limit,
+    required int offset,
+  }) {
+    final all = search(query);
+    final total = all.length;
+    final start = offset <= 0 ? 0 : (offset > total ? total : offset);
+    final requestedEnd = start + (limit <= 0 ? 0 : limit);
+    final end = requestedEnd > total ? total : requestedEnd;
+    return SearchPage(
+      results: start < end ? all.sublist(start, end) : const <SearchResult>[],
+      totalMatches: total,
+      hasMore: end < total,
+    );
+  }
+}
+
+/// One window of JSON search results produced by [SearchEngine.searchPaged].
+class SearchPage {
+  final List<SearchResult> results;
+  final int totalMatches;
+  final bool hasMore;
+
+  const SearchPage({
+    required this.results,
+    required this.totalMatches,
+    required this.hasMore,
+  });
 }

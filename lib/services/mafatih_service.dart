@@ -19,8 +19,10 @@ class MafatihService {
   }
 
   static Future<List<MafatihCategory>> getCategories() async {
+    // Web has no SQLite: gracefully fall back to an empty list.
+    if (kIsWeb) return [];
     try {
-      if (kIsWeb || _db == null) {
+      if (_db == null) {
         throw StateError('مفاتيح الجنان غير متاح على هذا الجهاز');
       }
       final maps = await _db!.query('categories', where: 'parent_id = 0');
@@ -32,8 +34,10 @@ class MafatihService {
   }
 
   static Future<List<MafatihCategory>> getSubCategories(int parentId) async {
+    // Web has no SQLite: gracefully fall back to an empty list.
+    if (kIsWeb) return [];
     try {
-      if (kIsWeb || _db == null) {
+      if (_db == null) {
         throw StateError('مفاتيح الجنان غير متاح على هذا الجهاز');
       }
       final maps = await _db!.query(
@@ -85,7 +89,16 @@ class MafatihService {
     }
   }
 
-  static Future<List<MafatihArticle>> searchArticles(String query) async {
+  /// Paged Mafatih search: applies SQL `LIMIT`/`OFFSET` so callers lazily
+  /// fetch batches instead of materializing every match.
+  ///
+  /// On the web build SQLite is unavailable: returns an empty (fallback)
+  /// result instead of throwing a native SQL error.
+  static Future<List<MafatihArticle>> searchArticlesPaged(
+    String query, {
+    required int limit,
+    required int offset,
+  }) async {
     try {
       if (kIsWeb || query.isEmpty) return [];
       if (_db == null) {
@@ -105,17 +118,25 @@ class MafatihService {
           normalizedPattern
         ],
         orderBy: 'id ASC',
+        limit: limit,
+        offset: offset,
       );
       return maps.map((m) => MafatihArticle.fromMap(m)).toList();
     } catch (e) {
-      debugPrint("MafatihService searchArticles Error: $e");
+      debugPrint("MafatihService searchArticlesPaged Error: $e");
       rethrow;
     }
   }
 
+  /// Convenience wrapper returning a single large batch.
+  static Future<List<MafatihArticle>> searchArticles(String query) =>
+      searchArticlesPaged(query, limit: 100000, offset: 0);
+
   static Future<List<MafatihArticle>> getArticles(int categoryId) async {
+    // Web has no SQLite: gracefully fall back to an empty list.
+    if (kIsWeb) return [];
     try {
-      if (kIsWeb || _db == null) {
+      if (_db == null) {
         throw StateError('مفاتيح الجنان غير متاح على هذا الجهاز');
       }
       final String idStr = categoryId.toString();

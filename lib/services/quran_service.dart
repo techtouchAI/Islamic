@@ -105,7 +105,16 @@ class QuranService {
     }
   }
 
-  static Future<List<Map<String, dynamic>>> searchVerses(String query) async {
+  /// Paged Quran search: applies SQL `LIMIT`/`OFFSET` so callers lazily
+  /// fetch batches instead of materializing every match.
+  ///
+  /// On the web build SQLite is unavailable: returns an empty (fallback)
+  /// result instead of throwing a native SQL error.
+  static Future<List<Map<String, dynamic>>> searchVersesPaged(
+    String query, {
+    required int limit,
+    required int offset,
+  }) async {
     if (kIsWeb || query.isEmpty) return [];
     if (_db == null) throw StateError('قاعدة القرآن غير متاحة');
 
@@ -121,7 +130,15 @@ class QuranService {
         WHERE a.ar_text LIKE ? ESCAPE '\' OR s.name LIKE ? ESCAPE '\'
            OR a.ar_text LIKE ? ESCAPE '\' OR s.name LIKE ? ESCAPE '\'
         ORDER BY a.sid ASC, a.anum ASC
-      ''', [rawPattern, rawPattern, normalizedPattern, normalizedPattern]);
+        LIMIT ? OFFSET ?
+      ''', [
+        rawPattern,
+        rawPattern,
+        normalizedPattern,
+        normalizedPattern,
+        limit,
+        offset,
+      ]);
 
       return result
           .map(
@@ -134,10 +151,14 @@ class QuranService {
           )
           .toList();
     } catch (e) {
-      debugPrint("QuranService searchVerses Error: $e");
+      debugPrint("QuranService searchVersesPaged Error: $e");
       rethrow;
     }
   }
+
+  /// Convenience wrapper returning a single large batch.
+  static Future<List<Map<String, dynamic>>> searchVerses(String query) =>
+      searchVersesPaged(query, limit: 7000, offset: 0);
 
   static String getFormattedContent(
     int surahId,

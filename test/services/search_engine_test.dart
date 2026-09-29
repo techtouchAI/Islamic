@@ -116,5 +116,42 @@ void main() {
       final resultsSpaces = engine.search("   ");
       expect(resultsSpaces.isEmpty, isTrue);
     });
+
+    test('searchPaged applies LIMIT and OFFSET over JSON results', () {
+      final engine = SearchEngine.instance;
+      SearchDocument doc(String id, String title) => SearchDocument(
+            id: id,
+            title: title,
+            content: 'وقت صلاة الفجر',
+            category: 'cat1',
+            tags: [],
+            type: 'content',
+            normalizedTitle: SearchEngine.normalizeArabic(title),
+            normalizedContent: SearchEngine.normalizeArabic('وقت صلاة الفجر'),
+            normalizedCategory: 'cat1',
+            normalizedTags: [],
+          );
+      engine.setMockIndex([
+        doc('1', 'صلاة الفجر'),
+        doc('2', 'صلاة الظهر'),
+        doc('3', 'صلاة العصر'),
+      ]);
+
+      final firstPage =
+          engine.searchPaged('صلاة', limit: 2, offset: 0);
+      expect(firstPage.results.length, 2);
+      expect(firstPage.totalMatches, 3);
+      expect(firstPage.hasMore, isTrue);
+
+      final secondPage =
+          engine.searchPaged('صلاة', limit: 2, offset: 2);
+      expect(secondPage.results.length, 1);
+      expect(secondPage.totalMatches, 3);
+      expect(secondPage.hasMore, isFalse);
+
+      final beyondEnd = engine.searchPaged('صلاة', limit: 2, offset: 10);
+      expect(beyondEnd.results, isEmpty);
+      expect(beyondEnd.hasMore, isFalse);
+    });
   });
 }
