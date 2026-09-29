@@ -98,7 +98,12 @@ class MafatihService {
         'articles',
         where: r"title LIKE ? ESCAPE '\' OR text LIKE ? ESCAPE '\' "
             r"OR title LIKE ? ESCAPE '\' OR text LIKE ? ESCAPE '\'",
-        whereArgs: [rawPattern, rawPattern, normalizedPattern, normalizedPattern],
+        whereArgs: [
+          rawPattern,
+          rawPattern,
+          normalizedPattern,
+          normalizedPattern
+        ],
         orderBy: 'id ASC',
       );
       return maps.map((m) => MafatihArticle.fromMap(m)).toList();

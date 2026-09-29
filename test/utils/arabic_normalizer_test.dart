@@ -5,7 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   test('all JSON entry points use one canonical Arabic normalizer', () {
-    const text = '  ٱلرَّحْـمَٰنُ   عَلَى  فاطمة '; 
+    const text = '  ٱلرَّحْـمَٰنُ   عَلَى  فاطمة ';
     const expected = 'الرحمن علي فاطمه';
     expect(ArabicNormalizer.normalize(text), expected);
     expect(text.normalizeArabic(), expected);

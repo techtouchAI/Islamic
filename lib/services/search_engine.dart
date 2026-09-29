@@ -64,7 +64,8 @@ class SearchEngine {
   bool get isIndexed => _isIndexed;
   List<SearchDocument> get allDocuments => _index;
 
-  static String normalizeArabic(String text) => ArabicNormalizer.normalize(text);
+  static String normalizeArabic(String text) =>
+      ArabicNormalizer.normalize(text);
 
   // Levenshtein distance calculation
   static int levenshteinDistance(String s, String t) {
