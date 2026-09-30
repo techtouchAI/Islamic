@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -37,6 +36,11 @@ class DataManager {
 
   /// Build stamp of the app currently running, used to notice an app update.
   static Future<String?> Function()? appBuildOverride;
+
+  /// The refresh of an installed build, while it runs. The app does not wait
+  /// for it (it must not delay the splash screen), but tests await it.
+  @visibleForTesting
+  static Future<void>? bundleCalendarRefresh;
 
   static Future<String?> _appBuild() async {
     if (appBuildOverride != null) return appBuildOverride!();
@@ -324,10 +328,11 @@ class DataManager {
             final content = await localFile.readAsString(encoding: utf8);
             _db = await compute(_decodeAndNormalizeJson, content);
             debugPrint("DataManager: Loaded from local storage.");
-            // Deliberately not awaited: the refresh reads and decodes the
+            // Deliberately not awaited here: the refresh reads and decodes the
             // bundled document, which must not delay the splash screen. It
-            // reports completion through dbNotifier.
-            unawaited(_adoptBundledCalendarOnUpdate(localFile));
+            // reports completion through dbNotifier and through
+            // [bundleCalendarRefresh], which tests await.
+            bundleCalendarRefresh = _adoptBundledCalendarOnUpdate(localFile);
             return;
           } catch (e) {
             debugPrint(
