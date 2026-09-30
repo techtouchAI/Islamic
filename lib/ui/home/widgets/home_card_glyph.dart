@@ -440,7 +440,6 @@ final Map<HomeCardGlyph, void Function(_Pen)> _glyphOutlines = {
   },
 };
 
-
 /// Picks the glyph that matches a home card.
 ///
 /// The section key is authoritative because it is stable; the title is only a
