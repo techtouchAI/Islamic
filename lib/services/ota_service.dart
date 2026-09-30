@@ -9,11 +9,14 @@ import 'package:permission_handler/permission_handler.dart';
 
 import 'release_manifest.dart';
 
-/// Trusted in-app OTA updater.
+/// In-app OTA updater — downloads APK directly from the app's own server
+/// and triggers the system installer without any browser or GitHub redirect.
 ///
-/// Flow: fetch the signed `release_manifest.json` -> download the APK with a
-/// visible progress value -> enforce SHA-256 validation -> install locally
-/// with `open_filex`. No browser/url_launcher redirect is ever used.
+/// Flow:
+///   1. Fetch `release_manifest.json` from the update server
+///   2. Download the APK with visible progress
+///   3. Verify SHA-256 checksum
+///   4. Open the APK through the system installer via `open_filex`
 class OTAService {
   static final OTAService _instance = OTAService._internal();
   static OTAService get instance => _instance;
@@ -21,17 +24,14 @@ class OTAService {
   OTAService._internal();
 
   /// Download progress in `0.0..1.0` while downloading/installing,
-  /// `-1.0` when idle or after a failure (UI may then be dismissed/retried).
+  /// `-1.0` when idle or after a failure.
   final ValueNotifier<double> downloadProgress = ValueNotifier(-1.0);
   bool _isDownloading = false;
 
   bool get isDownloading => _isDownloading;
 
-  /// Fetches and Ed25519-verifies `release_manifest.json` from the latest
-  /// GitHub release. Throws if the manifest is missing, malformed or the
-  /// signature does not verify against [publicKeyBytes].
-  Future<ReleaseManifest> fetchManifest(List<int> publicKeyBytes) =>
-      ReleaseManifest.fetchVerified(Dio(), publicKeyBytes);
+  /// Fetches the release manifest from the app's own update server.
+  Future<ReleaseManifest> fetchManifest() => ReleaseManifest.fetch();
 
   Future<void> downloadAndInstallApk(
     String url,
@@ -54,6 +54,7 @@ class OTAService {
       return;
     }
 
+    // Ensure the user has granted install permission.
     var installStatus = await Permission.requestInstallPackages.status;
     if (!installStatus.isGranted) {
       installStatus = await Permission.requestInstallPackages.request();
@@ -69,12 +70,11 @@ class OTAService {
 
     try {
       final Directory tempDir = await getTemporaryDirectory();
-      final String savePath = '${tempDir.path}/app-update.apk';
+      final String savePath = '${tempDir.path}/aldhakereen-update.apk';
 
       final Dio dio = Dio();
 
-      // Download runs independently from the UI; progress is observed via
-      // [downloadProgress] (unskippable progress bar in the update dialog).
+      // Download the APK directly — progress is observed via [downloadProgress].
       await dio.download(
         url,
         savePath,
@@ -87,7 +87,7 @@ class OTAService {
 
       final File file = File(savePath);
 
-      // SHA-256 validation must succeed before anything may be installed.
+      // SHA-256 validation — must succeed before anything is installed.
       final fileChecksum =
           (await sha256.bind(file.openRead()).first).toString();
       if (fileChecksum != checksum) {
@@ -108,8 +108,6 @@ class OTAService {
       debugPrint("Download/Install error: $e");
       onError('فشل تحميل التحديث');
     } finally {
-      // Keep the bar at 100% (unskippable) while the installer is on screen;
-      // only release it when the attempt failed or was aborted.
       if (!installTriggered) {
         downloadProgress.value = -1.0;
       }
