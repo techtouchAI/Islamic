@@ -11,20 +11,19 @@ const String _payload = 'html <p><c=#ff0000><b> ملخص قصة اليسع</b></
 
 void main() {
   final calls = <MethodCall>[];
-  late BinaryMessenger messenger;
 
   setUp(() {
     calls.clear();
-    messenger =
-        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
-    messenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(SystemChannels.platform, (call) async {
       calls.add(call);
       return null;
     });
   });
 
   tearDown(() {
-    messenger.setMockMethodCallHandler(SystemChannels.platform, null);
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(SystemChannels.platform, null);
   });
 
   testWidgets('the reader renders the payload as prose, never as markup',
