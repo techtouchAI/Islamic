@@ -65,6 +65,9 @@ jobs:
       - name: Run tests
         run: flutter test
 
+      - name: Verify bundled Hijri calendar
+        run: python3 scripts/verify_hijri_calendar.py
+
       - name: Decode Keystore
         env:
           KEYSTORE_B64: ${{ secrets.KEYSTORE_BASE64 }}
@@ -111,6 +114,13 @@ jobs:
         env:
           KEYSTORE_STOREPASS: ${{ secrets.KEYSTORE_STOREPASS }}
           KEYSTORE_KEYPASS: ${{ secrets.KEYSTORE_KEYPASS }}
+
+      # The released APK is verified as packaged, so a stale calendar table
+      # can never be shipped even when the source document is correct.
+      - name: Verify the calendar inside the APK
+        run: |
+          python3 scripts/verify_apk_calendar.py \
+            build/app/outputs/flutter-apk/app-release.apk
 
       - name: Sign release manifest
         run: |

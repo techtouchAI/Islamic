@@ -68,19 +68,13 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
 
   void _goToToday() {
     if (_todayHijri != null && _pageController != null) {
-      final settingsProvider = Provider.of<SettingsProvider>(
-        context,
-        listen: false,
-      );
       final currentMonthData = CalendarRepository.getMonthData(
         _todayHijri!.year,
         _todayHijri!.month,
       );
-      int calculatedTodayHDay = _calculateHDayForDate(
-        DateTime.now(),
-        currentMonthData,
-        settingsProvider.hijriAdjustment,
-      );
+      // `_todayHijri` is refilled from getTodayHijri on every build and already
+      // includes the user's correction, so the day is not recomputed here.
+      final int calculatedTodayHDay = _todayHijri!.day;
 
       HijriDayData? initialDayData;
       for (var d in currentMonthData.days) {
@@ -355,212 +349,150 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
     final int offset = settingsProvider.hijriAdjustment;
     final DateTime realNow = DateTime.now();
 
-    return FutureBuilder<HijriMonthData>(
-      future: CalendarRepository.getMonthDataAsync(
-        monthHijri.year,
-        monthHijri.month,
-      ),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(
-            child: CircularProgressIndicator(color: Colors.teal),
-          );
-        }
+    // The table is already in memory, so a month renders on the first frame
+    // instead of flashing a spinner on every swipe between months.
+    final monthData = CalendarRepository.getMonthData(
+      monthHijri.year,
+      monthHijri.month,
+    );
+    final int daysInMonth = monthData.totalDays;
 
-        if (snapshot.hasError || !snapshot.hasData) {
-          return const Center(
-            child: Text('حدث خطأ', style: TextStyle(color: Colors.white)),
-          );
-        }
+    // Uses the same correction as getTodayHijri, so the highlighted day and the
+    // grid can never disagree on which Gregorian date a Hijri day falls on.
+    final DateTime adjustedGregorianStart =
+        CalendarRepository.adjustedMonthStart(monthData, offset);
 
-        final monthData = snapshot.data!;
-        final int daysInMonth = monthData.totalDays;
+    int startWeekday = adjustedGregorianStart.weekday;
+    int leadingEmptyCells = startWeekday - 1;
 
-        DateTime firstDayGregorian;
-        try {
-          firstDayGregorian = DateTime.parse(monthData.expectedGregorianStart);
-        } catch (e) {
-          firstDayGregorian = CalendarRepository.getGregorianStartFallback(
-            monthHijri.year,
-            monthHijri.month,
-          );
-        }
+    final screenWidth = MediaQuery.of(context).size.width;
+    final cellWidth = (screenWidth - 32) / 7;
+    final cellHeight = cellWidth * 0.9;
 
-        final DateTime adjustedGregorianStart = firstDayGregorian.add(
-          Duration(days: offset),
-        );
-
-        int startWeekday = adjustedGregorianStart.weekday;
-        int leadingEmptyCells = startWeekday - 1;
-
-        final screenWidth = MediaQuery.of(context).size.width;
-        final cellWidth = (screenWidth - 32) / 7;
-        final cellHeight = cellWidth * 0.9;
-
-        return SingleChildScrollView(
-          child: Column(
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                alignment: Alignment.center,
-                child: Text(
-                  '${_getHijriMonthName(monthHijri.month)} - ${_getGregorianMonthName(adjustedGregorianStart.month)}',
-                  style: const TextStyle(
-                    fontFamily: 'Cairo',
-                    fontSize: 16,
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+    return SingleChildScrollView(
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            alignment: Alignment.center,
+            child: Text(
+              '${_getHijriMonthName(monthHijri.month)}'
+              ' - ${_getGregorianMonthName(adjustedGregorianStart.month)}',
+              style: const TextStyle(
+                fontFamily: 'Cairo',
+                fontSize: 16,
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: _weekDays
-                      .map(
-                        (day) => Expanded(
-                          child: Center(
-                            child: Text(
-                              day,
-                              style: const TextStyle(
-                                fontFamily: 'Cairo',
-                                fontSize: 12,
-                                color: Colors.grey,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: _weekDays
+                  .map(
+                    (day) => Expanded(
+                      child: Center(
+                        child: Text(
+                          day,
+                          style: const TextStyle(
+                            fontFamily: 'Cairo',
+                            fontSize: 12,
+                            color: Colors.grey,
+                            fontWeight: FontWeight.w500,
                           ),
-                        ),
-                      )
-                      .toList(),
-                ),
-              ),
-              const SizedBox(height: 8),
-              GridView.count(
-                crossAxisCount: 7,
-                childAspectRatio: cellWidth / cellHeight,
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                children: List.generate(leadingEmptyCells + daysInMonth, (
-                  index,
-                ) {
-                  if (index < leadingEmptyCells) {
-                    return const SizedBox.shrink();
-                  }
-
-                  final int hDay = index - leadingEmptyCells + 1;
-                  final DateTime cellGregorianDate = adjustedGregorianStart.add(
-                    Duration(days: hDay - 1),
-                  );
-                  final bool isToday = cellGregorianDate.year == realNow.year &&
-                      cellGregorianDate.month == realNow.month &&
-                      cellGregorianDate.day == realNow.day;
-
-                  HijriDayData? dayData;
-                  for (var d in monthData.days) {
-                    if (d.day == hDay) {
-                      dayData = d;
-                      break;
-                    }
-                  }
-
-                  final bool hasEvent = dayData != null &&
-                      (dayData.events.isNotEmpty ||
-                          dayData.astronomicalEvents.isNotEmpty);
-                  final bool isSelected = _selectedDay == hDay &&
-                      _displayedHijri.month == monthHijri.month &&
-                      _displayedHijri.year == monthHijri.year;
-
-                  return InkWell(
-                    onTap: () {
-                      setState(() {
-                        _selectedDay = hDay;
-                        _selectedDayData = dayData;
-                        _displayedHijri = monthHijri;
-                      });
-                    },
-                    child: Container(
-                      margin: const EdgeInsets.all(2),
-                      decoration: BoxDecoration(
-                        color: isToday
-                            ? (hasEvent
-                                ? Colors.teal.shade700
-                                : Colors.teal.withValues(alpha: 0.6))
-                            : null,
-                        shape: BoxShape.rectangle,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color: isToday
-                              ? Colors.amber
-                              : (isSelected
-                                  ? Colors.green
-                                  : (hasEvent
-                                      ? Colors.amber.withValues(alpha: 0.8)
-                                      : Colors.white12)),
-                          width: isToday || isSelected
-                              ? 2.0
-                              : (hasEvent ? 1.5 : 1.0),
-                        ),
-                      ),
-                      alignment: Alignment.center,
-                      child: Text(
-                        '$hDay',
-                        style: TextStyle(
-                          fontFamily: 'Cairo',
-                          fontSize: 18,
-                          fontWeight:
-                              isToday ? FontWeight.bold : FontWeight.normal,
-                          color: isToday
-                              ? (hasEvent
-                                  ? Colors.amber.shade200
-                                  : Colors.white)
-                              : (hasEvent
-                                  ? Colors.amber.shade300
-                                  : Colors.white70),
                         ),
                       ),
                     ),
-                  );
-                }),
-              ),
-              const SizedBox(height: 8),
-            ],
+                  )
+                  .toList(),
+            ),
           ),
-        );
-      },
-    );
-  }
+          const SizedBox(height: 8),
+          GridView.count(
+            crossAxisCount: 7,
+            childAspectRatio: cellWidth / cellHeight,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            children: List.generate(leadingEmptyCells + daysInMonth, (index) {
+              if (index < leadingEmptyCells) {
+                return const SizedBox.shrink();
+              }
 
-  int _calculateHDayForDate(
-    DateTime targetDate,
-    HijriMonthData monthData,
-    int offset,
-  ) {
-    DateTime firstDayGregorian;
-    try {
-      firstDayGregorian = DateTime.parse(monthData.expectedGregorianStart);
-    } catch (e) {
-      firstDayGregorian = DateTime.now();
-    }
+              final int hDay = index - leadingEmptyCells + 1;
+              final DateTime cellGregorianDate = adjustedGregorianStart.add(
+                Duration(days: hDay - 1),
+              );
+              final bool isToday = cellGregorianDate.year == realNow.year &&
+                  cellGregorianDate.month == realNow.month &&
+                  cellGregorianDate.day == realNow.day;
 
-    final DateTime adjustedGregorianStart = firstDayGregorian.add(
-      Duration(days: offset),
-    );
+              HijriDayData? dayData;
+              for (var d in monthData.days) {
+                if (d.day == hDay) {
+                  dayData = d;
+                  break;
+                }
+              }
 
-    // We only care about the date part (year, month, day) to calculate difference correctly
-    final targetDateOnly = DateTime(
-      targetDate.year,
-      targetDate.month,
-      targetDate.day,
-    );
-    final startDateOnly = DateTime(
-      adjustedGregorianStart.year,
-      adjustedGregorianStart.month,
-      adjustedGregorianStart.day,
-    );
+              final bool hasEvent = dayData != null &&
+                  (dayData.events.isNotEmpty ||
+                      dayData.astronomicalEvents.isNotEmpty);
+              final bool isSelected = _selectedDay == hDay &&
+                  _displayedHijri.month == monthHijri.month &&
+                  _displayedHijri.year == monthHijri.year;
 
-    return targetDateOnly.difference(startDateOnly).inDays + 1;
+              return InkWell(
+                onTap: () {
+                  setState(() {
+                    _selectedDay = hDay;
+                    _selectedDayData = dayData;
+                    _displayedHijri = monthHijri;
+                  });
+                },
+                child: Container(
+                  margin: const EdgeInsets.all(2),
+                  decoration: BoxDecoration(
+                    color: isToday
+                        ? (hasEvent
+                            ? Colors.teal.shade700
+                            : Colors.teal.withValues(alpha: 0.6))
+                        : null,
+                    shape: BoxShape.rectangle,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: isToday
+                          ? Colors.amber
+                          : (isSelected
+                              ? Colors.green
+                              : (hasEvent
+                                  ? Colors.amber.withValues(alpha: 0.8)
+                                  : Colors.white12)),
+                      width:
+                          isToday || isSelected ? 2.0 : (hasEvent ? 1.5 : 1.0),
+                    ),
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(
+                    '$hDay',
+                    style: TextStyle(
+                      fontFamily: 'Cairo',
+                      fontSize: 18,
+                      fontWeight: isToday ? FontWeight.bold : FontWeight.normal,
+                      color: isToday
+                          ? (hasEvent ? Colors.amber.shade200 : Colors.white)
+                          : (hasEvent ? Colors.amber.shade300 : Colors.white70),
+                    ),
+                  ),
+                ),
+              );
+            }),
+          ),
+          const SizedBox(height: 8),
+        ],
+      ),
+    );
   }
 
   Widget _buildTodayEventsCard() {
@@ -599,7 +531,9 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
           ),
         ],
       );
-    } else if (_selectedDayData != null) {
+    } else {
+      // Any selected day without events keeps its heading, so choosing a day
+      // always produces feedback instead of an empty screen.
       return _buildIslamicCard(
         title:
             'أحداث يوم $_selectedDay ${_getHijriMonthName(_displayedHijri.month)}',
@@ -619,7 +553,6 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
         ],
       );
     }
-    return const SizedBox.shrink();
   }
 
   Widget _buildUpcomingEventCard(_UpcomingEventInfo? upcomingInfo) {

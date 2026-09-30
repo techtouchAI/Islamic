@@ -3,8 +3,10 @@ import 'dart:io';
 
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../utils/string_extensions.dart';
 
@@ -13,10 +15,38 @@ class DataManager {
   static final ValueNotifier<int> dbNotifier = ValueNotifier(0);
   static const String _repoUrl =
       "https://raw.githubusercontent.com/techtouchAI/Islamic/main/assets/data/content.json";
+  static const String _contentAsset = 'assets/data/content.json';
+
+  /// The calendar table is the calendar of record of the app (the announced
+  /// months of the office of Grand Ayatollah al-Sistani). It is versioned by
+  /// `calendar_version` in the document, so a device can tell which table is
+  /// newer: the bundled asset of the installed build, the cached document, or
+  /// the cloud document. A table with a lower version never replaces a higher
+  /// one, which is what keeps a corrected month from being rolled back.
+  static const String calendarVersionKey = 'calendar_version';
+
+  /// Document the device copy can be older than: the CMS ships ~25 MB, which
+  /// needs more than a token timeout on a mobile link. A sync that times out
+  /// leaves the device on stale content, so the limit is deliberately roomy.
+  static const Duration cloudTimeout = Duration(seconds: 60);
 
   // Allows dependency injection for testing
   static http.Client? httpClient;
   static Future<File> Function()? getLocalFileOverride;
+
+  /// Build stamp of the app currently running, used to notice an app update.
+  static Future<String?> Function()? appBuildOverride;
+
+  /// The refresh of an installed build, while it runs. The app does not wait
+  /// for it (it must not delay the splash screen), but tests await it.
+  @visibleForTesting
+  static Future<void>? bundleCalendarRefresh;
+
+  static Future<String?> _appBuild() async {
+    if (appBuildOverride != null) return appBuildOverride!();
+    final info = await PackageInfo.fromPlatform();
+    return '${info.version}+${info.buildNumber}';
+  }
 
   static Map<String, dynamic>? getDB() => _db;
 
@@ -24,6 +54,37 @@ class DataManager {
   static void setDB(Map<String, dynamic>? newDb) {
     _db = newDb;
     _normalizeDB(_db);
+  }
+
+  /// Generation of the calendar table a document carries. A document without
+  /// the marker predates versioning and counts as generation zero.
+  static int calendarVersionOf(Map<String, dynamic>? document) {
+    final value = document?[calendarVersionKey];
+    return value is int && value > 0 ? value : 0;
+  }
+
+  /// Whether the table of [candidate] may replace the table of [current].
+  ///
+  /// The device always keeps the newest table it has seen: a correction in the
+  /// bundle or in the cloud wins, while an older document can never put an
+  /// outdated month back.
+  static bool calendarIsNewer(
+    Map<String, dynamic> candidate,
+    Map<String, dynamic>? current,
+  ) {
+    final incoming = candidate['hijri_calendar'];
+    if (incoming is! List || incoming.isEmpty) return false;
+    return calendarVersionOf(candidate) > calendarVersionOf(current);
+  }
+
+  /// Copies the calendar of [source] onto [target].
+  static void _copyCalendar(
+    Map<String, dynamic> target,
+    Map<String, dynamic> source,
+  ) {
+    target['hijri_calendar'] = source['hijri_calendar'];
+    target[calendarVersionKey] = source[calendarVersionKey];
+    target['calendar_source'] = source['calendar_source'];
   }
 
   static Map<String, dynamic> _decodeAndNormalizeJson(String source) {
@@ -199,6 +260,58 @@ class DataManager {
     }
   }
 
+  /// Brings the calendar of a freshly installed build onto the device.
+  ///
+  /// The device copy in the documents directory survives app updates and is
+  /// loaded before the bundle, so without this step a corrected table shipped
+  /// inside a new APK could never take effect: the old table would keep
+  /// answering with the old day of the month. Runs once per build, and only
+  /// accepts a table with a higher generation than the cached one.
+  static Future<void> _adoptBundledCalendarOnUpdate(File localFile) async {
+    try {
+      final build = await _appBuild();
+      if (build == null) return;
+      final prefs = await SharedPreferences.getInstance();
+      if (prefs.getString(_calendarBuildKey) == build) return;
+
+      final bundled = await compute(
+        _decodeAndNormalizeJson,
+        await rootBundle.loadString(_contentAsset),
+      );
+      rootBundle.evict(_contentAsset);
+      // Only a bundle that was read completely marks this build as handled.
+      await prefs.setString(_calendarBuildKey, build);
+
+      final current = _db;
+      if (current == null || !calendarIsNewer(bundled, current)) return;
+
+      // The live document is replaced, never edited in place, so a frame that
+      // is building right now reads either the old or the new table.
+      final merged = Map<String, dynamic>.from(current);
+      _copyCalendar(merged, bundled);
+      _db = merged;
+      final temporary = File('${localFile.path}.pending');
+      try {
+        await temporary.writeAsString(jsonEncode(merged), encoding: utf8);
+        await temporary.rename(localFile.path);
+      } finally {
+        await _deleteIfExists(temporary);
+      }
+      debugPrint(
+        'DataManager: Calendar updated to generation '
+        '${calendarVersionOf(merged)} from the installed build ($build).',
+      );
+      dbNotifier.value++;
+    } catch (e) {
+      // The bundled table is a bonus on app updates: a platform service that
+      // is unavailable (or a damaged asset) must not stop the app from booting
+      // with the document that was already loaded.
+      debugPrint("DataManager: Bundled calendar refresh skipped: $e");
+    }
+  }
+
+  static const String _calendarBuildKey = 'data.calendar.build';
+
   static Future<void> loadContent() async {
     try {
       // Browser storage has no dart:io file; load the same bundled content.
@@ -215,6 +328,11 @@ class DataManager {
             final content = await localFile.readAsString(encoding: utf8);
             _db = await compute(_decodeAndNormalizeJson, content);
             debugPrint("DataManager: Loaded from local storage.");
+            // Deliberately not awaited here: the refresh reads and decodes the
+            // bundled document, which must not delay the splash screen. It
+            // reports completion through dbNotifier and through
+            // [bundleCalendarRefresh], which tests await.
+            bundleCalendarRefresh = _adoptBundledCalendarOnUpdate(localFile);
             return;
           } catch (e) {
             debugPrint(
@@ -227,9 +345,9 @@ class DataManager {
           }
         }
       }
-      final response = await rootBundle.loadString('assets/data/content.json');
+      final response = await rootBundle.loadString(_contentAsset);
       _db = await compute(_decodeAndNormalizeJson, response);
-      rootBundle.evict('assets/data/content.json');
+      rootBundle.evict(_contentAsset);
       debugPrint("DataManager: Loaded from bundled assets.");
     } catch (e) {
       debugPrint("DataManager Error: $e");
@@ -252,13 +370,13 @@ class DataManager {
           DateTime.now().microsecondsSinceEpoch.toString();
       final url = Uri.parse("$_repoUrl?t=$timestamp");
 
-      final response =
-          await requestClient.get(url).timeout(const Duration(seconds: 15));
+      final response = await requestClient.get(url).timeout(cloudTimeout);
       if (response.statusCode == 200) {
         final content = utf8.decode(response.bodyBytes);
 
         if (kIsWeb) {
           final newDb = await compute(_decodeAndNormalizeJson, content);
+          _keepNewestCalendar(newDb);
           _db = newDb;
           dbNotifier.value++;
           return true;
@@ -266,10 +384,10 @@ class DataManager {
 
         // التحقق من وجود تغييرات فعلية
         final localFile = await _getLocalFile();
-        if (await localFile.exists()) {
-          final oldContent = await localFile.readAsString(encoding: utf8);
-          if (oldContent == content) return false;
-        }
+        final oldContent = await localFile.exists()
+            ? await localFile.readAsString(encoding: utf8)
+            : null;
+        if (oldContent == content) return false;
 
         // Schema policy: decode + validate BEFORE the document is adopted or
         // written. A rejected document keeps the previous copy untouched.
@@ -283,13 +401,20 @@ class DataManager {
           return false;
         }
 
+        // A newer calendar table already on the device (for example the one
+        // the installed build ships) outranks the incoming document, so the
+        // document is adopted without its older table.
+        final keepDeviceCalendar = _keepNewestCalendar(newDb);
+        final persisted = keepDeviceCalendar ? jsonEncode(newDb) : content;
+        if (oldContent == persisted) return false;
+
         // Persist atomically: write `<file>.pending`, then rename it over the
         // live file so a failed/interrupted write can never corrupt the last
         // good copy. Any failure cleans the temp file up and keeps the old data.
         final temporary = File('${localFile.path}.pending');
         try {
           await _cleanupOrphanedPending(localFile);
-          await temporary.writeAsString(content, encoding: utf8, flush: true);
+          await temporary.writeAsString(persisted, encoding: utf8, flush: true);
           await temporary.rename(localFile.path);
         } catch (writeError) {
           debugPrint(
@@ -316,6 +441,21 @@ class DataManager {
       if (ownsClient) requestClient.close();
     }
     return false;
+  }
+
+  /// Keeps the newest calendar table when a document is adopted.
+  ///
+  /// Returns true when the device table was copied onto [incoming], which
+  /// requires persisting the merged document instead of the received bytes.
+  static bool _keepNewestCalendar(Map<String, dynamic> incoming) {
+    final current = _db;
+    if (current == null || !calendarIsNewer(current, incoming)) return false;
+    _copyCalendar(incoming, current);
+    debugPrint(
+      'DataManager: Kept calendar generation ${calendarVersionOf(incoming)} '
+      'instead of the older one in the sync document.',
+    );
+    return true;
   }
 
   static Future<File> _getLocalFile() async {

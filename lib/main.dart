@@ -528,6 +528,11 @@ class _MainScaffoldState extends State<MainScaffold> {
         return HomeSection(
           key: const ValueKey('home'),
           onPrayerCardTap: () => _navigateTo('prayer_times'),
+          // The Hijri date is a calendar affordance: it opens the calendar page
+          // itself (the same route as the drawer entry), not the prayer times.
+          onHijriDateTap: () => Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => const HijriCalendarScreen()),
+          ),
           onNavigate: _navigateTo,
         );
       case 'settings':
