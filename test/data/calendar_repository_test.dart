@@ -311,6 +311,5 @@ void main() {
       expect(civil, DateTime.utc(2026, 9, 30));
       expect(civil.isUtc, isTrue);
     });
-
   });
 }
