@@ -469,9 +469,8 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
                               : (hasEvent
                                   ? Colors.amber.withValues(alpha: 0.8)
                                   : Colors.white12)),
-                      width: isToday || isSelected
-                          ? 2.0
-                          : (hasEvent ? 1.5 : 1.0),
+                      width:
+                          isToday || isSelected ? 2.0 : (hasEvent ? 1.5 : 1.0),
                     ),
                   ),
                   alignment: Alignment.center,
@@ -482,12 +481,8 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
                       fontSize: 18,
                       fontWeight: isToday ? FontWeight.bold : FontWeight.normal,
                       color: isToday
-                          ? (hasEvent
-                              ? Colors.amber.shade200
-                              : Colors.white)
-                          : (hasEvent
-                              ? Colors.amber.shade300
-                              : Colors.white70),
+                          ? (hasEvent ? Colors.amber.shade200 : Colors.white)
+                          : (hasEvent ? Colors.amber.shade300 : Colors.white70),
                     ),
                   ),
                 ),

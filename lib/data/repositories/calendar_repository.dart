@@ -280,8 +280,8 @@ class CalendarRepository {
   /// and [getTodayHijri] therefore always agree.
   static DateTime adjustedMonthStart(HijriMonthData monthData, int offset) {
     final parsed = DateTime.tryParse(monthData.expectedGregorianStart);
-    final start = parsed ??
-        getGregorianStartFallback(monthData.year, monthData.month);
+    final start =
+        parsed ?? getGregorianStartFallback(monthData.year, monthData.month);
     return civilDate(start).subtract(Duration(days: offset));
   }
 

@@ -96,9 +96,14 @@ void main() {
           final hijri = CalendarRepository.getTodayHijri(civil, 0);
           expect(
             (hijri.year, hijri.month, hijri.day, hijri.monthName),
-            (1448, summary.month, day, CalendarRepository.getHijriMonthName(
+            (
+              1448,
               summary.month,
-            )),
+              day,
+              CalendarRepository.getHijriMonthName(
+                summary.month,
+              )
+            ),
             reason: 'civil $civil',
           );
         }
@@ -109,8 +114,7 @@ void main() {
         () {
       // 30 Sep 2026 is 18 Rabi' al-thani 1448 in Iraq. The calculated Umm
       // al-Qura date is 19, which is exactly the off-by-one that was reported.
-      final hijri =
-          CalendarRepository.getTodayHijri(DateTime(2026, 9, 30), 0);
+      final hijri = CalendarRepository.getTodayHijri(DateTime(2026, 9, 30), 0);
       expect(hijri.day, 18);
       expect(hijri.month, 4);
       expect(hijri.year, 1448);
@@ -192,8 +196,8 @@ void main() {
         ],
       });
       expect(CalendarRepository.monthSummaries(), isEmpty);
-      expect(CalendarRepository.monthSummaryForDate(DateTime(2024, 8, 5)),
-          isNull);
+      expect(
+          CalendarRepository.monthSummaryForDate(DateTime(2024, 8, 5)), isNull);
     });
 
     test('month start follows the same correction as the reported date', () {
