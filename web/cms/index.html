@@ -115,6 +115,14 @@
         border-color: var(--gold);
         background: var(--light-gold);
       }
+      .upload-card:focus-within {
+        border-color: var(--gold);
+        background: var(--light-gold);
+      }
+      .upload-card:has(:focus-visible) {
+        outline: 3px solid var(--gold);
+        outline-offset: 2px;
+      }
       .sidebar-overlay {
         display: none;
         position: fixed;
@@ -324,9 +332,11 @@
       <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0" style="border-radius: 20px">
           <div class="modal-body p-5">
-            <div
-              class="upload-card"
-              onclick="document.getElementById('file-input').click()"
+            <label
+              class="upload-card d-block"
+              for="file-input"
+              ondragover="event.preventDefault()"
+              ondrop="event.preventDefault(); handleFile(event.dataTransfer.files)"
             >
               <i class="material-icons text-gold" style="font-size: 4rem"
                 >cloud_upload</i
@@ -338,11 +348,11 @@
               <input
                 type="file"
                 id="file-input"
-                hidden
+                class="visually-hidden"
                 accept=".json"
                 onchange="handleFile(this.files)"
               />
-            </div>
+            </label>
           </div>
         </div>
       </div>
@@ -460,6 +470,21 @@
         db.content[key] = data;
       }
 
+      /**
+       * يضمن وجود البنية الأساسية المطلوبة قبل أي استخدام،
+       * حتى لا تنهار الواجهة إذا نقص أي مفتاح في ملف البيانات.
+       */
+      function normalizeDb() {
+        const asObject = (value) =>
+          value && typeof value === "object" && !Array.isArray(value)
+            ? value
+            : {};
+        db.sections = asObject(db.sections);
+        db.content = asObject(db.content);
+        db.settings = asObject(db.settings);
+        db.about = asObject(db.about);
+      }
+
       let activeView = "settings";
       let activeSubView = null;
       let currentPage = 1;
@@ -497,12 +522,22 @@
       async function init() {
         try {
           const res = await fetch("../../assets/data/content.json");
-          db = await res.json();
+          if (!res.ok) {
+            throw new Error(`تعذّر تحميل قاعدة البيانات (HTTP ${res.status})`);
+          }
+          const data = await res.json();
+          if (!data || typeof data !== "object" || Array.isArray(data)) {
+            throw new Error("صيغة قاعدة البيانات غير صالحة");
+          }
+          db = data;
+          normalizeDb();
 
           const urlParams = new URLSearchParams(window.location.search);
           const pView = urlParams.get("view") || "settings";
           const pSub = urlParams.get("sub");
-          currentPage = parseInt(urlParams.get("page")) || 1;
+          const parsedPage = Number.parseInt(urlParams.get("page"), 10);
+          currentPage =
+            Number.isInteger(parsedPage) && parsedPage > 0 ? parsedPage : 1;
 
           if (db.prophets_stories) {
             db.content = db.content || {};
@@ -558,7 +593,10 @@
             }
           });
         } catch (e) {
-          alert("خطأ في تحميل قاعدة البيانات.");
+          console.error("فشل تحميل قاعدة البيانات:", e);
+          alert(
+            "خطأ في تحميل قاعدة البيانات: " + ((e && e.message) || String(e)),
+          );
         }
       }
 
@@ -681,22 +719,22 @@
                         <div class="col-md-6">
                             <div class="card card-lux p-4 h-100">
                                 <h5 class="fw-bold mb-4">شعار التطبيق (Logo)</h5>
-                                <div class="upload-card mb-3" onclick="document.getElementById('logo-file').click()">
+                                <label class="upload-card mb-3 d-block" for="logo-file">
                                     <img id="logo-prev" src="${db.settings.custom_logo_base64 || "../../assets/images/logo.png"}" class="img-preview mb-3" style="width:120px;height:120px">
-                                    <h6 class="fw-bold">انقر لاختيار صورة من الاستوديو</h6>
-                                    <input type="file" id="logo-file" hidden accept="image/*" onchange="processImg(this, 'logo')">
-                                </div>
+                                    <h6 class="fw-bold mb-0">انقر لاختيار صورة من الاستوديو</h6>
+                                    <input type="file" id="logo-file" class="visually-hidden" accept="image/*" onchange="processImg(this, 'logo')">
+                                </label>
                                 <button class="btn btn-outline-danger btn-sm" onclick="clearImg('logo')">استعادة الافتراضي</button>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="card card-lux p-4 h-100">
                                 <h5 class="fw-bold mb-4">الخلفية الافتراضية (Background)</h5>
-                                <div class="upload-card mb-3" onclick="document.getElementById('bg-file').click()">
+                                <label class="upload-card mb-3 d-block" for="bg-file">
                                     <img id="bg-prev" src="${db.settings.custom_bg_base64 || "../../assets/images/default_bg.png"}" class="img-preview mb-3" style="width:120px;height:120px">
-                                    <h6 class="fw-bold">انقر لاختيار خلفية من الاستوديو</h6>
-                                    <input type="file" id="bg-file" hidden accept="image/*" onchange="processImg(this, 'bg')">
-                                </div>
+                                    <h6 class="fw-bold mb-0">انقر لاختيار خلفية من الاستوديو</h6>
+                                    <input type="file" id="bg-file" class="visually-hidden" accept="image/*" onchange="processImg(this, 'bg')">
+                                </label>
                                 <button class="btn btn-outline-danger btn-sm" onclick="clearImg('bg')">استعادة الافتراضي</button>
                             </div>
                         </div>
@@ -705,11 +743,11 @@
                                 <h5 class="fw-bold mb-4">معرض الخلفيات (Background Gallery)</h5>
                                 <div class="d-flex overflow-auto pb-3 gap-3" id="bg-gallery-container" style="scrollbar-width: thin;">
                                     </div>
-                                <div class="upload-card mt-3" onclick="document.getElementById('gallery-file').click()">
+                                <label class="upload-card mt-3 d-block" for="gallery-file">
                                     <i class="material-icons text-gold">add_photo_alternate</i>
                                     <h6>أضف صورة إلى المعرض</h6>
-                                    <input type="file" id="gallery-file" hidden accept="image/*" onchange="processImg(this, 'gallery')">
-                                </div>
+                                    <input type="file" id="gallery-file" class="visually-hidden" accept="image/*" onchange="processImg(this, 'gallery')">
+                                </label>
                             </div>
                         </div>
                     </div>
@@ -758,42 +796,71 @@
         } else if (id === "adhan_settings") {
           title.innerText = "إعدادات الأذان والتوقيت";
           icon.innerText = "notifications_active";
-          if (!db.settings.adhan)
-            db.settings.adhan = {
-              ringtone: "adhan.mp3",
-              global_offset: 0,
-              adhan_base64: null,
-            };
+          const adhan = ensureAdhanSettings();
           ws.innerHTML = `
                     <div class="card card-lux p-4 shadow-sm mb-4">
                         <h6 class="fw-bold mb-4"><i class="material-icons align-middle me-2">volume_up</i> تخصيص نغمة الأذان</h6>
-                        <div class="upload-card" onclick="document.getElementById('adhan-file').click()">
+                        <label class="upload-card d-block mb-2" for="adhan-file">
                             <i class="material-icons text-gold" style="font-size:3rem">audiotrack</i>
-                            <h6>${db.settings.adhan.adhan_base64 ? "تم رفع ملف صوتي مخصص" : "انقر لرفع ملف الأذان (MP3)"}</h6>
-                            <input type="file" id="adhan-file" hidden accept="audio/*" onchange="processAdhanAudio(this)">
-                        </div>
+                            <h6 class="mb-1">${adhan.adhan_base64 ? "تم رفع ملف صوتي مخصص" : "انقر لرفع ملف الأذان (MP3)"}</h6>
+                            <p class="small text-muted mb-0">الحد الأقصى 10 ميجابايت — MP3 / OGG / M4A / WAV</p>
+                            <input type="file" id="adhan-file" class="visually-hidden" accept="audio/*">
+                        </label>
+                        ${
+                          adhan.adhan_base64
+                            ? `<div class="text-center mt-2">
+                                <button type="button" class="btn btn-outline-danger btn-sm" id="adhan-reset-btn">
+                                    <i class="material-icons align-middle" style="font-size:16px">restart_alt</i> استعادة النغمة الافتراضية
+                                </button>
+                               </div>`
+                            : ""
+                        }
                         <div class="mt-3 text-center">
-                            <label class="small fw-bold mb-2">إزاحة التوقيت الكلية (بالدقائق)</label>
-                            <input type="number" class="form-control text-center mx-auto" style="max-width:100px" value="${db.settings.adhan.global_offset}" onchange="db.settings.adhan.global_offset=parseInt(this.value)">
+                            <label class="small fw-bold mb-2 d-block" for="adhan-offset">إزاحة التوقيت الكلية (بالدقائق، من -1440 إلى 1440)</label>
+                            <input type="number" id="adhan-offset" class="form-control text-center mx-auto" style="max-width:120px"
+                                   min="-1440" max="1440" step="1" inputmode="numeric" value="${adhan.global_offset}">
                         </div>
                     </div>
 
                     <div class="card card-lux p-4 shadow-sm">
                         <h6 class="fw-bold mb-3">جدولة الأوقات يدوياً (اختياري)</h6>
-                        <p class="small text-muted">أضف أوقات محددة لتاريخ معين لتجاوز الحسابات التلقائية.</p>
-                        <div class="row g-2 mb-3">
-                            <div class="col-md-2"><input type="date" id="man-date" class="form-control"></div>
-                            <div class="col"><input type="text" id="man-fajr" class="form-control" placeholder="الفجر (05:30)"></div>
-                            <div class="col"><input type="text" id="man-dhuhr" class="form-control" placeholder="الظهر"></div>
-                            <div class="col"><input type="text" id="man-asr" class="form-control" placeholder="العصر"></div>
-                            <div class="col"><input type="text" id="man-magh" class="form-control" placeholder="المغرب"></div>
-                            <div class="col"><input type="text" id="man-isha" class="form-control" placeholder="العشاء"></div>
-                            <div class="col-md-2"><button class="btn btn-gold w-100" onclick="addManualSchedule()">إضافة</button></div>
-                        </div>
-                        <div id="manual-schedules-list"></div>
+                        <p class="small text-muted mb-3">أضف أوقاتاً محددة لتاريخ معين لتجاوز الحسابات التلقائية. الصيغة: <b>HH:MM</b> مثل 05:30، ويمكن إدخال أي عدد من الصلوات الخمس.</p>
+                        <form id="manual-schedule-form" novalidate>
+                            <div class="row g-2 mb-3 align-items-end">
+                                <div class="col-md-2">
+                                    <label class="small fw-bold d-block mb-1" for="man-date">التاريخ</label>
+                                    <input type="date" id="man-date" class="form-control">
+                                </div>
+                                <div class="col">
+                                    <label class="small fw-bold d-block mb-1" for="man-fajr">الفجر</label>
+                                    <input type="text" id="man-fajr" class="form-control" placeholder="05:30" inputmode="numeric" maxlength="5">
+                                </div>
+                                <div class="col">
+                                    <label class="small fw-bold d-block mb-1" for="man-dhuhr">الظهر</label>
+                                    <input type="text" id="man-dhuhr" class="form-control" placeholder="12:00" inputmode="numeric" maxlength="5">
+                                </div>
+                                <div class="col">
+                                    <label class="small fw-bold d-block mb-1" for="man-asr">العصر</label>
+                                    <input type="text" id="man-asr" class="form-control" placeholder="15:30" inputmode="numeric" maxlength="5">
+                                </div>
+                                <div class="col">
+                                    <label class="small fw-bold d-block mb-1" for="man-magh">المغرب</label>
+                                    <input type="text" id="man-magh" class="form-control" placeholder="18:45" inputmode="numeric" maxlength="5">
+                                </div>
+                                <div class="col">
+                                    <label class="small fw-bold d-block mb-1" for="man-isha">العشاء</label>
+                                    <input type="text" id="man-isha" class="form-control" placeholder="20:15" inputmode="numeric" maxlength="5">
+                                </div>
+                                <div class="col-md-2">
+                                    <button type="submit" class="btn btn-gold w-100">إضافة</button>
+                                </div>
+                            </div>
+                        </form>
+                        <div id="manual-schedules-list" aria-live="polite"></div>
                     </div>
                 `;
           renderManualSchedules();
+          bindAdhanView();
         } else if (id === "sections_manager") {
           title.innerText = "إدارة الأقسام";
           icon.innerText = "category";
@@ -1232,47 +1299,293 @@
         renderDailyDuasList();
       }
 
-      function processAdhanAudio(input) {
-        if (!input.files.length) return;
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          db.settings.adhan.adhan_base64 = e.target.result;
-          alert("تم تحميل ملف الأذان. سيتم دمجه في النسخة القادمة.");
-          loadView("adhan_settings");
+      // ===== إعدادات الأذان: ثوابت ودوال مساعدة =====
+      const ADHAN_MAX_AUDIO_BYTES = 10 * 1024 * 1024; // 10MB
+      const ADHAN_OFFSET_LIMIT = 1440; // ±24 ساعة بالدقائق
+      const ADHAN_PRAYER_LABELS = {
+        fajr: "الفجر",
+        dhuhr: "الظهر",
+        asr: "العصر",
+        maghrib: "المغرب",
+        isha: "العشاء",
+      };
+
+      /** يحوّل أي قيمة إلى نص آمن للحقول داخل HTML (وقاية من حقن الوسوم). */
+      function escapeHtml(value) {
+        return String(value ?? "").replace(
+          /[&<>"']/g,
+          (ch) =>
+            ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[
+              ch
+            ],
+        );
+      }
+
+      /**
+       * يطبّع إعدادات الأذان إلى الشكل المتوقع من التطبيق:
+       * رقم صحيح مقيّد للإزاحة، مصفوفة للجداول اليدوية، ونص أو null للنغمة.
+       */
+      function ensureAdhanSettings() {
+        db.settings = db.settings || {};
+        const current =
+          db.settings.adhan && typeof db.settings.adhan === "object"
+            ? db.settings.adhan
+            : {};
+        const rawOffset = Number.parseInt(current.global_offset, 10);
+        db.settings.adhan = {
+          ringtone:
+            typeof current.ringtone === "string" && current.ringtone
+              ? current.ringtone
+              : "adhan.mp3",
+          global_offset: Number.isInteger(rawOffset)
+            ? Math.min(
+                ADHAN_OFFSET_LIMIT,
+                Math.max(-ADHAN_OFFSET_LIMIT, rawOffset),
+              )
+            : 0,
+          adhan_base64:
+            typeof current.adhan_base64 === "string" && current.adhan_base64
+              ? current.adhan_base64
+              : null,
+          manual_schedules: Array.isArray(current.manual_schedules)
+            ? current.manual_schedules
+            : [],
         };
-        reader.readAsDataURL(input.files[0]);
+        return db.settings.adhan;
+      }
+
+      /**
+       * يتحقق من وقت مكتوب بصيغة HH:MM (يقبل ساعة من خانة واحدة)
+       * ويعيده مطبّعاً إلى خانتين، أو null إذا كان غير صالح.
+       */
+      function normalizeTimeInput(value) {
+        const match = /^\s*([01]?\d|2[0-3])\s*:\s*([0-5]?\d)\s*$/.exec(
+          String(value || ""),
+        );
+        if (!match) return null;
+        return `${match[1].padStart(2, "0")}:${match[2].padStart(2, "0")}`;
+      }
+
+      /** يطبّق الإزاحة بأمان: يرفض القيم غير الرقمية ويقيّدها ضمن الحد المسموح. */
+      function applyAdhanOffset(input) {
+        const parsed = Number.parseInt(input.value, 10);
+        const safe = Number.isInteger(parsed)
+          ? Math.min(ADHAN_OFFSET_LIMIT, Math.max(-ADHAN_OFFSET_LIMIT, parsed))
+          : 0;
+        db.settings.adhan.global_offset = safe;
+        input.value = String(safe);
+      }
+
+      /** يتحقق من الملف الصوتي (النوع والحجم) ثم يحفظه في الإعدادات. */
+      function handleAdhanFileSelection(input) {
+        const file = input.files && input.files[0];
+        input.value = ""; // لتمكين اختيار الملف نفسه مجدداً لاحقاً
+        if (!file) return;
+
+        const hasAudioExtension = /\.(mp3|ogg|oga|m4a|aac|wav|flac|opus)$/i.test(
+          file.name || "",
+        );
+        const isAudio =
+          (file.type && file.type.startsWith("audio/")) || hasAudioExtension;
+        if (!isAudio) {
+          alert("الرجاء اختيار ملف صوتي صالح (MP3 / OGG / M4A / WAV ...).");
+          return;
+        }
+        if (file.size > ADHAN_MAX_AUDIO_BYTES) {
+          alert(
+            `حجم الملف (${(file.size / (1024 * 1024)).toFixed(1)} ميجابايت) يتجاوز الحد الأقصى 10 ميجابايت.`,
+          );
+          return;
+        }
+
+        const reader = new FileReader();
+        reader.onerror = () =>
+          alert("تعذّر قراءة الملف المحدد، حاول مرة أخرى.");
+        reader.onload = (event) => {
+          db.settings.adhan.adhan_base64 = event.target.result;
+          // إعادة بناء العرض دون إضافة قيد جديد إلى سجل التصفح
+          loadView("adhan_settings", null, true);
+          alert(
+            "تم تحميل ملف الأذان بنجاح. لا تنسَ الضغط على «حفظ وإرسال للتطبيق».",
+          );
+        };
+        reader.readAsDataURL(file);
+      }
+
+      /** يحذف النغمة المخصصة ويعيد تفعيل نغمة التطبيق الافتراضية. */
+      function resetAdhanAudio() {
+        if (!confirm("استعادة نغمة الأذان الافتراضية وحذف الملف المخصص؟")) {
+          return;
+        }
+        db.settings.adhan.adhan_base64 = null;
+        loadView("adhan_settings", null, true);
+      }
+
+      /** يربط أحداث قسم الأذان بعد كل بناء للواجهة (بدون معالجات سطراً داخل HTML). */
+      function bindAdhanView() {
+        const fileInput = document.getElementById("adhan-file");
+        if (fileInput) {
+          fileInput.addEventListener("change", () =>
+            handleAdhanFileSelection(fileInput),
+          );
+        }
+
+        const resetBtn = document.getElementById("adhan-reset-btn");
+        if (resetBtn) {
+          resetBtn.addEventListener("click", resetAdhanAudio);
+        }
+
+        const offsetInput = document.getElementById("adhan-offset");
+        if (offsetInput) {
+          offsetInput.addEventListener("change", () =>
+            applyAdhanOffset(offsetInput),
+          );
+        }
+
+        const form = document.getElementById("manual-schedule-form");
+        if (form) {
+          form.addEventListener("submit", (event) => {
+            event.preventDefault();
+            addManualSchedule();
+          });
+        }
+
+        const list = document.getElementById("manual-schedules-list");
+        if (list) {
+          // تفويض الأحداث: يستمر مع إعادة بناء محتوى القائمة دون ربط متكرر
+          list.addEventListener("click", (event) => {
+            const button = event.target.closest("[data-remove-index]");
+            if (button) {
+              removeManualSchedule(
+                Number.parseInt(button.dataset.removeIndex, 10),
+              );
+            }
+          });
+        }
       }
 
       function renderManualSchedules() {
         const list = document.getElementById("manual-schedules-list");
         if (!list) return;
-        if (!db.settings.adhan.manual_schedules)
-          db.settings.adhan.manual_schedules = [];
-        list.innerHTML = "";
-        db.settings.adhan.manual_schedules.forEach((s, i) => {
-          list.innerHTML += `<div class="alert alert-secondary d-flex justify-content-between py-2 small">
-                    <span><b>${s.date}:</b> ف ${s.fajr} | ظ ${s.dhuhr} | ع ${s.asr} | م ${s.maghrib} | ع ${s.isha}</span>
-                    <button class="btn btn-sm text-danger" onclick="db.settings.adhan.manual_schedules.splice(${i},1);renderManualSchedules();">حذف</button>
-                </div>`;
-        });
+        const schedules = ensureAdhanSettings().manual_schedules;
+
+        if (!schedules.length) {
+          list.innerHTML =
+            '<p class="small text-muted mb-0">لا توجد جداول يدوية حالياً — ستُستخدم الأوقات المحسوبة تلقائياً.</p>';
+          return;
+        }
+
+        const ordered = schedules
+          .map((schedule, index) => ({ schedule, index }))
+          .sort((a, b) =>
+            String(a.schedule && a.schedule.date).localeCompare(
+              String(b.schedule && b.schedule.date),
+            ),
+          );
+
+        list.innerHTML = ordered
+          .map(({ schedule, index }) => {
+            const s = schedule || {};
+            const times = Object.keys(ADHAN_PRAYER_LABELS)
+              .filter((key) => s[key])
+              .map((key) => `${ADHAN_PRAYER_LABELS[key]} ${escapeHtml(s[key])}`)
+              .join(" | ");
+            return `
+                    <div class="alert alert-secondary d-flex justify-content-between align-items-center py-2 small mb-2">
+                        <span><b>${escapeHtml(s.date || "—")}:</b> ${times || "لا توجد أوقات صالحة"}</span>
+                        <button type="button" class="btn btn-sm text-danger" data-remove-index="${index}" aria-label="حذف جدول ${escapeHtml(s.date || "")}">حذف</button>
+                    </div>`;
+          })
+          .join("");
       }
 
+      /** يضيف أو يستبدل جدولاً يدوياً بعد التحقق الكامل من التاريخ والأوقات. */
       function addManualSchedule() {
-        const date = document.getElementById("man-date").value;
-        const fajr = document.getElementById("man-fajr").value;
-        const dhuhr = document.getElementById("man-dhuhr").value;
-        const asr = document.getElementById("man-asr").value;
-        const magh = document.getElementById("man-magh").value;
-        const isha = document.getElementById("man-isha").value;
-        if (!date || !fajr) return alert("حدد التاريخ والوقت");
-        db.settings.adhan.manual_schedules.push({
-          date,
-          fajr,
-          dhuhr,
-          asr,
-          maghrib: magh,
-          isha,
-        });
+        const dateInput = document.getElementById("man-date");
+        const date = (dateInput.value || "").trim();
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || Number.isNaN(Date.parse(date))) {
+          alert("الرجاء تحديد تاريخ صحيح.");
+          dateInput.focus();
+          return;
+        }
+
+        const fields = [
+          ["man-fajr", "fajr"],
+          ["man-dhuhr", "dhuhr"],
+          ["man-asr", "asr"],
+          ["man-magh", "maghrib"],
+          ["man-isha", "isha"],
+        ];
+        const record = { date };
+        let providedCount = 0;
+
+        for (const [inputId, prayerKey] of fields) {
+          const input = document.getElementById(inputId);
+          const raw = (input.value || "").trim();
+          if (!raw) continue;
+          const normalized = normalizeTimeInput(raw);
+          if (!normalized) {
+            alert(
+              `صيغة الوقت غير صالحة في حقل «${ADHAN_PRAYER_LABELS[prayerKey]}». استخدم الصيغة HH:MM مثل 05:30.`,
+            );
+            input.focus();
+            return;
+          }
+          record[prayerKey] = normalized;
+          providedCount++;
+        }
+
+        if (providedCount === 0) {
+          alert("أدخل وقت صلاة واحداً على الأقل (الصيغة HH:MM).");
+          document.getElementById("man-fajr").focus();
+          return;
+        }
+
+        const schedules = ensureAdhanSettings().manual_schedules;
+        const existingIndex = schedules.findIndex(
+          (item) => item && item.date === date,
+        );
+        if (existingIndex !== -1) {
+          if (
+            !confirm(
+              `يوجد جدول محفوظ بتاريخ ${date}. هل استبداله بالمدخل الجديد؟`,
+            )
+          ) {
+            return;
+          }
+          schedules[existingIndex] = record;
+        } else {
+          schedules.push(record);
+        }
+
+        renderManualSchedules();
+        resetManualScheduleForm();
+      }
+
+      /** يفرغ حقول نموذج الجدولة بعد الإضافة ويجهّزها للإدخال التالي. */
+      function resetManualScheduleForm() {
+        for (const id of [
+          "man-date",
+          "man-fajr",
+          "man-dhuhr",
+          "man-asr",
+          "man-magh",
+          "man-isha",
+        ]) {
+          const input = document.getElementById(id);
+          if (input) input.value = "";
+        }
+        document.getElementById("man-date").focus();
+      }
+
+      /** يحذف جدولاً يدوياً بعد تأكيد المستخدم. */
+      function removeManualSchedule(index) {
+        if (!Number.isInteger(index)) return;
+        const schedules = ensureAdhanSettings().manual_schedules;
+        const record = schedules[index];
+        if (!record) return;
+        if (!confirm(`حذف الجدول اليدوي بتاريخ ${record.date}؟`)) return;
+        schedules.splice(index, 1);
         renderManualSchedules();
       }
 
