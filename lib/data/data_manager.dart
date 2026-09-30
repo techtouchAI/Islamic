@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -280,17 +281,21 @@ class DataManager {
       final current = _db;
       if (current == null || !calendarIsNewer(bundled, current)) return;
 
-      _copyCalendar(current, bundled);
+      // The live document is replaced, never edited in place, so a frame that
+      // is building right now reads either the old or the new table.
+      final merged = Map<String, dynamic>.from(current);
+      _copyCalendar(merged, bundled);
+      _db = merged;
       final temporary = File('${localFile.path}.pending');
       try {
-        await temporary.writeAsString(jsonEncode(current), encoding: utf8);
+        await temporary.writeAsString(jsonEncode(merged), encoding: utf8);
         await temporary.rename(localFile.path);
       } finally {
         await _deleteIfExists(temporary);
       }
       debugPrint(
         'DataManager: Calendar updated to generation '
-        '${calendarVersionOf(current)} from the installed build ($build).',
+        '${calendarVersionOf(merged)} from the installed build ($build).',
       );
       dbNotifier.value++;
     } catch (e) {
@@ -319,7 +324,10 @@ class DataManager {
             final content = await localFile.readAsString(encoding: utf8);
             _db = await compute(_decodeAndNormalizeJson, content);
             debugPrint("DataManager: Loaded from local storage.");
-            await _adoptBundledCalendarOnUpdate(localFile);
+            // Deliberately not awaited: the refresh reads and decodes the
+            // bundled document, which must not delay the splash screen. It
+            // reports completion through dbNotifier.
+            unawaited(_adoptBundledCalendarOnUpdate(localFile));
             return;
           } catch (e) {
             debugPrint(
