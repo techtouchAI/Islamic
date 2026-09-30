@@ -264,25 +264,6 @@ class _HomeSectionState extends State<HomeSection> {
               padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
               sliver: SliverList(
                 delegate: SliverChildListDelegate([
-                  Row(children: [
-                    Icon(Icons.auto_awesome_outlined,
-                        color: Theme.of(context).colorScheme.primary),
-                    const SizedBox(width: 12),
-                    Expanded(
-                        child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('السلام عليكم',
-                            style: Theme.of(context)
-                                .textTheme
-                                .titleLarge
-                                ?.copyWith(fontWeight: FontWeight.w700)),
-                        Text('نسأل الله أن يجعل يومكم عامراً بالذكر',
-                            style: Theme.of(context).textTheme.bodySmall),
-                      ],
-                    )),
-                  ]),
-                  const SizedBox(height: 20),
                   HomePrayerCard(
                     hijriAdjustment: settingsProvider.hijriAdjustment,
                     onTap: widget.onPrayerCardTap,
@@ -322,7 +303,7 @@ class _HomeSectionState extends State<HomeSection> {
                       context,
                       'إلهام اليوم',
                       _inspirationDua!,
-                      Icons.auto_awesome,
+                      Icons.lightbulb_outline,
                     ),
                   const SizedBox(height: 25),
                   Align(

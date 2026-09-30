@@ -42,3 +42,21 @@ The SDK used was Flutter 3.47.5, matching this repository's existing build jobs.
 Testing caught and corrected progress-bar accessibility semantics and verified
 that the drawer has finished opening before navigation is hit-tested.
 No native-device runtime verification was performed in the sandbox.
+
+## Prayer artwork refinement
+- Removed the greeting, supporting sentence and sparkle icon. The prayer card
+  is now the first element. Inspiration uses `lightbulb_outline`.
+- `PrayerScenePainter` reconstructs the reference's paired mosque silhouettes,
+  edge rosettes and upper-left sky as vector paths. The day scene has sun/clouds/
+  birds; night has a crescent/stars. There are no enlarged icon watermarks.
+- Scene selection is independent of dark mode. It uses the selected location's
+  sunrise (inclusive) and sunset (exclusive), not Jafari Maghrib. Missing solar
+  events use a visual-only 06:00–18:00 fallback; alarm calculations are unchanged.
+- The hero has a right-aligned weekday/Hijri date, gold Cairo medium title, and
+  curved OmarNaskh Eastern Arabic countdown numerals. Location moves below the
+  times to preserve the reference hierarchy. Five obligatory prayers remain.
+- The original concept is a generated raster, not an editable design or font
+  specification: this is a vector/typographic reconstruction, not a claim of
+  pixel-identical source recovery. Both selected fonts are already bundled.
+- `CAPTURE_UI=1 flutter test test/ui/prayer_scene_test.dart` exports actual Flutter
+  day/night card renders to ignored `build/ui-previews/` for visual review.

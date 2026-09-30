@@ -30,6 +30,8 @@ jobs:
       - name: Analyze
         run: flutter analyze --no-fatal-infos
       - name: Test
+        env:
+          CAPTURE_UI: '1'
         run: |
           set +e
           flutter test --reporter expanded 2>&1 | tee /tmp/ui-tests.log
@@ -56,4 +58,5 @@ jobs:
           name: ui-verification-log
           path: |
             /tmp/ui-tests.log
+            build/ui-previews/*.png
           if-no-files-found: ignore
