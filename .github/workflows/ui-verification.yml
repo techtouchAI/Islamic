@@ -50,6 +50,17 @@ jobs:
           PYTHON
           fi
           exit "$result"
+      - name: Preview review evidence
+        if: always()
+        run: |
+          python3 - <<'PYTHON'
+          import base64
+          from pathlib import Path
+          for path in Path('build/ui-previews').glob('*.png'):
+              data = base64.b64encode(path.read_bytes()).decode()
+              for i in range(0, len(data), 12000):
+                  print(f'::notice title=preview-{path.stem}-{i // 12000}::{data[i:i+12000]}')
+          PYTHON
       - name: Build web
         run: flutter build web --release
       - uses: actions/upload-artifact@v4

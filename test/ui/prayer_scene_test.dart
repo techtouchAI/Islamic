@@ -173,11 +173,11 @@ void main() {
 Future<void> _capture(WidgetTester tester, Key key, String name) async {
   // Opt-in CI evidence, never a golden baseline auto-approved by this test.
   if (Platform.environment['CAPTURE_UI'] != '1') return;
-  final boundary = tester.renderObject<RenderRepaintBoundary>(find.byKey(key));
-  final image = await boundary.toImage(pixelRatio: 2);
-  final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
-  image.dispose();
   await tester.runAsync(() async {
+    final boundary = tester.renderObject<RenderRepaintBoundary>(find.byKey(key));
+    final image = await boundary.toImage(pixelRatio: 2);
+    final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
+    image.dispose();
     final file = File('build/ui-previews/$name.png');
     await file.parent.create(recursive: true);
     await file.writeAsBytes(bytes!.buffer.asUint8List());
