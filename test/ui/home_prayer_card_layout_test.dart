@@ -149,7 +149,11 @@ void main() {
       supportedLocales: const [Locale('ar', 'SA')],
       localizationsDelegates: GlobalMaterialLocalizations.delegates,
       home: Scaffold(
-        body: HomePrayerCard(controller: controller, hijriAdjustment: 0),
+        body: HomePrayerCard(
+          controller: controller,
+          hijriAdjustment: 0,
+          onDateTap: () {},
+        ),
       ),
     ));
     await tester.pump();

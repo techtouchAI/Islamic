@@ -257,28 +257,27 @@ class _HomePrayerCardState extends State<HomePrayerCard>
         maintainSize: true,
         maintainAnimation: true,
         maintainState: true,
-        child: _dateLine(date, interactive: false),
+        child: _dateLine(date, tapLayer: false),
       );
 
-  /// The date line that reacts to taps: it owns the calendar gesture.
-  Widget _buildDateTapTarget(String date) => widget.onDateTap == null
-      ? _dateLine(date, interactive: false)
-      : _dateLine(date, interactive: true);
+  /// The date line that is visible on the card: it carries the calendar
+  /// gesture whenever a callback was provided.
+  Widget _buildDateTapTarget(String date) => _dateLine(date, tapLayer: true);
 
   /// The Hijri date plus its calendar affordance.
   ///
   /// Built twice with identical geometry: one copy reserves the space inside
   /// the card body, the other is painted over the card-wide InkWell. Only
   /// interactivity differs, so the copies cannot drift apart.
-  Widget _dateLine(String date, {required bool interactive}) {
-    final tappable = interactive && widget.onDateTap != null;
+  Widget _dateLine(String date, {required bool tapLayer}) {
+    final tappable = tapLayer && widget.onDateTap != null;
     final line = Row(
       mainAxisAlignment: MainAxisAlignment.start,
       children: [
         Flexible(
           child: Text(
             date,
-            key: tappable ? _dateKey : null,
+            key: tapLayer ? _dateKey : null,
             textAlign: TextAlign.right,
             style: PrayerCardTypography.date,
           ),
