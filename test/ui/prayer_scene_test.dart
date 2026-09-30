@@ -110,6 +110,7 @@ void main() {
     // Loading real fonts makes exported images faithful to the actual app,
     // instead of Flutter test's Ahem placeholder glyphs.
     for (final pair in [
+      ('MaterialIcons', 'fonts/MaterialIcons-Regular.otf'),
       ('Cairo', 'assets/font/Cairo-VariableFont.ttf'),
       ('OmarNaskh', 'assets/font/OmarNaskh-Medium.ttf'),
     ]) {
@@ -118,7 +119,7 @@ void main() {
     }
     await tester.binding.setSurfaceSize(const Size(390, 720));
     addTearDown(() => tester.binding.setSurfaceSize(null));
-    var now = DateTime.utc(2026, 9, 30, 8);
+    var now = DateTime.utc(2026, 9, 30, 7, 35, 24);
     final controller = HomePrayerController(
       loadToday: () async => schedule,
       loadTomorrow: (_) async => scheduleFor(day.add(const Duration(days: 1))),
@@ -159,7 +160,7 @@ void main() {
     expect(countdown.style?.fontFamily, 'OmarNaskh');
     expect(find.byIcon(Icons.mosque_outlined), findsNothing);
     await _capture(tester, boundaryKey, 'prayer-day');
-    now = DateTime.utc(2026, 9, 30, 15); // 18:00 in selected Iraqi location
+    now = DateTime.utc(2026, 9, 30, 15, 35, 24); // After sunset in Iraq
     await tester.pump(const Duration(seconds: 1));
     expect(tester.widget<PrayerScene>(find.byType(PrayerScene)).period,
         PrayerScenePeriod.night);
