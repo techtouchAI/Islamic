@@ -307,6 +307,8 @@ class _DynamicListSectionState extends State<DynamicListSection> {
                                         ),
                                         child: Text(
                                           cleanSubtitle,
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
                                           style: TextStyle(
                                             fontSize:
                                                 14 * widget.fontSizeFactor,
