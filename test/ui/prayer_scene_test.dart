@@ -23,14 +23,20 @@ import '../fixtures/prayer_schedules.dart';
 void main() {
   final day = DateTime.utc(2026, 9, 30);
   final schedule = scheduleFor(day, hours: {
-    'fajr': 5, 'sunrise': 6, 'dhuhr': 12, 'asr': 15,
-    'sunset': 18, 'maghrib': 19, 'isha': 20,
+    'fajr': 5,
+    'sunrise': 6,
+    'dhuhr': 12,
+    'asr': 15,
+    'sunset': 18,
+    'maghrib': 19,
+    'isha': 20,
   });
 
   test('artwork uses sunrise inclusive, sunset exclusive; not Maghrib', () {
     PrayerScenePeriod at(int hour, [int minute = 0]) => prayerScenePeriod(
-      localNow: DateTime.utc(2026, 9, 30, hour, minute), schedule: schedule,
-    );
+          localNow: DateTime.utc(2026, 9, 30, hour, minute),
+          schedule: schedule,
+        );
     expect(at(5, 59), PrayerScenePeriod.night);
     expect(at(6), PrayerScenePeriod.day);
     expect(at(17, 59), PrayerScenePeriod.day);
@@ -46,8 +52,14 @@ void main() {
     final stale = scheduleFor(day.subtract(const Duration(days: 1)),
         hours: {'sunrise': 8, 'sunset': 20});
     for (final s in <PrayerSchedule?>[null, missing, invalid, stale]) {
-      expect(prayerScenePeriod(localNow: DateTime.utc(2026, 9, 30, 7), schedule: s), PrayerScenePeriod.day);
-      expect(prayerScenePeriod(localNow: DateTime.utc(2026, 9, 30, 19), schedule: s), PrayerScenePeriod.night);
+      expect(
+          prayerScenePeriod(
+              localNow: DateTime.utc(2026, 9, 30, 7), schedule: s),
+          PrayerScenePeriod.day);
+      expect(
+          prayerScenePeriod(
+              localNow: DateTime.utc(2026, 9, 30, 19), schedule: s),
+          PrayerScenePeriod.night);
     }
   });
 
@@ -58,10 +70,13 @@ void main() {
     expect(dayPainter.shouldRepaint(nightPainter), isTrue);
   });
 
-  testWidgets('home starts with prayer card, no greeting, new inspiration icon', (tester) async {
+  testWidgets('home starts with prayer card, no greeting, new inspiration icon',
+      (tester) async {
     await initializeDateFormatting('ar_SA');
     SharedPreferences.setMockInitialValues({
-      'vis_day_dua': false, 'vis_adhkar': false, 'vis_inspiration': true,
+      'vis_day_dua': false,
+      'vis_adhkar': false,
+      'vis_inspiration': true,
     });
     DataManager.setDB({'sections': {}, 'content': {}});
     final settings = SettingsProvider();
@@ -69,7 +84,8 @@ void main() {
     addTearDown(settings.dispose);
     await tester.pumpWidget(ChangeNotifierProvider.value(
       value: settings,
-      child: const MaterialApp(home: Directionality(
+      child: const MaterialApp(
+          home: Directionality(
         textDirection: TextDirection.rtl,
         child: Scaffold(body: HomeSection()),
       )),
@@ -78,7 +94,8 @@ void main() {
     expect(find.text('السلام عليكم'), findsNothing);
     expect(find.text('نسأل الله أن يجعل يومكم عامراً بالذكر'), findsNothing);
     expect(find.byIcon(Icons.auto_awesome_outlined), findsNothing);
-    expect(tester.getTopLeft(find.byKey(const ValueKey('home-prayer-card'))).dy, 20);
+    expect(tester.getTopLeft(find.byKey(const ValueKey('home-prayer-card'))).dy,
+        20);
     await tester.scrollUntilVisible(find.text('إلهام اليوم'), 200);
     expect(find.byIcon(Icons.lightbulb_outline), findsOneWidget);
     expect(find.byIcon(Icons.auto_awesome), findsNothing);
@@ -86,7 +103,8 @@ void main() {
     await tester.pumpWidget(const SizedBox());
   });
 
-  testWidgets('clock changes artwork without changing app theme; local fonts', (tester) async {
+  testWidgets('clock changes artwork without changing app theme; local fonts',
+      (tester) async {
     await initializeDateFormatting('ar_SA');
     // Loading real fonts makes exported images faithful to the actual app,
     // instead of Flutter test's Ahem placeholder glyphs.
@@ -109,22 +127,32 @@ void main() {
     var taps = 0;
     const boundaryKey = ValueKey('scene-capture');
     await tester.pumpWidget(MaterialApp(
-      theme: AppTheme.build(brightness: Brightness.light,
-          primary: AppPalette.forest, card: Colors.white),
-      home: Directionality(textDirection: TextDirection.rtl,
-        child: Scaffold(body: SingleChildScrollView(
+      theme: AppTheme.build(
+          brightness: Brightness.light,
+          primary: AppPalette.forest,
+          card: Colors.white),
+      home: Directionality(
+        textDirection: TextDirection.rtl,
+        child: Scaffold(
+            body: SingleChildScrollView(
           padding: const EdgeInsets.all(16),
-          child: RepaintBoundary(key: boundaryKey,
-            child: HomePrayerCard(controller: controller, hijriAdjustment: 0,
-              onTap: () => taps++)),
+          child: RepaintBoundary(
+              key: boundaryKey,
+              child: HomePrayerCard(
+                  controller: controller,
+                  hijriAdjustment: 0,
+                  onTap: () => taps++)),
         )),
       ),
     ));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
-    expect(tester.widget<PrayerScene>(find.byType(PrayerScene)).period, PrayerScenePeriod.day);
-    final title = tester.widget<Text>(find.byKey(const ValueKey('prayer-title')));
-    final countdown = tester.widget<Text>(find.byKey(const ValueKey('prayer-countdown')));
+    expect(tester.widget<PrayerScene>(find.byType(PrayerScene)).period,
+        PrayerScenePeriod.day);
+    final title =
+        tester.widget<Text>(find.byKey(const ValueKey('prayer-title')));
+    final countdown =
+        tester.widget<Text>(find.byKey(const ValueKey('prayer-countdown')));
     expect(title.style?.fontFamily, 'Cairo');
     expect(title.style?.fontWeight, FontWeight.w500);
     expect(countdown.style?.fontFamily, 'OmarNaskh');
@@ -132,7 +160,8 @@ void main() {
     await _capture(tester, boundaryKey, 'prayer-day');
     now = DateTime.utc(2026, 9, 30, 15); // 18:00 in selected Iraqi location
     await tester.pump(const Duration(seconds: 1));
-    expect(tester.widget<PrayerScene>(find.byType(PrayerScene)).period, PrayerScenePeriod.night);
+    expect(tester.widget<PrayerScene>(find.byType(PrayerScene)).period,
+        PrayerScenePeriod.night);
     await _capture(tester, boundaryKey, 'prayer-night');
     await tester.tap(find.byKey(const ValueKey('prayer-title')));
     expect(taps, 1);

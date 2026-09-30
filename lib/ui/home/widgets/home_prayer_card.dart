@@ -72,9 +72,11 @@ class _HomePrayerCardState extends State<HomePrayerCard>
             _controller.localNow,
             widget.hijriAdjustment,
           );
-          final weekday = intl.DateFormat('EEEE', 'ar_SA').format(_controller.localNow);
-          final date = '$weekday، ${hijri.day} ${hijri.monthName} ${hijri.year} هـ'
-              .toEasternArabic();
+          final weekday =
+              intl.DateFormat('EEEE', 'ar_SA').format(_controller.localNow);
+          final date =
+              '$weekday، ${hijri.day} ${hijri.monthName} ${hijri.year} هـ'
+                  .toEasternArabic();
           final remaining = upcoming?.utcTime.difference(_controller.nowUtc);
           final title = upcoming == null
               ? 'أوقات الصلاة'
@@ -97,108 +99,126 @@ class _HomePrayerCardState extends State<HomePrayerCard>
                 Stack(
                   children: [
                     Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Stack(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        Positioned.fill(child: PrayerScene(period: period)),
-                        ConstrainedBox(
-                          constraints: const BoxConstraints(minHeight: 210),
-                          child: Padding(
-                            padding: const EdgeInsets.fromLTRB(20, 20, 20, 22),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                // The sky lives on the physical left in both
-                                // directions, matching the reference artwork.
-                                Padding(
-                                  padding: const EdgeInsets.only(left: 66),
-                                  child: Text(date,
-                                    key: const ValueKey('prayer-date'),
-                                    textAlign: TextAlign.right,
-                                    style: PrayerCardTypography.date),
-                                ),
-                                const SizedBox(height: 12),
-                                Text(title,
-                                  key: const ValueKey('prayer-title'),
-                                  textAlign: TextAlign.center,
-                                  style: PrayerCardTypography.title),
-                                if (_controller.loading)
-                                  const Padding(
-                                    padding: EdgeInsets.all(20),
-                                    child: Center(child: CircularProgressIndicator(
-                                      color: AppPalette.gold,
-                                      semanticsLabel: 'جارٍ تحميل مواقيت الصلاة',
-                                    )),
-                                  )
-                                else if (remaining != null) ...[
-                                  Semantics(
-                                    label: 'الوقت المتبقي ${_countdown(remaining)}',
-                                    child: ExcludeSemantics(
-                                      child: FittedBox(
-                                        fit: BoxFit.scaleDown,
-                                        child: Text(_countdown(remaining),
-                                          key: const ValueKey('prayer-countdown'),
-                                          textDirection: TextDirection.ltr,
-                                          style: PrayerCardTypography.countdown),
-                                      ),
+                        Stack(
+                          children: [
+                            Positioned.fill(child: PrayerScene(period: period)),
+                            ConstrainedBox(
+                              constraints: const BoxConstraints(minHeight: 210),
+                              child: Padding(
+                                padding:
+                                    const EdgeInsets.fromLTRB(20, 20, 20, 22),
+                                child: Column(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.stretch,
+                                  children: [
+                                    // The sky lives on the physical left in both
+                                    // directions, matching the reference artwork.
+                                    Padding(
+                                      padding: const EdgeInsets.only(left: 66),
+                                      child: Text(date,
+                                          key: const ValueKey('prayer-date'),
+                                          textAlign: TextAlign.right,
+                                          style: PrayerCardTypography.date),
                                     ),
-                                  ),
-                                  Text(upcoming!.key == 'imsak'
-                                      ? 'المتبقي للإمساك' : 'المتبقي للأذان',
-                                    textAlign: TextAlign.center,
-                                    style: PrayerCardTypography.caption),
-                                ] else if (!_controller.failed)
-                                  const Text('لا توجد مواقيت متاحة حالياً',
-                                    textAlign: TextAlign.center,
-                                    style: PrayerCardTypography.caption),
-                              ],
+                                    const SizedBox(height: 12),
+                                    Text(title,
+                                        key: const ValueKey('prayer-title'),
+                                        textAlign: TextAlign.center,
+                                        style: PrayerCardTypography.title),
+                                    if (_controller.loading)
+                                      const Padding(
+                                        padding: EdgeInsets.all(20),
+                                        child: Center(
+                                            child: CircularProgressIndicator(
+                                          color: AppPalette.gold,
+                                          semanticsLabel:
+                                              'جارٍ تحميل مواقيت الصلاة',
+                                        )),
+                                      )
+                                    else if (remaining != null) ...[
+                                      Semantics(
+                                        label:
+                                            'الوقت المتبقي ${_countdown(remaining)}',
+                                        child: ExcludeSemantics(
+                                          child: FittedBox(
+                                            fit: BoxFit.scaleDown,
+                                            child: Text(_countdown(remaining),
+                                                key: const ValueKey(
+                                                    'prayer-countdown'),
+                                                textDirection:
+                                                    TextDirection.ltr,
+                                                style: PrayerCardTypography
+                                                    .countdown),
+                                          ),
+                                        ),
+                                      ),
+                                      Text(
+                                          upcoming!.key == 'imsak'
+                                              ? 'المتبقي للإمساك'
+                                              : 'المتبقي للأذان',
+                                          textAlign: TextAlign.center,
+                                          style: PrayerCardTypography.caption),
+                                    ] else if (!_controller.failed)
+                                      const Text('لا توجد مواقيت متاحة حالياً',
+                                          textAlign: TextAlign.center,
+                                          style: PrayerCardTypography.caption),
+                                  ],
+                                ),
+                              ),
                             ),
-                          ),
+                          ],
+                        ),
+                        // Keep the five actual times inside the card; unlike the
+                        // reference's six columns, sunrise is not a sixth prayer.
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(14, 0, 14, 12),
+                          child: Column(children: [
+                            PrayerTimesStrip(
+                              schedule: _controller.today,
+                              nextKey: upcoming != null &&
+                                      _controller
+                                              .today?[upcoming.key]?.utcTime ==
+                                          upcoming.utcTime
+                                  ? upcoming.key
+                                  : null,
+                            ),
+                            const SizedBox(height: 10),
+                            Text(
+                                '${_controller.today?.location.displayName ?? 'الموقع المختار'} · عرض المواقيت وإعدادات الأذان',
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                    fontFamily: 'Cairo',
+                                    color: Colors.white70,
+                                    fontSize: 11)),
+                          ]),
                         ),
                       ],
                     ),
-                    // Keep the five actual times inside the card; unlike the
-                    // reference's six columns, sunrise is not a sixth prayer.
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(14, 0, 14, 12),
-                      child: Column(children: [
-                        PrayerTimesStrip(
-                          schedule: _controller.today,
-                          nextKey: upcoming != null &&
-                              _controller.today?[upcoming.key]?.utcTime == upcoming.utcTime
-                              ? upcoming.key : null,
+                    Positioned.fill(
+                      child: Material(
+                        type: MaterialType.transparency,
+                        child: Semantics(
+                          label: 'فتح مواقيت الصلاة وإعدادات الأذان',
+                          button: widget.onTap != null,
+                          child: InkWell(onTap: widget.onTap),
                         ),
-                        const SizedBox(height: 10),
-                        Text(
-                          '${_controller.today?.location.displayName ?? 'الموقع المختار'} · عرض المواقيت وإعدادات الأذان',
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(fontFamily: 'Cairo',
-                            color: Colors.white70, fontSize: 11)),
-                      ]),
+                      ),
                     ),
-                  ],
-                ),
-                Positioned.fill(
-                  child: Material(
-                    type: MaterialType.transparency,
-                    child: Semantics(
-                      label: 'فتح مواقيت الصلاة وإعدادات الأذان',
-                      button: widget.onTap != null,
-                      child: InkWell(onTap: widget.onTap),
-                    ),
-                  ),
-                ),
                   ],
                 ),
                 // Natural height for retry at accessibility text sizes.
                 if (_controller.failed)
-                  Padding(padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
                     child: TextButton.icon(
                       onPressed: _controller.refresh,
                       icon: const Icon(Icons.refresh),
-                      label: const Text('تعذّر تحديث المواقيت · إعادة المحاولة'),
-                      style: TextButton.styleFrom(foregroundColor: Colors.white),
+                      label:
+                          const Text('تعذّر تحديث المواقيت · إعادة المحاولة'),
+                      style:
+                          TextButton.styleFrom(foregroundColor: Colors.white),
                     ),
                   ),
               ],
@@ -264,14 +284,16 @@ class PrayerTimesStrip extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(
                             vertical: 9, horizontal: 2),
                         decoration: BoxDecoration(
-                          color: active ? AppPalette.forest : Colors.transparent,
+                          color:
+                              active ? AppPalette.forest : Colors.transparent,
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Column(children: [
                           Icon(icons[i],
                               size: 19,
-                              color:
-                                  active ? AppPalette.gold : const Color(0xFF897547)),
+                              color: active
+                                  ? AppPalette.gold
+                                  : const Color(0xFF897547)),
                           const SizedBox(height: 5),
                           Text(label,
                               textAlign: TextAlign.center,

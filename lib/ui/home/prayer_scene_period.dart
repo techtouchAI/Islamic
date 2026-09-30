@@ -12,18 +12,25 @@ PrayerScenePeriod prayerScenePeriod({
 }) {
   final sunrise = schedule?['sunrise']?.localCivilTime;
   final sunset = schedule?['sunset']?.localCivilTime;
-  bool sameDate(DateTime value) => value.year == localNow.year &&
-      value.month == localNow.month && value.day == localNow.day;
+  bool sameDate(DateTime value) =>
+      value.year == localNow.year &&
+      value.month == localNow.month &&
+      value.day == localNow.day;
   // Civil values are represented with UTC kind by PrayerTimesService. Compare
   // fields consistently even when a fallback caller supplies a local DateTime.
   DateTime civil(DateTime value) => DateTime.utc(value.year, value.month,
       value.day, value.hour, value.minute, value.second);
-  if (sunrise != null && sunset != null &&
-      sameDate(sunrise) && sameDate(sunset) && sunset.isAfter(sunrise)) {
+  if (sunrise != null &&
+      sunset != null &&
+      sameDate(sunrise) &&
+      sameDate(sunset) &&
+      sunset.isAfter(sunrise)) {
     final now = civil(localNow);
     return !now.isBefore(civil(sunrise)) && now.isBefore(civil(sunset))
-        ? PrayerScenePeriod.day : PrayerScenePeriod.night;
+        ? PrayerScenePeriod.day
+        : PrayerScenePeriod.night;
   }
   return localNow.hour >= 6 && localNow.hour < 18
-      ? PrayerScenePeriod.day : PrayerScenePeriod.night;
+      ? PrayerScenePeriod.day
+      : PrayerScenePeriod.night;
 }
