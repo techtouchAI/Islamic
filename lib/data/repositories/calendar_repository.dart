@@ -157,6 +157,34 @@ class HijriMonthData {
   }
 }
 
+/// One month row of the bundled Hijri table: the civil date of Hijri day 1 and
+/// the number of days the reference authority declared for that month.
+///
+/// The table is the calendar of record (see `scripts/verify_hijri_calendar.py`)
+/// because the announced month starts differ from the calculated Umm al-Qura
+/// calendar by a day.
+class HijriMonthSummary {
+  const HijriMonthSummary({
+    required this.year,
+    required this.month,
+    required this.totalDays,
+    required this.start,
+  });
+
+  final int year;
+  final int month;
+  final int totalDays;
+
+  /// Civil date of Hijri day 1 of this month, time of day removed.
+  final DateTime start;
+
+  /// Civil date of the last day of this month.
+  DateTime get end => start.add(Duration(days: totalDays - 1));
+
+  bool contains(DateTime civilDate) =>
+      !civilDate.isBefore(start) && !civilDate.isAfter(end);
+}
+
 class AppHijriDate {
   final int day;
   final int month;
@@ -196,71 +224,100 @@ class CalendarRepository {
     return months[month - 1];
   }
 
+  /// Calendar day of [value] with the time of day removed.
+  ///
+  /// Day arithmetic uses UTC fields so a daylight-saving change on the device
+  /// can never truncate a difference and shift a Hijri date by one day.
+  static DateTime civilDate(DateTime value) =>
+      DateTime.utc(value.year, value.month, value.day);
+
+  /// Header fields of every row in the bundled table.
+  ///
+  /// Day records (with their event lists) are deliberately not parsed here:
+  /// locating a month must stay cheap even when the calendar document is large.
+  static List<HijriMonthSummary> monthSummaries() {
+    final months = DataManager.getDB()?['hijri_calendar'];
+    if (months is! List) return const <HijriMonthSummary>[];
+
+    final summaries = <HijriMonthSummary>[];
+    for (final entry in months) {
+      if (entry is! Map) continue;
+      final year = _asInt(entry['year']);
+      final month = _asInt(entry['month']);
+      final totalDays = _asInt(entry['total_days']);
+      final start = DateTime.tryParse(
+        entry['expected_gregorian_start']?.toString() ?? '',
+      );
+      if (year == null || month == null || start == null) continue;
+      if (month < 1 || month > 12) continue;
+      if (totalDays == null || totalDays < 29 || totalDays > 30) continue;
+      summaries.add(
+        HijriMonthSummary(
+          year: year,
+          month: month,
+          totalDays: totalDays,
+          start: civilDate(start),
+        ),
+      );
+    }
+    return summaries;
+  }
+
+  /// The table row containing [date], or null when the bundled table does not
+  /// cover that day (another Hijri year, or a document without a calendar).
+  static HijriMonthSummary? monthSummaryForDate(DateTime date) {
+    final day = civilDate(date);
+    for (final summary in monthSummaries()) {
+      if (summary.contains(day)) return summary;
+    }
+    return null;
+  }
+
+  /// Civil date on which day 1 of [monthData] is displayed.
+  ///
+  /// A positive correction reads the table [offset] days ahead, so the same
+  /// Hijri day is shown [offset] days *earlier* on the Gregorian grid. The grid
+  /// and [getTodayHijri] therefore always agree.
+  static DateTime adjustedMonthStart(HijriMonthData monthData, int offset) {
+    final parsed = DateTime.tryParse(monthData.expectedGregorianStart);
+    final start = parsed ??
+        getGregorianStartFallback(monthData.year, monthData.month);
+    return civilDate(start).subtract(Duration(days: offset));
+  }
+
+  /// Hijri date of the civil date [targetDate], after the user's [offset].
+  ///
+  /// The bundled table decides: the month that really contains the date wins,
+  /// so the last day of a month is never reported as day one of the next month
+  /// even when the calculated calendar is a day ahead on that boundary. Dates
+  /// outside the table fall back to the Umm al-Qura calculation bundled with
+  /// the `hijri` package, which remains the best available approximation.
   static AppHijriDate getTodayHijri(DateTime targetDate, int offset) {
-    // Determine fallback current hijri using the library
-    final fallbackHijri = HijriCalendar.fromDate(
-      targetDate.add(Duration(days: offset)),
-    );
+    final civil = civilDate(targetDate).add(Duration(days: offset));
 
-    // Ensure we load month data (could be missing/fallback from hijri calendar)
-    final monthData = getMonthData(fallbackHijri.hYear, fallbackHijri.hMonth);
-
-    DateTime firstDayGregorian;
-    try {
-      firstDayGregorian = DateTime.parse(monthData.expectedGregorianStart);
-    } catch (e) {
-      // A simplistic fallback for missing JSON: we just use the calculated day by hijri package
+    final summary = monthSummaryForDate(civil);
+    if (summary != null) {
       return AppHijriDate(
-        day: fallbackHijri.hDay,
-        month: fallbackHijri.hMonth,
-        year: fallbackHijri.hYear,
-        monthName: getHijriMonthName(fallbackHijri.hMonth),
+        day: civil.difference(summary.start).inDays + 1,
+        month: summary.month,
+        year: summary.year,
+        monthName: getHijriMonthName(summary.month),
       );
     }
 
-    // Adjust the target date with the offset (instead of moving the Gregorian start)
-    final DateTime adjustedTargetDate = targetDate.add(Duration(days: offset));
-
-    // Calculate actual difference relative to JSON's expected Gregorian start
-    final targetDateOnly = DateTime(
-      adjustedTargetDate.year,
-      adjustedTargetDate.month,
-      adjustedTargetDate.day,
+    final fallback = HijriCalendar.fromDate(
+      DateTime(civil.year, civil.month, civil.day),
     );
-    final startDateOnly = DateTime(
-      firstDayGregorian.year,
-      firstDayGregorian.month,
-      firstDayGregorian.day,
-    );
-
-    int calculatedHDay = targetDateOnly.difference(startDateOnly).inDays + 1;
-
-    // Handle month boundary logic
-    int resultYear = monthData.year;
-    int resultMonth = monthData.month;
-    int resultDay = calculatedHDay;
-
-    if (calculatedHDay > monthData.totalDays) {
-      resultDay = calculatedHDay - monthData.totalDays;
-      resultMonth++;
-      if (resultMonth > 12) {
-        resultMonth = 1;
-        resultYear++;
-      }
-    } else if (calculatedHDay < 1) {
-      // A simplistic fallback for past bounds: we just use the calculated day by hijri package
-      resultDay = fallbackHijri.hDay;
-      resultMonth = fallbackHijri.hMonth;
-      resultYear = fallbackHijri.hYear;
-    }
-
     return AppHijriDate(
-      day: resultDay,
-      month: resultMonth,
-      year: resultYear,
-      monthName: getHijriMonthName(resultMonth),
+      day: fallback.hDay,
+      month: fallback.hMonth,
+      year: fallback.hYear,
+      monthName: getHijriMonthName(fallback.hMonth),
     );
   }
+
+  static int? _asInt(dynamic value) =>
+      value is int ? value : int.tryParse(value?.toString() ?? '');
 
   static DateTime getGregorianStartFallback(int year, int month) {
     try {
@@ -274,32 +331,20 @@ class CalendarRepository {
     }
   }
 
-  static Future<HijriMonthData> getMonthDataAsync(int year, int month) async {
-    return getMonthData(year, month);
-  }
-
+  /// Full record of one Hijri month: header fields plus the days that carry
+  /// events. Months the bundled table does not know are derived from the
+  /// calculation library so navigation never breaks outside the table.
   static HijriMonthData getMonthData(int year, int month) {
-    final db = DataManager.getDB();
-    if (db != null && db['hijri_calendar'] != null) {
-      final monthsData = db['hijri_calendar'];
-      if (monthsData is List) {
-        for (var m in monthsData) {
-          try {
-            if (m is Map<String, dynamic>) {
-              final hYear = m['year'] is int
-                  ? m['year']
-                  : int.tryParse(m['year']?.toString() ?? '');
-              final hMonth = m['month'] is int
-                  ? m['month']
-                  : int.tryParse(m['month']?.toString() ?? '');
-
-              if (hYear == year && hMonth == month) {
-                return HijriMonthData.fromJson(m);
-              }
-            }
-          } catch (e) {
-            debugPrint('Error checking month data: $e');
-          }
+    final months = DataManager.getDB()?['hijri_calendar'];
+    if (months is List) {
+      for (final entry in months) {
+        if (entry is! Map) continue;
+        if (_asInt(entry['year']) != year) continue;
+        if (_asInt(entry['month']) != month) continue;
+        try {
+          return HijriMonthData.fromJson(Map<String, dynamic>.from(entry));
+        } catch (e) {
+          debugPrint('Error parsing Hijri month $year-$month: $e');
         }
       }
     }

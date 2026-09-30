@@ -18,14 +18,22 @@ import 'package:provider/provider.dart';
 
 import '../../providers/settings_provider.dart';
 import '../../theme/app_card_theme.dart';
+import '../widgets/keep_alive_host.dart';
 import 'widgets/home_prayer_card.dart';
 import 'widgets/daily_worship_actions.dart';
 import 'widgets/daily_dhikr_card.dart';
+import 'widgets/home_card_glyph.dart';
 
 class HomeSection extends StatefulWidget {
   final VoidCallback? onPrayerCardTap;
+  final VoidCallback? onHijriDateTap;
   final ValueChanged<String>? onNavigate;
-  const HomeSection({super.key, this.onPrayerCardTap, this.onNavigate});
+  const HomeSection({
+    super.key,
+    this.onPrayerCardTap,
+    this.onHijriDateTap,
+    this.onNavigate,
+  });
 
   @override
   State<HomeSection> createState() => _HomeSectionState();
@@ -264,9 +272,14 @@ class _HomeSectionState extends State<HomeSection> {
               padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
               sliver: SliverList(
                 delegate: SliverChildListDelegate([
-                  HomePrayerCard(
-                    hijriAdjustment: settingsProvider.hijriAdjustment,
-                    onTap: widget.onPrayerCardTap,
+                  // Kept alive so scrolling the home list never resets the
+                  // loaded schedule or restarts the countdown.
+                  KeepAliveHost(
+                    child: HomePrayerCard(
+                      hijriAdjustment: settingsProvider.hijriAdjustment,
+                      onTap: widget.onPrayerCardTap,
+                      onDateTap: widget.onHijriDateTap,
+                    ),
                   ),
                   const SizedBox(height: 24),
                   Text('العبادة اليومية',
@@ -332,19 +345,22 @@ class _HomeSectionState extends State<HomeSection> {
                   final rowItems = groupedRows[index];
 
                   Widget buildCard(MapEntry<String, dynamic> e) {
+                    final sectionKey = e.value['sectionKey']?.toString() ?? '';
+                    final isImamAli = sectionKey.contains('imam_ali');
+                    var title = e.value['title'].toString();
+                    if (isImamAli) {
+                      title = 'قال أمير المؤمنين علي (عليه السلام)';
+                    }
                     return RepaintBoundary(
                       child: _HomeSmallCard(
                         tag: e.key,
-                        title: e.value['sectionKey']?.toString().contains(
-                                      'imam_ali',
-                                    ) ==
-                                true
-                            ? 'قال أمير المؤمنين علي (عليه السلام)'
-                            : e.value['title'].toString(),
+                        title: title,
+                        glyph: resolveHomeCardGlyph(
+                          sectionKey: sectionKey,
+                          title: title,
+                        ),
                         uiOpacity: settingsProvider.uiOpacity,
                         onTap: () async {
-                          final sectionKey =
-                              e.value['sectionKey']?.toString() ?? '';
                           if (sectionKey == 'istikhara') {
                             if (!context.mounted) return;
                             Navigator.push(
@@ -433,11 +449,13 @@ class _HomeSectionState extends State<HomeSection> {
 
 class _HomeSmallCard extends StatelessWidget {
   final String tag, title;
+  final HomeCardGlyph glyph;
   final double uiOpacity;
   final VoidCallback onTap;
   const _HomeSmallCard({
     required this.tag,
     required this.title,
+    required this.glyph,
     required this.uiOpacity,
     required this.onTap,
   });
@@ -461,8 +479,11 @@ class _HomeSmallCard extends StatelessWidget {
           padding: const EdgeInsets.all(16),
           child:
               Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Icon(Icons.auto_stories_outlined,
-                size: 24, color: foreground.withValues(alpha: .6)),
+            HomeCardGlyphIcon(
+              glyph: glyph,
+              size: 26,
+              color: foreground.withValues(alpha: .65),
+            ),
             const SizedBox(height: 12),
             Text(tag,
                 style: TextStyle(

@@ -2,6 +2,7 @@ import 'package:aldhakereen/theme/app_theme.dart';
 import 'package:aldhakereen/ui/home/home_prayer_controller.dart';
 import 'package:aldhakereen/ui/home/widgets/home_prayer_card.dart';
 import 'package:aldhakereen/ui/home/widgets/daily_worship_actions.dart';
+import 'package:aldhakereen/ui/widgets/keep_alive_host.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -28,6 +29,7 @@ void main() {
           );
           addTearDown(controller.dispose);
           var tapped = false;
+          var dateTapped = false;
           await tester.pumpWidget(MaterialApp(
             locale: const Locale('ar', 'SA'),
             supportedLocales: const [Locale('ar', 'SA')],
@@ -46,7 +48,8 @@ void main() {
                 child: HomePrayerCard(
                     controller: controller,
                     hijriAdjustment: 0,
-                    onTap: () => tapped = true),
+                    onTap: () => tapped = true,
+                    onDateTap: () => dateTapped = true),
               )),
             ),
           ));
@@ -67,6 +70,17 @@ void main() {
             expect(fajr.dy, isha.dy);
           }
           await tester.tapAt(tester.getCenter(find.text('صلاة الظهر')));
+          expect(tapped, isTrue);
+          expect(dateTapped, isFalse);
+
+          // The Hijri date line is its own target: tapping it must open the
+          // calendar and never the prayer-times settings behind it.
+          final dateFinder = find.byKey(const ValueKey('prayer-date-button'));
+          expect(dateFinder, findsOneWidget);
+          final dateCenter = tester.getCenter(dateFinder);
+          await tester.tapAt(tester.getCenter(find.text('صلاة الظهر')));
+          await tester.tapAt(dateCenter);
+          expect(dateTapped, isTrue);
           expect(tapped, isTrue);
           await tester.pumpWidget(const SizedBox());
         });
@@ -117,5 +131,100 @@ void main() {
       await tester.tap(find.byKey(ValueKey('quick-$key')));
       expect(selected, key);
     }
+  });
+
+  testWidgets('the date line sits on the sky and stays readable in dark mode',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final date = DateTime.utc(2026, 9, 30);
+    final controller = HomePrayerController(
+      loadToday: () async => scheduleFor(date),
+      loadTomorrow: (_) async => scheduleFor(date.add(const Duration(days: 1))),
+      clock: () => DateTime.utc(2026, 9, 30, 8),
+    );
+    addTearDown(controller.dispose);
+    await tester.pumpWidget(MaterialApp(
+      locale: const Locale('ar', 'SA'),
+      supportedLocales: const [Locale('ar', 'SA')],
+      localizationsDelegates: GlobalMaterialLocalizations.delegates,
+      home: Scaffold(
+        body: HomePrayerCard(controller: controller, hijriAdjustment: 0),
+      ),
+    ));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    final card = tester.getRect(find.byKey(const ValueKey('home-prayer-card')));
+    final date = tester.getRect(find.byKey(const ValueKey('prayer-date')));
+    final title = tester.getRect(find.byKey(const ValueKey('prayer-title')));
+    expect(date.top, greaterThan(card.top));
+    expect(date.bottom, lessThan(title.top));
+    // The line is inset from the physical left edge, where the artwork draws
+    // its sky, and stays inside the card.
+    expect(date.left - card.left, greaterThan(60));
+    expect(date.right, lessThanOrEqualTo(card.right));
+    expect(
+      find.descendant(
+        of: find.byKey(const ValueKey('prayer-date-button')),
+        matching: find.byIcon(Icons.calendar_today_outlined),
+      ),
+      findsOneWidget,
+    );
+    await tester.pumpWidget(const SizedBox());
+  });
+
+  testWidgets('scrolling the home list never reloads the schedule',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 700));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final date = DateTime.utc(2026, 9, 30);
+    var loads = 0;
+    final controller = HomePrayerController(
+      loadToday: () async {
+        loads++;
+        return scheduleFor(date);
+      },
+      loadTomorrow: (_) async => scheduleFor(date.add(const Duration(days: 1))),
+      clock: () => DateTime.utc(2026, 9, 30, 8),
+    );
+    addTearDown(controller.dispose);
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: ListView(
+          children: [
+            KeepAliveHost(
+              child: SizedBox(
+                height: 420,
+                child:
+                    HomePrayerCard(controller: controller, hijriAdjustment: 0),
+              ),
+            ),
+            // Long enough to push the card fully off screen.
+            for (var i = 0; i < 20; i++)
+              SizedBox(height: 120, child: Text('عنصر $i')),
+          ],
+        ),
+      ),
+    ));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+    expect(loads, 1);
+
+    final position = tester.state<ScrollableState>(find.byType(Scrollable));
+    position.position.jumpTo(1200);
+    await tester.pump();
+    position.position.jumpTo(2400);
+    await tester.pump();
+
+    expect(loads, 1, reason: 'the card must survive being scrolled away');
+    expect(find.byKey(const ValueKey('home-prayer-card')), findsOneWidget);
+    expect(find.byKey(const ValueKey('prayer-countdown')), findsOneWidget);
+
+    position.position.jumpTo(0);
+    await tester.pump();
+    expect(loads, 1);
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox());
   });
 }

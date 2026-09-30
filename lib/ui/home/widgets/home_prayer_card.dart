@@ -18,11 +18,19 @@ class HomePrayerCard extends StatefulWidget {
     super.key,
     required this.hijriAdjustment,
     this.onTap,
+    this.onDateTap,
     this.controller,
   });
 
   final int hijriAdjustment;
+
+  /// Opens prayer times and the adhan settings; covers the whole card except
+  /// the Hijri date line.
   final VoidCallback? onTap;
+
+  /// Opens the Hijri calendar; wired to the date line only.
+  final VoidCallback? onDateTap;
+
   final HomePrayerController? controller;
 
   @override
@@ -31,6 +39,15 @@ class HomePrayerCard extends StatefulWidget {
 
 class _HomePrayerCardState extends State<HomePrayerCard>
     with WidgetsBindingObserver {
+  /// Hero padding; the date's tap layer below mirrors it.
+  static const EdgeInsets _heroPadding = EdgeInsets.fromLTRB(20, 20, 20, 22);
+
+  /// Distance from the physical left edge that keeps the date over the artwork
+  /// instead of the painted sky, matching the reference layout.
+  static const double _dateInset = 66;
+
+  static const Key _dateKey = ValueKey('prayer-date');
+
   late final HomePrayerController _controller;
 
   @override
@@ -107,8 +124,7 @@ class _HomePrayerCardState extends State<HomePrayerCard>
                             ConstrainedBox(
                               constraints: const BoxConstraints(minHeight: 210),
                               child: Padding(
-                                padding:
-                                    const EdgeInsets.fromLTRB(20, 20, 20, 22),
+                                padding: _heroPadding,
                                 child: Column(
                                   crossAxisAlignment:
                                       CrossAxisAlignment.stretch,
@@ -116,11 +132,10 @@ class _HomePrayerCardState extends State<HomePrayerCard>
                                     // The sky lives on the physical left in both
                                     // directions, matching the reference artwork.
                                     Padding(
-                                      padding: const EdgeInsets.only(left: 66),
-                                      child: Text(date,
-                                          key: const ValueKey('prayer-date'),
-                                          textAlign: TextAlign.right,
-                                          style: PrayerCardTypography.date),
+                                      padding: const EdgeInsets.only(
+                                        left: _dateInset,
+                                      ),
+                                      child: _buildDateSpacer(date),
                                     ),
                                     const SizedBox(height: 12),
                                     Text(title,
@@ -206,6 +221,14 @@ class _HomePrayerCardState extends State<HomePrayerCard>
                         ),
                       ),
                     ),
+                    // Sits above the card-wide tap layer, so the date opens the
+                    // Hijri calendar instead of the prayer times.
+                    Positioned(
+                      top: _heroPadding.top,
+                      left: _heroPadding.left + _dateInset,
+                      right: _heroPadding.right,
+                      child: _buildDateTapTarget(date),
+                    ),
                   ],
                 ),
                 // Natural height for retry at accessibility text sizes.
@@ -226,6 +249,66 @@ class _HomePrayerCardState extends State<HomePrayerCard>
           );
         },
       );
+
+  /// Invisible copy of the date line. It reserves exactly the space the
+  /// visible line occupies in the tap layer, so both copies stay in sync.
+  Widget _buildDateSpacer(String date) => Visibility(
+        visible: false,
+        maintainSize: true,
+        maintainAnimation: true,
+        maintainState: true,
+        child: _dateLine(date, interactive: false),
+      );
+
+  /// The date line that reacts to taps: it owns the calendar gesture.
+  Widget _buildDateTapTarget(String date) => widget.onDateTap == null
+      ? _dateLine(date, interactive: false)
+      : _dateLine(date, interactive: true);
+
+  /// The Hijri date plus its calendar affordance.
+  ///
+  /// Built twice with identical geometry: one copy reserves the space inside
+  /// the card body, the other is painted over the card-wide InkWell. Only
+  /// interactivity differs, so the copies cannot drift apart.
+  Widget _dateLine(String date, {required bool interactive}) {
+    final tappable = interactive && widget.onDateTap != null;
+    final line = Row(
+      mainAxisAlignment: MainAxisAlignment.start,
+      children: [
+        Flexible(
+          child: Text(
+            date,
+            key: tappable ? _dateKey : null,
+            textAlign: TextAlign.right,
+            style: PrayerCardTypography.date,
+          ),
+        ),
+        const SizedBox(width: 6),
+        Opacity(
+          opacity: tappable ? 1 : 0,
+          child: const Icon(
+            Icons.calendar_today_outlined,
+            size: 15,
+            color: Color(0x8CF5F1DC),
+          ),
+        ),
+      ],
+    );
+    if (!tappable) return line;
+    return Semantics(
+      button: true,
+      label: 'فتح التقويم الهجري',
+      onTap: widget.onDateTap,
+      child: ExcludeSemantics(
+        child: InkWell(
+          key: const ValueKey('prayer-date-button'),
+          onTap: widget.onDateTap,
+          borderRadius: BorderRadius.circular(10),
+          child: line,
+        ),
+      ),
+    );
+  }
 
   String _countdown(Duration value) {
     final seconds = value.inSeconds.clamp(0, 172800);
