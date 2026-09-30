@@ -199,15 +199,16 @@ void main() {
     });
     addTearDown(() => DataManager.setDB(null));
 
-    // Noon of the local 30th, so the expectation holds in every time zone.
-    final localNoon = DateTime(2026, 9, 30, 12);
-    final expected = CalendarRepository.getTodayHijri(localNoon, 0);
+    // Noon in the app's own zone (the fixture location is UTC+3) as a fixed
+    // instant, so the answer does not depend on the runner's time zone.
+    final noon = DateTime.utc(2026, 9, 30, 12);
+    final expected = CalendarRepository.getTodayHijri(noon, 0);
     expect((expected.month, expected.day), (4, 18));
 
     final controller = HomePrayerController(
       loadToday: () async => scheduleFor(DateTime.utc(2026, 9, 30)),
       loadTomorrow: (_) async => scheduleFor(DateTime.utc(2026, 10, 1)),
-      clock: () => localNoon.toUtc(),
+      clock: () => noon.subtract(const Duration(hours: 3)),
     );
     addTearDown(controller.dispose);
     await tester.binding.setSurfaceSize(const Size(390, 844));
