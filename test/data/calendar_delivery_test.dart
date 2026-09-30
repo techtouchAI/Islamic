@@ -59,6 +59,17 @@ void main() {
   late Directory directory;
   late File cache;
 
+  /// Start of month 4 in the document the device kept, whichever position the
+  /// row has in the array.
+  Future<String> persistedStartOfMonth4() async {
+    final document = jsonDecode(await cache.readAsString()) as Map;
+    final months = (document['hijri_calendar'] as List)
+        .cast<Map>()
+        .where((row) => row['month'] == 4)
+        .toList();
+    return months.single['expected_gregorian_start'] as String;
+  }
+
   setUp(() async {
     directory = await Directory.systemTemp.createTemp('calendar_sync_test');
     cache = File('${directory.path}/content.json');
@@ -102,11 +113,7 @@ void main() {
         greaterThan(0),
       );
       expect(dayOfSeptember30(), 18);
-      expect(
-        jsonDecode(await cache.readAsString())['hijri_calendar'][0]
-            ['expected_gregorian_start'],
-        announcedStart,
-      );
+      expect(await persistedStartOfMonth4(), announcedStart);
     });
 
     test('the refresh is bound to the build that performed it', () async {
@@ -124,11 +131,7 @@ void main() {
       await DataManager.bundleCalendarRefresh;
 
       expect(dayOfSeptember30(), 17);
-      expect(
-        jsonDecode(await cache.readAsString())['hijri_calendar'][0]
-            ['expected_gregorian_start'],
-        staleStart,
-      );
+      expect(await persistedStartOfMonth4(), staleStart);
     });
 
     test('a newer device table is not overwritten by the bundle', () async {
@@ -143,11 +146,7 @@ void main() {
 
       expect(DataManager.calendarVersionOf(DataManager.getDB()), 99);
       expect(dayOfSeptember30(), 18);
-      expect(
-        jsonDecode(await cache.readAsString())['hijri_calendar'][0]
-            ['expected_gregorian_start'],
-        announcedStart,
-      );
+      expect(await persistedStartOfMonth4(), announcedStart);
     });
   });
 
@@ -214,11 +213,7 @@ void main() {
           DataManager.getDB()!['content']['sync_marker'][0]['title'], 'cloud');
       expect(DataManager.calendarVersionOf(DataManager.getDB()), 5);
       expect(dayOfSeptember30(), 18);
-      final persisted = jsonDecode(await cache.readAsString());
-      expect(
-        persisted['hijri_calendar'][0]['expected_gregorian_start'],
-        announcedStart,
-      );
+      expect(await persistedStartOfMonth4(), announcedStart);
     });
 
     test('a document without a table keeps the device table', () async {

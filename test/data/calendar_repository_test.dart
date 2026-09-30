@@ -207,6 +207,20 @@ void main() {
       expect(firstDay.monthName, 'ذو الحجة');
     });
 
+    test('a local day keeps one Hijri date from midnight to midnight', () {
+      // The civil date is read from the local fields, so no conversion may
+      // move the answer across a day: 30 Sep 2026 is 18 Rabi' al-thani at the
+      // first second and at the last second of the day.
+      for (final time in [
+        DateTime(2026, 9, 30, 0, 0, 1),
+        DateTime(2026, 9, 30, 12),
+        DateTime(2026, 9, 30, 23, 59, 59),
+      ]) {
+        final hijri = CalendarRepository.getTodayHijri(time, 0);
+        expect((hijri.month, hijri.day), (4, 18), reason: time.toString());
+      }
+    });
+
     test('the table decides month boundaries the calculation gets wrong', () {
       // Calculated Umm al-Qura starts Jumada al-ula on 12 Oct 2026; the table
       // keeps 12 Oct as the 30th of Rabi' al-thani.
@@ -298,18 +312,5 @@ void main() {
       expect(civil.isUtc, isTrue);
     });
 
-    test('a local day keeps one Hijri date from midnight to midnight', () {
-      // The civil date is read from the local fields, so no conversion may
-      // move the answer across a day: 30 Sep 2026 is 18 Rabi' al-thani at the
-      // first second and at the last second of the day.
-      for (final time in [
-        DateTime(2026, 9, 30, 0, 0, 1),
-        DateTime(2026, 9, 30, 12),
-        DateTime(2026, 9, 30, 23, 59, 59),
-      ]) {
-        final hijri = CalendarRepository.getTodayHijri(time, 0);
-        expect((hijri.month, hijri.day), (4, 18), reason: time.toString());
-      }
-    });
   });
 }
