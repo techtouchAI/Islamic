@@ -16,7 +16,16 @@ import 'package:intl/date_symbol_data_local.dart';
 import '../fixtures/prayer_schedules.dart';
 
 void main() {
+  late Map<String, dynamic> bundledDocument;
+
   setUp(() async => initializeDateFormatting('ar_SA'));
+
+  // Reading the shipped document is real I/O, which never completes inside the
+  // fake async zone of a widget test, so it is read once, outside it.
+  setUpAll(() async {
+    final raw = await File('assets/data/content.json').readAsString();
+    bundledDocument = jsonDecode(raw) as Map<String, dynamic>;
+  });
 
   for (final width in [320.0, 390.0, 768.0]) {
     for (final scale in [1.0, 2.0]) {
@@ -188,14 +197,11 @@ void main() {
     // The acceptance case: the real bundled table must reach the screen. The
     // card may not work out a Hijri date of its own, and the day it prints for
     // 30 September 2026 has to be 18 Rabi' al-thani 1448, never 17.
-    final document = jsonDecode(
-      await File('assets/data/content.json').readAsString(),
-    ) as Map<String, dynamic>;
     DataManager.setDB(<String, dynamic>{
       'sections': <String, dynamic>{},
       'content': <String, dynamic>{},
-      'hijri_calendar': document['hijri_calendar'],
-      'calendar_version': document['calendar_version'],
+      'hijri_calendar': bundledDocument['hijri_calendar'],
+      'calendar_version': bundledDocument['calendar_version'],
     });
     addTearDown(() => DataManager.setDB(null));
 
