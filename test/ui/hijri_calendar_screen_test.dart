@@ -85,7 +85,11 @@ void main() {
 
   test('the fixture month is the month the repository reports for today', () {
     final hijri = CalendarRepository.getTodayHijri(DateTime.now(), 0);
-    expect((hijri.year, hijri.month, hijri.day), (
+    expect((
+      hijri.year,
+      hijri.month,
+      hijri.day
+    ), (
       fixtureYear,
       fixtureMonth,
       todayDay,
@@ -132,8 +136,8 @@ void main() {
     final firstCell = tester.getRect(inGrid(find.text('1')));
     final gridRect = tester.getRect(find.byType(GridView).first);
     final columnWidth = gridRect.width / 7;
-    final actualColumn = ((gridRect.right - firstCell.center.dx) / columnWidth)
-        .floor();
+    final actualColumn =
+        ((gridRect.right - firstCell.center.dx) / columnWidth).floor();
     expect(actualColumn, start.weekday - 1);
     expect(firstCell.center.dy, lessThan(gridRect.bottom));
   });
