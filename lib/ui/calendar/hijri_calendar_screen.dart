@@ -531,7 +531,9 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
           ),
         ],
       );
-    } else if (_selectedDayData != null) {
+    } else {
+      // Any selected day without events keeps its heading, so choosing a day
+      // always produces feedback instead of an empty screen.
       return _buildIslamicCard(
         title:
             'أحداث يوم $_selectedDay ${_getHijriMonthName(_displayedHijri.month)}',
@@ -551,7 +553,6 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
         ],
       );
     }
-    return const SizedBox.shrink();
   }
 
   Widget _buildUpcomingEventCard(_UpcomingEventInfo? upcomingInfo) {
