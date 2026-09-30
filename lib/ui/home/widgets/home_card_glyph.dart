@@ -150,13 +150,6 @@ class _Pen {
     path.arcTo(rect, startRadians, sweepRadians, false);
   }
 
-  /// A full circle, drawn as two halves so it stays a closed outline.
-  void circle(double cx, double cy, double r) {
-    move(cx, cy - r);
-    arc(cx, cy, r, -90, 90);
-    arc(cx, cy, r, 90, 270);
-  }
-
   void close() => path.close();
 }
 
@@ -446,6 +439,7 @@ final Map<HomeCardGlyph, void Function(_Pen)> _glyphOutlines = {
     p.close();
   },
 };
+
 
 /// Picks the glyph that matches a home card.
 ///
