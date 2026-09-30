@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../sections/html_content_renderer.dart';
+import '../../utils/content_sanitizer.dart';
 
 /// The framed surah-name strip drawn at the top of every Quran page.
 /// Precached before scrolling to a target ayah so its late decode cannot
@@ -122,6 +123,17 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
   int? _bookmarkedLineIndex;
   static final _trailingNumbersRegex = RegExp(r'[\s\xa0]*[0-9٠-٩]+$');
 
+  /// Markup the body renders: the payload marker, comments and unsupported
+  /// tags are gone, paragraphs are line breaks, and the inline tags the
+  /// renderer speaks are preserved.
+  late final String _displayContent = ContentSanitizer.displayMarkup(
+    widget.content,
+  );
+
+  /// Tag-free text for the clipboard and the share sheet, so a shared story
+  /// arrives as prose instead of as markup.
+  late final String _shareText = ContentSanitizer.plainText(widget.content);
+
   Color _parseColor(String colorStr) {
     if (colorStr.startsWith('#')) {
       try {
@@ -220,14 +232,14 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
           IconButton(
             icon: const Icon(Icons.content_copy),
             onPressed: () {
-              Clipboard.setData(ClipboardData(text: widget.content));
+              Clipboard.setData(ClipboardData(text: _shareText));
               ScaffoldMessenger.of(context)
                   .showSnackBar(const SnackBar(content: Text('تم نسخ النص')));
             },
           ),
           IconButton(
             icon: const Icon(Icons.share),
-            onPressed: () => Share.share(widget.content),
+            onPressed: () => Share.share(_shareText),
           ),
         ],
       ),
@@ -501,42 +513,11 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
                                                     color: dynamicTextColor,
                                                   );
 
-                                        String cleanContent = widget.content;
-                                        cleanContent = cleanContent.replaceAll(
-                                          '### ',
-                                          '',
-                                        );
-                                        if (cleanContent
-                                            .trim()
-                                            .toLowerCase()
-                                            .startsWith('html')) {
-                                          cleanContent = cleanContent
-                                              .trim()
-                                              .substring(4)
-                                              .trim();
-                                        }
-                                        cleanContent = cleanContent
-                                            .replaceAll(
-                                              '\uFDFA',
-                                              '(صلى الله عليه وآله)',
-                                            )
-                                            .replaceAll('\uFDFB', '(جل جلاله)')
-                                            .replaceAll('!', '(عليه السلام)');
-                                        cleanContent = cleanContent
-                                            .replaceAll(
-                                              RegExp(
-                                                r'<html>|<html|\bhtml\b',
-                                                caseSensitive: false,
-                                              ),
-                                              '',
-                                            )
-                                            .trim();
-
                                         debugPrint(
                                           'HtmlContentRenderer built for section: ${widget.title} with bookmark: $_bookmarkedLineIndex',
                                         );
                                         return HtmlContentRenderer(
-                                          content: cleanContent,
+                                          content: _displayContent,
                                           baseStyle: baseStyle,
                                           bookmarkedIndex: _bookmarkedLineIndex,
                                           onParagraphTapped: (index) async {

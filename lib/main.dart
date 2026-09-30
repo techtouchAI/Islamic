@@ -111,6 +111,7 @@ IconData getMaterialIcon(String? name) {
     'search': Icons.search,
     'mosque': Icons.mosque,
     'book': Icons.book,
+    'account_tree': Icons.account_tree,
     'event': Icons.event,
     'info': Icons.info,
     'group': Icons.group,
