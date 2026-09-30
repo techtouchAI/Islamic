@@ -1,3 +1,5 @@
+import 'package:aldhakereen/data/data_manager.dart';
+import 'package:aldhakereen/data/repositories/calendar_repository.dart';
 import 'package:aldhakereen/theme/app_theme.dart';
 import 'package:aldhakereen/ui/home/home_prayer_controller.dart';
 import 'package:aldhakereen/ui/home/widgets/home_prayer_card.dart';
@@ -176,6 +178,64 @@ void main() {
       ),
       findsOneWidget,
     );
+    await tester.pumpWidget(const SizedBox());
+  });
+
+  testWidgets('the date line shows the date of the shared repository',
+      (tester) async {
+    // The home card must not work out a Hijri date of its own: whatever the
+    // calendar repository answers for the current civil date is what the card
+    // has to print, and the calendar screen highlights the same day.
+    final today = DateTime.now();
+    DataManager.setDB(<String, dynamic>{
+      'sections': <String, dynamic>{},
+      'content': <String, dynamic>{},
+      'hijri_calendar': <dynamic>[
+        // A month that starts ten days before today, so "today" is day 11 of
+        // it whatever day the suite runs on.
+        <String, dynamic>{
+          'year': 1448,
+          'month': 6,
+          'total_days': 30,
+          'expected_gregorian_start': DateTime(today.year, today.month,
+                  today.day)
+              .subtract(const Duration(days: 10))
+              .toIso8601String()
+              .substring(0, 10),
+          'days': <dynamic>[],
+        },
+      ],
+    });
+    addTearDown(() => DataManager.setDB(null));
+
+    final expected = CalendarRepository.getTodayHijri(today, 0);
+    expect((expected.month, expected.day), (6, 11));
+
+    final date = DateTime.utc(2026, 9, 30);
+    final controller = HomePrayerController(
+      loadToday: () async => scheduleFor(date),
+      loadTomorrow: (_) async => scheduleFor(date.add(const Duration(days: 1))),
+      clock: () => DateTime.utc(2026, 9, 30, 8),
+    );
+    addTearDown(controller.dispose);
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: HomePrayerCard(controller: controller, hijriAdjustment: 0),
+      ),
+    ));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    final text = tester
+        .widget<Text>(find.byKey(const ValueKey('prayer-date')))
+        .data
+        .toString();
+    expect(text, contains('11'));
+    expect(text, contains(expected.monthName));
+    expect(text, contains('${expected.year} هـ'));
+    expect(text, isNot(contains('17 ربيع الآخر')));
     await tester.pumpWidget(const SizedBox());
   });
 

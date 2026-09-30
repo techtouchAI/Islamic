@@ -35,6 +35,11 @@ jobs:
       - name: Verify bundled search databases
         run: python3 scripts/verify_search_databases.py
 
+      # The app's Hijri date comes from this table; a build must never carry a
+      # month start that differs from the office of al-Sistani.
+      - name: Verify bundled Hijri calendar
+        run: python3 scripts/verify_hijri_calendar.py
+
       - name: Install dependencies
         run: |
           set +e
@@ -94,6 +99,13 @@ jobs:
         env:
           KEYSTORE_STOREPASS: ${{ secrets.KEYSTORE_STOREPASS }}
           KEYSTORE_KEYPASS: ${{ secrets.KEYSTORE_KEYPASS }}
+
+      # The packaged copy decides what the installed app shows, so the APK
+      # itself is checked, not only the source document.
+      - name: Verify the calendar inside the APK
+        run: |
+          python3 scripts/verify_apk_calendar.py \
+            build/app/outputs/flutter-apk/app-release.apk
 
       - name: Upload APKs
         uses: actions/upload-artifact@v4

@@ -5,42 +5,70 @@ import 'package:aldhakereen/data/data_manager.dart';
 import 'package:aldhakereen/data/repositories/calendar_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-/// The bundled table is the calendar of record: announced month starts differ
-/// from the calculated Umm al-Qura calendar, so the shipped data — not the
-/// calculation package — has to decide what day it is.
+/// The bundled table is the calendar of record of this app: the month starts of
+/// the office of Grand Ayatollah al-Sistani, which differ from the calculated
+/// Umm al-Qura calendar by a day in several months. The expected values below
+/// are transcribed from the office itself:
+///
+/// * months 1-4 were announced after the sighting of the crescent
+///   (`sistani_office_announcement`), e.g. the statement that Sunday 13 Sep
+///   2026 is the first of Rabi' al-thani 1448;
+/// * months 5-12 are the predictions of the office's crescent booklet for
+///   1448 (`sistani_office_booklet`), published at
+///   sistani.org/downloads/ahelleh1448hj.pdf. Each start is traced to the
+///   line stating the evening the crescent is sought on: the Jumada al-ula
+///   page looks for it on 30 Rabi' al-thani 1448 = 12 Oct 2026, so its day 1
+///   is 13 Oct 2026.
+///
+/// A month length here is the distance to the next month start, which the
+/// booklet fixes for months 1-11 through that same crescent line.
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  /// Day 1 of each month of 1448. Months 1-4 are the announced starts of the
-  /// Sistani office; the rest are the Umm al-Qura start plus the same one-day
-  /// difference until the office publishes them, keeping the table contiguous.
+  /// month -> (day 1 as a civil date, number of days).
+  final officeMonths = <int, (String, int)>{
+    1: ('2026-06-17', 29), // Muharram, announced (crescent 16 Jun 2026).
+    2: ('2026-07-16', 30), // Safar, announced (crescent 15 Jul 2026).
+    3: ('2026-08-15', 29), // Rabi' al-awwal, announced (crescent 14 Aug).
+    4: ('2026-09-13', 30), // Rabi' al-thani, announced (crescent 12 Sep).
+    5: ('2026-10-13', 30), // Jumada al-ula (crescent 12 Oct 2026).
+    6: ('2026-11-12', 29), // Jumada al-akhirah (crescent 11 Nov 2026).
+    7: ('2026-12-11', 30), // Rajab (crescent 10 Dec 2026).
+    8: ('2027-01-10', 30), // Sha'ban (crescent 9 Jan 2027).
+    9: ('2027-02-09', 29), // Ramadan (crescent 8 Feb 2027).
+    10: ('2027-03-10', 30), // Shawwal (crescent 9 Mar 2027).
+    11: ('2027-04-09', 29), // Dhu al-qa'dah (crescent 8 Apr 2027).
+    12: ('2027-05-08', 29), // Dhu al-hijjah (crescent 7 May 2027).
+  };
   final announcedStarts = <int, String>{
-    1: '2026-06-17', // Muharram — announced.
-    2: '2026-07-16', // Safar — announced.
-    3: '2026-08-15', // Rabi' al-awwal — announced.
-    4: '2026-09-13', // Rabi' al-thani — announced.
-    5: '2026-10-13', // Jumada al-ula.
-    6: '2026-11-12',
-    7: '2026-12-11',
-    8: '2027-01-10',
-    9: '2027-02-09',
-    10: '2027-03-10',
-    11: '2027-04-09',
-    12: '2027-05-09',
+    for (final entry in officeMonths.entries) entry.key: entry.value.$1,
   };
 
   group('bundled calendar data', () {
     late List<dynamic> table;
 
+    late Map<String, dynamic> document;
+
     setUpAll(() async {
       final raw = await File('assets/data/content.json').readAsString();
-      final document = jsonDecode(raw) as Map<String, dynamic>;
+      document = jsonDecode(raw) as Map<String, dynamic>;
       table = document['hijri_calendar'] as List<dynamic>;
       DataManager.setDB(<String, dynamic>{
         'sections': <String, dynamic>{},
         'content': <String, dynamic>{},
         'hijri_calendar': table,
+        'calendar_version': document['calendar_version'],
       });
+    });
+
+    test('the document versions its calendar and names the authority', () {
+      expect(document['calendar_version'], isA<int>());
+      expect(document['calendar_version'], greaterThan(0));
+      expect(
+        document['calendar_source'].toString(),
+        contains('السيستاني'),
+        reason: 'the table must state which authority it follows',
+      );
     });
 
     test('publishes every month of 1448 with a contiguous day range', () {
@@ -62,7 +90,17 @@ void main() {
           reason: 'month $month start',
         );
         final totalDays = entry['total_days'] as int;
+        expect(
+          totalDays,
+          officeMonths[month]!.$2,
+          reason: 'month $month length as fixed by the office table',
+        );
         expect(totalDays, inInclusiveRange(29, 30));
+        expect(
+          entry['source'],
+          month <= 4 ? 'sistani_office_announcement' : 'sistani_office_booklet',
+          reason: 'month $month must record where its start comes from',
+        );
         if (previousEnd != null) {
           expect(
             start,
@@ -129,6 +167,45 @@ void main() {
         CalendarRepository.getTodayHijri(DateTime(2026, 9, 30), -1).day,
         17,
       );
+    });
+
+    test('maps the reported days of Rabi\' al-thani 1448', () {
+      // Asked for explicitly: 28, 29 and 30 September and 1 October 2026, as
+      // the office's announcement of 12 Sep 2026 (day 1 = 13 Sep) fixes them.
+      const expected = <String, int>{
+        '2026-09-28': 16,
+        '2026-09-29': 17,
+        '2026-09-30': 18,
+        '2026-10-01': 19,
+      };
+      expected.forEach((iso, day) {
+        final hijri = CalendarRepository.getTodayHijri(DateTime.parse(iso), 0);
+        expect((hijri.year, hijri.month, hijri.day), (1448, 4, day),
+            reason: iso);
+        expect(hijri.monthName, 'ربيع الآخر');
+      });
+
+      // The regression: the app used to answer 17 for 30 Sep 2026 because the
+      // table started the month on 14 Sep instead of the announced 13 Sep.
+      final reported = CalendarRepository.getTodayHijri(
+        DateTime(2026, 9, 30),
+        0,
+      );
+      expect(reported.day, isNot(17));
+      expect(reported.day, 18);
+    });
+
+    test('a month that the office ends early is not padded to 30 days', () {
+      // Dhu al-qa'dah 1448: the booklet looks for the Dhu al-hijjah crescent
+      // on 29 Dhu al-qa'dah (7 May 2027), so the month has 29 days and the
+      // martyrdom of Imam Muhammad al-Jawad, its last day, is day 29.
+      final lastDay =
+          CalendarRepository.getTodayHijri(DateTime(2027, 5, 7), 0);
+      expect((lastDay.month, lastDay.day), (11, 29));
+      final firstDay =
+          CalendarRepository.getTodayHijri(DateTime(2027, 5, 8), 0);
+      expect((firstDay.month, firstDay.day), (12, 1));
+      expect(firstDay.monthName, 'ذو الحجة');
     });
 
     test('the table decides month boundaries the calculation gets wrong', () {
@@ -220,6 +297,20 @@ void main() {
       final civil = CalendarRepository.civilDate(DateTime(2026, 9, 30, 23, 59));
       expect(civil, DateTime.utc(2026, 9, 30));
       expect(civil.isUtc, isTrue);
+    });
+
+    test('a local day keeps one Hijri date from midnight to midnight', () {
+      // The civil date is read from the local fields, so no conversion may
+      // move the answer across a day: 30 Sep 2026 is 18 Rabi' al-thani at the
+      // first second and at the last second of the day.
+      for (final time in [
+        DateTime(2026, 9, 30, 0, 0, 1),
+        DateTime(2026, 9, 30, 12),
+        DateTime(2026, 9, 30, 23, 59, 59),
+      ]) {
+        final hijri = CalendarRepository.getTodayHijri(time, 0);
+        expect((hijri.month, hijri.day), (4, 18), reason: time.toString());
+      }
     });
   });
 }

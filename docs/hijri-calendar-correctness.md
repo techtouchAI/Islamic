@@ -1,74 +1,125 @@
-# Hijri calendar correctness (home date, calendar grid, month data)
+# Hijri calendar: source of record, delivery to devices, and verification
 
-## Problem
+The home card and the calendar screen answer the Hijri date for a civil date.
+Both read the same table through `CalendarRepository`, and that table is the
+calendar of the office of Grand Ayatollah al-Sistani in Najaf — not Umm al-Qura,
+not a general arithmetic calendar.
 
-The home card showed the wrong Hijri day (17 instead of 18 on 30 Sep 2026) and a
-Hijri month start could be off by one day. Two independent causes:
+## Why the app showed 17 instead of 18 for 30 September 2026
 
-1. **The data.** `assets/data/content.json → hijri_calendar` started 1448–4
-   (`ربيع الآخر`) on 14 Sep 2026 while the office of Grand Ayatollah al-Sistani
-   announced 13 Sep 2026 as day 1, and several other months carried a start that
-   was a day late relative to that announcement.
-2. **The code.** `CalendarRepository.getTodayHijri` asked the `hijri` package
-   (Umm al-Qura) which month came first and then measured the day from the table
-   row for *that* month. On a boundary where the two calendars disagree, the
-   calculated month won and the reported day was wrong by one, and the calendar
-   grid moved the month start a day in the opposite direction from the reported
-   date.
+Three separate faults, all of them data delivery rather than arithmetic:
 
-## Rule now used
+1. **The table on `main` was a day late.** The released document started
+   Rabi' al-thani 1448 on 14 September 2026. The office announced Sunday
+   13 September 2026 as day 1, so 30 September is 18, not 17. The APK released
+   as `v1.0.55+805` packages that stale table (`git show
+   v1.0.55-805:assets/data/content.json`), which is exactly what the installed
+   app displayed.
+2. **The device copy outranks the bundle.** `DataManager.loadContent()` reads
+   `${documents}/content.json` first and only falls back to the bundled asset
+   when that file is missing or corrupt. The file survives app updates, so a
+   corrected table inside a *newly installed* APK was never read: the app kept
+   answering from the cached document. That is why installing another build did
+   not change the date.
+3. **Nothing ever superseded it.** `syncCloudData()` only adopts a cloud
+   document whose bytes differ from the cached one, and the cloud copy on
+   `main` carried the same stale table, so the two agreed and the date stayed
+   wrong. A fix that is only merged locally cannot travel either: the cloud
+   document *is* the OTA source.
 
-The bundled table is the **calendar of record**: the announced month starts come
-from the reference authority, not from a calculation.
+Time zone, the `hijri` package and a second date source were ruled out: the
+date is computed from local civil fields (never UTC-truncated), the package is
+only a fallback outside the table, and every Hijri display in the Dart code
+goes through `CalendarRepository`.
 
-* `CalendarRepository.monthSummaries()` reads only the header fields of each
-  row (`year`, `month`, `total_days`, `expected_gregorian_start`), so locating a
-  month stays cheap in a large document.
-* `getTodayHijri(date, offset)` shifts the civil date by the user correction and
-  asks the table which month contains it; the day is the difference from that
-  month's start. Dates outside the table fall back to the `hijri` package as
-  before, so navigation outside 1448 still works.
-* `adjustedMonthStart(month, offset)` moves the month start by `-offset` on the
-  grid, so the highlighted "today" cell and the printed date always describe the
-  same Hijri day.
-* Day arithmetic uses UTC fields ([`civilDate`]) so a daylight-saving change on
-  the device can never truncate a difference by a day.
+## The table of record
 
-## Data
+`assets/data/content.json → hijri_calendar` holds year 1448 with a
+`calendar_version`, a `calendar_source`, and a `source` on every month row:
 
-`scripts/verify_hijri_calendar.py` guards the document offline:
+* `sistani_office_announcement` — months 1-4, announced after the sighting of
+  the crescent (e.g. "يوم غدٍ الأحد الموافق (9/13/2026م) هو الأول من شهر ربيع
+  الآخر لعام 1448هـ").
+* `sistani_office_booklet` — months 5-12, transcribed from the office's
+  crescent booklet for 1448, `https://www.sistani.org/downloads/ahelleh1448hj.pdf`.
+  Every start is the line that states the evening the crescent is sought on,
+  which is the last possible night of the running month.
 
-```
-python3 scripts/verify_hijri_calendar.py          # data + anchors
-python3 scripts/verify_hijri_calendar.py --fetch  # also re-read statements
-```
+| Month (1448) | Day 1 | Days | Basis |
+| --- | --- | --- | --- |
+| 1 محرم | 2026-06-17 | 29 | announced (crescent 16 Jun) |
+| 2 صفر | 2026-07-16 | 30 | announced (crescent 15 Jul) |
+| 3 ربيع الأول | 2026-08-15 | 29 | announced (crescent 14 Aug) |
+| 4 ربيع الآخر | 2026-09-13 | 30 | announced (crescent 12 Sep) |
+| 5 جمادى الأولى | 2026-10-13 | 30 | booklet (crescent 12 Oct) |
+| 6 جمادى الآخرة | 2026-11-12 | 29 | booklet (crescent 11 Nov) |
+| 7 رجب | 2026-12-11 | 30 | booklet (crescent 10 Dec) |
+| 8 شعبان | 2027-01-10 | 30 | booklet (crescent 9 Jan) |
+| 9 رمضان | 2027-02-09 | 29 | booklet (crescent 8 Feb) |
+| 10 شوال | 2027-03-10 | 30 | booklet (crescent 9 Mar) |
+| 11 ذو القعدة | 2027-04-09 | 29 | booklet (crescent 8 Apr) |
+| 12 ذو الحجة | 2027-05-08 | 29 | booklet (crescent 7 May) |
 
-It checks that every month row is well formed, 29 or 30 days long, contiguous
-with its neighbours, that no event sits outside its month (this caught a day-30
-event inside a 29-day `ذو القعدة`, which made that month 30 days and moved
-`ذو الحجة` one day later), and that the announced anchors still map to day 1:
+Months 1-11 are contiguous by construction; month 12 ends with the Hijri year
+and its length is the length the source data carried (the office publishes the
+Muharram 1449 crescent in the next booklet). Days of the month that carry
+events are re-checked against these lengths, which is how the martyrdom of Imam
+Muhammad al-Jawad — the office lists it as the *last day* of ذو القعدة — moved
+to day 29 of a 29-day month.
 
-| Month (1448) | Day 1 | Source |
-| --- | --- | --- |
-| 1 محرم | 2026-06-17 | Sistani office statement |
-| 2 صفر | 2026-07-16 | Sistani office statement |
-| 3 ربيع الأول | 2026-08-15 | Sistani office statement |
-| 4 ربيع الآخر | 2026-09-13 | Sistani office statement |
+### Updating a month
 
-Months 5–12 keep the same one-day difference from Umm al-Qura until the office
-publishes them; replacing a row with the published values needs no code change.
+1. Take the start from the office (announcement, or the booklet line).
+2. Edit the row in `assets/data/content.json`, set `"source"`, and increment
+   `calendar_version`. A device only accepts a table with a **higher**
+   generation, so this number is what lets a correction reach phones.
+3. `python3 scripts/verify_hijri_calendar.py` and `flutter test` must pass.
+4. Merge to `main`: the document is the OTA payload, so merging is what heals
+   installed apps (`syncCloudData` runs on every launch). The next APK build
+   packages the same table for offline installs.
 
-`test/data/calendar_repository_test.dart` asserts the same anchors, the same
-month lengths, full coverage of every day of 1448, and the corrected 18
-`ربيع الآخر` for 30 Sep 2026 against the Dart implementation, so the data and the
-runtime rule cannot drift apart silently.
+## Delivery guarantees
+
+* **Installed build (bundle).** On the first launch after an app update,
+  `DataManager` compares the bundled table with the device copy and adopts the
+  bundle when its generation is higher, then persists the merged document.
+  Without this step a corrected APK could never take effect (fault 2).
+* **Cloud (OTA).** `syncCloudData()` adopts the cloud document and keeps the
+  newer of the two tables: an older document can no longer roll a corrected
+  table back, and a document without a table leaves the device table alone.
+  The request timeout is sized for the ~25 MB CMS document (`cloudTimeout`),
+  because a sync that times out leaves a device on stale data.
+* **Web.** The browser loads the bundled document on every start, so it always
+  carries the table of the deployed build.
+* **Single source.** Home card, calendar screen and the Ramadan imsak check all
+  call `CalendarRepository.getTodayHijri` / `getMonthData`, which read
+  `hijri_calendar` from the loaded document.
+
+## Verification
+
+* `scripts/verify_hijri_calendar.py` — asserts the whole 1448 table, the
+  provenance fields, the version marker, event days inside their month, and the
+  regression days (28-30 Sep and 1 Oct 2026). Runs on every Android build.
+* `scripts/verify_apk_calendar.py` — unpacks the built APK and verifies the
+  document that actually ships in it; a release cannot be signed while the
+  packaged calendar is stale.
+* `test/data/calendar_repository_test.dart` — the same expectations against the
+  Dart implementation, plus day-by-day coverage of 1448.
+* `test/data/calendar_delivery_test.dart` — drives `DataManager.loadContent()`
+  and `syncCloudData()` with a cached document holding the stale table and
+  requires `getTodayHijri(2026-09-30).day == 18` afterwards, in both the
+  app-update and the OTA direction.
+* `test/ui/home_prayer_card_layout_test.dart` — the card prints the date the
+  repository reports instead of computing its own.
 
 ## Related code paths
 
-* `lib/ui/home/widgets/home_prayer_card.dart` — the date line renders the
-  corrected date and owns a `فتح التقويم الهجري` tap target.
-* `lib/ui/calendar/hijri_calendar_screen.dart` — the grid reads the same table
-  synchronously (no spinner per swipe, no second day-calculation rule) and
-  `_goToToday` uses the date the repository already resolved.
-* `lib/ui/home/widgets/home_prayer_controller.dart` — the Ramadan test that
-  gates ئimsak uses the same corrected date.
+* `lib/ui/home/widgets/home_prayer_card.dart` — the date line, its calendar tap
+  target and the `prayer-date` key.
+* `lib/ui/calendar/hijri_calendar_screen.dart` — grid and day sheet, built from
+  the same synchronous table (`adjustedMonthStart`).
+* `lib/ui/home/home_prayer_controller.dart` — uses the repository date for the
+  Ramadan imsak decision.
+* `android/.../hijri/HijriNativeManager.kt` — an arithmetic converter kept for
+  the platform channel; no Dart code calls it, so it is not a date source of
+  the app.
