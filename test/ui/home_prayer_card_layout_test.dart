@@ -66,7 +66,7 @@ void main() {
             expect(fajr.dx, greaterThan(isha.dx));
             expect(fajr.dy, isha.dy);
           }
-          await tester.tap(find.text('صلاة الظهر'));
+          await tester.tapAt(tester.getCenter(find.text('صلاة الظهر')));
           expect(tapped, isTrue);
           await tester.pumpWidget(const SizedBox());
         });

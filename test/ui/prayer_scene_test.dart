@@ -78,7 +78,7 @@ void main() {
       'vis_adhkar': false,
       'vis_inspiration': true,
     });
-    DataManager.setDB({'sections': {}, 'content': {}});
+    DataManager.setDB({'sections': <String, dynamic>{}, 'content': <String, dynamic>{}});
     final settings = SettingsProvider();
     await settings.loadSettings();
     addTearDown(settings.dispose);
@@ -163,7 +163,7 @@ void main() {
     expect(tester.widget<PrayerScene>(find.byType(PrayerScene)).period,
         PrayerScenePeriod.night);
     await _capture(tester, boundaryKey, 'prayer-night');
-    await tester.tap(find.byKey(const ValueKey('prayer-title')));
+    await tester.tapAt(tester.getCenter(find.byKey(const ValueKey('prayer-title'))));
     expect(taps, 1);
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox());
