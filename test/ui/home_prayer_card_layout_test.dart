@@ -198,14 +198,11 @@ void main() {
       home: Scaffold(
         body: ListView(
           children: [
+            // The card keeps its natural height; the rows below are what push
+            // it out of the viewport.
             KeepAliveHost(
-              child: SizedBox(
-                height: 420,
-                child:
-                    HomePrayerCard(controller: controller, hijriAdjustment: 0),
-              ),
+              child: HomePrayerCard(controller: controller, hijriAdjustment: 0),
             ),
-            // Long enough to push the card fully off screen.
             for (var i = 0; i < 20; i++)
               SizedBox(height: 120, child: Text('عنصر $i')),
           ],
@@ -216,19 +213,35 @@ void main() {
     await tester.pump(const Duration(milliseconds: 200));
     expect(loads, 1);
 
-    final position = tester.state<ScrollableState>(find.byType(Scrollable));
-    position.position.jumpTo(1200);
-    await tester.pump();
-    position.position.jumpTo(2400);
-    await tester.pump();
+    // The element that renders the card right now.
+    final cardElement =
+        tester.element(find.byKey(const ValueKey('home-prayer-card')));
 
-    expect(loads, 1, reason: 'the card must survive being scrolled away');
-    expect(find.byKey(const ValueKey('home-prayer-card')), findsOneWidget);
-    expect(find.byKey(const ValueKey('prayer-countdown')), findsOneWidget);
+    // Scroll to the middle and then to the very end of the list, the two
+    // places where the card used to be rebuilt.
+    final position = tester.state<ScrollableState>(find.byType(Scrollable));
+    final maxScroll = position.position.maxScrollExtent;
+    expect(maxScroll, greaterThan(1000));
+    position.position.jumpTo(maxScroll / 2);
+    await tester.pump();
+    expect(loads, 1, reason: 'scrolling to the middle must not reload');
+    position.position.jumpTo(maxScroll);
+    await tester.pump();
+    expect(loads, 1, reason: 'scrolling to the end must not reload');
 
     position.position.jumpTo(0);
     await tester.pump();
-    expect(loads, 1);
+    expect(loads, 1, reason: 'returning to the card must not reload it');
+    expect(
+      identical(
+        tester.element(find.byKey(const ValueKey('home-prayer-card'))),
+        cardElement,
+      ),
+      isTrue,
+      reason: 'a disposed card would come back as a new element and reload',
+    );
+    expect(find.byKey(const ValueKey('prayer-countdown')), findsOneWidget);
+    expect(find.byType(CircularProgressIndicator), findsNothing);
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox());
   });
