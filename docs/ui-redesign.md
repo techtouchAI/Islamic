@@ -60,3 +60,6 @@ No native-device runtime verification was performed in the sandbox.
   pixel-identical source recovery. Both selected fonts are already bundled.
 - `CAPTURE_UI=1 flutter test test/ui/prayer_scene_test.dart` exports actual Flutter
   day/night card renders to ignored `build/ui-previews/` for visual review.
+- Refinement tests additionally cover exact sunrise/sunset boundaries, stale or
+  absent solar events, the removed greeting, the replacement inspiration icon,
+  selected-location clock transitions and real-font day/night capture.
