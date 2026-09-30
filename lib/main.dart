@@ -44,6 +44,9 @@ import 'services/release_manifest.dart';
 import 'services/ota_service.dart';
 
 import 'providers/settings_provider.dart';
+import 'theme/app_theme.dart';
+import 'ui/navigation/app_navigation_controller.dart';
+import 'ui/navigation/app_bottom_navigation.dart';
 
 class IslamicPatternPainter extends CustomPainter {
   final Color color;
@@ -224,25 +227,15 @@ class _AlDhakereenAppState extends State<AlDhakereenApp> {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      theme: ThemeData(
-        useMaterial3: true,
-        textTheme: ThemeData.light().textTheme.apply(fontFamily: 'Cairo'),
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: settingsProvider.primaryColor,
-          brightness: Brightness.light,
-          primary: settingsProvider.primaryColor,
-        ),
-        scaffoldBackgroundColor: const Color(0xFFFDFBF7),
+      theme: AppTheme.build(
+        brightness: Brightness.light,
+        primary: settingsProvider.primaryColor,
+        card: settingsProvider.cardColor,
       ),
-      darkTheme: ThemeData(
-        useMaterial3: true,
-        textTheme: ThemeData.dark().textTheme.apply(fontFamily: 'Cairo'),
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: settingsProvider.primaryColor,
-          brightness: Brightness.dark,
-          primary: settingsProvider.primaryColor,
-        ),
-        scaffoldBackgroundColor: const Color(0xFF0A0A0A),
+      darkTheme: AppTheme.build(
+        brightness: Brightness.dark,
+        primary: settingsProvider.primaryColor,
+        card: settingsProvider.cardColor,
       ),
       themeMode: settingsProvider.themeMode,
       home: const SplashScreen(),
@@ -261,7 +254,9 @@ class _MainScaffoldState extends State<MainScaffold> {
   @override
   void initState() {
     super.initState();
+    _navigation.addListener(_onNavigationChanged);
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       _checkForUpdatesSafe();
       _runDeferredTasks();
     });
@@ -378,47 +373,57 @@ class _MainScaffoldState extends State<MainScaffold> {
     );
   }
 
-  String _currentSection = 'home';
-  final List<String> _history = ['home'];
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  final AppNavigationController _navigation = AppNavigationController();
+  String get _currentSection => _navigation.currentSection;
 
-  void _navigateTo(String section) {
-    if (_currentSection == section) return;
-    setState(() {
-      _history.add(section);
-      _currentSection = section;
-    });
+  void _navigateTo(String section) => _navigation.navigateTo(section);
+  void _onBack() => _navigation.goBack();
+
+  void _onNavigationChanged() {
+    if (mounted) setState(() {});
   }
 
-  void _onBack() {
-    if (_history.length > 1) {
-      setState(() {
-        _history.removeLast();
-        _currentSection = _history.last;
-      });
-    }
+  @override
+  void dispose() {
+    _navigation.removeListener(_onNavigationChanged);
+    _navigation.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final bool isSubPage = _history.length > 1;
+    final bool isSubPage = _navigation.isDetail;
     return ValueListenableBuilder<int>(
       valueListenable: DataManager.dbNotifier,
       builder: (context, _, __) {
         final settingsProvider = context.watch<SettingsProvider>();
         return PopScope(
-          canPop: !isSubPage,
+          canPop: !_navigation.canGoBack,
           onPopInvokedWithResult: (didPop, result) {
             if (didPop) return;
+            final scaffold = _scaffoldKey.currentState;
+            if (scaffold?.isDrawerOpen ?? false) {
+              scaffold!.closeDrawer();
+              return;
+            }
             _onBack();
           },
           child: Scaffold(
+            key: _scaffoldKey,
             drawer: AppDrawer(
               currentSection: _currentSection,
               onNavigate: (section) {
-                Navigator.pop(context);
+                _scaffoldKey.currentState?.closeDrawer();
                 _navigateTo(section);
               },
             ),
+            bottomNavigationBar: isSubPage
+                ? null
+                : AppBottomNavigation(
+                    selectedIndex: _navigation.selectedIndex,
+                    onSelected: _navigation.selectTab,
+                  ),
             appBar: AppBar(
               title: Text(
                 _getAppBarTitle(_currentSection),
@@ -435,7 +440,7 @@ class _MainScaffoldState extends State<MainScaffold> {
                   ?.withValues(alpha: settingsProvider.uiOpacity),
               leading: Builder(
                 builder: (context) => IconButton(
-                  icon: const Icon(Icons.notes),
+                  icon: const Icon(Icons.menu_rounded),
                   onPressed: () => Scaffold.of(context).openDrawer(),
                   tooltip: 'القائمة',
                 ),
@@ -479,8 +484,7 @@ class _MainScaffoldState extends State<MainScaffold> {
                       child: buildImage(
                         settingsProvider.selectedBase64Bg ??
                             DataManager.getSettings()['custom_bg_base64']
-                                ?.toString() ??
-                            DataManager.getSettings()['bg_image']?.toString(),
+                                ?.toString(),
                         fit: BoxFit.cover,
                       ),
                     ),
@@ -496,8 +500,10 @@ class _MainScaffoldState extends State<MainScaffold> {
                   ),
                 ),
                 SafeArea(
-                  child: AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 400),
+                  // Root tabs switch immediately. Cross-fading stateful pages
+                  // keeps outgoing timers and writers alive during rapid taps.
+                  child: KeyedSubtree(
+                    key: ValueKey(_currentSection),
                     child: _buildBody(context),
                   ),
                 ),
@@ -522,6 +528,7 @@ class _MainScaffoldState extends State<MainScaffold> {
         return HomeSection(
           key: const ValueKey('home'),
           onPrayerCardTap: () => _navigateTo('prayer_times'),
+          onNavigate: _navigateTo,
         );
       case 'settings':
         return const SettingsSection(key: ValueKey('settings'));
@@ -643,6 +650,12 @@ class _MainScaffoldState extends State<MainScaffold> {
   String _getAppBarTitle(String section) {
     if (section == 'home') return 'الذاكرين';
     if (section == 'settings') return 'الإعدادات';
+    if (section == 'favorites') return 'المفضلة';
+    if (section == 'prayer_times') return 'أوقات الصلاة';
+    if (section == 'tasbih') return 'المسبحة';
+    if (section == 'qibla') return 'القبلة';
+    if (section == 'adhkar') return 'الأذكار';
+    if (section == 'quran') return 'القرآن الكريم';
     if (section == 'about') return 'حول المطور';
     if (section == 'universal_batch') return 'استيراد بالدفعة';
     return _getSectionTitle(section);

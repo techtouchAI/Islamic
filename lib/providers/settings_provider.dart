@@ -2,11 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../data/data_manager.dart';
+import '../theme/app_theme.dart';
 
 class SettingsProvider extends ChangeNotifier {
   ThemeMode _themeMode = ThemeMode.light;
   double _fontSizeFactor = 1.0;
-  Color _primaryColor = Colors.blue;
+  Color _primaryColor = AppPalette.forest;
   double _uiOpacity = 1.0;
   String? _backgroundImagePath;
   String? _selectedBase64Bg;
@@ -42,8 +43,7 @@ class SettingsProvider extends ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     final dbSettings = DataManager.getSettings();
 
-    int defaultPrimary =
-        int.tryParse(dbSettings['primary_color'] ?? '0xFF2196F3') ?? 0xFF2196F3;
+    final defaultPrimary = AppPalette.forest.toARGB32();
     int defaultCard =
         int.tryParse(dbSettings['card_color'] ?? '0xFFFFFFFF') ?? 0xFFFFFFFF;
 

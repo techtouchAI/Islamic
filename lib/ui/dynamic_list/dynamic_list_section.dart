@@ -74,6 +74,7 @@ class _DynamicListSectionState extends State<DynamicListSection> {
           }
           final data = snapshot.data!;
           return ListView.builder(
+            key: PageStorageKey('list-${widget.sectionKey}'),
             physics: const BouncingScrollPhysics(),
             itemCount: data.length,
             padding: const EdgeInsets.only(bottom: 20),
@@ -146,6 +147,7 @@ class _DynamicListSectionState extends State<DynamicListSection> {
                                         : (surahId == 108 ? 107 : surahId - 1));
                                 return Image.asset(
                                   'assets/images/quran/quran_surah_names_$imageId.png',
+                                  semanticLabel: surah['name'].toString(),
                                   height: 50,
                                   fit: BoxFit.contain,
                                   color: color,

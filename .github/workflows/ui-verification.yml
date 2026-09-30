@@ -1,0 +1,63 @@
+name: UI verification
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'lib/**'
+      - 'test/**'
+      - 'pubspec.*'
+      - '.github/workflows/ui-verification.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.5'
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - name: Check formatting
+        run: dart format --output=none --set-exit-if-changed .
+      - name: Analyze
+        run: flutter analyze --no-fatal-infos
+      - name: Test
+        env:
+          CAPTURE_UI: '1'
+        run: |
+          set +e
+          flutter test --reporter expanded 2>&1 | tee /tmp/ui-tests.log
+          result=${PIPESTATUS[0]}
+          if [ "$result" -ne 0 ]; then
+            python3 - <<'PYTHON'
+          import re
+          from pathlib import Path
+          text = Path('/tmp/ui-tests.log').read_text()
+          chunks = re.split(r'(?=══╡ EXCEPTION|\d\d:\d\d .*?\[E\])', text)
+          for chunk in chunks:
+              if 'EXCEPTION' not in chunk[:100] and '[E]' not in chunk[:300]:
+                  continue
+              message = chunk[:7000].replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A')
+              print('::error title=UI test failure::' + message)
+          PYTHON
+          fi
+          exit "$result"
+      - name: Build web
+        run: flutter build web --release
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ui-verification-log
+          path: |
+            /tmp/ui-tests.log
+            build/ui-previews/*.png
+          if-no-files-found: ignore
+

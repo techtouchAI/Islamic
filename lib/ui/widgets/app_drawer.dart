@@ -95,7 +95,7 @@ class AppDrawer extends StatelessWidget {
                     style: TextStyle(fontSize: 16),
                   ),
                   onTap: () {
-                    Navigator.pop(context); // close drawer
+                    Scaffold.of(context).closeDrawer(); // close drawer
                     Navigator.push(
                       context,
                       MaterialPageRoute(builder: (_) => HijriCalendarScreen()),
@@ -109,7 +109,7 @@ class AppDrawer extends StatelessWidget {
                     style: TextStyle(fontSize: 16),
                   ),
                   onTap: () {
-                    Navigator.pop(context); // close drawer
+                    Scaffold.of(context).closeDrawer(); // close drawer
                     Navigator.push(
                       context,
                       MaterialPageRoute(builder: (_) => QiblaScreen()),
@@ -123,7 +123,7 @@ class AppDrawer extends StatelessWidget {
                     style: TextStyle(fontSize: 16),
                   ),
                   onTap: () {
-                    Navigator.pop(context); // close drawer
+                    Scaffold.of(context).closeDrawer(); // close drawer
                     Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -178,6 +178,7 @@ class AppDrawer extends StatelessWidget {
     }
 
     return ListTile(
+      key: ValueKey('drawer-$id'),
       leading: Icon(
         icon,
         color: active ? Theme.of(context).colorScheme.primary : null,
