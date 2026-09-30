@@ -93,9 +93,8 @@ class ContentSanitizer {
         .replaceAll('\uFDFB', '(جل جلاله)');
   }
 
-  static String _toParagraphs(String text) => text
-      .replaceAll(_lineBreak, '\n')
-      .replaceAll(_blockBoundary, '\n\n');
+  static String _toParagraphs(String text) =>
+      text.replaceAll(_lineBreak, '\n').replaceAll(_blockBoundary, '\n\n');
 
   /// `&amp;` is decoded last so an escaped `&lt;` is not decoded twice.
   static String _decodeEntities(String text) => text

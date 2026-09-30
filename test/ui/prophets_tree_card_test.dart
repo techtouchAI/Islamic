@@ -130,7 +130,9 @@ void main() {
     addTearDown(() => tester.binding.setSurfaceSize(null));
     SharedPreferences.setMockInitialValues({});
     DataManager.setDB({
-      'sections': {'quran': {'title': 'القرآن الكريم'}},
+      'sections': {
+        'quran': {'title': 'القرآن الكريم'}
+      },
       'content': {'quran': []},
       'settings': {},
     });
