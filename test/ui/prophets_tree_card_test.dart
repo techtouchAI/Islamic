@@ -51,13 +51,11 @@ void main() {
     expect(card.height, lessThan(120));
 
     // The backdrop is painted, not an asset, and it never repaints itself.
-    final backdrop = tester.widgetList<CustomPaint>(find.byType(CustomPaint));
-    expect(backdrop, isNotEmpty);
-    expect(backdrop.first.painter, isNotNull);
-    expect(
-      backdrop.first.painter!.shouldRepaint(backdrop.first.painter!),
-      isFalse,
+    final backdrop = tester.widget<CustomPaint>(
+      find.byKey(ProphetsTreeCard.backdropKey),
     );
+    expect(backdrop.painter, isA<CustomPainter>());
+    expect(backdrop.painter!.shouldRepaint(backdrop.painter!), isFalse);
 
     await tester.tap(find.byType(ProphetsTreeCard));
     await tester.pump();
@@ -90,7 +88,7 @@ void main() {
           {'id': 1, 'title': 'شجرة النسب', 'content': 'html <p>آدم</p>'},
         ],
       },
-      'settings': {},
+      'settings': <String, dynamic>{},
     });
     final settings = SettingsProvider();
     await settings.loadSettings();
@@ -134,7 +132,7 @@ void main() {
         'quran': {'title': 'القرآن الكريم'}
       },
       'content': {'quran': []},
-      'settings': {},
+      'settings': <String, dynamic>{},
     });
     final settings = SettingsProvider();
     await settings.loadSettings();

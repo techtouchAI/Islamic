@@ -25,6 +25,10 @@ class ProphetsTreeCard extends StatelessWidget {
   static const String subtitle =
       'الرسل والأنبياء · الأئمة الاثني عشر · الفروع النبوية';
 
+  /// Identifies the painted backdrop, so a test can address the lineage tree
+  /// itself instead of whichever `CustomPaint` happens to come first.
+  static const Key backdropKey = Key('prophetsTreeBackdrop');
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -41,6 +45,7 @@ class ProphetsTreeCard extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         child: CustomPaint(
+          key: backdropKey,
           painter: _LineageTreePainter(
             cardColor: theme.cardColor,
             foreground: foreground,
