@@ -199,8 +199,7 @@ void main() {
       // Dhu al-qa'dah 1448: the booklet looks for the Dhu al-hijjah crescent
       // on 29 Dhu al-qa'dah (7 May 2027), so the month has 29 days and the
       // martyrdom of Imam Muhammad al-Jawad, its last day, is day 29.
-      final lastDay =
-          CalendarRepository.getTodayHijri(DateTime(2027, 5, 7), 0);
+      final lastDay = CalendarRepository.getTodayHijri(DateTime(2027, 5, 7), 0);
       expect((lastDay.month, lastDay.day), (11, 29));
       final firstDay =
           CalendarRepository.getTodayHijri(DateTime(2027, 5, 8), 0);

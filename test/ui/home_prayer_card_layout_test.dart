@@ -197,11 +197,11 @@ void main() {
           'year': 1448,
           'month': 6,
           'total_days': 30,
-          'expected_gregorian_start': DateTime(today.year, today.month,
-                  today.day)
-              .subtract(const Duration(days: 10))
-              .toIso8601String()
-              .substring(0, 10),
+          'expected_gregorian_start':
+              DateTime(today.year, today.month, today.day)
+                  .subtract(const Duration(days: 10))
+                  .toIso8601String()
+                  .substring(0, 10),
           'days': <dynamic>[],
         },
       ],

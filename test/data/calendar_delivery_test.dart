@@ -33,9 +33,10 @@ void main() {
     return jsonEncode(<String, dynamic>{
       'sections': <String, dynamic>{},
       'content': <String, dynamic>{
-        if (extraSection != null) 'sync_marker': <dynamic>[
-          <String, dynamic>{'title': extraSection},
-        ],
+        if (extraSection != null)
+          'sync_marker': <dynamic>[
+            <String, dynamic>{'title': extraSection},
+          ],
       },
       'calendar_version': calendarVersion,
       'calendar_source': 'test',
@@ -173,8 +174,8 @@ void main() {
 
       expect(await DataManager.syncCloudData(client: client), isTrue);
       expect(DataManager.calendarVersionOf(DataManager.getDB()), 2);
-      expect(DataManager.getDB()!['content']['sync_marker'][0]['title'],
-          'cloud');
+      expect(
+          DataManager.getDB()!['content']['sync_marker'][0]['title'], 'cloud');
       expect(dayOfSeptember30(), 18);
     });
 
@@ -204,8 +205,8 @@ void main() {
 
       expect(await DataManager.syncCloudData(client: client), isTrue);
       // The rest of the document is adopted, the table is not regressed.
-      expect(DataManager.getDB()!['content']['sync_marker'][0]['title'],
-          'cloud');
+      expect(
+          DataManager.getDB()!['content']['sync_marker'][0]['title'], 'cloud');
       expect(DataManager.calendarVersionOf(DataManager.getDB()), 5);
       expect(dayOfSeptember30(), 18);
       final persisted = jsonDecode(await cache.readAsString());
