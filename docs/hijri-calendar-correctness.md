@@ -123,3 +123,31 @@ to day 29 of a 29-day month.
 * `android/.../hijri/HijriNativeManager.kt` — an arithmetic converter kept for
   the platform channel; no Dart code calls it, so it is not a date source of
   the app.
+
+## Verification record
+
+Verified end to end on the branch `arena/01a0f192-islamic` (commit `2a5d938`),
+on GitHub Actions with Flutter 3.47.5:
+
+* run `36711707429` Fix Dart formatting — formatting clean.
+* run `36711707189` UI verification — format, `flutter analyze`, the full
+  `flutter test` suite and the release web build all pass.
+* run `36711707210` Android Build and Quality Checks — the data verifier
+  (`Verify bundled Hijri calendar`), analyzer, the full test suite, the web
+  build, `flutter build apk --release`, and `Verify the calendar inside the
+  APK` all pass; the last step reads `assets/data/content.json` out of the
+  built `app-release.apk` and requires month 4 to start on 13 Sep 2026.
+
+The Dart sides of the acceptance case: 28 Sep 2026 = 16, 29 Sep = 17,
+30 Sep = 18 and 1 Oct = 19 Rabi' al-thani 1448, asserted in
+`test/data/calendar_repository_test.dart`, in the delivery tests (after an app
+update and after a cloud sync), and in the home card widget test that renders
+the date of the shared document.
+
+Installing the APK by hand is not possible in the change environment (no
+device, and its artifact download returns EOF), so the packaged-document
+verifier in CI is the evidence that the shipped binary carries the corrected
+table, while the delivery tests cover the two ways a device can still be on an
+older copy (cached document, older cloud document). A device that installs this
+build replaces the bundled table on the first launch and never accepts an older
+table afterwards.
