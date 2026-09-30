@@ -66,7 +66,7 @@ void main() {
         if (previousEnd != null) {
           expect(
             start,
-            previousEnd!.add(const Duration(days: 1)),
+            previousEnd.add(const Duration(days: 1)),
             reason: 'month $month must start the day after month ${month - 1}',
           );
         }

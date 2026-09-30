@@ -160,14 +160,15 @@ void main() {
     await tester.pump(const Duration(milliseconds: 200));
 
     final card = tester.getRect(find.byKey(const ValueKey('home-prayer-card')));
-    final date = tester.getRect(find.byKey(const ValueKey('prayer-date')));
-    final title = tester.getRect(find.byKey(const ValueKey('prayer-title')));
-    expect(date.top, greaterThan(card.top));
-    expect(date.bottom, lessThan(title.top));
+    final dateRect = tester.getRect(find.byKey(const ValueKey('prayer-date')));
+    final titleRect =
+        tester.getRect(find.byKey(const ValueKey('prayer-title')));
+    expect(dateRect.top, greaterThan(card.top));
+    expect(dateRect.bottom, lessThan(titleRect.top));
     // The line is inset from the physical left edge, where the artwork draws
     // its sky, and stays inside the card.
-    expect(date.left - card.left, greaterThan(60));
-    expect(date.right, lessThanOrEqualTo(card.right));
+    expect(dateRect.left - card.left, greaterThan(60));
+    expect(dateRect.right, lessThanOrEqualTo(card.right));
     expect(
       find.descendant(
         of: find.byKey(const ValueKey('prayer-date-button')),
