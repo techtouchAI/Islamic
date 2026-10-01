@@ -39,8 +39,8 @@ void main() {
               card: currentSettings.cardColor,
             ),
             themeMode: currentSettings.themeMode,
-            home: const Scaffold(
-              appBar: AppBar(actions: [ThemeModeActionButton()]),
+            home: Scaffold(
+              appBar: AppBar(actions: const [ThemeModeActionButton()]),
               body: Center(child: Text('الصفحة')),
             ),
           ),
