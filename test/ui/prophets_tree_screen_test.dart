@@ -120,7 +120,7 @@ void main() {
   });
 
   testWidgets('renders the whole tree on one page', (tester) async {
-    await tester.binding.setSurfaceSize(const Size(400, 3200));
+    await tester.binding.setSurfaceSize(const Size(400, 5600));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
     await tester.pumpWidget(host());
@@ -173,7 +173,9 @@ void main() {
       expect(find.text(label), findsOneWidget);
     }
 
-    await tester.tap(find.text('الأنبياء والرسل'));
+    final prophetsChip = find.text('الأنبياء والرسل');
+    await tester.ensureVisible(prophetsChip);
+    await tester.tap(prophetsChip);
     await tester.pumpAndSettle();
 
     // Only prophets remain: the ancestors, the branch drawing, the marriage
@@ -187,14 +189,18 @@ void main() {
     expect(find.text(ProphetsTreeScreen.supplementTitle), findsNothing);
 
     // The imams filter reaches the chain, including the Mahdi.
-    await tester.tap(find.text('الأئمة الاثنا عشر'));
+    final imamsChip = find.text('الأئمة الاثنا عشر');
+    await tester.ensureVisible(imamsChip);
+    await tester.tap(imamsChip);
     await tester.pumpAndSettle();
     expect(find.text('علي بن أبي طالب عليه السلام'), findsOneWidget);
     expect(find.text('محمد بن الحسن المهدي'), findsOneWidget);
     expect(find.text('آدم'), findsNothing);
 
     // The show-everything chip restores the full tree.
-    await tester.tap(find.text('الكل'));
+    final allChip = find.text('الكل');
+    await tester.ensureVisible(allChip);
+    await tester.tap(allChip);
     await tester.pumpAndSettle();
     expect(find.text('أنوش'), findsOneWidget);
     expect(find.text('تزوج علي من فاطمة بنت النبي'), findsOneWidget);
@@ -210,7 +216,10 @@ void main() {
     await tester.pumpWidget(host());
     await tester.pump();
 
-    await tester.tap(find.text('أهل البيت'));
+    // The last chip can sit beyond the row's edge; bring it into view.
+    final cloakChip = find.text('أهل البيت');
+    await tester.ensureVisible(cloakChip);
+    await tester.tap(cloakChip);
     await tester.pumpAndSettle();
 
     for (final name in const [

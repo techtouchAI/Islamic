@@ -800,19 +800,28 @@ class _ProphetsTreeScreenState extends State<ProphetsTreeScreen> {
           ),
         ),
         const SizedBox(width: 16),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-          decoration: BoxDecoration(
-            color: blue.withValues(alpha: isDark ? 0.09 : 0.08),
-            borderRadius: BorderRadius.circular(999),
-            border: Border.all(color: blue.withValues(alpha: 0.3)),
-          ),
-          child: Text(
-            'سلسلة الأئمة الاثني عشر',
-            style: TextStyle(
-              fontSize: 13.5 * widget.fontSizeFactor,
-              fontWeight: FontWeight.w700,
-              color: isDark ? blue : const Color(0xFF2563EB),
+        Flexible(
+          flex: 3,
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 6,
+              ),
+              decoration: BoxDecoration(
+                color: blue.withValues(alpha: isDark ? 0.09 : 0.08),
+                borderRadius: BorderRadius.circular(999),
+                border: Border.all(color: blue.withValues(alpha: 0.3)),
+              ),
+              child: Text(
+                'سلسلة الأئمة الاثني عشر',
+                style: TextStyle(
+                  fontSize: 13.5 * widget.fontSizeFactor,
+                  fontWeight: FontWeight.w700,
+                  color: isDark ? blue : const Color(0xFF2563EB),
+                ),
+              ),
             ),
           ),
         ),
