@@ -13,17 +13,21 @@ enum UpdateCheckStatus {
 
 /// Release manifest for in-app OTA updates.
 ///
-/// The manifest is a simple JSON file hosted on the app's own server,
-/// containing the latest version info and a direct APK download link.
-/// No GitHub references are used anywhere in the update flow.
+/// The source of truth is the latest GitHub Release of this repository
+/// (the same approach used by the SUN app). The release tag has the form
+/// `v<version>-<build>` (e.g. `v1.0.56-806`, created by the release workflow)
+/// and carries the APK as an asset whose SHA-256 `digest` is published by
+/// GitHub itself. No private server is needed, so the check cannot fail
+/// because of a missing domain.
 ///
-/// Expected JSON shape:
+/// [parse] still accepts the flat JSON shape below, used by tests and by the
+/// optional signed `release_manifest.json` asset:
 /// ```json
 /// {
 ///   "version": "1.0.56",
 ///   "build_number": 806,
 ///   "min_supported_build": 800,
-///   "apk_url": "https://aldhakereen.com/api/update/aldhakereen.apk",
+///   "apk_url": "https://github.com/.../app-release.apk",
 ///   "sha256": "abcdef0123456789..."
 /// }
 /// ```
@@ -42,10 +46,58 @@ class ReleaseManifest {
     required this.sha256Hex,
   });
 
-  /// Base URL where the release manifest and APK are hosted.
-  /// Change this to your own server when deploying.
-  static const String _baseUrl = 'https://aldhakereen.com/api/update';
-  static const String _manifestUrl = '$_baseUrl/release_manifest.json';
+  static const String repoOwner = 'techtouchAI';
+  static const String repoName = 'Islamic';
+  static const String apkAssetName = 'app-release.apk';
+  static const String latestReleaseUrl =
+      'https://api.github.com/repos/$repoOwner/$repoName/releases/latest';
+
+  /// Builds a manifest from the GitHub "latest release" API payload.
+  ///
+  /// Throws [FormatException] with an Arabic-friendly diagnostic when the
+  /// release has no usable APK asset, digest, or version tag.
+  static ReleaseManifest fromGitHubRelease(
+    Map<String, dynamic> release, {
+    int minSupportedBuild = 0,
+  }) {
+    final tag = release['tag_name'];
+    if (tag is! String) {
+      throw const FormatException('Invalid release: missing tag_name');
+    }
+    final match =
+        RegExp(r'^v?(\d+(?:\.\d+)*)[-+](\d+)$').firstMatch(tag.trim());
+    if (match == null) {
+      throw FormatException('Invalid release tag (expected vX.Y.Z-N): $tag');
+    }
+
+    final assets = release['assets'];
+    if (assets is! List) {
+      throw const FormatException('Invalid release: missing assets');
+    }
+    Map<String, dynamic>? apk;
+    for (final item in assets) {
+      if (item is Map && item['name'] == apkAssetName) {
+        apk = Map<String, dynamic>.from(item);
+        break;
+      }
+    }
+    if (apk == null) {
+      throw const FormatException('Release has no app-release.apk asset');
+    }
+    final digest = apk['digest']?.toString().toLowerCase() ?? '';
+    final hash =
+        digest.startsWith('sha256:') ? digest.substring('sha256:'.length) : '';
+    final build = int.parse(match.group(2)!);
+
+    return parse(<String, dynamic>{
+      'version': match.group(1),
+      'build_number': build,
+      'min_supported_build':
+          minSupportedBuild > build ? build : minSupportedBuild,
+      'apk_url': apk['browser_download_url'],
+      'sha256': hash,
+    });
+  }
 
   static ReleaseManifest parse(Map<String, dynamic> json) {
     final version = json['version'];
@@ -97,30 +149,31 @@ class ReleaseManifest {
     return UpdateCheckStatus.upToDate;
   }
 
-  /// Fetches the release manifest from the app's own update server.
+  /// Fetches the latest release from GitHub Releases.
   static Future<ReleaseManifest> fetch({Dio? dio}) async {
     final client = dio ??
         Dio(
           BaseOptions(
-            connectTimeout: const Duration(seconds: 10),
-            receiveTimeout: const Duration(seconds: 10),
+            connectTimeout: const Duration(seconds: 20),
+            receiveTimeout: const Duration(seconds: 20),
           ),
         );
     final response = await client.get<dynamic>(
-      _manifestUrl,
+      latestReleaseUrl,
       options: Options(
         responseType: ResponseType.json,
         headers: {
-          'Accept': 'application/json',
+          'Accept': 'application/vnd.github+json',
+          'X-GitHub-Api-Version': '2022-11-28',
+          'User-Agent': 'aldhakereen-OTA',
           'Cache-Control': 'no-cache',
-          'Pragma': 'no-cache',
         },
       ),
     );
     final data = response.data;
     if (data is! Map<String, dynamic>) {
-      throw const FormatException('Invalid release manifest response');
+      throw const FormatException('Invalid release response');
     }
-    return parse(data);
+    return fromGitHubRelease(data);
   }
 }

@@ -37,6 +37,7 @@ import 'dart:io';
 
 import 'presentation/screens/istikhara_screen.dart';
 
+import 'package:dio/dio.dart' show DioException;
 import 'package:provider/provider.dart';
 
 import 'package:package_info_plus/package_info_plus.dart';
@@ -298,7 +299,7 @@ class _MainScaffoldState extends State<MainScaffold> {
         );
       }
 
-      // Fetch release_manifest.json from the app's own update server.
+      // Read the latest GitHub Release (tag vX.Y.Z-N + APK digest).
       final manifest = await OTAService.instance.fetchManifest();
       if (!mounted) return;
 
@@ -347,14 +348,30 @@ class _MainScaffoldState extends State<MainScaffold> {
       debugPrint('OTA_Update Error: $e');
       if (mounted) {
         _showUpdateCheckMessage(
-          'تعذر فحص التحديث أو الاتصال بخادم التحديث. '
-          'تحقق من الإنترنت ثم أعد المحاولة.',
+          _describeUpdateError(e),
           allowRetry: true,
         );
       }
     } finally {
       _isCheckingForUpdates = false;
     }
+  }
+
+  String _describeUpdateError(Object e) {
+    if (e is DioException) {
+      final code = e.response?.statusCode;
+      if (code == 403 || code == 429) {
+        return 'تعذر فحص التحديث: تم تجاوز حد الطلبات مؤقتًا، حاول لاحقًا.';
+      }
+      if (code != null) {
+        return 'تعذر فحص التحديث (رمز الخادم $code).';
+      }
+      return 'تعذر الاتصال بخادم التحديث. تحقق من الإنترنت ثم أعد المحاولة.';
+    }
+    if (e is FormatException) {
+      return 'بيانات الإصدار المنشور غير صالحة: ${e.message}';
+    }
+    return 'تعذر فحص التحديث. تحقق من الإنترنت ثم أعد المحاولة.';
   }
 
   void _showUpdateCheckMessage(String message, {bool allowRetry = false}) {

@@ -24,3 +24,13 @@ upgraded. Do not remove the older update path before that rollout succeeds.
 
 Without a provisioned signing secret, the installer is disabled. The app must
 never redirect to an unsigned release or claim it has a verified update.
+
+## Update source (GitHub Releases)
+
+The in-app update check reads `https://api.github.com/repos/techtouchAI/Islamic/releases/latest`
+(same approach as the SUN app). The release tag must be `v<version>-<build>`
+(created by `build_and_release.yml`) and the release must contain
+`app-release.apk`; its SHA-256 `digest` published by GitHub is used to verify
+the download. The old `aldhakereen.com/api/update` server does not exist
+(DNS fails), which caused the "تعذر فحص التحديث" error, so `server/` is
+obsolete and no longer used by the app.
