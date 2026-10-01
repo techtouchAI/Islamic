@@ -47,7 +47,7 @@ class AppDrawer extends StatelessWidget {
                     height: 60,
                   ),
                   const SizedBox(height: 10),
-                  const Text(
+                  Text(
                     'تطبيق الذاكرين',
                     style: TextStyle(
                       color: scheme.onPrimary,
