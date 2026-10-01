@@ -102,8 +102,10 @@ void main() {
       });
 
       final client = MockClient(
-        (request) async =>
-            http.Response(documentWithoutTree(marker: 'cloud'), 200),
+        (request) async => http.Response.bytes(
+          utf8.encode(documentWithoutTree(marker: 'cloud')),
+          200,
+        ),
       );
 
       expect(await DataManager.syncCloudData(client: client), isTrue);
@@ -147,7 +149,10 @@ void main() {
       });
 
       final client = MockClient(
-        (request) async => http.Response(documentWithTree(), 200),
+        (request) async => http.Response.bytes(
+          utf8.encode(documentWithTree()),
+          200,
+        ),
       );
 
       expect(await DataManager.syncCloudData(client: client), isTrue);
@@ -164,7 +169,10 @@ void main() {
       });
 
       final client = MockClient(
-        (request) async => http.Response(documentWithTree(), 200),
+        (request) async => http.Response.bytes(
+          utf8.encode(documentWithTree()),
+          200,
+        ),
       );
 
       expect(await DataManager.syncCloudData(client: client), isTrue);
