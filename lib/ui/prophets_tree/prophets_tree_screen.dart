@@ -63,9 +63,8 @@ class _ProphetsTreeScreenState extends State<ProphetsTreeScreen> {
     super.dispose();
   }
 
-  static List<_TreeNode> _decodeNodes() => DataManager.getItems('prophets_tree')
-      .map(_TreeNode.fromMap)
-      .toList();
+  static List<_TreeNode> _decodeNodes() =>
+      DataManager.getItems('prophets_tree').map(_TreeNode.fromMap).toList();
 
   void _reload() {
     if (!mounted) return;
@@ -165,9 +164,8 @@ class _ProphetsTreeScreenState extends State<ProphetsTreeScreen> {
   /// The filtered view: a single trunk carrying only the matching nodes.
   List<Widget> _filteredPage(BuildContext context, bool isDark) {
     final tag = _activeTag;
-    final matches = _nodes
-        .where((n) => !n.structural && n.tags.contains(tag))
-        .toList();
+    final matches =
+        _nodes.where((n) => !n.structural && n.tags.contains(tag)).toList();
     if (matches.isEmpty) {
       return [
         const SizedBox(height: 60),
@@ -281,7 +279,11 @@ class _ProphetsTreeScreenState extends State<ProphetsTreeScreen> {
       height: 1,
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [line.withValues(alpha: 0.0), line, line.withValues(alpha: 0.0)],
+          colors: [
+            line.withValues(alpha: 0.0),
+            line,
+            line.withValues(alpha: 0.0)
+          ],
         ),
       ),
     );
@@ -364,7 +366,8 @@ class _ProphetsTreeScreenState extends State<ProphetsTreeScreen> {
     final background = Theme.of(context).cardColor;
     final foreground = background.contrastTextColor;
     final isMahdi = node.type == 'mahdi';
-    final titleSize = node.strong ? 22.0 : (node.group == 'chain' ? 20.0 : 21.0);
+    final titleSize =
+        node.strong ? 22.0 : (node.group == 'chain' ? 20.0 : 21.0);
     return Container(
       width: double.infinity,
       padding: EdgeInsets.symmetric(
@@ -401,9 +404,7 @@ class _ProphetsTreeScreenState extends State<ProphetsTreeScreen> {
               fontSize: titleSize * widget.fontSizeFactor,
               fontWeight: node.strong ? FontWeight.w800 : FontWeight.w700,
               height: 1.55,
-              color: isMahdi && isDark
-                  ? const Color(0xFFFFF8E6)
-                  : foreground,
+              color: isMahdi && isDark ? const Color(0xFFFFF8E6) : foreground,
             ),
           ),
           if (node.desc.isNotEmpty) ...[
@@ -461,7 +462,8 @@ class _ProphetsTreeScreenState extends State<ProphetsTreeScreen> {
     );
   }
 
-  Widget _badge(String text, Color accent, bool isDark, {bool compact = false}) {
+  Widget _badge(String text, Color accent, bool isDark,
+      {bool compact = false}) {
     return Container(
       padding: EdgeInsets.symmetric(
         horizontal: compact ? 10 : 13,
@@ -1017,11 +1019,7 @@ class _ProphetsTreeScreenState extends State<ProphetsTreeScreen> {
   /// Eastern Arabic numerals for the imam medallions.
   static String _easternArabic(int value) {
     const digits = '٠١٢٣٤٥٦٧٨٩';
-    return value
-        .toString()
-        .split('')
-        .map((d) => digits[int.parse(d)])
-        .join();
+    return value.toString().split('').map((d) => digits[int.parse(d)]).join();
   }
 }
 
