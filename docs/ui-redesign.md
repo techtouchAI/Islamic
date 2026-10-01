@@ -64,3 +64,41 @@ No native-device runtime verification was performed in the sandbox.
 - Refinement tests additionally cover exact sunrise/sunset boundaries, stale or
   absent solar events, the removed greeting, the replacement inspiration icon,
   selected-location clock transitions and real-font day/night capture.
+
+## Prophets tree doorway artwork
+- The `ProphetsTreeCard` backdrop is drawn, not shipped as an asset. The
+  earlier abstract "lineage nodes" sketch was replaced with a sacred scene in
+  fine gold linework on the card surface: a mihrab arch framing an onion dome
+  with a finial, two slender minarets with balcony rings and dome caps, a
+  crescent, eight-pointed stars (khatam), an emerald arabesque vine with
+  leaves and buds, and a pointed-arch arcade along the base.
+- The scene is constructed in fractions of the card size (architecture sized
+  against the card height), so it scales with the card instead of being
+  cropped, and it is faded out under the text side with the same right-to-left
+  scrim the home cards use. Dark cards carry slightly stronger ink. The gold
+  matches `sections.prophets_tree.color` and the app's gold accents.
+- Section availability is protected in `DataManager`: a document adopted from
+  the cloud, or a cached document from a previous build, can no longer hide a
+  section the device already carries (descriptor or entries). This is the
+  keep-newest policy of the calendar table extended to sections, and it is
+  what keeps the doorway and its drawer entry from vanishing after a sync
+  with an older document.
+
+## Prophets tree as one page
+- The `prophets_tree` section is no longer three reader articles: it is a
+  single scrollable page (`ProphetsTreeScreen`) drawing the lineage as a
+  tree, matching the approved reference design: one trunk from Adam to
+  `Abd al-Muttalib with ancestor beads and prophet cards, a fork into
+  `Abd Allah and Abu Talib, the marriage line of `Ali and Fatima, the
+  grid of al-Hasan and al-Husayn, the chain of the twelve imams with
+  Eastern Arabic medallions and a glowing card for al-Mahdi, and the
+  supplement of the prophetic branches of Ibrahim and Nuh.
+- The tree is data, not code: every node is an entry of
+  `content.prophets_tree` (`group` places it, `type` colours it, `tags`
+  reach it through filters), so the CMS can correct a name or a line
+  without a release. The drawer entry carries no count badge: the tree is
+  one page, not a list of entries.
+- Filter chips over the page collapse it onto a single tag — the prophets
+  and messengers, the paternal line, the Quraysh line, the twelve imams,
+  or the people of the house — and the show-everything chip restores the
+  full drawing. Colours adapt to the light and dark themes.

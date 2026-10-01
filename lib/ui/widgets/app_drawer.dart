@@ -154,7 +154,11 @@ class AppDrawer extends StatelessWidget {
     int count = 0;
     Widget? trailingWidget;
 
-    if (id != 'mafatih') {
+    if (id == 'prophets_tree') {
+      // The tree is one page, not a list: counting its nodes as entries
+      // would mislead, so the badge stays off.
+      trailingWidget = null;
+    } else if (id != 'mafatih') {
       if (id == 'fatawa' || id == 'imam_ali' || id == 'dreams') {
         final cats = DataManager.getItems(id);
         for (var cat in cats) {
