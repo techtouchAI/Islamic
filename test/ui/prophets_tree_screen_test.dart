@@ -140,7 +140,7 @@ void main() {
     expect(find.text('الحسين بن علي'), findsOneWidget);
 
     // The chain carries its own header and Eastern Arabic medallions.
-    expect(find.text('سلسلة الأئمة الاثنا عشر'), findsOneWidget);
+    expect(find.text('سلسلة الأئمة الاثني عشر'), findsOneWidget);
     expect(find.text('٤'), findsOneWidget);
     expect(find.text('١٢'), findsOneWidget);
 
@@ -161,7 +161,9 @@ void main() {
     await tester.pumpWidget(host());
     await tester.pump();
 
-    // All six filters are offered.
+    // All six filters are offered in the chip row (node badges may reuse
+    // the same wording, so look only inside the chips).
+    final chipRow = find.byType(SingleChildScrollView);
     for (final label in const [
       'الكل',
       'الأنبياء والرسل',
@@ -170,7 +172,10 @@ void main() {
       'الأئمة الاثنا عشر',
       'أهل البيت',
     ]) {
-      expect(find.text(label), findsOneWidget);
+      expect(
+        find.descendant(of: chipRow, matching: find.text(label)),
+        findsOneWidget,
+      );
     }
 
     final prophetsChip = find.text('الأنبياء والرسل');
