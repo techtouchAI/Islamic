@@ -102,4 +102,44 @@ void main() {
       expect(() => ReleaseManifest.parse(values), throwsFormatException);
     });
   });
+
+  group('ReleaseManifest.fromGitHubRelease', () {
+    final hash = List.filled(64, 'b').join();
+    Map<String, dynamic> release() => <String, dynamic>{
+          'tag_name': 'v1.0.56-806',
+          'assets': [
+            {
+              'name': 'app-release.apk',
+              'digest': 'sha256:$hash',
+              'browser_download_url':
+                  'https://github.com/techtouchAI/Islamic/releases/download/v1.0.56-806/app-release.apk',
+            },
+          ],
+        };
+
+    test('reads version, build, url and digest from the latest release', () {
+      final m = ReleaseManifest.fromGitHubRelease(release());
+      expect(m.version, '1.0.56');
+      expect(m.buildNumber, 806);
+      expect(m.minSupportedBuild, 0);
+      expect(m.sha256Hex, hash);
+      expect(m.apkUrl.host, 'github.com');
+    });
+
+    test('rejects a tag that is not vX.Y.Z-N', () {
+      final r = release()..['tag_name'] = 'nightly';
+      expect(() => ReleaseManifest.fromGitHubRelease(r), throwsFormatException);
+    });
+
+    test('rejects a release without the APK asset', () {
+      final r = release()..['assets'] = <dynamic>[];
+      expect(() => ReleaseManifest.fromGitHubRelease(r), throwsFormatException);
+    });
+
+    test('rejects an APK asset without a sha256 digest', () {
+      final r = release();
+      (r['assets'] as List).first['digest'] = null;
+      expect(() => ReleaseManifest.fromGitHubRelease(r), throwsFormatException);
+    });
+  });
 }
