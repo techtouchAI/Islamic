@@ -2,7 +2,7 @@ import 'package:aldhakereen/services/release_manifest.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  group('ReleaseManifest.parse', () {
+  group('ReleaseManifest', () {
     Map<String, dynamic> validValues() => <String, dynamic>{
           'version': '1.0.56',
           'build_number': 806,
@@ -21,6 +21,50 @@ void main() {
         'https://aldhakereen.com/api/update/aldhakereen.apk',
       );
       expect(manifest.sha256Hex, List.filled(64, 'a').join());
+    });
+
+    test('detects an update when the server build is newer', () {
+      final manifest = ReleaseManifest.parse(validValues());
+      expect(
+        manifest.compareWithInstalledApp(
+          installedVersion: '1.0.55',
+          installedBuildNumber: 805,
+        ),
+        UpdateCheckStatus.updateAvailable,
+      );
+    });
+
+    test('reports the app as current when version and build match', () {
+      final manifest = ReleaseManifest.parse(validValues());
+      expect(
+        manifest.compareWithInstalledApp(
+          installedVersion: '1.0.56',
+          installedBuildNumber: 806,
+        ),
+        UpdateCheckStatus.upToDate,
+      );
+    });
+
+    test('reports a stale server instead of offering a downgrade', () {
+      final manifest = ReleaseManifest.parse(validValues());
+      expect(
+        manifest.compareWithInstalledApp(
+          installedVersion: '1.0.56',
+          installedBuildNumber: 807,
+        ),
+        UpdateCheckStatus.serverBehind,
+      );
+    });
+
+    test('reports conflicting version names for the same build', () {
+      final manifest = ReleaseManifest.parse(validValues());
+      expect(
+        manifest.compareWithInstalledApp(
+          installedVersion: '1.0.55',
+          installedBuildNumber: 806,
+        ),
+        UpdateCheckStatus.inconsistentVersion,
+      );
     });
 
     test('rejects missing version', () {

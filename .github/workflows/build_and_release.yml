@@ -131,7 +131,17 @@ jobs:
               --apk build/app/outputs/flutter-apk/app-release.apk \
               --key "$RUNNER_TEMP/ota-signing.pem" \
               --output build/app/outputs/flutter-apk/release_manifest.json
+            if [ ! -s build/app/outputs/flutter-apk/release_manifest.json ]; then
+              echo "::error::Release manifest generation failed."
+              exit 1
+            fi
             rm -f "$RUNNER_TEMP/ota-signing.pem"
+          else
+            echo "::warning title=OTA manifest not created::OTA_MANIFEST_SIGNING_KEY is missing; this release will not include a signed OTA manifest."
+            {
+              echo "### OTA manifest not created"
+              echo "Configure the OTA_MANIFEST_SIGNING_KEY Actions secret to publish a signed manifest with this release."
+            } >> "$GITHUB_STEP_SUMMARY"
           fi
 
       - name: Create Release and Upload APK

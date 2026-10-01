@@ -1,5 +1,16 @@
 import 'package:dio/dio.dart';
 
+/// Result of comparing the server's Android build with the installed build.
+///
+/// Android's build number is authoritative for installability; a higher
+/// version name alone cannot be installed when the build number is unchanged.
+enum UpdateCheckStatus {
+  updateAvailable,
+  upToDate,
+  serverBehind,
+  inconsistentVersion,
+}
+
 /// Release manifest for in-app OTA updates.
 ///
 /// The manifest is a simple JSON file hosted on the app's own server,
@@ -69,14 +80,41 @@ class ReleaseManifest {
     );
   }
 
+  /// Compares this manifest with the installed Android app.
+  UpdateCheckStatus compareWithInstalledApp({
+    required String installedVersion,
+    required int installedBuildNumber,
+  }) {
+    if (buildNumber > installedBuildNumber) {
+      return UpdateCheckStatus.updateAvailable;
+    }
+    if (buildNumber < installedBuildNumber) {
+      return UpdateCheckStatus.serverBehind;
+    }
+    if (version != installedVersion) {
+      return UpdateCheckStatus.inconsistentVersion;
+    }
+    return UpdateCheckStatus.upToDate;
+  }
+
   /// Fetches the release manifest from the app's own update server.
   static Future<ReleaseManifest> fetch({Dio? dio}) async {
-    final client = dio ?? Dio();
+    final client = dio ??
+        Dio(
+          BaseOptions(
+            connectTimeout: const Duration(seconds: 10),
+            receiveTimeout: const Duration(seconds: 10),
+          ),
+        );
     final response = await client.get<dynamic>(
       _manifestUrl,
       options: Options(
         responseType: ResponseType.json,
-        headers: {'Accept': 'application/json'},
+        headers: {
+          'Accept': 'application/json',
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache',
+        },
       ),
     );
     final data = response.data;
