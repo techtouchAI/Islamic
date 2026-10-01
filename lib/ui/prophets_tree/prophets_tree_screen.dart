@@ -66,8 +66,7 @@ class _ProphetsTreeScreenState extends State<ProphetsTreeScreen> {
   }
 
   static List<_TreeNode> _decodeNodes() {
-    final raw =
-        DataManager.getItems('prophets_tree').whereType<Map>().toList();
+    final raw = DataManager.getItems('prophets_tree').whereType<Map>().toList();
     if (raw.isEmpty) {
       if (DataManager.getSections().containsKey('prophets_tree')) {
         return kDefaultProphetsTreeNodes.map(_TreeNode.fromMap).toList();
