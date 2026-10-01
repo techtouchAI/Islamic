@@ -448,8 +448,8 @@ class _SacredScenePainter extends CustomPainter {
     canvas.rotate(angle);
     final leaf = Path()
       ..moveTo(0, 0)
-      ..quadraticTo(length * 0.5, -length * 0.42, length, 0)
-      ..quadraticTo(length * 0.5, length * 0.42, 0, 0)
+      ..quadraticBezierTo(length * 0.5, -length * 0.42, length, 0)
+      ..quadraticBezierTo(length * 0.5, length * 0.42, 0, 0)
       ..close();
     canvas.drawPath(leaf, paint);
     canvas.restore();
