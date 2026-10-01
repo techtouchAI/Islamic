@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
 
 import '../../utils/qibla_calculator.dart';
+import '../widgets/theme_mode_action_button.dart';
 
 class QiblaScreen extends StatefulWidget {
   const QiblaScreen({super.key});
@@ -164,7 +165,8 @@ class _QiblaScreenState extends State<QiblaScreen> {
         title: Text('اتجاه القبلة', style: TextStyle(color: Colors.white)),
         backgroundColor: Colors.transparent,
         elevation: 0,
-        iconTheme: IconThemeData(color: Colors.white),
+        iconTheme: const IconThemeData(color: Colors.white),
+        actions: const [ThemeModeActionButton()],
       ),
       body: Container(
         width: double.infinity,

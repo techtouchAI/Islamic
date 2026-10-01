@@ -27,7 +27,7 @@ class AppStandardCard extends StatelessWidget {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppCardTheme.borderRadius),
         side: BorderSide(
-          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.4),
+          color: Theme.of(context).colorScheme.outlineVariant,
         ),
       ),
       child: InkWell(

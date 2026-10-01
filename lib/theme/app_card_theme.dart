@@ -15,7 +15,15 @@ class AppCardTheme {
 }
 
 extension ColorContrast on Color {
+  /// Returns the higher-contrast neutral foreground for this surface.
+  ///
+  /// Comparing both WCAG contrast ratios gives more reliable results than a
+  /// fixed luminance cut-off, especially for saturated colours such as the
+  /// app's forest-green card surface.
   Color get contrastTextColor {
-    return computeLuminance() > 0.5 ? Colors.black : Colors.white;
+    final luminance = computeLuminance();
+    final contrastWithBlack = (luminance + 0.05) / 0.05;
+    final contrastWithWhite = 1.05 / (luminance + 0.05);
+    return contrastWithBlack >= contrastWithWhite ? Colors.black : Colors.white;
   }
 }

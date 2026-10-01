@@ -10,6 +10,7 @@ import 'dart:io';
 
 import '../services/favorites_service.dart';
 import '../models/favorite_item.dart';
+import '../theme/app_card_theme.dart';
 
 class FavoritesSection extends StatefulWidget {
   final double fontSizeFactor;
@@ -191,25 +192,27 @@ class _FavoritesSectionState extends State<FavoritesSection> {
       padding: const EdgeInsets.only(bottom: 80),
       itemBuilder: (context, index) {
         final item = items[index];
+        final theme = Theme.of(context);
+        final foreground = theme.cardColor.contrastTextColor;
         return Container(
           margin: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
           decoration: BoxDecoration(
-            color: Theme.of(context)
-                .cardColor
-                .withValues(alpha: widget.uiOpacity * 0.8),
+            color: theme.cardColor.withValues(alpha: widget.uiOpacity * 0.8),
             borderRadius: BorderRadius.circular(15),
-            border: Border.all(
-              color: Theme.of(context).colorScheme.primary,
-              width: 1.0,
-            ),
+            border: Border.all(color: theme.colorScheme.outlineVariant),
           ),
           child: ListTile(
             contentPadding: const EdgeInsets.all(16),
             title: Text(
               item.title,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 18,
+                color: foreground,
+              ),
             ),
             trailing: IconButton(
+              color: foreground,
               icon: const Icon(Icons.delete_outline),
               onPressed: () {
                 FavoritesService.instance.toggleFavorite(item);
@@ -244,23 +247,24 @@ class _FavoritesSectionState extends State<FavoritesSection> {
       padding: const EdgeInsets.only(bottom: 80),
       itemBuilder: (context, index) {
         final item = items[index];
+        final theme = Theme.of(context);
+        final foreground = theme.cardColor.contrastTextColor;
         return Container(
           margin: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
           decoration: BoxDecoration(
-            color: Theme.of(context)
-                .cardColor
-                .withValues(alpha: widget.uiOpacity * 0.8),
+            color: theme.cardColor.withValues(alpha: widget.uiOpacity * 0.8),
             borderRadius: BorderRadius.circular(15),
-            border: Border.all(
-              color: Theme.of(context).colorScheme.primary,
-              width: 1.0,
-            ),
+            border: Border.all(color: theme.colorScheme.outlineVariant),
           ),
           child: ListTile(
             contentPadding: const EdgeInsets.all(16),
             title: Text(
               item.title,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 18,
+                color: foreground,
+              ),
             ),
             subtitle: Padding(
               padding: const EdgeInsets.only(top: 8),
@@ -268,17 +272,23 @@ class _FavoritesSectionState extends State<FavoritesSection> {
                 item.content,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(fontFamily: 'OmarNaskh', fontSize: 16),
+                style: TextStyle(
+                  fontFamily: 'OmarNaskh',
+                  fontSize: 16,
+                  color: foreground.withValues(alpha: 0.8),
+                ),
               ),
             ),
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 IconButton(
+                  color: foreground,
                   icon: const Icon(Icons.edit),
                   onPressed: () => _showAddNoteSheet(item),
                 ),
                 IconButton(
+                  color: foreground,
                   icon: const Icon(Icons.delete_outline),
                   onPressed: () {
                     FavoritesService.instance.removeFavorite(item.id);

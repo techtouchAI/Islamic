@@ -48,6 +48,7 @@ import 'providers/settings_provider.dart';
 import 'theme/app_theme.dart';
 import 'ui/navigation/app_navigation_controller.dart';
 import 'ui/navigation/app_bottom_navigation.dart';
+import 'ui/widgets/theme_mode_action_button.dart';
 
 class IslamicPatternPainter extends CustomPainter {
   final Color color;
@@ -462,6 +463,7 @@ class _MainScaffoldState extends State<MainScaffold> {
                   },
                   tooltip: 'بحث شامل',
                 ),
+                const ThemeModeActionButton(),
                 if (isSubPage)
                   IconButton(
                     icon: const Icon(Icons.arrow_forward_ios),

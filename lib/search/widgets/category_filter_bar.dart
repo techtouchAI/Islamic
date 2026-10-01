@@ -27,6 +27,7 @@ class CategoryFilterBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Container(
       height: 56,
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -43,12 +44,14 @@ class CategoryFilterBar extends StatelessWidget {
                 _displayNames[category] ?? category,
                 style: TextStyle(
                   fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                  color: isSelected ? Colors.white : Colors.grey[800],
+                  color: isSelected
+                      ? scheme.onPrimary
+                      : scheme.onSurfaceVariant,
                 ),
               ),
               selected: isSelected,
-              selectedColor: Theme.of(context).primaryColor,
-              backgroundColor: Colors.grey[200],
+              selectedColor: scheme.primary,
+              backgroundColor: scheme.surfaceContainerHighest,
               padding: const EdgeInsets.symmetric(horizontal: 12),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(20),

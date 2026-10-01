@@ -9,6 +9,7 @@ import '../../services/favorites_service.dart'; // For Favorites
 import '../../models/favorite_item.dart';
 import '../widgets/app_standard_card.dart';
 import '../../theme/app_card_theme.dart';
+import '../widgets/theme_mode_action_button.dart';
 
 class MafatihSection extends StatefulWidget {
   final double fontSizeFactor;
@@ -54,7 +55,7 @@ class _MafatihSectionState extends State<MafatihSection> {
         }
 
         final categories = snapshot.data!;
-        final isDark = Theme.of(context).brightness == Brightness.dark;
+        final scheme = Theme.of(context).colorScheme;
 
         return DefaultTabController(
           length: categories.length,
@@ -63,9 +64,7 @@ class _MafatihSectionState extends State<MafatihSection> {
               Container(
                 width: double.infinity,
                 decoration: BoxDecoration(
-                  color: isDark
-                      ? Colors.black.withValues(alpha: 0.5)
-                      : const Color(0xFFFDFBF7),
+                  color: scheme.surfaceContainerLow,
                   border: Border(
                     bottom: BorderSide(
                       color: Theme.of(context)
@@ -78,10 +77,9 @@ class _MafatihSectionState extends State<MafatihSection> {
                 child: TabBar(
                   isScrollable: true,
                   tabAlignment: TabAlignment.center,
-                  indicatorColor: Theme.of(context).colorScheme.primary,
-                  labelColor: Theme.of(context).colorScheme.primary,
-                  unselectedLabelColor:
-                      isDark ? Colors.white70 : Colors.black54,
+                  indicatorColor: scheme.primary,
+                  labelColor: scheme.primary,
+                  unselectedLabelColor: scheme.onSurfaceVariant,
                   tabs: categories.map((cat) {
                     return Tab(
                       child: Row(
@@ -198,6 +196,8 @@ class _MafatihCategoryListState extends State<_MafatihCategoryList> {
             padding: const EdgeInsets.only(bottom: 20),
             itemBuilder: (context, index) {
               final subCat = subCategories[index];
+              final cardForeground =
+                  Theme.of(context).cardColor.contrastTextColor;
               return AppStandardCard(
                 uiOpacity: widget.uiOpacity,
                 customPadding: EdgeInsets.zero,
@@ -228,7 +228,7 @@ class _MafatihCategoryListState extends State<_MafatihCategoryList> {
                       Icon(
                         Icons.folder_open,
                         size: 20,
-                        color: Theme.of(context).colorScheme.primary,
+                        color: cardForeground,
                       ),
                     ],
                   ),
@@ -273,6 +273,8 @@ class _MafatihCategoryListState extends State<_MafatihCategoryList> {
                 padding: const EdgeInsets.only(bottom: 20),
                 itemBuilder: (context, index) {
                   final article = articles[index];
+                  final cardForeground =
+                      Theme.of(context).cardColor.contrastTextColor;
                   final title = article.title;
                   final text = article.text;
 
@@ -309,9 +311,7 @@ class _MafatihCategoryListState extends State<_MafatihCategoryList> {
                                           : Icons.favorite_border,
                                       color: isFav
                                           ? Colors.red
-                                          : Theme.of(context)
-                                              .colorScheme
-                                              .primary,
+                                          : cardForeground,
                                     ),
                                     onPressed: () {
                                       final item = FavoriteItem(
@@ -334,7 +334,7 @@ class _MafatihCategoryListState extends State<_MafatihCategoryList> {
                           Icon(
                             Icons.arrow_forward_ios,
                             size: 16,
-                            color: Theme.of(context).colorScheme.primary,
+                            color: cardForeground,
                           ),
                         ],
                       ),
@@ -385,6 +385,7 @@ class MafatihSubCategoryScreen extends StatelessWidget {
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
+        actions: const [ThemeModeActionButton()],
       ),
       body: SafeArea(
         child: _MafatihCategoryList(

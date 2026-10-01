@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 
 import '../../data/data_manager.dart';
 import '../../services/quran_service.dart';
+import '../../ui/widgets/theme_mode_action_button.dart';
 
 enum IstikharaStep { dua, action, result }
 
@@ -192,6 +193,7 @@ class _IstikharaScreenState extends State<IstikharaScreen>
         centerTitle: true,
         // ✅ استخدام ValueListenableBuilder لتحديث الـ actions ديناميكياً
         actions: [
+          const ThemeModeActionButton(),
           ValueListenableBuilder<IstikharaStep>(
             valueListenable: _stepNotifier,
             builder: (context, step, child) {

@@ -21,14 +21,24 @@ abstract final class AppTheme {
       brightness: brightness,
     );
     final background = dark ? AppPalette.night : AppPalette.ivory;
+    // Preserve the familiar dark surface when a user explicitly chooses white,
+    // while keeping every other selected card colour exact in both themes.
+    final effectiveCardColor =
+        dark && card == Colors.white ? const Color(0xFF1D2B25) : card;
     return ThemeData(
       useMaterial3: true,
       brightness: brightness,
       colorScheme: scheme,
       fontFamily: 'Cairo',
       scaffoldBackgroundColor: background,
-      // A custom card colour remains available; white defaults adapt at night.
-      cardColor: dark && card == Colors.white ? const Color(0xFF1D2B25) : card,
+      cardColor: effectiveCardColor,
+      // Material 3 Cards use surfaceContainerLow by default. Setting the theme
+      // colour here ensures cards without a local override follow the user's
+      // saved card-background choice too.
+      cardTheme: CardThemeData(
+        color: effectiveCardColor,
+        surfaceTintColor: Colors.transparent,
+      ),
       appBarTheme: AppBarTheme(
         backgroundColor: background,
         foregroundColor: scheme.onSurface,

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/search_models.dart';
 import '../../services/search_engine.dart'; // for normalization
+import '../../theme/app_card_theme.dart';
 
 class SearchResultTile extends StatelessWidget {
   final ContentItem item;
@@ -73,12 +74,15 @@ class SearchResultTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final foreground = theme.cardColor.contrastTextColor;
     return Card(
+      color: theme.cardColor,
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: Colors.grey.shade200),
+        side: BorderSide(color: theme.colorScheme.outlineVariant),
       ),
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
@@ -90,10 +94,11 @@ class SearchResultTile extends StatelessWidget {
           child: _buildHighlightedText(
             item.title,
             context,
-            baseStyle: const TextStyle(
+            baseStyle: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
               height: 1.4,
+              color: foreground,
             ),
           ),
         ),

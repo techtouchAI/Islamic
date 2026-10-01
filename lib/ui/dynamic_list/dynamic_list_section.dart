@@ -80,10 +80,10 @@ class _DynamicListSectionState extends State<DynamicListSection> {
             padding: const EdgeInsets.only(bottom: 20),
             itemBuilder: (context, index) {
               final surah = data[index];
+              final theme = Theme.of(context);
+              final cardForeground = theme.cardColor.contrastTextColor;
               return Card(
-                color: Theme.of(context)
-                    .cardColor
-                    .withValues(alpha: widget.uiOpacity),
+                color: theme.cardColor.withValues(alpha: widget.uiOpacity),
                 margin: const EdgeInsets.symmetric(
                   horizontal: 4.0,
                   vertical: 8.0,
@@ -91,7 +91,7 @@ class _DynamicListSectionState extends State<DynamicListSection> {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(15),
                   side: BorderSide(
-                    color: Theme.of(context).colorScheme.primary,
+                    color: theme.colorScheme.outlineVariant,
                     width: 1.0,
                   ),
                 ),
@@ -129,10 +129,7 @@ class _DynamicListSectionState extends State<DynamicListSection> {
                             child: Builder(
                               builder: (context) {
                                 final surahId = surah['id'] as int;
-                                final color = Theme.of(context).brightness ==
-                                        Brightness.dark
-                                    ? Colors.white
-                                    : Colors.black;
+                                final color = cardForeground;
                                 // surah['surah_index'] usually contains the correct 1..114 index
                                 // From the SQL dump we saw:
                                 // Fatiha: id=2, surah_index=1
@@ -163,16 +160,10 @@ class _DynamicListSectionState extends State<DynamicListSection> {
                             vertical: 6,
                           ),
                           decoration: BoxDecoration(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .primary
-                                .withValues(alpha: 0.1),
+                            color: cardForeground.withValues(alpha: 0.12),
                             borderRadius: BorderRadius.circular(20),
                             border: Border.all(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .primary
-                                  .withValues(alpha: 0.3),
+                              color: cardForeground.withValues(alpha: 0.3),
                               width: 1,
                             ),
                           ),
@@ -182,7 +173,7 @@ class _DynamicListSectionState extends State<DynamicListSection> {
                               fontFamily: 'OmarNaskh',
                               fontSize: 12,
                               fontWeight: FontWeight.bold,
-                              color: Theme.of(context).colorScheme.primary,
+                              color: cardForeground,
                             ),
                           ),
                         ),
@@ -211,31 +202,31 @@ class _DynamicListSectionState extends State<DynamicListSection> {
                 mainAxisSpacing: 10,
               ),
               itemCount: data.length,
-              itemBuilder: (context, index) => Container(
-                decoration: BoxDecoration(
-                  color: Theme.of(context)
-                      .cardColor
-                      .withValues(alpha: widget.uiOpacity * 0.8),
-                  borderRadius: BorderRadius.circular(15),
-                  border: Border.all(
-                    color: Theme.of(context).colorScheme.primary,
-                    width: 1.5,
+              itemBuilder: (context, index) {
+                final theme = Theme.of(context);
+                final foreground = theme.cardColor.contrastTextColor;
+                return Container(
+                  decoration: BoxDecoration(
+                    color: theme.cardColor
+                        .withValues(alpha: widget.uiOpacity * 0.8),
+                    borderRadius: BorderRadius.circular(15),
+                    border: Border.all(color: theme.colorScheme.outlineVariant),
                   ),
-                ),
-                alignment: Alignment.center,
-                child: Text(
-                  data[index]['name']?.toString() ??
-                      data[index]['title']?.toString() ??
-                      '',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 20 * widget.fontSizeFactor,
-                    fontFamily: 'me_quran',
-                    color: Theme.of(context).colorScheme.primary,
+                  alignment: Alignment.center,
+                  child: Text(
+                    data[index]['name']?.toString() ??
+                        data[index]['title']?.toString() ??
+                        '',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 20 * widget.fontSizeFactor,
+                      fontFamily: 'me_quran',
+                      color: foreground,
+                    ),
                   ),
-                ),
-              ),
+                );
+              },
             );
     }
 
