@@ -331,9 +331,10 @@ class _MainScaffoldState extends State<MainScaffold> {
           break;
         case UpdateCheckStatus.serverBehind:
           _showUpdateCheckMessage(
-            'تم الاتصال بخادم التحديث، لكن نسخته أقدم من التطبيق: '
-            '$serverRelease مقابل $installedRelease. '
-            'حدّث ملف الإصدار على الخادم.',
+            'تم الاتصال بخادم التحديث، لكن آخر إصدار منشور ($serverRelease) '
+            'أقدم من النسخة المثبتة ($installedRelease). غالباً ثُبّتت نسخة '
+            'اختبارية؛ ارفع الإصدار من لوحة CMS (إدارة التحديثات) '
+            'أو ثبّت نسخة الإصدار الرسمية.',
           );
           break;
         case UpdateCheckStatus.inconsistentVersion:
