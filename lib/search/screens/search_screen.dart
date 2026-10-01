@@ -11,6 +11,7 @@ import '../widgets/search_result_tile.dart';
 import '../widgets/section_header.dart';
 import '../../services/search_engine.dart';
 import '../../services/quran_service.dart';
+import '../../ui/widgets/theme_mode_action_button.dart';
 
 class SearchScreen extends StatefulWidget {
   final double fontSizeFactor;
@@ -199,6 +200,7 @@ class _SearchScreenState extends State<SearchScreen> {
   Widget build(BuildContext context) {
     if (!SearchEngine.instance.isIndexed) {
       return Scaffold(
+        appBar: AppBar(actions: const [ThemeModeActionButton()]),
         body: Center(
           child: SearchEngine.instance.isIndexingNotifier.value
               ? const CircularProgressIndicator()
@@ -219,11 +221,13 @@ class _SearchScreenState extends State<SearchScreen> {
     // The whole scaffold is built once.
     // The AppBar has its own isolated rebuild for the category filter.
     // The body has its own isolated rebuild for results.
+    final theme = Theme.of(context);
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         elevation: 0,
-        backgroundColor: Colors.white,
+        backgroundColor:
+            theme.appBarTheme.backgroundColor ?? theme.colorScheme.surface,
         title: _SearchTextField(
           controller: _searchFieldController,
           focusNode: _searchFocusNode,
@@ -234,6 +238,7 @@ class _SearchScreenState extends State<SearchScreen> {
             _searchFocusNode.requestFocus();
           },
         ),
+        actions: const [ThemeModeActionButton()],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(56),
           child: ValueListenableBuilder<SearchSnapshot>(
@@ -293,6 +298,7 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   Widget _buildResultsHeader(SearchSnapshot snapshot) {
+    final theme = Theme.of(context);
     final query = snapshot.query;
     final total = snapshot.loadedCount;
 
@@ -301,14 +307,14 @@ class _SearchScreenState extends State<SearchScreen> {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      color: Colors.white,
+      color: theme.colorScheme.surfaceContainerLow,
       child: Text(
         query.isEmpty
             ? 'إجمالي المحتوى: $total'
             : 'تم العثور على $total${snapshot.hasMore ? '+' : ''} نتيجة لـ "$query"',
         style: TextStyle(
           fontSize: 13,
-          color: Colors.grey[600],
+          color: theme.colorScheme.onSurfaceVariant,
           fontWeight: FontWeight.w500,
         ),
         textAlign: TextAlign.right,
@@ -484,15 +490,20 @@ class _SearchTextField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return TextField(
       controller: controller,
+      style: TextStyle(color: theme.colorScheme.onSurface),
       focusNode: focusNode,
       textAlign: TextAlign.right,
       textDirection: TextDirection.rtl,
       decoration: InputDecoration(
         hintText: 'ابحث في المحتوى...',
-        hintStyle: TextStyle(color: Colors.grey[400]),
-        prefixIcon: Icon(Icons.search, color: Colors.grey[400]),
+        hintStyle: TextStyle(color: theme.colorScheme.onSurfaceVariant),
+        prefixIcon: Icon(
+          Icons.search,
+          color: theme.colorScheme.onSurfaceVariant,
+        ),
         suffixIcon: ValueListenableBuilder<TextEditingValue>(
           valueListenable: controller,
           builder: (context, value, child) {
@@ -504,7 +515,7 @@ class _SearchTextField extends StatelessWidget {
           },
         ),
         filled: true,
-        fillColor: Colors.grey[100],
+        fillColor: theme.colorScheme.surfaceContainerHighest,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
@@ -529,17 +540,25 @@ class _ErrorState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 32),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.error_outline, size: 64, color: Colors.grey[400]),
+            Icon(
+              Icons.error_outline,
+              size: 64,
+              color: theme.colorScheme.error,
+            ),
             const SizedBox(height: 16),
             Text(
               message,
-              style: TextStyle(fontSize: 15, color: Colors.grey[700]),
+              style: TextStyle(
+                fontSize: 15,
+                color: theme.colorScheme.onSurface,
+              ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 20),
@@ -560,24 +579,33 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final muted = theme.colorScheme.onSurfaceVariant;
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.search_off, size: 64, color: Colors.grey[300]),
+          Icon(
+            Icons.search_off,
+            size: 64,
+            color: muted.withValues(alpha: 0.55),
+          ),
           const SizedBox(height: 16),
           Text(
             'لا توجد نتائج',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w600,
-              color: Colors.grey[400],
+              color: muted,
             ),
           ),
           const SizedBox(height: 8),
           Text(
             'جرب البحث بكلمات مختلفة',
-            style: TextStyle(fontSize: 14, color: Colors.grey[400]),
+            style: TextStyle(
+              fontSize: 14,
+              color: muted.withValues(alpha: 0.85),
+            ),
           ),
         ],
       ),

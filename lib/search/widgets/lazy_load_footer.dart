@@ -47,7 +47,7 @@ class LazyLoadFooter extends StatelessWidget {
               : Text(
                   'تم تحميل جميع النتائج ($loadedCount)',
                   style: theme.textTheme.bodySmall?.copyWith(
-                    color: Colors.grey[600],
+                    color: theme.colorScheme.onSurfaceVariant,
                   ),
                   textAlign: TextAlign.center,
                 ),

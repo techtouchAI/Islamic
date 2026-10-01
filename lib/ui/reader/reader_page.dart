@@ -7,7 +7,9 @@ import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../sections/html_content_renderer.dart';
+import '../../theme/app_card_theme.dart';
 import '../../utils/content_sanitizer.dart';
+import '../widgets/theme_mode_action_button.dart';
 
 /// The framed surah-name strip drawn at the top of every Quran page.
 /// Precached before scrolling to a target ayah so its late decode cannot
@@ -29,6 +31,7 @@ class SurahHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final foregroundColor = color;
     return Container(
       color: Colors.transparent,
       width: double.infinity,
@@ -40,9 +43,7 @@ class SurahHeader extends StatelessWidget {
             'assets/images/quran_surah_name_frame.png',
             width: double.infinity,
             fit: BoxFit.fitWidth,
-            color: Theme.of(context).brightness == Brightness.dark
-                ? Colors.white
-                : Colors.black,
+            color: foregroundColor,
             colorBlendMode: BlendMode.srcIn,
             // A missing asset must never crash the reader or break scrolling.
             errorBuilder: (context, error, stackTrace) =>
@@ -53,9 +54,6 @@ class SurahHeader extends StatelessWidget {
             Builder(
               builder: (context) {
                 final id = surahId!;
-                final color = Theme.of(context).brightness == Brightness.dark
-                    ? Colors.white
-                    : Colors.black;
                 // SurahHeader only receives `surahId` (which maps to db 'id').
                 // Fatiha (id 2) -> 1
                 // Baqarah (id 3) -> 2
@@ -68,7 +66,7 @@ class SurahHeader extends StatelessWidget {
                   'assets/images/quran/quran_surah_names_$imageId.png',
                   height: 32,
                   fit: BoxFit.contain,
-                  color: color,
+                  color: foregroundColor,
                   colorBlendMode: BlendMode.srcIn,
                   errorBuilder: (context, error, stackTrace) =>
                       const SizedBox(height: 32),
@@ -134,15 +132,20 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
   /// arrives as prose instead of as markup.
   late final String _shareText = ContentSanitizer.plainText(widget.content);
 
-  Color _parseColor(String colorStr) {
-    if (colorStr.startsWith('#')) {
-      try {
-        return Color(int.parse(colorStr.substring(1), radix: 16) + 0xFF000000);
-      } catch (e) {
-        return Colors.black;
-      }
-    }
-    return Colors.black; // default
+  Color? _parseColor(String? colorString) {
+    final value = colorString?.trim();
+    if (value == null || value.isEmpty) return null;
+
+    final hex = value.startsWith('#')
+        ? value.substring(1)
+        : value.toLowerCase().startsWith('0x')
+            ? value.substring(2)
+            : value;
+    final parsed = int.tryParse(hex, radix: 16);
+    if (parsed == null) return null;
+    if (hex.length == 6) return Color(0xFF000000 | parsed);
+    if (hex.length == 8) return Color(parsed);
+    return null;
   }
 
   String _convertToArabicNumber(String number) {
@@ -216,10 +219,10 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    final primary = Theme.of(context).colorScheme.primary;
-    final dynamicBgColor = _customBgColor ?? Theme.of(context).cardColor;
-    final dynamicTextColor =
-        dynamicBgColor.computeLuminance() > 0.5 ? Colors.black87 : Colors.white;
+    final theme = Theme.of(context);
+    final dynamicBgColor = _customBgColor ?? theme.cardColor;
+    final dynamicTextColor = dynamicBgColor.contrastTextColor;
+    final footerForeground = theme.cardColor.contrastTextColor;
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.title, style: const TextStyle(fontSize: 16)),
@@ -229,6 +232,7 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
+          const ThemeModeActionButton(),
           IconButton(
             icon: const Icon(Icons.content_copy),
             onPressed: () {
@@ -255,12 +259,15 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
               child: Container(
                 width: double.infinity,
                 decoration: BoxDecoration(
-                  border: Border.all(color: primary, width: 1.0),
+                  border: Border.all(
+                    color: dynamicTextColor.withValues(alpha: 0.35),
+                    width: 1.0,
+                  ),
                   borderRadius: BorderRadius.circular(25),
-                  color: _customBgColor ?? Theme.of(context).cardColor,
+                  color: dynamicBgColor,
                   boxShadow: [
                     BoxShadow(
-                      color: primary.withValues(alpha: 0.1),
+                      color: dynamicTextColor.withValues(alpha: 0.08),
                       blurRadius: 15,
                       spreadRadius: 2,
                     ),
@@ -276,7 +283,7 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
                         ),
                         child: SurahHeader(
                           title: widget.title,
-                          color: primary,
+                          color: dynamicTextColor,
                           surahId: widget.surahId,
                         ),
                       ),
@@ -296,7 +303,7 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
                                 fontFamily: 'OmarNaskh',
                                 fontSize: 30,
                                 fontWeight: FontWeight.bold,
-                                color: primary,
+                                color: dynamicTextColor,
                               ),
                             ),
                             const SizedBox(height: 15),
@@ -307,7 +314,8 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
                                 (index) => Icon(
                                   Icons.star,
                                   size: 12,
-                                  color: primary.withValues(alpha: 0.5),
+                                  color:
+                                      dynamicTextColor.withValues(alpha: 0.5),
                                 ),
                               ),
                             ),
@@ -376,16 +384,12 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
                                             : EdgeInsets.zero,
                                         decoration: isSearchTarget
                                             ? BoxDecoration(
-                                                color: Theme.of(context)
-                                                    .colorScheme
-                                                    .primary
+                                                color: dynamicTextColor
                                                     .withValues(alpha: 0.16),
                                                 borderRadius:
                                                     BorderRadius.circular(12),
                                                 border: Border.all(
-                                                  color: Theme.of(context)
-                                                      .colorScheme
-                                                      .primary
+                                                  color: dynamicTextColor
                                                       .withValues(alpha: 0.45),
                                                 ),
                                               )
@@ -466,7 +470,7 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
                                         style: TextStyle(
                                           fontFamily: 'me_quran',
                                           fontSize: 26 * _factor,
-                                          color: primary,
+                                          color: dynamicTextColor,
                                         ),
                                       ),
                                       const SizedBox(height: 15),
@@ -482,14 +486,15 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
                                           fontSize: 22 * _factor,
                                           height: 2.2,
                                           fontWeight: FontWeight.bold,
-                                          color: widget.titleColor != null
-                                              ? _parseColor(widget.titleColor!)
-                                              : dynamicTextColor,
+                                          color:
+                                              _parseColor(widget.titleColor) ??
+                                                  dynamicTextColor,
                                         ),
                                       ),
                                       const SizedBox(height: 15),
                                       Divider(
-                                        color: primary.withValues(alpha: 0.3),
+                                        color: dynamicTextColor.withValues(
+                                            alpha: 0.3),
                                         thickness: 1,
                                       ),
                                       const SizedBox(height: 15),
@@ -554,7 +559,7 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
                               (index) => Icon(
                                 Icons.star,
                                 size: 12,
-                                color: primary.withValues(alpha: 0.5),
+                                color: dynamicTextColor.withValues(alpha: 0.5),
                               ),
                             ),
                           ),
@@ -574,7 +579,7 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
               MediaQuery.of(context).padding.bottom + 10,
             ),
             decoration: BoxDecoration(
-              color: Theme.of(context).cardColor,
+              color: theme.cardColor,
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withValues(alpha: 0.05),
@@ -582,67 +587,79 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
                 ),
               ],
             ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            child: DefaultTextStyle(
+              style: theme.textTheme.bodyMedium?.copyWith(
+                    color: footerForeground,
+                  ) ??
+                  TextStyle(color: footerForeground),
+              child: IconTheme(
+                data: IconThemeData(color: footerForeground),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Text(
-                      'لون البطاقة:',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    ...[
-                      null,
-                      const Color(0xFFFDF5E6),
-                      const Color(0xFFE0EEE0),
-                      const Color(0xFFE6E6FA),
-                      const Color(0xFF2C2C2C),
-                    ].map(
-                      (c) => GestureDetector(
-                        onTap: () => setState(() => _customBgColor = c),
-                        child: CircleAvatar(
-                          radius: 14,
-                          backgroundColor: c ?? Colors.grey[300],
-                          child: _customBgColor == c
-                              ? const Icon(
-                                  Icons.check,
-                                  size: 14,
-                                  color: Colors.blue,
-                                )
-                              : null,
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        const Text(
+                          'لون البطاقة:',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                      ),
+                        ...[
+                          null,
+                          const Color(0xFFFDF5E6),
+                          const Color(0xFFE0EEE0),
+                          const Color(0xFFE6E6FA),
+                          const Color(0xFF2C2C2C),
+                        ].map((color) {
+                          final swatchColor = color ?? theme.cardColor;
+                          return GestureDetector(
+                            onTap: () => setState(() => _customBgColor = color),
+                            child: CircleAvatar(
+                              radius: 14,
+                              backgroundColor: swatchColor,
+                              child: _customBgColor == color
+                                  ? Icon(
+                                      Icons.check,
+                                      size: 14,
+                                      color: swatchColor.contrastTextColor,
+                                    )
+                                  : null,
+                            ),
+                          );
+                        }),
+                      ],
+                    ),
+                    const Divider(height: 15),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.remove_circle_outline),
+                          onPressed: () => setState(
+                            () => _factor = max(0.5, _factor - 0.1),
+                          ),
+                        ),
+                        const Text(
+                          ' Aa ',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.add_circle_outline),
+                          onPressed: () => setState(
+                            () => _factor = min(3.0, _factor + 0.1),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
-                const Divider(height: 15),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.remove_circle_outline),
-                      onPressed: () =>
-                          setState(() => _factor = max(0.5, _factor - 0.1)),
-                    ),
-                    const Text(
-                      ' Aa ',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.add_circle_outline),
-                      onPressed: () =>
-                          setState(() => _factor = min(3.0, _factor + 0.1)),
-                    ),
-                  ],
-                ),
-              ],
+              ),
             ),
           ),
         ],

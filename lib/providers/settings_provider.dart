@@ -5,13 +5,13 @@ import '../data/data_manager.dart';
 import '../theme/app_theme.dart';
 
 class SettingsProvider extends ChangeNotifier {
-  ThemeMode _themeMode = ThemeMode.light;
+  ThemeMode _themeMode = ThemeMode.dark;
   double _fontSizeFactor = 1.0;
   Color _primaryColor = AppPalette.forest;
   double _uiOpacity = 1.0;
   String? _backgroundImagePath;
   String? _selectedBase64Bg;
-  Color _cardColor = Colors.white;
+  Color _cardColor = AppPalette.forest;
   Map<String, bool> _homeVisibility = {};
   int _hijriAdjustment = 0;
 
@@ -44,10 +44,17 @@ class SettingsProvider extends ChangeNotifier {
     final dbSettings = DataManager.getSettings();
 
     final defaultPrimary = AppPalette.forest.toARGB32();
-    int defaultCard =
-        int.tryParse(dbSettings['card_color'] ?? '0xFFFFFFFF') ?? 0xFFFFFFFF;
+    final configuredCardColor =
+        int.tryParse(dbSettings['card_color']?.toString() ?? '');
+    // Older bundled and cloud documents used white as the implicit default.
+    // Keep explicitly configured colours, but migrate that legacy default to
+    // the same forest green used by the daily worship actions.
+    final defaultCard = configuredCardColor == null ||
+            configuredCardColor == Colors.white.toARGB32()
+        ? AppPalette.forest.toARGB32()
+        : configuredCardColor;
 
-    _themeMode = (prefs.getString('theme') ?? 'light') == 'light'
+    _themeMode = (prefs.getString('theme') ?? 'dark') == 'light'
         ? ThemeMode.light
         : ThemeMode.dark;
     _fontSizeFactor = prefs.getDouble('fontSize') ?? 1.0;

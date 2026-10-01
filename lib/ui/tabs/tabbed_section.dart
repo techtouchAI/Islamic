@@ -19,7 +19,7 @@ class TabbedSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final scheme = Theme.of(context).colorScheme;
 
     return DefaultTabController(
       length: tabs.length,
@@ -28,9 +28,7 @@ class TabbedSection extends StatelessWidget {
           Container(
             width: double.infinity,
             decoration: BoxDecoration(
-              color: isDark
-                  ? Colors.black.withValues(alpha: 0.5)
-                  : const Color(0xFFFDFBF7),
+              color: scheme.surfaceContainerLow,
               border: Border(
                 bottom: BorderSide(
                   color: Theme.of(context)
@@ -43,9 +41,9 @@ class TabbedSection extends StatelessWidget {
             child: TabBar(
               isScrollable: true,
               tabAlignment: TabAlignment.center,
-              indicatorColor: Theme.of(context).colorScheme.primary,
-              labelColor: Theme.of(context).colorScheme.primary,
-              unselectedLabelColor: isDark ? Colors.white70 : Colors.black54,
+              indicatorColor: scheme.primary,
+              labelColor: scheme.primary,
+              unselectedLabelColor: scheme.onSurfaceVariant,
               tabs: List.generate(
                 tabs.length,
                 (i) => Tab(

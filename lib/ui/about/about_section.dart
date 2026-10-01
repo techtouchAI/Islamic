@@ -9,23 +9,26 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../data/data_manager.dart';
 import '../../main.dart'; // For shared material icon mapping
+import '../../theme/app_card_theme.dart';
 
 class AboutSection extends StatelessWidget {
   const AboutSection({super.key});
   @override
   Widget build(BuildContext context) {
     final about = DataManager.getAbout();
+    final theme = Theme.of(context);
+    final foreground = theme.cardColor.contrastTextColor;
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24.0),
       child: Center(
         child: Container(
           padding: const EdgeInsets.all(30),
           decoration: BoxDecoration(
-            color: Theme.of(context).cardColor,
+            color: theme.cardColor,
             borderRadius: BorderRadius.circular(30),
             border: Border.all(
-              color: Theme.of(context).colorScheme.primary,
-              width: 2,
+              color: theme.colorScheme.outlineVariant,
+              width: 1,
             ),
             boxShadow: [
               BoxShadow(
@@ -73,16 +76,17 @@ class AboutSection extends StatelessWidget {
                           about['developer_icon']?.toString() ?? 'person',
                         ),
                         size: 60,
-                        color: Theme.of(context).colorScheme.primary,
+                        color: foreground,
                       )
                     : null,
               ),
               const SizedBox(height: 20),
               Text(
                 about['developer_name']?.toString() ?? 'المطور',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
+                  color: foreground,
                 ),
               ),
               const SizedBox(height: 15),
@@ -100,9 +104,13 @@ class AboutSection extends StatelessWidget {
                 },
                 text: about['app_info']?.toString() ?? '',
                 textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 16, height: 1.6),
+                style: TextStyle(
+                  fontSize: 16,
+                  height: 1.6,
+                  color: foreground,
+                ),
                 linkStyle: TextStyle(
-                  color: Theme.of(context).colorScheme.primary,
+                  color: foreground,
                   decoration: TextDecoration.underline,
                 ),
               ),
@@ -183,9 +191,7 @@ class AboutSection extends StatelessWidget {
                         }
                       },
                       child: IconTheme(
-                        data: IconThemeData(
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
+                        data: IconThemeData(color: foreground),
                         child: iconWidget,
                       ),
                     );
@@ -212,8 +218,8 @@ class AboutSection extends StatelessWidget {
                   icon: const Icon(Icons.link),
                   label: const Text('زيارة الموقع الشخصي'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context).colorScheme.primary,
-                    foregroundColor: Colors.white,
+                    backgroundColor: theme.colorScheme.primary,
+                    foregroundColor: theme.colorScheme.onPrimary,
                     padding: const EdgeInsets.symmetric(
                       horizontal: 20,
                       vertical: 12,

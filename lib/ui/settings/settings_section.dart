@@ -10,6 +10,8 @@ import '../../data/data_manager.dart';
 import 'package:provider/provider.dart';
 
 import '../../providers/settings_provider.dart';
+import '../../theme/app_theme.dart';
+import '../../theme/app_card_theme.dart';
 import '../../main.dart';
 
 import 'package:path_provider/path_provider.dart';
@@ -21,6 +23,7 @@ class SettingsSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final settingsProvider = context.watch<SettingsProvider>();
     final comfortColors = [
+      AppPalette.forest,
       Colors.white,
       const Color(0xFFFDF5E6),
       const Color(0xFFF5F5DC),
@@ -81,6 +84,7 @@ class SettingsSection extends StatelessWidget {
             Wrap(
               spacing: 12,
               children: [
+                AppPalette.forest,
                 Colors.blue,
                 Colors.red,
                 Colors.black,
@@ -98,9 +102,9 @@ class SettingsSection extends StatelessWidget {
                         radius: 18,
                         child: settingsProvider.primaryColor.toARGB32() ==
                                 c.toARGB32()
-                            ? const Icon(
+                            ? Icon(
                                 Icons.check,
-                                color: Colors.white,
+                                color: c.contrastTextColor,
                                 size: 16,
                               )
                             : null,
@@ -130,9 +134,7 @@ class SettingsSection extends StatelessWidget {
                                 c.toARGB32()
                             ? Icon(
                                 Icons.check,
-                                color: c.computeLuminance() > 0.5
-                                    ? Colors.black
-                                    : Colors.white,
+                                color: c.contrastTextColor,
                                 size: 16,
                               )
                             : null,
@@ -257,17 +259,16 @@ class SettingsSection extends StatelessWidget {
     String title,
     List<Widget> children,
   ) {
-    final settingsProvider = context.watch<SettingsProvider>();
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = Theme.of(context);
 
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.only(bottom: 20),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: isDark ? Colors.black : Colors.white,
+        color: theme.colorScheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: settingsProvider.primaryColor, width: 2),
+        border: Border.all(color: theme.colorScheme.outlineVariant, width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -275,7 +276,7 @@ class SettingsSection extends StatelessWidget {
           Text(
             title,
             style: TextStyle(
-              color: settingsProvider.primaryColor,
+              color: theme.colorScheme.primary,
               fontWeight: FontWeight.bold,
               fontSize: 15,
             ),

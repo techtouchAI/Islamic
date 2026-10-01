@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../providers/settings_provider.dart';
 import '../../data/repositories/calendar_repository.dart';
+import '../widgets/theme_mode_action_button.dart';
 
 final RouteObserver<PageRoute> routeObserver = RouteObserver<PageRoute>();
 
@@ -656,6 +657,7 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
           ),
         ),
         actions: [
+          const ThemeModeActionButton(color: Colors.amber),
           IconButton(
             icon: const Icon(Icons.today, color: Colors.amber),
             tooltip: 'اليوم',

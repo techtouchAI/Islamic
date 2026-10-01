@@ -21,6 +21,7 @@ class AppDrawer extends StatelessWidget {
     final about = DataManager.getAbout();
     final settings = DataManager.getSettings();
     final sections = DataManager.getSections();
+    final scheme = Theme.of(context).colorScheme;
     return Drawer(
       child: Column(
         children: [
@@ -31,8 +32,8 @@ class AppDrawer extends StatelessWidget {
                 begin: Alignment.topRight,
                 end: Alignment.bottomLeft,
                 colors: [
-                  Theme.of(context).colorScheme.primary,
-                  Theme.of(context).colorScheme.primary.withValues(alpha: 0.8),
+                  scheme.primary,
+                  scheme.primary.withValues(alpha: 0.8),
                 ],
               ),
             ),
@@ -46,17 +47,20 @@ class AppDrawer extends StatelessWidget {
                     height: 60,
                   ),
                   const SizedBox(height: 10),
-                  const Text(
+                  Text(
                     'تطبيق الذاكرين',
                     style: TextStyle(
-                      color: Colors.white,
+                      color: scheme.onPrimary,
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                   Text(
                     about['developer_name']?.toString() ?? '',
-                    style: const TextStyle(color: Colors.white70, fontSize: 14),
+                    style: TextStyle(
+                      color: scheme.onPrimary.withValues(alpha: 0.72),
+                      fontSize: 14,
+                    ),
                   ),
                 ],
               ),

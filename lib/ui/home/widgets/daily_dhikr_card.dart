@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../../theme/app_card_theme.dart';
+import '../../../theme/app_theme.dart';
 import '../../../utils/string_extensions.dart';
 
 /// A personal daily goal, separate from the existing tasbih al-Zahra state.
@@ -91,7 +93,13 @@ class _DailyDhikrCardState extends State<DailyDhikrCard> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final cardColor = theme.cardColor;
+    final foreground = cardColor.contrastTextColor;
+    final progressColor = foreground == Colors.white
+        ? AppPalette.gold
+        : theme.colorScheme.primary;
     return Card(
+      color: cardColor,
       margin: EdgeInsets.zero,
       elevation: 0,
       shape: RoundedRectangleBorder(
@@ -103,24 +111,29 @@ class _DailyDhikrCardState extends State<DailyDhikrCard> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('ذكر اليوم',
-                style: TextStyle(
-                    color: theme.cardColor.computeLuminance() > .5
-                        ? const Color(0xFF123C32)
-                        : Colors.white70)),
+            Text(
+              'ذكر اليوم',
+              style: TextStyle(
+                color: foreground.withValues(alpha: 0.82),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
             const SizedBox(height: 8),
-            Text('سبحان الله وبحمده',
-                style: TextStyle(
-                    fontFamily: 'OmarNaskh',
-                    fontSize: 26,
-                    color: theme.cardColor.computeLuminance() > .5
-                        ? Colors.black87
-                        : Colors.white)),
+            Text(
+              'سبحان الله وبحمده',
+              style: TextStyle(
+                fontFamily: 'OmarNaskh',
+                fontSize: 26,
+                color: foreground,
+              ),
+            ),
             const SizedBox(height: 14),
             LinearProgressIndicator(
               value: _count / _target,
               minHeight: 5,
               borderRadius: BorderRadius.circular(8),
+              color: progressColor,
+              backgroundColor: foreground.withValues(alpha: 0.18),
               semanticsLabel: 'تقدم هدف الذكر الشخصي',
             ),
             const SizedBox(height: 12),
@@ -136,13 +149,14 @@ class _DailyDhikrCardState extends State<DailyDhikrCard> {
                   ? 'أتممت هدف اليوم · ١٠٠'
                   : 'تسبيح · $_count / $_target'.toEasternArabic()),
             ),
-            Text('هدف يومي شخصي',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                    fontSize: 11,
-                    color: theme.cardColor.computeLuminance() > .5
-                        ? Colors.black54
-                        : Colors.white70)),
+            Text(
+              'هدف يومي شخصي',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 11,
+                color: foreground.withValues(alpha: 0.72),
+              ),
+            ),
             if (_failed)
               TextButton(
                   onPressed: _prefs == null ? _load : _persist,

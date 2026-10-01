@@ -1,3 +1,4 @@
+import 'package:aldhakereen/theme/app_theme.dart';
 import 'package:aldhakereen/ui/home/widgets/daily_dhikr_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -22,6 +23,37 @@ void main() {
     await tester.pumpWidget(app());
     await tester.pumpAndSettle();
     expect(find.text('تسبيح · ٤ / ١٠٠'), findsOneWidget);
+    await tester.pumpWidget(const SizedBox());
+  });
+
+  testWidgets('daily dhikr foreground and progress remain legible at night',
+      (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    await tester.pumpWidget(MaterialApp(
+      theme: AppTheme.build(
+        brightness: Brightness.dark,
+        primary: AppPalette.forest,
+        card: AppPalette.forest,
+      ),
+      home: const Scaffold(body: DailyDhikrCard()),
+    ));
+    await tester.pumpAndSettle();
+
+    final card = tester.widget<Card>(find.byType(Card));
+    expect(card.color, AppPalette.forest);
+    expect(
+      tester.widget<Text>(find.text('سبحان الله وبحمده')).style?.color,
+      Colors.white,
+    );
+    expect(
+      tester
+          .widget<LinearProgressIndicator>(
+            find.byType(LinearProgressIndicator),
+          )
+          .color,
+      AppPalette.gold,
+    );
+    expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox());
   });
 
