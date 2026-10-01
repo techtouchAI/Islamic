@@ -15,9 +15,8 @@ class ThemeModeActionButton extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return IconButton(
       key: const ValueKey('theme-mode-toggle'),
-      tooltip: isDark
-          ? 'التبديل إلى الوضع النهاري'
-          : 'التبديل إلى الوضع الليلي',
+      tooltip:
+          isDark ? 'التبديل إلى الوضع النهاري' : 'التبديل إلى الوضع الليلي',
       icon: Icon(
         isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
         color: color,

@@ -309,9 +309,8 @@ class _MafatihCategoryListState extends State<_MafatihCategoryList> {
                                       isFav
                                           ? Icons.favorite
                                           : Icons.favorite_border,
-                                      color: isFav
-                                          ? Colors.red
-                                          : cardForeground,
+                                      color:
+                                          isFav ? Colors.red : cardForeground,
                                     ),
                                     onPressed: () {
                                       final item = FavoriteItem(

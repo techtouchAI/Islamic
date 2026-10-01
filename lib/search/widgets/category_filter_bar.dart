@@ -44,9 +44,8 @@ class CategoryFilterBar extends StatelessWidget {
                 _displayNames[category] ?? category,
                 style: TextStyle(
                   fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                  color: isSelected
-                      ? scheme.onPrimary
-                      : scheme.onSurfaceVariant,
+                  color:
+                      isSelected ? scheme.onPrimary : scheme.onSurfaceVariant,
                 ),
               ),
               selected: isSelected,

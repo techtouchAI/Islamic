@@ -6,7 +6,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
-  test('new installs use dark mode and worship-card green by default', () async {
+  test('new installs use dark mode and worship-card green by default',
+      () async {
     SharedPreferences.setMockInitialValues(<String, Object>{});
     DataManager.setDB(<String, dynamic>{
       'sections': <String, dynamic>{},

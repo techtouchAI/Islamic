@@ -314,7 +314,8 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
                                 (index) => Icon(
                                   Icons.star,
                                   size: 12,
-                                  color: dynamicTextColor.withValues(alpha: 0.5),
+                                  color:
+                                      dynamicTextColor.withValues(alpha: 0.5),
                                 ),
                               ),
                             ),
@@ -485,13 +486,15 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
                                           fontSize: 22 * _factor,
                                           height: 2.2,
                                           fontWeight: FontWeight.bold,
-                                          color: _parseColor(widget.titleColor) ??
-                                              dynamicTextColor,
+                                          color:
+                                              _parseColor(widget.titleColor) ??
+                                                  dynamicTextColor,
                                         ),
                                       ),
                                       const SizedBox(height: 15),
                                       Divider(
-                                        color: dynamicTextColor.withValues(alpha: 0.3),
+                                        color: dynamicTextColor.withValues(
+                                            alpha: 0.3),
                                         thickness: 1,
                                       ),
                                       const SizedBox(height: 15),
@@ -613,8 +616,7 @@ class _ReaderPageState extends State<ReaderPage> with TickerProviderStateMixin {
                         ].map((color) {
                           final swatchColor = color ?? theme.cardColor;
                           return GestureDetector(
-                            onTap: () =>
-                                setState(() => _customBgColor = color),
+                            onTap: () => setState(() => _customBgColor = color),
                             child: CircleAvatar(
                               radius: 14,
                               backgroundColor: swatchColor,

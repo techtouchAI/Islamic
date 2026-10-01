@@ -46,9 +46,11 @@ void main() {
       Colors.white,
     );
     expect(
-      tester.widget<LinearProgressIndicator>(
-        find.byType(LinearProgressIndicator),
-      ).color,
+      tester
+          .widget<LinearProgressIndicator>(
+            find.byType(LinearProgressIndicator),
+          )
+          .color,
       AppPalette.gold,
     );
     expect(tester.takeException(), isNull);
