@@ -193,6 +193,7 @@ void main() {
 
       expect(DataManager.getSections().containsKey('prophets_tree'), isTrue);
       expect(DataManager.getItems('prophets_tree'), isNotEmpty);
+      expect(DataManager.getItems('prophets_tree').first['type'], isNotNull);
       // The cached content is otherwise untouched.
       expect(
         DataManager.getDB()!['content']['sync_marker'][0]['title'],
