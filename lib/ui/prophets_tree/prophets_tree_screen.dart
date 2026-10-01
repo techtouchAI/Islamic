@@ -64,7 +64,10 @@ class _ProphetsTreeScreenState extends State<ProphetsTreeScreen> {
   }
 
   static List<_TreeNode> _decodeNodes() =>
-      DataManager.getItems('prophets_tree').map(_TreeNode.fromMap).toList();
+      DataManager.getItems('prophets_tree')
+          .whereType<Map>()
+          .map(_TreeNode.fromMap)
+          .toList();
 
   void _reload() {
     if (!mounted) return;
