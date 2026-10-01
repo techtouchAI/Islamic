@@ -83,3 +83,22 @@ No native-device runtime verification was performed in the sandbox.
   keep-newest policy of the calendar table extended to sections, and it is
   what keeps the doorway and its drawer entry from vanishing after a sync
   with an older document.
+
+## Prophets tree as one page
+- The `prophets_tree` section is no longer three reader articles: it is a
+  single scrollable page (`ProphetsTreeScreen`) drawing the lineage as a
+  tree, matching the approved reference design: one trunk from Adam to
+  `Abd al-Muttalib with ancestor beads and prophet cards, a fork into
+  `Abd Allah and Abu Talib, the marriage line of `Ali and Fatima, the
+  grid of al-Hasan and al-Husayn, the chain of the twelve imams with
+  Eastern Arabic medallions and a glowing card for al-Mahdi, and the
+  supplement of the prophetic branches of Ibrahim and Nuh.
+- The tree is data, not code: every node is an entry of
+  `content.prophets_tree` (`group` places it, `type` colours it, `tags`
+  reach it through filters), so the CMS can correct a name or a line
+  without a release. The drawer entry carries no count badge: the tree is
+  one page, not a list of entries.
+- Filter chips over the page collapse it onto a single tag — the prophets
+  and messengers, the paternal line, the Quraysh line, the twelve imams,
+  or the people of the house — and the show-everything chip restores the
+  full drawing. Colours adapt to the light and dark themes.

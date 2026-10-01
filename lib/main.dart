@@ -27,6 +27,7 @@ import 'ui/home/home_section.dart';
 import 'ui/about/about_section.dart';
 import 'ui/tabs/tabbed_section.dart';
 import 'ui/dynamic_list/dynamic_list_section.dart';
+import 'ui/prophets_tree/prophets_tree_screen.dart';
 import 'ui/settings/settings_section.dart';
 import 'ui/prayer_times/prayer_times_section.dart';
 import 'ui/mafatih/mafatih_section.dart';
@@ -633,6 +634,12 @@ class _MainScaffoldState extends State<MainScaffold> {
           sectionKey: 'prophets_stories',
           fontSizeFactor: settingsProvider.fontSizeFactor,
           uiOpacity: settingsProvider.uiOpacity,
+        );
+      case 'prophets_tree':
+        return ProphetsTreeScreen(
+          key: const ValueKey('prophets_tree'),
+          title: _getSectionTitle('prophets_tree'),
+          fontSizeFactor: settingsProvider.fontSizeFactor,
         );
       case 'istikhara':
         return const IstikharaScreen(key: ValueKey('istikhara'));
