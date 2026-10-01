@@ -43,6 +43,7 @@ class ProphetsTreeCard extends StatelessWidget {
     final theme = Theme.of(context);
     final foreground = theme.cardColor.contrastTextColor;
     final isDark = theme.brightness == Brightness.dark;
+    final goldBorder = Color.lerp(theme.colorScheme.outlineVariant, gold, 0.6);
     return Card(
       margin: EdgeInsets.zero,
       elevation: 0,
@@ -50,14 +51,7 @@ class ProphetsTreeCard extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(22),
-        side: BorderSide(
-          color: Color.lerp(
-            theme.colorScheme.outlineVariant,
-            gold,
-            0.6,
-          )!
-              .withValues(alpha: 0.55),
-        ),
+        side: BorderSide(color: (goldBorder ?? gold).withValues(alpha: 0.55)),
       ),
       child: InkWell(
         onTap: onTap,
