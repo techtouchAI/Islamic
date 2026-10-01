@@ -139,7 +139,8 @@ void main() {
     expect(find.text('الحسن بن علي'), findsOneWidget);
     expect(find.text('الحسين بن علي'), findsOneWidget);
 
-    // The chain carries Eastern Arabic medallions.
+    // The chain carries its own header and Eastern Arabic medallions.
+    expect(find.text('سلسلة الأئمة الاثنا عشر'), findsOneWidget);
     expect(find.text('٤'), findsOneWidget);
     expect(find.text('١٢'), findsOneWidget);
 
