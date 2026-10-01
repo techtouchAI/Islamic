@@ -2101,9 +2101,20 @@
           );
 
           let latestReleaseTag = "غير متوفر";
+          let releaseBuild = null;
+          let releaseHasApk = false;
+          let releaseDate = "";
           if (releaseRes.ok) {
             const releaseData = await releaseRes.json();
             latestReleaseTag = releaseData.tag_name || "غير متوفر";
+            const m = /^v?(\d+(?:\.\d+)*)[-+](\d+)$/.exec(latestReleaseTag);
+            if (m) releaseBuild = parseInt(m[2], 10);
+            releaseHasApk = (releaseData.assets || []).some(
+              (a) => a.name === "app-release.apk",
+            );
+            releaseDate = releaseData.published_at
+              ? new Date(releaseData.published_at).toLocaleString("ar-IQ")
+              : "";
           }
 
           // 2. Fetch pubspec.yaml
@@ -2151,7 +2162,33 @@
             statusIcon.innerText = "check_circle";
             statusIcon.className = "material-icons text-success";
             statusTitle.innerText = "متصل بـ GitHub";
-            statusText.innerText = `الإصدار في السيرفر (Release): ${latestReleaseTag} | البناء الحالي في الكود (pubspec): ${window.otaCurrentBuildNumber}`;
+            // Compare the published release (what installed apps check)
+            // with the pubspec on main (what the next build will publish).
+            const pub = `${window.otaCurrentVersionName}+${window.otaCurrentBuildNumber}`;
+            let verdict = "";
+            if (releaseBuild === null) {
+              verdict = "⚠️ لا يوجد Release منشور بصيغة صحيحة بعد.";
+            } else if (releaseBuild === window.otaCurrentBuildNumber) {
+              verdict = "✅ آخر Release يطابق pubspec.";
+            } else if (releaseBuild < window.otaCurrentBuildNumber) {
+              verdict = "⏳ pubspec أحدث من آخر Release: بناء التحديث قيد التنفيذ أو فشل (راجع GitHub Actions).";
+            } else {
+              verdict = "⚠️ آخر Release أحدث من pubspec: ارفع رقم البناء أعلى من " + releaseBuild + ".";
+            }
+            if (releaseBuild !== null && !releaseHasApk) {
+              verdict += " ⚠️ الـ Release لا يحتوي app-release.apk.";
+            }
+            statusText.innerHTML = "";
+            [
+              `آخر تحديث منشور للمستخدمين (Release): ${latestReleaseTag}${releaseDate ? " — " + releaseDate : ""}`,
+              `الإصدار في الكود (pubspec.yaml): ${pub}`,
+              verdict,
+              `ملاحظة: التطبيق المثبت يجب أن يكون رقم بنائه أقل من ${releaseBuild ?? "—"} ليظهر له التحديث. نسخ الاختبار القديمة (Artifacts) كانت تأخذ رقم تشغيل أعلى، وتم إصلاح ذلك.`,
+            ].forEach((line) => {
+              const d = document.createElement("div");
+              d.textContent = line;
+              statusText.appendChild(d);
+            });
           } else {
             throw new Error(
               "لم يتم العثور على صيغة الإصدار (version: x.y.z+n) في ملف pubspec.yaml",
