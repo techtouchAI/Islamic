@@ -77,9 +77,9 @@ void main() {
     DataManager.appBuildOverride = () async => '1.0.60+900';
     DataManager.getLocalFileOverride = () async => cache;
     DataManager.httpClient = null;
-    DataManager.bundleCalendarRefresh = null;
+    DataManager.bundleRefresh = null;
     addTearDown(() async {
-      DataManager.bundleCalendarRefresh = null;
+      DataManager.bundleRefresh = null;
       DataManager.appBuildOverride = null;
       DataManager.getLocalFileOverride = null;
       DataManager.httpClient = null;
@@ -100,7 +100,7 @@ void main() {
       ));
 
       await DataManager.loadContent();
-      await DataManager.bundleCalendarRefresh;
+      await DataManager.bundleRefresh;
 
       // The cached document is still the source for everything else ...
       expect(
@@ -128,7 +128,7 @@ void main() {
       ));
 
       await DataManager.loadContent();
-      await DataManager.bundleCalendarRefresh;
+      await DataManager.bundleRefresh;
 
       expect(dayOfSeptember30(), 17);
       expect(await persistedStartOfMonth4(), staleStart);
@@ -142,7 +142,7 @@ void main() {
       ));
 
       await DataManager.loadContent();
-      await DataManager.bundleCalendarRefresh;
+      await DataManager.bundleRefresh;
 
       expect(DataManager.calendarVersionOf(DataManager.getDB()), 99);
       expect(dayOfSeptember30(), 18);

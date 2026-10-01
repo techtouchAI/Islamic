@@ -40,7 +40,7 @@ class DataManager {
   /// The refresh of an installed build, while it runs. The app does not wait
   /// for it (it must not delay the splash screen), but tests await it.
   @visibleForTesting
-  static Future<void>? bundleCalendarRefresh;
+  static Future<void>? bundleRefresh;
 
   static Future<String?> _appBuild() async {
     if (appBuildOverride != null) return appBuildOverride!();
@@ -260,14 +260,17 @@ class DataManager {
     }
   }
 
-  /// Brings the calendar of a freshly installed build onto the device.
+  /// Brings what a freshly installed build ships onto the device.
   ///
   /// The device copy in the documents directory survives app updates and is
-  /// loaded before the bundle, so without this step a corrected table shipped
-  /// inside a new APK could never take effect: the old table would keep
-  /// answering with the old day of the month. Runs once per build, and only
-  /// accepts a table with a higher generation than the cached one.
-  static Future<void> _adoptBundledCalendarOnUpdate(File localFile) async {
+  /// loaded before the bundle, so without this step anything a new build adds
+  /// could never take effect: a corrected calendar table would keep answering
+  /// with the old day of the month, and a section the build ships (such as
+  /// `prophets_tree`) would stay hidden behind the older copy — including on
+  /// a device whose cache lost the section to an older cloud document. Runs
+  /// once per build; the calendar is accepted only with a higher generation,
+  /// while sections are additive and can therefore never remove content.
+  static Future<void> _adoptBundledDocumentOnUpdate(File localFile) async {
     try {
       final build = await _appBuild();
       if (build == null) return;
@@ -283,12 +286,25 @@ class DataManager {
       await prefs.setString(_calendarBuildKey, build);
 
       final current = _db;
-      if (current == null || !calendarIsNewer(bundled, current)) return;
+      if (current == null) return;
+      final tookCalendar = calendarIsNewer(bundled, current);
 
       // The live document is replaced, never edited in place, so a frame that
-      // is building right now reads either the old or the new table.
+      // is building right now reads either the old or the new document. The
+      // nested maps are copied as well because restoring sections adds keys.
       final merged = Map<String, dynamic>.from(current);
-      _copyCalendar(merged, bundled);
+      final sections = merged['sections'];
+      if (sections is Map) {
+        merged['sections'] = Map<String, dynamic>.from(sections);
+      }
+      final content = merged['content'];
+      if (content is Map) {
+        merged['content'] = Map<String, dynamic>.from(content);
+      }
+      if (tookCalendar) _copyCalendar(merged, bundled);
+      final tookSections = _keepNewestSections(merged, bundled);
+      if (!tookCalendar && !tookSections) return;
+
       _db = merged;
       final temporary = File('${localFile.path}.pending');
       try {
@@ -298,15 +314,16 @@ class DataManager {
         await _deleteIfExists(temporary);
       }
       debugPrint(
-        'DataManager: Calendar updated to generation '
-        '${calendarVersionOf(merged)} from the installed build ($build).',
+        'DataManager: Installed build $build refreshed the device document '
+        '(calendar generation ${calendarVersionOf(merged)}'
+        '${tookSections ? ', missing sections restored' : ''}).',
       );
       dbNotifier.value++;
     } catch (e) {
-      // The bundled table is a bonus on app updates: a platform service that
-      // is unavailable (or a damaged asset) must not stop the app from booting
-      // with the document that was already loaded.
-      debugPrint("DataManager: Bundled calendar refresh skipped: $e");
+      // The bundled refresh is a bonus on app updates: a platform service
+      // that is unavailable (or a damaged asset) must not stop the app from
+      // booting with the document that was already loaded.
+      debugPrint("DataManager: Bundled refresh skipped: $e");
     }
   }
 
@@ -331,8 +348,8 @@ class DataManager {
             // Deliberately not awaited here: the refresh reads and decodes the
             // bundled document, which must not delay the splash screen. It
             // reports completion through dbNotifier and through
-            // [bundleCalendarRefresh], which tests await.
-            bundleCalendarRefresh = _adoptBundledCalendarOnUpdate(localFile);
+            // [bundleRefresh], which tests await.
+            bundleRefresh = _adoptBundledDocumentOnUpdate(localFile);
             return;
           } catch (e) {
             debugPrint(
@@ -377,6 +394,7 @@ class DataManager {
         if (kIsWeb) {
           final newDb = await compute(_decodeAndNormalizeJson, content);
           _keepNewestCalendar(newDb);
+          _keepNewestSections(newDb, _db);
           _db = newDb;
           dbNotifier.value++;
           return true;
@@ -405,7 +423,14 @@ class DataManager {
         // the installed build ships) outranks the incoming document, so the
         // document is adopted without its older table.
         final keepDeviceCalendar = _keepNewestCalendar(newDb);
-        final persisted = keepDeviceCalendar ? jsonEncode(newDb) : content;
+        // A cloud copy that predates a section the device already carries —
+        // an older CMS export, or a cached copy of one — must not hide it:
+        // this is how the prophets tree vanished from the home and drawer
+        // seconds after launch. The restored sections make the persisted
+        // document differ from the received bytes, so it is re-encoded.
+        final keptSections = _keepNewestSections(newDb, _db);
+        final persisted =
+            keepDeviceCalendar || keptSections ? jsonEncode(newDb) : content;
         if (oldContent == persisted) return false;
 
         // Persist atomically: write `<file>.pending`, then rename it over the
@@ -456,6 +481,66 @@ class DataManager {
       'instead of the older one in the sync document.',
     );
     return true;
+  }
+
+  /// Restores onto [target] every section that [source] carries and [target]
+  /// lacks, so an older document can never hide what a newer one shipped.
+  ///
+  /// A document is adopted as a whole, which is how a section such as
+  /// `prophets_tree` disappeared from the home doorway and the drawer: a
+  /// cloud copy fetched before the section shipped (or a cached copy of that
+  /// older document) replaced the device copy and took the section with it.
+  /// The device therefore keeps every section it has seen, mirroring the
+  /// keep-newest policy of the calendar table:
+  ///
+  /// * a `sections` descriptor is copied when [target] has none;
+  /// * the section entries are looked up the way [getItems] does — under
+  ///   `content` first, then at the top level (`prophets_stories` and the
+  ///   other legacy collections) — and copied when the target side is
+  ///   missing or empty and the source side is not.
+  ///
+  /// Entries a section already carries on [target] are never replaced, so a
+  /// newer document still updates them normally. Returns true when anything
+  /// was copied.
+  static bool _keepNewestSections(
+    Map<String, dynamic> target,
+    Map<String, dynamic>? source,
+  ) {
+    if (source == null) return false;
+    final sourceSections = source['sections'];
+    final targetSections = target['sections'];
+    if (sourceSections is! Map || targetSections is! Map) return false;
+    final sourceContent = source['content'];
+    final targetContent = target['content'];
+
+    var changed = false;
+    for (final entry in sourceSections.entries) {
+      final key = entry.key;
+
+      if (!targetSections.containsKey(key) && entry.value is Map) {
+        targetSections[key] = entry.value;
+        changed = true;
+      }
+
+      if (targetContent is Map) {
+        final targetItems = targetContent[key];
+        final sourceItems = sourceContent is Map ? sourceContent[key] : null;
+        final empty = targetItems is! List || targetItems.isEmpty;
+        if (empty && sourceItems is List && sourceItems.isNotEmpty) {
+          targetContent[key] = sourceItems;
+          changed = true;
+        }
+      }
+
+      final targetTop = target[key];
+      final sourceTop = source[key];
+      final topEmpty = targetTop is! List || targetTop.isEmpty;
+      if (topEmpty && sourceTop is List && sourceTop.isNotEmpty) {
+        target[key] = sourceTop;
+        changed = true;
+      }
+    }
+    return changed;
   }
 
   static Future<File> _getLocalFile() async {
