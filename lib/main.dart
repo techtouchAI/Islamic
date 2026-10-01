@@ -254,6 +254,8 @@ class MainScaffold extends StatefulWidget {
 }
 
 class _MainScaffoldState extends State<MainScaffold> {
+  bool _isCheckingForUpdates = false;
+
   @override
   void initState() {
     super.initState();
@@ -283,32 +285,111 @@ class _MainScaffoldState extends State<MainScaffold> {
   }
 
   Future<void> _checkForUpdatesSafe() async {
-    if (!mounted) return;
+    if (!mounted || _isCheckingForUpdates) return;
+    if (kIsWeb || !Platform.isAndroid) return;
 
+    _isCheckingForUpdates = true;
     try {
-      if (kIsWeb || !Platform.isAndroid) return;
+      final info = await PackageInfo.fromPlatform();
+      final currentBuild = int.tryParse(info.buildNumber);
+      if (currentBuild == null) {
+        throw FormatException(
+          'Invalid installed build number: ${info.buildNumber}',
+        );
+      }
+
       // Fetch release_manifest.json from the app's own update server.
       final manifest = await OTAService.instance.fetchManifest();
       if (!mounted) return;
-      final info = await PackageInfo.fromPlatform();
-      final currentBuild = int.tryParse(info.buildNumber) ?? 0;
-      if (currentBuild < manifest.buildNumber) {
-        _showSignedUpdateDialog(
-          manifest,
-          mandatory: currentBuild < manifest.minSupportedBuild,
-        );
+
+      final status = manifest.compareWithInstalledApp(
+        installedVersion: info.version,
+        installedBuildNumber: currentBuild,
+      );
+      final installedRelease = '${info.version}+${info.buildNumber}';
+      final serverRelease = '${manifest.version}+${manifest.buildNumber}';
+      debugPrint(
+        'OTA_Update: connected; app=$installedRelease, server=$serverRelease, '
+        'status=${status.name}',
+      );
+
+      switch (status) {
+        case UpdateCheckStatus.updateAvailable:
+          _showUpdateDialog(
+            manifest,
+            installedVersion: info.version,
+            installedBuildNumber: currentBuild,
+            mandatory: currentBuild < manifest.minSupportedBuild,
+          );
+          break;
+        case UpdateCheckStatus.upToDate:
+          _showUpdateCheckMessage(
+            'تم الاتصال بخادم التحديث بنجاح. '
+            'التطبيق محدث ($installedRelease).',
+          );
+          break;
+        case UpdateCheckStatus.serverBehind:
+          _showUpdateCheckMessage(
+            'تم الاتصال بخادم التحديث، لكن نسخته أقدم من التطبيق: '
+            '$serverRelease مقابل $installedRelease. '
+            'حدّث ملف الإصدار على الخادم.',
+          );
+          break;
+        case UpdateCheckStatus.inconsistentVersion:
+          _showUpdateCheckMessage(
+            'تم الاتصال بخادم التحديث، لكن رقم البناء متطابق ($currentBuild) '
+            'واسم الإصدار مختلف: التطبيق ${info.version} والخادم '
+            '${manifest.version}. تحقق من بيانات الإصدار المنشورة.',
+          );
+          break;
       }
     } catch (e) {
       debugPrint('OTA_Update Error: $e');
+      if (mounted) {
+        _showUpdateCheckMessage(
+          'تعذر فحص التحديث أو الاتصال بخادم التحديث. '
+          'تحقق من الإنترنت ثم أعد المحاولة.',
+          allowRetry: true,
+        );
+      }
+    } finally {
+      _isCheckingForUpdates = false;
     }
   }
 
-  void _showSignedUpdateDialog(
+  void _showUpdateCheckMessage(String message, {bool allowRetry = false}) {
+    final messenger = ScaffoldMessenger.maybeOf(context);
+    if (messenger == null) {
+      debugPrint('OTA_Update status: $message');
+      return;
+    }
+
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(message, textAlign: TextAlign.right),
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 6),
+          action: allowRetry
+              ? SnackBarAction(
+                  label: 'إعادة المحاولة',
+                  onPressed: () {
+                    _checkForUpdatesSafe();
+                  },
+                )
+              : null,
+        ),
+      );
+  }
+
+  void _showUpdateDialog(
     ReleaseManifest manifest, {
+    required String installedVersion,
+    required int installedBuildNumber,
     required bool mandatory,
   }) {
-    final context = navigatorKey.currentContext;
-    if (context == null) return;
+    if (!mounted) return;
     final progress = OTAService.instance.downloadProgress;
     showDialog<void>(
       context: context,
@@ -321,11 +402,32 @@ class _MainScaffoldState extends State<MainScaffold> {
           return PopScope(
             canPop: !mandatory && !downloading,
             child: AlertDialog(
-              title: const Text('تحديث موثّق متوفر'),
+              title: const Text('تحديث جديد متوفر'),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text('الإصدار ${manifest.version}'),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.cloud_done_outlined,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                      const SizedBox(width: 8),
+                      const Flexible(
+                        child: Text('تم الاتصال بخادم التحديث'),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'إصدار التطبيق: '
+                    '$installedVersion+$installedBuildNumber',
+                  ),
+                  Text(
+                    'الإصدار المتوفر: '
+                    '${manifest.version}+${manifest.buildNumber}',
+                  ),
                   if (downloading) ...[
                     const SizedBox(height: 16),
                     // Determinate bar when the byte total is known,
