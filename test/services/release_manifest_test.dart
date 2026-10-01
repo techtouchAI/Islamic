@@ -105,16 +105,21 @@ void main() {
 
   group('ReleaseManifest.fromGitHubRelease', () {
     final hash = List.filled(64, 'b').join();
-    Map<String, dynamic> release() => <String, dynamic>{
-          'tag_name': 'v1.0.56-806',
-          'assets': [
-            {
-              'name': 'app-release.apk',
-              'digest': 'sha256:$hash',
-              'browser_download_url':
-                  'https://github.com/techtouchAI/Islamic/releases/download/v1.0.56-806/app-release.apk',
-            },
-          ],
+    Map<String, dynamic> release({
+      String tag = 'v1.0.56-806',
+      List<Map<String, dynamic>>? assets,
+    }) =>
+        <String, dynamic>{
+          'tag_name': tag,
+          'assets': assets ??
+              <Map<String, dynamic>>[
+                <String, dynamic>{
+                  'name': 'app-release.apk',
+                  'digest': 'sha256:$hash',
+                  'browser_download_url':
+                      'https://github.com/techtouchAI/Islamic/releases/download/v1.0.56-806/app-release.apk',
+                },
+              ],
         };
 
     test('reads version, build, url and digest from the latest release', () {
@@ -127,19 +132,35 @@ void main() {
     });
 
     test('rejects a tag that is not vX.Y.Z-N', () {
-      final r = release()..['tag_name'] = 'nightly';
-      expect(() => ReleaseManifest.fromGitHubRelease(r), throwsFormatException);
+      expect(
+        () => ReleaseManifest.fromGitHubRelease(release(tag: 'nightly')),
+        throwsFormatException,
+      );
     });
 
     test('rejects a release without the APK asset', () {
-      final r = release()..['assets'] = <dynamic>[];
-      expect(() => ReleaseManifest.fromGitHubRelease(r), throwsFormatException);
+      expect(
+        () => ReleaseManifest.fromGitHubRelease(
+          release(assets: <Map<String, dynamic>>[]),
+        ),
+        throwsFormatException,
+      );
     });
 
     test('rejects an APK asset without a sha256 digest', () {
-      final r = release();
-      (r['assets'] as List).first['digest'] = null;
-      expect(() => ReleaseManifest.fromGitHubRelease(r), throwsFormatException);
+      expect(
+        () => ReleaseManifest.fromGitHubRelease(
+          release(assets: <Map<String, dynamic>>[
+            <String, dynamic>{
+              'name': 'app-release.apk',
+              'digest': null,
+              'browser_download_url':
+                  'https://github.com/techtouchAI/Islamic/releases/download/v1.0.56-806/app-release.apk',
+            },
+          ]),
+        ),
+        throwsFormatException,
+      );
     });
   });
 }
