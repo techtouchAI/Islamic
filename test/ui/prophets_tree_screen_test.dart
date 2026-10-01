@@ -120,7 +120,7 @@ void main() {
   });
 
   testWidgets('renders the whole tree on one page', (tester) async {
-    await tester.binding.setSurfaceSize(const Size(400, 5600));
+    await tester.binding.setSurfaceSize(const Size(400, 7000));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
     await tester.pumpWidget(host());
@@ -260,5 +260,72 @@ void main() {
     expect(find.text('الكل'), findsOneWidget);
     expect(find.text('آدم'), findsNothing);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('legacy three-article entries fall back to the canonical tree',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(360, 14000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    // Simulates a cached or pre-merge cloud document carrying the old
+    // three-article reader entries (no type, group, or tags).
+    DataManager.setDB(<String, dynamic>{
+      'sections': <String, dynamic>{
+        'prophets_tree': <String, dynamic>{'title': 'شجرة الأنبياء والأئمة'},
+      },
+      'content': <String, dynamic>{
+        'prophets_tree': <dynamic>[
+          <String, dynamic>{
+            'title':
+                'سلسلة النسب من آدم إلى خاتم الأنبياء محمد صلى الله عليه وآله',
+            'content': 'آدم شيث أنوش',
+          },
+          <String, dynamic>{
+            'title': 'الأئمة الاثني عشر عليهم السلام',
+            'content': 'علي الحسن الحسين',
+          },
+          <String, dynamic>{
+            'title': 'أهم الفروع النبوية المرتبطة بإبراهيم ونوح',
+            'content': 'إبراهيم إسحاق يعقوب',
+          },
+        ],
+      },
+      'settings': <String, dynamic>{},
+    });
+
+    await tester.pumpWidget(host());
+    await tester.pump();
+
+    expect(find.text('آدم'), findsOneWidget);
+    expect(find.text('إبراهيم'), findsOneWidget);
+    expect(find.text('عدنان'), findsOneWidget);
+    expect(find.text('عبد المطلب'), findsOneWidget);
+    expect(find.text('محمد ﷺ'), findsOneWidget);
+    expect(find.text('فاطمة الزهراء عليها السلام'), findsOneWidget);
+    expect(find.text('علي بن أبي طالب عليه السلام'), findsOneWidget);
+    expect(find.text('الحسن بن علي'), findsOneWidget);
+    expect(find.text('الحسين بن علي'), findsOneWidget);
+    expect(find.text('محمد بن الحسن المهدي'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+
+    final chipRow = find.byType(SingleChildScrollView);
+    for (final entry in const <MapEntry<String, String>>[
+      MapEntry('الأنبياء والرسل', 'إبراهيم'),
+      MapEntry('الخط الأبوي', 'أنوش'),
+      MapEntry('نسب قريش', 'عدنان'),
+      MapEntry('الأئمة الاثنا عشر', 'جعفر الصادق'),
+      MapEntry('أهل البيت', 'فاطمة الزهراء عليها السلام'),
+    ]) {
+      final chip = find.descendant(
+        of: chipRow,
+        matching: find.text(entry.key),
+      );
+      await tester.ensureVisible(chip);
+      await tester.tap(chip);
+      await tester.pumpAndSettle();
+      expect(find.text('لا توجد عناصر ضمن هذا التصنيف'), findsNothing);
+      expect(find.text(entry.value), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    }
   });
 }

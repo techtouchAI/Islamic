@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../data/data_manager.dart';
 import '../../theme/app_card_theme.dart';
+import 'prophets_tree_data.dart';
 
 /// One page, one tree: the lineage from Adam to the Seal of the Prophets,
 /// the branch of `Abd al-Muttalib into `Abd Allah and Abu Talib, the meeting
@@ -11,8 +12,9 @@ import '../../theme/app_card_theme.dart';
 /// The tree is data: the entries of the `prophets_tree` section are nodes
 /// (`group` says where a node sits, `type` says how it is drawn, `tags` say
 /// which filters reach it), so the CMS can correct a name without a release.
-/// Filtering hides every node outside the selected tag and collapses the
-/// page into a single trunk of the matching nodes.
+/// If the active document still carries the legacy three-article entries, the
+/// screen falls back to [kDefaultProphetsTreeNodes] so the full tree and all
+/// category filters work immediately.
 class ProphetsTreeScreen extends StatefulWidget {
   const ProphetsTreeScreen({
     super.key,
@@ -63,10 +65,22 @@ class _ProphetsTreeScreenState extends State<ProphetsTreeScreen> {
     super.dispose();
   }
 
-  static List<_TreeNode> _decodeNodes() => DataManager.getItems('prophets_tree')
-      .whereType<Map>()
-      .map(_TreeNode.fromMap)
-      .toList();
+  static List<_TreeNode> _decodeNodes() {
+    final raw =
+        DataManager.getItems('prophets_tree').whereType<Map>().toList();
+    if (raw.isEmpty) {
+      if (DataManager.getSections().containsKey('prophets_tree')) {
+        return kDefaultProphetsTreeNodes.map(_TreeNode.fromMap).toList();
+      }
+      return const [];
+    }
+    final hasStructuredNodes = raw.any(_isStructuredNode);
+    final source = hasStructuredNodes ? raw : kDefaultProphetsTreeNodes;
+    return source.map(_TreeNode.fromMap).toList();
+  }
+
+  static bool _isStructuredNode(Map m) =>
+      m.containsKey('type') || m.containsKey('group') || m.containsKey('tags');
 
   void _reload() {
     if (!mounted) return;
@@ -130,36 +144,51 @@ class _ProphetsTreeScreenState extends State<ProphetsTreeScreen> {
 
     return [
       _hero(context),
-      const SizedBox(height: 24),
+      const SizedBox(height: 22),
       _methodNote(context, isDark),
-      const SizedBox(height: 34),
-      _spine(
-        context,
-        gradient: _trunkGradient(isDark),
-        children: [
-          for (final node in trunk)
-            node.type == 'gap'
-                ? _gapNote(context, node, isDark)
-                : _centeredNode(context, node, isDark),
-        ],
-      ),
-      const SizedBox(height: 10),
-      _branch(context, isDark, branchA, branchB),
-      const SizedBox(height: 34),
-      if (marriage.title.isNotEmpty) _marriageRow(context, marriage, isDark),
-      const SizedBox(height: 34),
-      _grid(context, isDark, grid),
-      const SizedBox(height: 56),
-      _chainTitle(context, isDark),
-      const SizedBox(height: 36),
-      _spine(
-        context,
-        gradient: _chainGradient(isDark),
-        maxWidth: 460,
-        children: [for (final node in chain) _chainStep(context, node, isDark)],
-      ),
-      const SizedBox(height: 70),
-      _supplement(context, isDark, supplement),
+      const SizedBox(height: 30),
+      if (trunk.isNotEmpty)
+        _spine(
+          context,
+          gradient: _trunkGradient(isDark),
+          spacing: 18,
+          children: [
+            for (final node in trunk)
+              node.type == 'gap'
+                  ? _gapNote(context, node, isDark)
+                  : _centeredNode(context, node, isDark),
+          ],
+        ),
+      if (branchA.isNotEmpty || branchB.isNotEmpty) ...[
+        const SizedBox(height: 6),
+        _branch(context, isDark, branchA, branchB),
+      ],
+      if (marriage.title.isNotEmpty) ...[
+        const SizedBox(height: 20),
+        _marriageRow(context, marriage, isDark),
+      ],
+      if (grid.isNotEmpty) ...[
+        const SizedBox(height: 16),
+        _grid(context, isDark, grid),
+      ],
+      if (chain.isNotEmpty) ...[
+        const SizedBox(height: 44),
+        _chainTitle(context, isDark),
+        const SizedBox(height: 30),
+        _spine(
+          context,
+          gradient: _chainGradient(isDark),
+          maxWidth: 460,
+          spacing: 24,
+          children: [
+            for (final node in chain) _chainStep(context, node, isDark),
+          ],
+        ),
+      ],
+      if (supplement.isNotEmpty) ...[
+        const SizedBox(height: 52),
+        _supplement(context, isDark, supplement),
+      ],
     ];
   }
 
@@ -174,6 +203,7 @@ class _ProphetsTreeScreenState extends State<ProphetsTreeScreen> {
         Center(
           child: Text(
             'لا توجد عناصر ضمن هذا التصنيف',
+            textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.bodyLarge,
           ),
         ),
@@ -183,12 +213,22 @@ class _ProphetsTreeScreenState extends State<ProphetsTreeScreen> {
     final accent = _accentForFilter(tag, isDark);
     return [
       Center(
-        child: Text(
-          filter.label,
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w700,
-                color: accent,
-              ),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 7),
+          decoration: BoxDecoration(
+            color: accent.withValues(alpha: isDark ? 0.14 : 0.1),
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(color: accent.withValues(alpha: 0.38)),
+          ),
+          child: Text(
+            '${filter.label} (${_easternArabic(matches.length)})',
+            textAlign: TextAlign.center,
+            softWrap: true,
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: accent,
+                ),
+          ),
         ),
       ),
       const SizedBox(height: 22),
@@ -205,6 +245,7 @@ class _ProphetsTreeScreenState extends State<ProphetsTreeScreen> {
           ],
           stops: const [0.0, 0.04, 0.96, 1.0],
         ),
+        spacing: 18,
         children: [
           for (final node in matches) _centeredNode(context, node, isDark),
         ],
@@ -221,18 +262,19 @@ class _ProphetsTreeScreenState extends State<ProphetsTreeScreen> {
     final foreground = theme.cardColor.contrastTextColor;
     return Column(
       children: [
-        const SizedBox(height: 14),
+        const SizedBox(height: 10),
         Text(
           widget.title,
           textAlign: TextAlign.center,
+          softWrap: true,
           style: TextStyle(
-            fontSize: 25 * widget.fontSizeFactor,
+            fontSize: 24 * widget.fontSizeFactor,
             fontWeight: FontWeight.w800,
             height: 1.5,
             color: foreground,
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 14),
         Row(
           children: [
             Expanded(child: _ornamentLine(context)),
@@ -257,14 +299,15 @@ class _ProphetsTreeScreenState extends State<ProphetsTreeScreen> {
             Expanded(child: _ornamentLine(context)),
           ],
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 14),
         Text(
           ProphetsTreeScreen.heroSubtitle,
           textAlign: TextAlign.center,
+          softWrap: true,
           style: TextStyle(
-            fontSize: 14 * widget.fontSizeFactor,
-            height: 1.9,
-            color: foreground.withValues(alpha: 0.7),
+            fontSize: 13.5 * widget.fontSizeFactor,
+            height: 1.85,
+            color: foreground.withValues(alpha: 0.74),
           ),
         ),
       ],
@@ -284,7 +327,7 @@ class _ProphetsTreeScreenState extends State<ProphetsTreeScreen> {
           colors: [
             line.withValues(alpha: 0.0),
             line,
-            line.withValues(alpha: 0.0)
+            line.withValues(alpha: 0.0),
           ],
         ),
       ),
@@ -295,168 +338,224 @@ class _ProphetsTreeScreenState extends State<ProphetsTreeScreen> {
     const gold = Color(0xFFFBBF24);
     final background = Theme.of(context).cardColor;
     final foreground = background.contrastTextColor;
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-      decoration: BoxDecoration(
-        color: Color.lerp(background, gold, isDark ? 0.07 : 0.09),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: gold.withValues(alpha: 0.3)),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 3,
-            constraints: const BoxConstraints(minHeight: 40),
-            decoration: BoxDecoration(
-              color: gold.withValues(alpha: 0.8),
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Text.rich(
-              TextSpan(
-                children: [
-                  TextSpan(
-                    text: 'ملاحظة منهجية: ',
-                    style: TextStyle(
-                      color: isDark ? gold : const Color(0xFFB45309),
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  TextSpan(
-                    text: ProphetsTreeScreen.methodNote,
-                    style: TextStyle(
-                      color: foreground.withValues(alpha: 0.8),
-                    ),
-                  ),
-                ],
-              ),
-              style: TextStyle(
-                fontSize: 13 * widget.fontSizeFactor,
-                height: 1.95,
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
+        width: double.infinity,
+        decoration: BoxDecoration(
+          color: Color.lerp(background, gold, isDark ? 0.08 : 0.09),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: gold.withValues(alpha: 0.34)),
+        ),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 15),
+          decoration: BoxDecoration(
+            border: BorderDirectional(
+              start: BorderSide(
+                color: gold.withValues(alpha: 0.85),
+                width: 4,
               ),
             ),
           ),
-        ],
+          child: Text.rich(
+            TextSpan(
+              children: [
+                TextSpan(
+                  text: 'ملاحظة منهجية: ',
+                  style: TextStyle(
+                    color: isDark ? gold : const Color(0xFFB45309),
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                TextSpan(
+                  text: ProphetsTreeScreen.methodNote,
+                  style: TextStyle(
+                    color: foreground.withValues(alpha: 0.82),
+                  ),
+                ),
+              ],
+            ),
+            softWrap: true,
+            style: TextStyle(
+              fontSize: 13 * widget.fontSizeFactor,
+              height: 1.9,
+            ),
+          ),
+        ),
       ),
     );
   }
 
   // ------------------------------------------------------------------
-  // Nodes
+  // Nodes (HTML-faithful `.node-card` design with zero overflow)
   // ------------------------------------------------------------------
 
-  /// A node of the trunk or of the filtered view: centred under the spine.
+  /// A node of the trunk or of the filtered view: centred over the spine.
   Widget _centeredNode(BuildContext context, _TreeNode node, bool isDark) {
-    final Widget child;
-    if (node.type == 'ancestor' && node.desc.isEmpty && !node.strong) {
-      child = _pillNode(context, node, isDark);
-    } else {
-      child = ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 420),
-        child: _nodeCard(context, node, isDark),
-      );
-    }
-    return Center(child: child);
+    final isLineage = node.type == 'ancestor' || node.type == 'quraish';
+    final isCompactLineage = isLineage && node.desc.isEmpty && !node.strong;
+    return Center(
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: isCompactLineage ? 270 : 420),
+        child: _nodeCard(
+          context,
+          node,
+          isDark,
+          compact: isCompactLineage,
+        ),
+      ),
+    );
   }
 
-  Widget _nodeCard(BuildContext context, _TreeNode node, bool isDark) {
+  Widget _nodeCard(
+    BuildContext context,
+    _TreeNode node,
+    bool isDark, {
+    bool compact = false,
+    bool inBranch = false,
+    double extraTopPadding = 0,
+  }) {
     final accent = _accentForNode(node, isDark);
     final background = Theme.of(context).cardColor;
     final foreground = background.contrastTextColor;
     final isMahdi = node.type == 'mahdi';
-    final titleSize =
-        node.strong ? 22.0 : (node.group == 'chain' ? 20.0 : 21.0);
+    final isStrong = node.strong || isMahdi;
+
+    final double titleBase;
+    if (inBranch) {
+      titleBase = isStrong ? 16.5 : 15.5;
+    } else if (compact) {
+      titleBase = 16.5;
+    } else if (isStrong) {
+      titleBase = 20.5;
+    } else if (node.group == 'chain') {
+      titleBase = 19.0;
+    } else {
+      titleBase = 19.5;
+    }
+
+    final horizontalPad = inBranch ? 10.0 : (compact ? 16.0 : 18.0);
+    final double verticalPad;
+    if (compact) {
+      verticalPad = 11.0;
+    } else if (node.desc.isEmpty) {
+      verticalPad = 13.0;
+    } else {
+      verticalPad = inBranch ? 12.0 : 15.0;
+    }
+
+    final double topAlpha;
+    final double shadowAlpha;
+    if (isMahdi) {
+      topAlpha = isDark ? 0.16 : 0.12;
+      shadowAlpha = isDark ? 0.38 : 0.24;
+    } else if (isStrong) {
+      topAlpha = isDark ? 0.11 : 0.08;
+      shadowAlpha = isDark ? 0.28 : 0.16;
+    } else {
+      topAlpha = isDark ? 0.07 : 0.045;
+      shadowAlpha = isDark ? 0.18 : 0.1;
+    }
+    final bottomAlpha =
+        isMahdi ? (isDark ? 0.06 : 0.04) : (isDark ? 0.025 : 0.015);
+    final borderAlpha =
+        isStrong ? (isDark ? 0.68 : 0.62) : (isDark ? 0.38 : 0.42);
+    final topTint = Color.lerp(background, accent, topAlpha)!;
+    final bottomTint = Color.lerp(background, accent, bottomAlpha)!;
+
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.symmetric(
-        horizontal: 20,
-        vertical: node.desc.isEmpty ? 14 : 17,
-      ),
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        color: isMahdi ? Color.lerp(background, accent, 0.08) : background,
-        borderRadius: BorderRadius.circular(16),
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [topTint, bottomTint],
+        ),
+        borderRadius: BorderRadius.circular(compact ? 14 : 16),
         border: Border.all(
-          color: accent.withValues(alpha: isDark ? 0.4 : 0.55),
-          width: node.strong || isMahdi ? 2 : 1,
+          color: accent.withValues(alpha: borderAlpha),
+          width: isStrong ? 1.8 : 1.1,
         ),
         boxShadow: [
           BoxShadow(
-            color: accent.withValues(alpha: isDark ? 0.35 : 0.22),
-            blurRadius: isMahdi ? 40 : 26,
-            offset: const Offset(0, 14),
-            spreadRadius: isMahdi ? -18 : -16,
+            color: accent.withValues(alpha: shadowAlpha),
+            blurRadius: isMahdi ? 32 : (compact ? 16 : 22),
+            offset: Offset(0, compact ? 8 : 11),
+            spreadRadius: isMahdi ? -12 : -14,
           ),
         ],
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          if (node.badge.isNotEmpty) ...[
-            _badge(node.badge, accent, isDark),
-            const SizedBox(height: 9),
-          ],
-          Text(
-            node.title,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: titleSize * widget.fontSizeFactor,
-              fontWeight: node.strong ? FontWeight.w800 : FontWeight.w700,
-              height: 1.55,
-              color: isMahdi && isDark ? const Color(0xFFFFF8E6) : foreground,
-            ),
-          ),
-          if (node.desc.isNotEmpty) ...[
-            const SizedBox(height: 7),
-            Text(
-              node.desc,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 13 * widget.fontSizeFactor,
-                height: 1.85,
-                color: foreground.withValues(alpha: 0.65),
+          // Top luminous bar matching `.node-card::before` in the HTML design.
+          Container(
+            height: isStrong ? 3.5 : 2.5,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  accent.withValues(alpha: 0.1),
+                  accent.withValues(alpha: isStrong ? 0.95 : 0.75),
+                  accent.withValues(alpha: 0.1),
+                ],
               ),
             ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  /// The compact bead of an ancestor without a description.
-  Widget _pillNode(BuildContext context, _TreeNode node, bool isDark) {
-    final accent = _accentForNode(node, isDark);
-    final background = Theme.of(context).cardColor;
-    final foreground = background.contrastTextColor;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 9),
-      decoration: BoxDecoration(
-        color: background,
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: accent.withValues(alpha: isDark ? 0.3 : 0.4)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.08),
-            blurRadius: 18,
-            offset: const Offset(0, 9),
-            spreadRadius: -14,
           ),
-        ],
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _badge(node.badge, accent, isDark, compact: true),
-          const SizedBox(width: 11),
-          Text(
-            node.title,
-            style: TextStyle(
-              fontSize: 15 * widget.fontSizeFactor,
-              fontWeight: FontWeight.w600,
-              color: foreground.withValues(alpha: 0.9),
+          Padding(
+            padding: EdgeInsets.fromLTRB(
+              horizontalPad,
+              verticalPad + extraTopPadding,
+              horizontalPad,
+              verticalPad,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (node.badge.isNotEmpty) ...[
+                  _badge(
+                    node.badge,
+                    accent,
+                    isDark,
+                    compact: compact || inBranch,
+                  ),
+                  SizedBox(height: compact ? 6 : 8),
+                ],
+                Text(
+                  node.title,
+                  textAlign: TextAlign.center,
+                  softWrap: true,
+                  style: TextStyle(
+                    fontSize: titleBase * widget.fontSizeFactor,
+                    fontWeight: isStrong ? FontWeight.w800 : FontWeight.w700,
+                    height: 1.45,
+                    color: isMahdi && isDark
+                        ? const Color(0xFFFFF8E6)
+                        : foreground,
+                  ),
+                ),
+                if (node.desc.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Container(
+                    width: 42,
+                    height: 1,
+                    color: accent.withValues(alpha: 0.22),
+                  ),
+                  const SizedBox(height: 7),
+                  Text(
+                    node.desc,
+                    textAlign: TextAlign.center,
+                    softWrap: true,
+                    style: TextStyle(
+                      fontSize:
+                          (inBranch ? 12.0 : 13.0) * widget.fontSizeFactor,
+                      height: 1.75,
+                      color: foreground.withValues(alpha: 0.74),
+                    ),
+                  ),
+                ],
+              ],
             ),
           ),
         ],
@@ -464,24 +563,30 @@ class _ProphetsTreeScreenState extends State<ProphetsTreeScreen> {
     );
   }
 
-  Widget _badge(String text, Color accent, bool isDark,
-      {bool compact = false}) {
+  Widget _badge(
+    String text,
+    Color accent,
+    bool isDark, {
+    bool compact = false,
+  }) {
     return Container(
       padding: EdgeInsets.symmetric(
-        horizontal: compact ? 10 : 13,
-        vertical: compact ? 2 : 3,
+        horizontal: compact ? 10 : 12,
+        vertical: compact ? 2.5 : 3.5,
       ),
       decoration: BoxDecoration(
-        color: accent.withValues(alpha: isDark ? 0.13 : 0.11),
+        color: accent.withValues(alpha: isDark ? 0.15 : 0.12),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: accent.withValues(alpha: 0.38)),
+        border: Border.all(color: accent.withValues(alpha: 0.42)),
       ),
       child: Text(
         text,
+        textAlign: TextAlign.center,
+        softWrap: true,
         style: TextStyle(
-          fontSize: compact ? 10.5 : 11.5,
+          fontSize: compact ? 10.0 : 11.0,
           fontWeight: FontWeight.w700,
-          height: 1.7,
+          height: 1.45,
           color: accent,
         ),
       ),
@@ -489,27 +594,29 @@ class _ProphetsTreeScreenState extends State<ProphetsTreeScreen> {
   }
 
   Widget _gapNote(BuildContext context, _TreeNode node, bool isDark) {
+    const gold = Color(0xFFFBBF24);
     final background = Theme.of(context).cardColor;
     final foreground = background.contrastTextColor;
     return Center(
       child: Container(
-        constraints: const BoxConstraints(maxWidth: 300),
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 7),
+        constraints: const BoxConstraints(maxWidth: 340),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
         decoration: BoxDecoration(
-          color: background,
-          borderRadius: BorderRadius.circular(999),
+          color: Color.lerp(background, gold, isDark ? 0.06 : 0.07),
+          borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: foreground.withValues(alpha: isDark ? 0.3 : 0.25),
-            style: BorderStyle.solid,
+            color: gold.withValues(alpha: isDark ? 0.38 : 0.42),
           ),
         ),
         child: Text(
           node.title,
           textAlign: TextAlign.center,
+          softWrap: true,
           style: TextStyle(
-            fontSize: 11.5 * widget.fontSizeFactor,
-            height: 1.9,
-            color: foreground.withValues(alpha: 0.65),
+            fontSize: 12 * widget.fontSizeFactor,
+            fontWeight: FontWeight.w600,
+            height: 1.7,
+            color: foreground.withValues(alpha: 0.78),
           ),
         ),
       ),
@@ -526,10 +633,11 @@ class _ProphetsTreeScreenState extends State<ProphetsTreeScreen> {
     required LinearGradient gradient,
     required List<Widget> children,
     double maxWidth = 560,
+    double spacing = 22,
   }) {
     final separated = <Widget>[];
     for (var i = 0; i < children.length; i++) {
-      if (i > 0) separated.add(const SizedBox(height: 26));
+      if (i > 0) separated.add(SizedBox(height: spacing));
       separated.add(children[i]);
     }
     return Center(
@@ -556,7 +664,7 @@ class _ProphetsTreeScreenState extends State<ProphetsTreeScreen> {
   }
 
   LinearGradient _trunkGradient(bool isDark) {
-    double a(double v) => v * (isDark ? 1.0 : 0.62);
+    double a(double v) => v * (isDark ? 1.0 : 0.65);
     const slate = Color(0xFF94A3B8);
     const emerald = Color(0xFF34D399);
     const blue = Color(0xFF60A5FA);
@@ -566,29 +674,28 @@ class _ProphetsTreeScreenState extends State<ProphetsTreeScreen> {
       end: Alignment.bottomCenter,
       colors: [
         slate.withValues(alpha: 0.0),
-        slate.withValues(alpha: a(0.45)),
         emerald.withValues(alpha: a(0.55)),
+        slate.withValues(alpha: a(0.48)),
         emerald.withValues(alpha: a(0.55)),
-        blue.withValues(alpha: a(0.45)),
-        emerald.withValues(alpha: a(0.55)),
-        gold.withValues(alpha: a(0.6)),
+        blue.withValues(alpha: a(0.48)),
+        gold.withValues(alpha: a(0.62)),
         gold.withValues(alpha: 0.0),
       ],
-      stops: const [0.0, 0.03, 0.22, 0.46, 0.66, 0.86, 0.98, 1.0],
+      stops: const [0.0, 0.06, 0.28, 0.5, 0.74, 0.96, 1.0],
     );
   }
 
   LinearGradient _chainGradient(bool isDark) {
-    double a(double v) => v * (isDark ? 1.0 : 0.62);
+    double a(double v) => v * (isDark ? 1.0 : 0.65);
     const blue = Color(0xFF60A5FA);
     const gold = Color(0xFFFBBF24);
     return LinearGradient(
       begin: Alignment.topCenter,
       end: Alignment.bottomCenter,
       colors: [
-        blue.withValues(alpha: a(0.5)),
-        blue.withValues(alpha: a(0.5)),
-        gold.withValues(alpha: a(0.6)),
+        blue.withValues(alpha: a(0.52)),
+        blue.withValues(alpha: a(0.52)),
+        gold.withValues(alpha: a(0.65)),
       ],
       stops: const [0.0, 0.72, 1.0],
     );
@@ -604,43 +711,61 @@ class _ProphetsTreeScreenState extends State<ProphetsTreeScreen> {
     final lineColor = Theme.of(context)
         .cardColor
         .contrastTextColor
-        .withValues(alpha: isDark ? 0.34 : 0.26);
+        .withValues(alpha: isDark ? 0.36 : 0.28);
     return LayoutBuilder(
       builder: (context, constraints) {
-        final narrow = constraints.maxWidth < 560;
+        final veryNarrow = constraints.maxWidth < 280;
+        final compactCols = constraints.maxWidth < 480;
         final columns = [
-          _branchColumn(context, isDark, branchA, lineColor, !narrow),
-          _branchColumn(context, isDark, branchB, lineColor, !narrow),
+          _branchColumn(
+            context,
+            isDark,
+            branchA,
+            lineColor,
+            !veryNarrow,
+            compactCols,
+          ),
+          _branchColumn(
+            context,
+            isDark,
+            branchB,
+            lineColor,
+            !veryNarrow,
+            compactCols,
+          ),
         ];
         return Column(
           children: [
-            if (!narrow) ...[
+            if (!veryNarrow) ...[
               Container(
                 width: 3,
-                height: 30,
+                height: 22,
                 decoration: BoxDecoration(
                   color: lineColor,
                   borderRadius: BorderRadius.circular(3),
                 ),
               ),
-              Container(
-                width: constraints.maxWidth * 0.5,
-                height: 2,
-                decoration: BoxDecoration(
-                  color: lineColor,
-                  borderRadius: BorderRadius.circular(2),
+              FractionallySizedBox(
+                widthFactor: 0.52,
+                child: Container(
+                  height: 2.5,
+                  decoration: BoxDecoration(
+                    color: lineColor,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
                 ),
               ),
             ],
-            if (narrow) ...[
+            if (veryNarrow) ...[
               columns[0],
-              const SizedBox(height: 26),
+              const SizedBox(height: 18),
               columns[1],
             ] else
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Expanded(child: columns[0]),
+                  const SizedBox(width: 10),
                   Expanded(child: columns[1]),
                 ],
               ),
@@ -656,14 +781,15 @@ class _ProphetsTreeScreenState extends State<ProphetsTreeScreen> {
     List<_TreeNode> nodes,
     Color lineColor,
     bool connectors,
+    bool compactCols,
   ) {
     final children = <Widget>[];
     if (connectors) {
       children.add(
         Center(
           child: Container(
-            width: 2,
-            height: 30,
+            width: 2.5,
+            height: 20,
             decoration: BoxDecoration(
               color: lineColor,
               borderRadius: BorderRadius.circular(2),
@@ -673,13 +799,26 @@ class _ProphetsTreeScreenState extends State<ProphetsTreeScreen> {
       );
     }
     for (var i = 0; i < nodes.length; i++) {
-      if (i > 0 || connectors) children.add(const SizedBox(height: 26));
-      children.add(
-        Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 420),
-            child: _nodeCard(context, nodes[i], isDark),
+      if (i > 0) {
+        children.add(
+          Center(
+            child: Container(
+              width: 2.5,
+              height: 18,
+              decoration: BoxDecoration(
+                color: lineColor,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
           ),
+        );
+      }
+      children.add(
+        _nodeCard(
+          context,
+          nodes[i],
+          isDark,
+          inBranch: compactCols,
         ),
       );
     }
@@ -703,19 +842,19 @@ class _ProphetsTreeScreenState extends State<ProphetsTreeScreen> {
         Expanded(
           child: _dashedLine(rose.withValues(alpha: isDark ? 0.55 : 0.45)),
         ),
-        const SizedBox(width: 12),
+        const SizedBox(width: 10),
         Flexible(
+          flex: 4,
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             decoration: BoxDecoration(
-              color: purple.withValues(alpha: isDark ? 0.14 : 0.1),
+              color: purple.withValues(alpha: isDark ? 0.15 : 0.11),
               borderRadius: BorderRadius.circular(999),
-              border: Border.all(color: purple.withValues(alpha: 0.4)),
+              border: Border.all(color: purple.withValues(alpha: 0.45)),
               boxShadow: [
                 BoxShadow(
-                  color: purple.withValues(alpha: 0.35),
-                  blurRadius: 22,
-                  offset: const Offset(0, 0),
+                  color: purple.withValues(alpha: 0.32),
+                  blurRadius: 20,
                   spreadRadius: -10,
                 ),
               ],
@@ -723,15 +862,17 @@ class _ProphetsTreeScreenState extends State<ProphetsTreeScreen> {
             child: Text(
               marriage.title,
               textAlign: TextAlign.center,
+              softWrap: true,
               style: TextStyle(
                 fontSize: 12.5 * widget.fontSizeFactor,
                 fontWeight: FontWeight.w700,
+                height: 1.5,
                 color: isDark ? const Color(0xFFD8B4FE) : purple,
               ),
             ),
           ),
         ),
-        const SizedBox(width: 12),
+        const SizedBox(width: 10),
         Expanded(
           child: _dashedLine(blue.withValues(alpha: isDark ? 0.55 : 0.45)),
         ),
@@ -750,32 +891,84 @@ class _ProphetsTreeScreenState extends State<ProphetsTreeScreen> {
 
   Widget _grid(BuildContext context, bool isDark, List<_TreeNode> nodes) {
     if (nodes.isEmpty) return const SizedBox.shrink();
+    final lineColor = Theme.of(context)
+        .cardColor
+        .contrastTextColor
+        .withValues(alpha: isDark ? 0.34 : 0.26);
     return LayoutBuilder(
       builder: (context, constraints) {
+        final veryNarrow = constraints.maxWidth < 280;
+        final compactCols = constraints.maxWidth < 480;
         final cards = [
-          for (final node in nodes) _nodeCard(context, node, isDark),
+          for (final node in nodes)
+            _nodeCard(context, node, isDark, inBranch: compactCols),
         ];
-        if (constraints.maxWidth < 560) {
+        if (veryNarrow || cards.length == 1) {
           return Column(
             children: [
               for (var i = 0; i < cards.length; i++) ...[
-                if (i > 0) const SizedBox(height: 18),
-                Center(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 420),
-                    child: cards[i],
-                  ),
-                ),
+                if (i > 0) const SizedBox(height: 16),
+                cards[i],
               ],
             ],
           );
         }
-        return Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        return Column(
           children: [
-            Expanded(child: cards[0]),
-            const SizedBox(width: 18),
-            if (cards.length > 1) Expanded(child: cards[1]),
+            Container(
+              width: 2.5,
+              height: 16,
+              decoration: BoxDecoration(
+                color: lineColor,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            FractionallySizedBox(
+              widthFactor: 0.52,
+              child: Container(
+                height: 2.5,
+                decoration: BoxDecoration(
+                  color: lineColor,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    children: [
+                      Container(
+                        width: 2.5,
+                        height: 14,
+                        decoration: BoxDecoration(
+                          color: lineColor,
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                      cards[0],
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    children: [
+                      Container(
+                        width: 2.5,
+                        height: 14,
+                        decoration: BoxDecoration(
+                          color: lineColor,
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                      cards[1],
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ],
         );
       },
@@ -799,33 +992,32 @@ class _ProphetsTreeScreenState extends State<ProphetsTreeScreen> {
             ),
           ),
         ),
-        const SizedBox(width: 16),
+        const SizedBox(width: 12),
         Flexible(
-          flex: 3,
-          child: FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 6,
-              ),
-              decoration: BoxDecoration(
-                color: blue.withValues(alpha: isDark ? 0.09 : 0.08),
-                borderRadius: BorderRadius.circular(999),
-                border: Border.all(color: blue.withValues(alpha: 0.3)),
-              ),
-              child: Text(
-                'سلسلة الأئمة الاثني عشر',
-                style: TextStyle(
-                  fontSize: 13.5 * widget.fontSizeFactor,
-                  fontWeight: FontWeight.w700,
-                  color: isDark ? blue : const Color(0xFF2563EB),
-                ),
+          flex: 4,
+          child: Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 7,
+            ),
+            decoration: BoxDecoration(
+              color: blue.withValues(alpha: isDark ? 0.11 : 0.09),
+              borderRadius: BorderRadius.circular(999),
+              border: Border.all(color: blue.withValues(alpha: 0.36)),
+            ),
+            child: Text(
+              'سلسلة الأئمة الاثني عشر',
+              textAlign: TextAlign.center,
+              softWrap: true,
+              style: TextStyle(
+                fontSize: 13.5 * widget.fontSizeFactor,
+                fontWeight: FontWeight.w700,
+                color: isDark ? blue : const Color(0xFF2563EB),
               ),
             ),
           ),
         ),
-        const SizedBox(width: 16),
+        const SizedBox(width: 12),
         Expanded(
           child: Container(
             height: 1,
@@ -849,48 +1041,59 @@ class _ProphetsTreeScreenState extends State<ProphetsTreeScreen> {
     const blue = Color(0xFF60A5FA);
     const gold = Color(0xFFFBBF24);
     final ringColor = isMahdi ? gold : blue;
-    return Stack(
-      clipBehavior: Clip.none,
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(top: 18),
-          child: _nodeCard(context, node, isDark),
-        ),
-        if (node.step != null)
-          Positioned.fill(
-            child: Align(
-              alignment: Alignment.topCenter,
-              child: Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Theme.of(context).cardColor,
-                  border: Border.all(color: ringColor, width: 2),
-                  boxShadow: [
-                    BoxShadow(
-                      color: ringColor.withValues(alpha: isDark ? 0.55 : 0.4),
-                      blurRadius: 20,
-                      spreadRadius: -5,
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 420),
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(top: 18),
+              child: _nodeCard(
+                context,
+                node,
+                isDark,
+                extraTopPadding: node.step != null ? 10 : 0,
+              ),
+            ),
+            if (node.step != null)
+              Positioned.fill(
+                child: Align(
+                  alignment: Alignment.topCenter,
+                  child: Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Theme.of(context).cardColor,
+                      border: Border.all(color: ringColor, width: 2),
+                      boxShadow: [
+                        BoxShadow(
+                          color:
+                              ringColor.withValues(alpha: isDark ? 0.55 : 0.4),
+                          blurRadius: 20,
+                          spreadRadius: -5,
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-                child: Center(
-                  child: Text(
-                    _easternArabic(node.step!),
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w800,
-                      color: isMahdi && !isDark
-                          ? const Color(0xFFB45309)
-                          : ringColor,
+                    child: Center(
+                      child: Text(
+                        _easternArabic(node.step!),
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w800,
+                          color: isMahdi && !isDark
+                              ? const Color(0xFFB45309)
+                              : ringColor,
+                        ),
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-          ),
-      ],
+          ],
+        ),
+      ),
     );
   }
 
@@ -905,83 +1108,124 @@ class _ProphetsTreeScreenState extends State<ProphetsTreeScreen> {
     final foreground = background.contrastTextColor;
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(24, 26, 24, 28),
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        color: Color.lerp(background, const Color(0xFF94A3B8), 0.05),
+        color: Color.lerp(background, const Color(0xFF94A3B8), 0.06),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: foreground.withValues(alpha: isDark ? 0.18 : 0.14),
+          color: gold.withValues(alpha: isDark ? 0.28 : 0.32),
         ),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
-            ProphetsTreeScreen.supplementTitle,
-            style: TextStyle(
-              fontSize: 20 * widget.fontSizeFactor,
-              fontWeight: FontWeight.w700,
-              height: 1.6,
-              color: foreground,
-            ),
-          ),
-          const SizedBox(height: 12),
           Container(
-            width: 76,
             height: 3,
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(3),
               gradient: LinearGradient(
-                colors: [gold, gold.withValues(alpha: 0.0)],
+                colors: [
+                  gold.withValues(alpha: 0.1),
+                  gold,
+                  gold.withValues(alpha: 0.1),
+                ],
               ),
             ),
           ),
-          const SizedBox(height: 20),
-          for (final entry in entries)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 14),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.only(top: 9),
-                    child: Text(
-                      '◆',
-                      style: TextStyle(
-                        fontSize: 9,
-                        color: gold.withValues(alpha: 0.9),
-                      ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 22, 20, 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  ProphetsTreeScreen.supplementTitle,
+                  softWrap: true,
+                  style: TextStyle(
+                    fontSize: 19 * widget.fontSizeFactor,
+                    fontWeight: FontWeight.w800,
+                    height: 1.55,
+                    color: foreground,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Container(
+                  width: 76,
+                  height: 3,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(3),
+                    gradient: LinearGradient(
+                      colors: [gold, gold.withValues(alpha: 0.0)],
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text.rich(
-                      TextSpan(
+                ),
+                const SizedBox(height: 18),
+                for (final entry in entries)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 10,
+                      ),
+                      decoration: BoxDecoration(
+                        color: background.withValues(
+                          alpha: isDark ? 0.55 : 0.75,
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: foreground.withValues(
+                            alpha: isDark ? 0.1 : 0.08,
+                          ),
+                        ),
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          TextSpan(
-                            text: '${entry.title}: ',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w700,
-                              color: foreground,
+                          Padding(
+                            padding: const EdgeInsets.only(top: 8),
+                            child: Text(
+                              '◆',
+                              style: TextStyle(
+                                fontSize: 9,
+                                color: gold.withValues(alpha: 0.9),
+                              ),
                             ),
                           ),
-                          TextSpan(
-                            text: entry.desc,
-                            style: TextStyle(
-                              color: foreground.withValues(alpha: 0.78),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text.rich(
+                              TextSpan(
+                                children: [
+                                  TextSpan(
+                                    text: '${entry.title}: ',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w700,
+                                      color: isDark
+                                          ? gold
+                                          : const Color(0xFFB45309),
+                                    ),
+                                  ),
+                                  TextSpan(
+                                    text: entry.desc,
+                                    style: TextStyle(
+                                      color: foreground.withValues(alpha: 0.82),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              softWrap: true,
+                              style: TextStyle(
+                                fontSize: 13.5 * widget.fontSizeFactor,
+                                height: 1.85,
+                              ),
                             ),
                           ),
                         ],
                       ),
-                      style: TextStyle(
-                        fontSize: 14 * widget.fontSizeFactor,
-                        height: 1.95,
-                      ),
                     ),
                   ),
-                ],
-              ),
+              ],
             ),
+          ),
         ],
       ),
     );

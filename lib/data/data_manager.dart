@@ -526,7 +526,11 @@ class DataManager {
         final targetItems = targetContent[key];
         final sourceItems = sourceContent is Map ? sourceContent[key] : null;
         final empty = targetItems is! List || targetItems.isEmpty;
-        if (empty && sourceItems is List && sourceItems.isNotEmpty) {
+        final legacyTree = key == 'prophets_tree' &&
+            !_hasStructuredTreeNodes(targetItems) &&
+            _hasStructuredTreeNodes(sourceItems);
+        final useSource = (empty || legacyTree) && sourceItems is List;
+        if (useSource && sourceItems.isNotEmpty) {
           targetContent[key] = sourceItems;
           changed = true;
         }
@@ -541,6 +545,18 @@ class DataManager {
       }
     }
     return changed;
+  }
+
+  /// True when [items] contains structured tree nodes (`type`/`group`/`tags`)
+  /// rather than the legacy three-article reader entries.
+  static bool _hasStructuredTreeNodes(Object? items) {
+    if (items is! List) return false;
+    for (final item in items) {
+      if (item is! Map) continue;
+      if (item.containsKey('type') || item.containsKey('group')) return true;
+      if (item.containsKey('tags')) return true;
+    }
+    return false;
   }
 
   static Future<File> _getLocalFile() async {
