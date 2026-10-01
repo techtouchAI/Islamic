@@ -201,6 +201,32 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('the people of the house filter gathers the five of the cloak',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(400, 3200));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(host());
+    await tester.pump();
+
+    await tester.tap(find.text('أهل البيت'));
+    await tester.pumpAndSettle();
+
+    for (final name in const [
+      'محمد ﷺ',
+      'فاطمة الزهراء عليها السلام',
+      'علي بن أبي طالب عليه السلام',
+      'الحسن بن علي',
+      'الحسين بن علي',
+    ]) {
+      expect(find.text(name), findsOneWidget);
+    }
+    // Lineage outside the cloak steps aside.
+    expect(find.text('آدم'), findsNothing);
+    expect(find.text('أنوش'), findsNothing);
+    expect(find.text('محمد بن الحسن المهدي'), findsNothing);
+  });
+
   testWidgets('an empty section leaves the page calm, not broken',
       (tester) async {
     await tester.binding.setSurfaceSize(const Size(400, 1200));
