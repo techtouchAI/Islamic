@@ -7,6 +7,7 @@ import 'dart:math';
 
 import '../../data/data_manager.dart';
 import '../../data/daily_duas.dart';
+import '../../utils/content_sanitizer.dart';
 import '../../utils/string_extensions.dart';
 import '../../services/quran_service.dart';
 
@@ -23,6 +24,7 @@ import 'widgets/home_prayer_card.dart';
 import 'widgets/daily_worship_actions.dart';
 import 'widgets/daily_dhikr_card.dart';
 import 'widgets/home_card_glyph.dart';
+import 'widgets/prophets_tree_card.dart';
 
 class HomeSection extends StatefulWidget {
   final VoidCallback? onPrayerCardTap;
@@ -75,6 +77,9 @@ class _HomeSectionState extends State<HomeSection> {
       if (key == 'mafatih' || key == 'Mafatih_alJinan') {
         return; // Hide Mafatih from Home Screen
       }
+      // A section rendered by its own home card must not also appear as a
+      // grid tile, or the same content would be reachable twice.
+      if (value['home_card'] == true) return;
       if (settingsProvider.homeVisibility[key] ?? true) {
         String fetchKey = key;
         if (key == 'visits') fetchKey = 'visits_general';
@@ -157,6 +162,17 @@ class _HomeSectionState extends State<HomeSection> {
     _cachedDayDua = _dayDua;
   }
 
+  /// Section key of the collection the tree home card opens.
+  static const _treeSectionKey = 'prophets_tree';
+
+  /// The tree section, or null when the loaded document carries no entries
+  /// for it: an older document then simply gets no card.
+  Map<String, dynamic>? get _treeSection {
+    final section = DataManager.getSections()[_treeSectionKey];
+    if (section == null) return null;
+    return DataManager.getItems(_treeSectionKey).isEmpty ? null : section;
+  }
+
   dynamic _safeGet(List list, Random r) {
     if (list.isEmpty) return {'title': 'قريباً', 'content': ''};
     return list[r.nextInt(list.length)];
@@ -206,7 +222,7 @@ class _HomeSectionState extends State<HomeSection> {
               Icon(Icons.chevron_left, color: foreground.withValues(alpha: .5)),
             ]),
             const SizedBox(height: 12),
-            Text(data['content'].toString(),
+            Text(ContentSanitizer.plainText(data['content'].toString()),
                 maxLines: 3,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
@@ -295,6 +311,16 @@ class _HomeSectionState extends State<HomeSection> {
                   const SizedBox(height: 20),
                   if (settingsProvider.homeVisibility['adhkar'] ?? true) ...[
                     const DailyDhikrCard(),
+                    const SizedBox(height: 16),
+                  ],
+                  if (_treeSection != null &&
+                      (settingsProvider.homeVisibility[_treeSectionKey] ??
+                          true)) ...[
+                    ProphetsTreeCard(
+                      title: _treeSection!['title'].toString(),
+                      uiOpacity: settingsProvider.uiOpacity,
+                      onTap: () => widget.onNavigate?.call(_treeSectionKey),
+                    ),
                     const SizedBox(height: 16),
                   ],
                   if (_dayDua != null &&

@@ -1,4 +1,5 @@
 import 'arabic_normalizer.dart';
+import 'content_sanitizer.dart';
 
 extension ArabicStringNormalization on String {
   String normalizeArabic() => ArabicNormalizer.normalize(this);
@@ -15,25 +16,7 @@ extension ArabicStringNormalization on String {
 }
 
 extension HtmlStringFormatting on String {
-  String cleanSnippet() {
-    try {
-      if (this.length > 10000) return this;
-      String result = this.trim();
-      if (result.toLowerCase().startsWith('html')) {
-        result = result.substring(4).trim();
-      }
-      result = result.replaceAll('\uFDFA', '(صلى الله عليه وآله)');
-      result = result.replaceAll('\uFDFB', '(جل جلاله)');
-      result = result.replaceAll('!', '(عليه السلام)');
-      result = result.replaceAll('<html>', '');
-      result = result.replaceAll('//', '');
-      result = result.replaceAll(RegExp(r'<\/?p>', caseSensitive: false), ' ');
-      result = result.replaceAll(RegExp(r'<br>', caseSensitive: false), ' ');
-      result = result.replaceAll(RegExp(r'<[^>]*>'), '');
-      result = result.replaceAll(RegExp(r'\s+'), ' ');
-      return result.trim();
-    } catch (e) {
-      return this;
-    }
-  }
+  /// One tag-free line of a CMS payload; see [ContentSanitizer.snippet].
+  String cleanSnippet({int? maxLength}) =>
+      ContentSanitizer.snippet(this, maxLength: maxLength);
 }

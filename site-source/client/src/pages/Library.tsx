@@ -1,10 +1,11 @@
 /** Design: «واجهة التطبيق الممتدة» — فهرس الحواف يقود إلى النص الأصلي، لا إلى بطاقات تسويقية. */
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { BookOpen, ChevronLeft, ExternalLink, LoaderCircle, Search, X } from "lucide-react";
 import { Link } from "wouter";
 import { SiteShell } from "@/components/SiteShell";
 import { appAssets, isGitHubPagesBuild } from "@/lib/app-assets";
-import { entryBody, entryTitle, loadApplicationContent, loadCatalog, loadCollectionChunk, loadCollectionIndex, readCollection, type LibraryCatalog, type LibraryCollection, type LibraryIndexEntry } from "@/lib/library";
+import type { ContentParagraph } from "@/lib/content-markup";
+import { entryParagraphs, entryTitle, loadApplicationContent, loadCatalog, loadCollectionChunk, loadCollectionIndex, readCollection, type LibraryCatalog, type LibraryCollection, type LibraryIndexEntry } from "@/lib/library";
 
 const PAGE_SIZE = 24;
 
@@ -13,7 +14,7 @@ export default function Library() {
   const [source, setSource] = useState<Record<string, unknown> | null>(null);
   const [indexEntries, setIndexEntries] = useState<LibraryIndexEntry[]>([]);
   const [selectedId, setSelectedId] = useState<string>("");
-  const [activeReading, setActiveReading] = useState<{ title: string; body: string } | null>(null);
+  const [activeReading, setActiveReading] = useState<{ title: string; paragraphs: ContentParagraph[] } | null>(null);
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(0);
   const [error, setError] = useState("");
@@ -58,14 +59,14 @@ export default function Library() {
   async function openEntry(record: LibraryIndexEntry) {
     if (!selectedCollection) return;
     if (!isGitHubPagesBuild) {
-      setActiveReading({ title: record.title, body: entryBody(allEntries[record.index]) });
+      setActiveReading({ title: record.title, paragraphs: entryParagraphs(allEntries[record.index]) });
       return;
     }
     try {
       const chunk = selectedCollection.chunks.find((candidate) => record.index >= candidate.offset && record.index < candidate.offset + candidate.count);
       if (!chunk) throw new Error("missing chunk");
       const data = await loadCollectionChunk(chunk.file);
-      setActiveReading({ title: record.title, body: entryBody(data.items[record.index - chunk.offset]) });
+      setActiveReading({ title: record.title, paragraphs: entryParagraphs(data.items[record.index - chunk.offset]) });
     } catch {
       setError("تعذر تحميل نص العنصر المختار.");
     }
@@ -98,7 +99,7 @@ export default function Library() {
         </div>
       </section>}
 
-      {activeReading ? <div className="reading-overlay" role="dialog" aria-modal="true" aria-label="قراءة المحتوى"><button type="button" className="overlay-dismiss" onClick={() => setActiveReading(null)} aria-label="إغلاق" /><article className="reading-sheet"><button type="button" onClick={() => setActiveReading(null)} className="reading-close"><X className="h-4 w-4" /> إغلاق</button><p className="section-kicker">{selectedCollection?.title}</p><h2>{activeReading.title}</h2><div className="reading-content">{activeReading.body}</div></article></div> : null}
+      {activeReading ? <div className="reading-overlay" role="dialog" aria-modal="true" aria-label="قراءة المحتوى"><button type="button" className="overlay-dismiss" onClick={() => setActiveReading(null)} aria-label="إغلاق" /><article className="reading-sheet"><button type="button" onClick={() => setActiveReading(null)} className="reading-close"><X className="h-4 w-4" /> إغلاق</button><p className="section-kicker">{selectedCollection?.title}</p><h2>{activeReading.title}</h2><div className="reading-content">{activeReading.paragraphs.map((paragraph, index) => <p key={index}>{paragraph.runs.map((run, runIndex) => { const style = run.color ? { color: `#${run.color}` } : undefined; if (run.bold) return <b key={runIndex} style={style}>{run.text}</b>; if (style) return <span key={runIndex} style={style}>{run.text}</span>; return <Fragment key={runIndex}>{run.text}</Fragment>; })}</p>)}</div></article></div> : null}
 
       <section className="library-footer section-wrap"><BookOpen className="h-5 w-5" /><p>هذه المكتبة تعرض المحتوى الذي يستخدمه التطبيق من ملفه المركزي؛ للحصول على أدوات اليوم والتنبيهات، استخدم تطبيق Android.</p><Link href="/download">اذهب إلى التنزيل</Link></section>
     </main>

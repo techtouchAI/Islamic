@@ -256,18 +256,12 @@ class _DynamicListSectionState extends State<DynamicListSection> {
                         children: [
                           Builder(
                             builder: (context) {
-                              String rawText = data[index]['content']
+                              // The sanitizer owns the payload marker, the
+                              // comments and every unsupported tag, so a
+                              // subtitle never shows markup.
+                              String cleanSubtitle = data[index]['content']
                                   .toString()
-                                  .trim()
-                                  .replaceAll(
-                                    RegExp(
-                                      r'<html>|<html|^html\b',
-                                      caseSensitive: false,
-                                    ),
-                                    ' ',
-                                  )
-                                  .trim();
-                              String cleanSubtitle = rawText.cleanSnippet();
+                                  .cleanSnippet();
 
                               String displayTitle;
                               TextStyle titleStyle;
@@ -313,6 +307,8 @@ class _DynamicListSectionState extends State<DynamicListSection> {
                                         ),
                                         child: Text(
                                           cleanSubtitle,
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
                                           style: TextStyle(
                                             fontSize:
                                                 14 * widget.fontSizeFactor,

@@ -40,10 +40,11 @@ class _HtmlContentRendererState extends State<HtmlContentRenderer> {
     TextStyle baseStyle,
     TextAlign textAlign,
   ) {
-    String processed = content.replaceAll('<html>', '').replaceAll('//', '');
-    processed = processed
-        .replaceAll(RegExp(r'<\/?p>', caseSensitive: false), '\n\n')
-        .replaceAll(RegExp(r'<br>', caseSensitive: false), '\n');
+    // The reader sanitises the payload before it arrives, so only the
+    // paragraph markers it may still carry are turned into line breaks here.
+    String processed = content
+        .replaceAll(RegExp(r'<\s*/?\s*p\b[^>]*>', caseSensitive: false), '\n\n')
+        .replaceAll(RegExp(r'<\s*br\s*/?\s*>', caseSensitive: false), '\n');
     processed = processed.replaceAll(RegExp(r'\n{3,}'), '\n\n').trim();
 
     // Insert a newline after Ayah markers so they can be parsed as independent paragraphs

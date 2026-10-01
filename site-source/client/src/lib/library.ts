@@ -1,5 +1,6 @@
 /** Design: «واجهة التطبيق الممتدة» — المكتبة تقرأ المصدر الحقيقي وتعرضه على دفعات قابلة للبحث. */
 import { appAssets } from "./app-assets";
+import { contentParagraphs, contentPlainText, type ContentParagraph } from "./content-markup";
 
 export type CatalogChunk = { file: string; count: number; offset: number };
 export type LibraryCollection = {
@@ -77,11 +78,22 @@ function nestedText(value: unknown): string {
   return "";
 }
 
+/** الفقرات المنسّقة كما يعرضها التطبيق: لون، عريض، وفقرات. */
+export function entryParagraphs(entry: unknown): ContentParagraph[] {
+  if (typeof entry === "string") return contentParagraphs(entry);
+  if (!entry || typeof entry !== "object") return [];
+  const data = entry as Record<string, unknown>;
+  if (typeof data.content === "string") return contentParagraphs(data.content);
+  if (typeof data.answer === "string") return contentParagraphs(data.answer);
+  return [];
+}
+
+/** النص الخالص للعنصر، بلا وسوم CMS، للمشاركة والمعاينة. */
 export function entryBody(entry: unknown): string {
-  if (typeof entry === "string") return entry;
+  if (typeof entry === "string") return contentPlainText(entry);
   if (!entry || typeof entry !== "object") return "لا يتوفر نص قابل للعرض لهذا العنصر.";
   const data = entry as Record<string, unknown>;
-  if (typeof data.content === "string") return data.content;
+  if (typeof data.content === "string") return contentPlainText(data.content);
   if (typeof data.answer === "string") return data.answer;
   if (data.items) return nestedText(data.items);
   if (data.days) return nestedText(data.days);
