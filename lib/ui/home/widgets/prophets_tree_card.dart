@@ -55,7 +55,8 @@ class ProphetsTreeCard extends StatelessWidget {
             theme.colorScheme.outlineVariant,
             gold,
             0.6,
-          )!.withValues(alpha: 0.55),
+          )!
+              .withValues(alpha: 0.55),
         ),
       ),
       child: InkWell(
@@ -250,13 +251,14 @@ class _SacredScenePainter extends CustomPainter {
     _minaret(canvas, 0.495 * w, size, goldLine, goldSoft, goldBody);
 
     // The crescent rides the sky between the arch and the right minaret.
-    canvas.drawPath(_crescent(Offset(0.405 * w, 0.19 * h), 0.088 * h), goldBody);
+    canvas.drawPath(
+        _crescent(Offset(0.405 * w, 0.19 * h), 0.088 * h), goldBody);
 
     // Eight-pointed stars scatter across the upper sky.
-    canvas.drawPath(_eightPointStar(Offset(0.515 * w, 0.24 * h), 0.058 * h),
-        goldSoft);
-    canvas.drawPath(_eightPointStar(Offset(0.185 * w, 0.155 * h), 0.042 * h),
-        goldSoft);
+    canvas.drawPath(
+        _eightPointStar(Offset(0.515 * w, 0.24 * h), 0.058 * h), goldSoft);
+    canvas.drawPath(
+        _eightPointStar(Offset(0.185 * w, 0.155 * h), 0.042 * h), goldSoft);
     canvas.drawPath(
       _eightPointStar(Offset(0.625 * w, 0.58 * h), 0.072 * h),
       Paint()
@@ -270,14 +272,20 @@ class _SacredScenePainter extends CustomPainter {
     final vinePath = Path()
       ..moveTo(0.545 * w, 0.96 * h)
       ..cubicTo(
-        0.60 * w, 1.00 * h,
-        0.645 * w, 0.82 * h,
-        0.70 * w, 0.72 * h,
+        0.60 * w,
+        1.00 * h,
+        0.645 * w,
+        0.82 * h,
+        0.70 * w,
+        0.72 * h,
       )
       ..cubicTo(
-        0.755 * w, 0.62 * h,
-        0.83 * w, 0.62 * h,
-        0.90 * w, 0.50 * h,
+        0.755 * w,
+        0.62 * h,
+        0.83 * w,
+        0.62 * h,
+        0.90 * w,
+        0.50 * h,
       );
     canvas.drawPath(vinePath, vine);
     _leaf(canvas, Offset(0.655 * w, 0.80 * h), 0.075 * h, -2.4, vine);
@@ -315,14 +323,20 @@ class _SacredScenePainter extends CustomPainter {
     return Path()
       ..moveTo(base.dx - half, base.dy)
       ..cubicTo(
-        base.dx - half - width * 0.16, base.dy - height * 0.46,
-        base.dx - width * 0.20, base.dy - height * 0.84,
-        base.dx, base.dy - height,
+        base.dx - half - width * 0.16,
+        base.dy - height * 0.46,
+        base.dx - width * 0.20,
+        base.dy - height * 0.84,
+        base.dx,
+        base.dy - height,
       )
       ..cubicTo(
-        base.dx + width * 0.20, base.dy - height * 0.84,
-        base.dx + half + width * 0.16, base.dy - height * 0.46,
-        base.dx + half, base.dy,
+        base.dx + width * 0.20,
+        base.dy - height * 0.84,
+        base.dx + half + width * 0.16,
+        base.dy - height * 0.46,
+        base.dx + half,
+        base.dy,
       )
       ..close();
   }
@@ -334,14 +348,20 @@ class _SacredScenePainter extends CustomPainter {
     return Path()
       ..moveTo(base.dx - half, base.dy)
       ..cubicTo(
-        base.dx - half, base.dy - height * 0.60,
-        base.dx - width * 0.17, base.dy - height * 0.82,
-        base.dx, base.dy - height,
+        base.dx - half,
+        base.dy - height * 0.60,
+        base.dx - width * 0.17,
+        base.dy - height * 0.82,
+        base.dx,
+        base.dy - height,
       )
       ..cubicTo(
-        base.dx + width * 0.17, base.dy - height * 0.82,
-        base.dx + half, base.dy - height * 0.60,
-        base.dx + half, base.dy,
+        base.dx + width * 0.17,
+        base.dy - height * 0.82,
+        base.dx + half,
+        base.dy - height * 0.60,
+        base.dx + half,
+        base.dy,
       );
   }
 
@@ -361,10 +381,10 @@ class _SacredScenePainter extends CustomPainter {
     final double halfBase = 0.040 * h;
     final double halfTop = 0.030 * h;
 
-    canvas.drawLine(Offset(x - halfBase, baseY), Offset(x - halfTop, topY),
-        line);
-    canvas.drawLine(Offset(x + halfBase, baseY), Offset(x + halfTop, topY),
-        line);
+    canvas.drawLine(
+        Offset(x - halfBase, baseY), Offset(x - halfTop, topY), line);
+    canvas.drawLine(
+        Offset(x + halfBase, baseY), Offset(x + halfTop, topY), line);
 
     final double balconyY = topY + (baseY - topY) * 0.16;
     canvas.drawLine(
@@ -378,8 +398,8 @@ class _SacredScenePainter extends CustomPainter {
 
     final double tipY = topY - halfTop * 2.7;
     canvas.drawLine(Offset(x, tipY), Offset(x, tipY - 0.045 * h), soft);
-    canvas.drawCircle(Offset(x, tipY - 0.060 * h), line.strokeWidth * 0.8,
-        body);
+    canvas.drawCircle(
+        Offset(x, tipY - 0.060 * h), line.strokeWidth * 0.8, body);
   }
 
   /// A crescent opening towards the upper right, built as the difference of
